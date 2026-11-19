@@ -46,7 +46,7 @@ export const nextStepCasesExpansion11: NextStepCase[] = [
 { id:"nx240",specialty:"Pediatrics",vignette:"A child with tetralogy of Fallot develops a hypercyanotic spell with worsening hypoxemia and agitation.",question:"What is an appropriate immediate maneuver?",options:["Knee-chest positioning, calm the child, give oxygen and IV fluids as indicated, and use beta blockade when needed","Lay the child flat and encourage crying","Give a diuretic as first-line","Discharge when cyanosis improves"],answer:0,explanation:"Hypercyanotic spells are treated by increasing systemic vascular resistance and reducing infundibular spasm with knee-chest positioning, calming, oxygen/fluids, and selected medications.",source:"Pediatric cardiology references."}
 ];
 
-export const connectionPuzzlesExpansion11: ConnectionGroup[][] = [
+export const connectionPuzzlesClinical11: ConnectionGroup[][] = [
 [
 {category:"Kawasaki disease",words:["Prolonged fever","Strawberry tongue","Hand-foot changes","Coronary aneurysm"],hint:"Mucocutaneous vasculitis in children."},
 {category:"MIS-C",words:["Post-COVID timing","Shock","Elevated ferritin","Cardiac dysfunction"],hint:"Postinfectious pediatric hyperinflammation."},
