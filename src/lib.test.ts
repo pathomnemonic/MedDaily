@@ -58,7 +58,8 @@ describe("daily puzzle primitives", () => {
 
 describe("content bank sanity", () => {
   it("keeps Medle answers five letters long and unique", () => {
-    expect(new Set(medleWords).size).toBe(medleWords.length);
+    expect(medleWords).toHaveLength(365);
+    expect(new Set(medleWords).size).toBe(365);
     expect(medleWords.every((word) => /^[A-Z]{5}$/.test(word))).toBe(true);
   });
 
@@ -206,7 +207,7 @@ describe("expanded content integrity", () => {
     expect(pairsBank.length).toBeGreaterThanOrEqual(200);
     expect(microbePacks.length).toBeGreaterThanOrEqual(68);
     expect(triageCases.length).toBeGreaterThanOrEqual(42);
-    expect(medleWords.length).toBeGreaterThanOrEqual(140);
+    expect(medleWords.length).toBeGreaterThanOrEqual(365);
     expect(scrambleWordsExtended.length).toBeGreaterThanOrEqual(110);
     expect(higherLowerPairs.length).toBeGreaterThanOrEqual(110);
     expect(higherLowerPairs.filter((item) => "fun" in item)).toHaveLength(50);
@@ -257,6 +258,8 @@ describe("expanded content integrity", () => {
     for (const ladder of wordLadders) {
       expect(ladder.path[0]).toBe(ladder.start);
       expect(ladder.path[ladder.path.length - 1]).toBe(ladder.end);
+      expect(new Set(ladder.path).size).toBe(ladder.path.length);
+      expect(ladder.path.every((word) => /^[A-Z]{4,6}$/.test(word))).toBe(true);
       expect(new Set(ladder.path).size).toBe(ladder.path.length);
       expect(ladder.path.every((word) => /^[A-Z]{4,6}$/.test(word))).toBe(true);
       for (let i = 1; i < ladder.path.length; i++) {
