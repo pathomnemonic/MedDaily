@@ -1,4 +1,5 @@
 import { higherLowerPairsExpansion } from "./dataExpansion";
+import { spellingHiveExpansion, wordLaddersExpansion, deductionCasesExpansion } from "./dataExtraExpansion";
 
 export const glyphPatterns: { name: string; pattern: number[][]; hint: string }[] = [
   { name:"Neuron", hint:"A cell that carries signals", pattern:[[0,0,1,0,0],[0,1,1,1,0],[1,1,1,1,1],[0,0,1,0,0],[0,1,0,1,0]] },
@@ -305,4 +306,7 @@ solution:[{suspect:"Ari",location:"Reference Desk",object:"Atlas"},{suspect:"Min
 );
 
 
+spellingHivePuzzles.push(...spellingHiveExpansion);
+wordLadders.push(...wordLaddersExpansion);
+deductionCases.push(...deductionCasesExpansion);
 higherLowerPairs.push(...higherLowerPairsExpansion);
