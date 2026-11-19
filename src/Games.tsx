@@ -355,7 +355,7 @@ function LetterGridGame({ seed, onDone }: Props) {
   const [path, setPath] = useState<number[]>([]);
   const [found, setFound] = useState<string[]>([]);
   const [foundPaths, setFoundPaths] = useState<number[][]>([]);
-  const [seconds, setSeconds] = useState(90);
+  const [seconds, setSeconds] = useState(75);
   const [note, setNote] = useState("Connect adjacent letters in any direction. Each cell can be used once per word.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
@@ -759,7 +759,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     done.current = true;
     setEnded(true);
     setNote("Time. Review the pairs you uncovered and try to build a longer streak next run.");
-    onDone(score, 1850, false);
+    onDone(score, 1800, false);
   }, [seconds, ended, score, onDone]);
 
   const flip = (id: number) => {
@@ -787,7 +787,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
         done.current = true;
         setEnded(true);
         setNote("All twelve pairs found. Time bonus: " + seconds * 2 + " points.");
-        onDone(finalScore, 1850, mismatches === 0);
+        onDone(finalScore, 1800, mismatches === 0);
       }
     } else {
       setLocked(true);
@@ -803,7 +803,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   };
 
   return <div className="game-layout association-game">
-    <div className="game-instructions"><span className="instruction-dot peach" /> Twelve pairs are hidden in a 4 × 6 memory board. Match terms to their clinical associations, build a streak, and beat the 90-second clock.</div>
+    <div className="game-instructions"><span className="instruction-dot peach" /> Twelve pairs are hidden in a 4 × 6 memory board. Match terms to their clinical associations, build a streak, and beat the 75-second clock.</div>
     <div className="association-hud">
       <div><b>{seconds}</b><span>SECONDS</span></div>
       <div><b>{matched.length}/{pairSet.length}</b><span>PAIRS</span></div>
@@ -821,7 +821,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     </div>
     <div className="association-footer"><span>{moves} turns · {mismatches} mismatches</span><span>Match streaks earn bonus points</span></div>
     <p className="game-feedback" aria-live="polite">{note}</p>
-    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All twelve associations found in " + moves + " turns." : matched.length + " of twelve pairs found. " + mismatches + " mismatches."} score={score + " / 1850"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
+    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All twelve associations found in " + moves + " turns." : matched.length + " of twelve pairs found. " + mismatches + " mismatches."} score={score + " / 1800"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
   </div>;
 }
 
