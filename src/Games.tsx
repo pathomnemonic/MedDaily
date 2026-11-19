@@ -381,7 +381,7 @@ function LetterGridGame({ seed, onDone }: Props) {
   }, [seconds, ended, found]);
 
   const chooseCell = (index: number) => {
-    if (ended || foundPaths.some((cells) => cells.includes(index))) return;
+    if (ended) return;
     if (path.includes(index)) {
       if (path[path.length - 1] === index) setPath((current) => current.slice(0, -1));
       else setNote("A letter cannot be reused in the same word. Remove the last tile to backtrack.");
@@ -637,7 +637,7 @@ function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
       }} onPointerCancel={clear}>
         {board.grid.flat().map((letter, i) => {
           const isFound = foundPaths.some((cells) => cells.includes(i));
-          return <button key={i} data-cell-index={i} type="button" className={"letter-tile" + (path.includes(i) ? " path-cell" : "") + (isFound ? " found-cell" : "")} onPointerDown={() => begin(i)} onClick={(event) => { if (event.detail === 0) { if (start === null) begin(i); else finish(i); } }} disabled={ended || isFound} aria-label={"Row " + (Math.floor(i / 14) + 1) + ", column " + (i % 14 + 1) + ", " + letter}>
+          return <button key={i} data-cell-index={i} type="button" className={"letter-tile" + (path.includes(i) ? " path-cell" : "") + (isFound ? " found-cell" : "")} onPointerDown={() => begin(i)} onClick={(event) => { if (event.detail === 0) { if (start === null) begin(i); else finish(i); } }} disabled={ended} aria-label={"Row " + (Math.floor(i / 14) + 1) + ", column " + (i % 14 + 1) + ", " + letter}>
             {letter}
           </button>;
         })}
