@@ -523,7 +523,7 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
         <div><input id="doctordle-guess" value={guess} onChange={(event) => setGuess(event.target.value)} placeholder="Type a diagnosis…" autoComplete="off" /><button className="button button-primary" type="submit" disabled={!guess.trim()}>Guess ↗</button></div>
       </form>
       <div className="doctordle-tools"><button className="text-button" onClick={revealClue} disabled={clueCount >= item.clues.length}>Reveal another clue</button><span>{guesses.length}/6 guesses used</span></div>
-    </> : <Finish title={won ? "Diagnosis found" : "Case revealed"} detail={item.explanation}><p className="doctordle-answer">Answer: <b>{item.answer}</b></p><p className="source-note">Source note: {item.source}</p></Finish>}
+    </> : <Finish title={won ? "Diagnosis found" : "Case revealed"} detail={(won ? "Solved in " + guesses.length + " of 6 guesses. " : "Six guesses used. ") + item.explanation}><p className="doctordle-answer">Answer: <b>{item.answer}</b></p><p className="source-note">Source note: {item.source}</p></Finish>}
     <p className="game-feedback" aria-live="polite">{note}</p>
   </div>;
 }
