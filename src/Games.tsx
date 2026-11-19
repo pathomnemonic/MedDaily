@@ -75,7 +75,8 @@ function SectionLabel({ children }: { children: ReactNode }) { return <div class
 
 const DIVE_POINTS = [10, 15, 30, 60, 85, 100];
 const DIVE_TIERS = ["Surface find", "Familiar current", "Reef discovery", "Rare specimen", "Abyssal find", "Hidden gem"];
-const diveRoundScore = (answers: DeepAnswer[]) => Math.min(100, answers.reduce((sum, answer) => sum + DIVE_POINTS[answer.tier - 1], 0));
+type ScoredDeepAnswer = DeepAnswer & { earned: number };
+const diveRoundScore = (answers: ScoredDeepAnswer[]) => answers.reduce((sum, answer) => sum + answer.earned, 0);
 
 function DeepDive({ seed, onDone }: Props) {
   const prompts = useMemo(() => {
@@ -88,8 +89,8 @@ function DeepDive({ seed, onDone }: Props) {
   const [seconds, setSeconds] = useState(25);
   const [entry, setEntry] = useState("");
   const [revealed, setRevealed] = useState(false);
-  const [results, setResults] = useState<DeepAnswer[][]>([]);
-  const [accepted, setAccepted] = useState<DeepAnswer[]>([]);
+  const [results, setResults] = useState<ScoredDeepAnswer[][]>([]);
+  const [accepted, setAccepted] = useState<ScoredDeepAnswer[]>([]);
   const [message, setMessage] = useState("List as many valid answers as you can. Less-obvious answers score more.");
   const [finished, setFinished] = useState(false);
   const done = useRef(false);
@@ -125,7 +126,7 @@ function DeepDive({ seed, onDone }: Props) {
       return;
     }
     const earned = Math.min(DIVE_POINTS[match.tier - 1], 100 - roundScore);
-    const next = [...accepted, match];
+    const next = [...accepted, { ...match, earned }];
     setAccepted(next);
     setEntry("");
     if (diveRoundScore(next) >= 100) {
@@ -184,7 +185,7 @@ function DeepDive({ seed, onDone }: Props) {
       </form> : <div className="dive-result-card">
         <span className="dive-tier tier-0">{roundScore} / 100 points · {accepted.length} accepted</span>
         <h3>{accepted.length ? "Your discoveries" : "Keep moving."}</h3>
-        <div className="dive-answer-examples">{accepted.map((answer) => <span key={answer.answer}>{answer.answer}<b>+{DIVE_POINTS[answer.tier - 1]}</b></span>)}</div>
+        <div className="dive-answer-examples">{accepted.map((answer) => <span key={answer.answer}>{answer.answer}<b>+{answer.earned}</b></span>)}</div>
         <p>{item.explanation}</p>
         <div className="dive-answer-examples">{item.answers.filter((answer) => !accepted.some((found) => found.answer === answer.answer)).slice().sort((a, b) => b.tier - a.tier).slice(0, 12).map((answer) => <span key={answer.answer}>{answer.answer}<b>{DIVE_POINTS[answer.tier - 1]}</b></span>)}</div>
         <button className="button button-primary full-button" onClick={next}>{round === 6 ? "Surface & see score" : "Next prompt ↓"}</button>
