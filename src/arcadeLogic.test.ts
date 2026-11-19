@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
+import { ladderDictionary } from "./dataExtra";
 
 describe("Letter Lab grid rules", () => {
   const grid = [
@@ -61,6 +62,21 @@ describe("generated Word Ladder puzzles", () => {
   });
   it("is deterministic for the same seed", () => {
     expect(generateWordLadder(17, dictionary)).toEqual(generateWordLadder(17, dictionary));
+  });
+
+  it("can supply a valid generated daily ladder across a full year of seeds", () => {
+    const words = [...ladderDictionary];
+    for (let day = 0; day < 365; day++) {
+      const puzzle = generateWordLadder(day * 7919, words);
+      expect(puzzle, "day " + day).not.toBeNull();
+      expect(puzzle!.path.length).toBeGreaterThanOrEqual(4);
+      expect(puzzle!.path.length).toBeLessThanOrEqual(6);
+      expect(puzzle!.path.every((word) => ladderDictionary.has(word))).toBe(true);
+      expect(new Set(puzzle!.path).size).toBe(puzzle!.path.length);
+      for (let index = 1; index < puzzle!.path.length; index++) {
+        expect([...puzzle!.path[index - 1]].filter((letter, i) => letter !== puzzle!.path[index][i])).toHaveLength(1);
+      }
+    }
   });
 });
 
