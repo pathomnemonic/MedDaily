@@ -1044,3 +1044,14 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .letter-tile.found-cell{background:rgba(114,240,197,.25);border-color:var(--mint);color:#eafff8}
 .wordhunt-progress{color:#8fa3c8;font:500 9px "DM Mono"}
 @media(max-width:760px){.wordhunt-layout{grid-template-columns:1fr}.wordhunt-layout .target-words{order:-1}.wordhunt-layout .target-words>div{grid-template-columns:repeat(3,minmax(0,1fr))}.wordhunt-layout .wordsearch-board{gap:2px}.wordhunt-layout .letter-tile{border-radius:3px;font-size:clamp(7px,2.4vw,11px)}}
+
+.letter-grid-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;width:min(100%,420px);margin:20px auto}
+.letter-grid-tile{aspect-ratio:1;border:1px solid rgba(194,208,255,.2);border-radius:15px;background:linear-gradient(145deg,#3d4d7d,#222f53);color:#f3f6ff;font:700 clamp(22px,5vw,34px) "Space Grotesk";cursor:pointer;box-shadow:0 5px 0 rgba(4,9,28,.55);transition:transform .12s,border-color .12s,background .12s}
+.letter-grid-tile:not(:disabled):hover{transform:translateY(-2px);border-color:var(--gold)}
+.letter-grid-tile.selected{background:linear-gradient(145deg,#a28bdb,#665eae);border-color:#d2c4ff;transform:translateY(-2px);box-shadow:0 3px 0 rgba(4,9,28,.55),0 0 0 2px rgba(195,180,255,.15)}
+.letter-grid-tile.found{background:linear-gradient(145deg,#2c9478,#1e5e5c);border-color:var(--mint);color:#eafff8}
+.letter-grid-current{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;max-width:420px;margin:0 auto 10px;padding:11px 14px;border:1px solid rgba(190,202,255,.15);border-radius:12px;background:rgba(5,12,31,.42)}
+.letter-grid-current span,.letter-grid-current small{font:500 8px "DM Mono";letter-spacing:1px;color:#8fa1c7}
+.letter-grid-current strong{font:700 18px "DM Mono";letter-spacing:2px;color:var(--gold)}
+.letter-grid-controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.letter-grid-controls .button{min-width:105px}
