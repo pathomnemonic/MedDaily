@@ -24,9 +24,9 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "glyph": return <CellSketch seed={seed} onDone={onDone} practice={practice} />;
     case "higher": return <HigherLower seed={seed} onDone={onDone} specialty={specialty} />;
     case "ladder": return <WordLadder seed={seed} onDone={onDone} practice={practice} />;
-    case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
+    case "hive": return <SpellingHive seed={seed} onDone={onDone} practice={practice} />;
     case "casefile": return <CasefileLogic seed={seed} onDone={onDone} practice={practice} />;
-    case "dive": return <DeepDive seed={seed} onDone={onDone} />;
+    case "dive": return <DeepDive seed={seed} onDone={onDone} practice={practice} />;
     case "trivia": return <TriviaRumble seed={seed} onDone={onDone} />;
     case "lettergrid": return <LetterGridGame seed={seed} onDone={onDone} />;
   }
@@ -77,7 +77,7 @@ function SectionLabel({ children }: { children: ReactNode }) { return <div class
 const DIVE_POINTS = [10, 15, 30, 60, 85, 100];
 const DIVE_TIERS = ["Surface find", "Familiar current", "Reef discovery", "Rare specimen", "Abyssal find", "Hidden gem"];
 
-function DeepDive({ seed, onDone }: Props) {
+function DeepDive({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
   const prompts = useMemo(() => shuffle(deepDivePrompts, seeded(seed + 811)).slice(0, 7), [seed]);
   const [round, setRound] = useState(0);
   const [seconds, setSeconds] = useState(45);
@@ -166,7 +166,7 @@ function DeepDive({ seed, onDone }: Props) {
 
   return <div className="game-layout dive-game">
     <div className="dive-hud">
-      <div><span className="eyebrow">DAILY DEEP DIVE</span><strong>{total}<small> pts</small></strong><span>depth score</span></div>
+      <div><span className="eyebrow">{practice ? "FREE PLAY DEEP DIVE" : "DAILY DEEP DIVE"}</span><strong>{total}<small> pts</small></strong><span>depth score</span></div>
       <div className={"dive-timer" + (seconds <= 8 ? " urgent" : "")}><b>{revealed ? "✓" : seconds}</b><span>{revealed ? "LOCKED" : "SECONDS"}</span></div>
       <div><span className="eyebrow">EXPEDITION</span><strong>{round + 1}<small> / 7</small></strong><span>{roundAnswers.length} answers found</span></div>
     </div>
@@ -1197,7 +1197,7 @@ const HIVE_MEDICAL_DEFINITIONS: Record<string, string> = {
   ARTERIES:"Blood vessels that carry blood away from the heart."
 };
 const MEDICAL_HIVE_PUZZLES = spellingHivePuzzles.filter((puzzle) => medicalHiveTitles.has(puzzle.title));
-function SpellingHive({ seed, onDone }: Props) {
+function SpellingHive({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
   const puzzle = MEDICAL_HIVE_PUZZLES[seed % MEDICAL_HIVE_PUZZLES.length];
   const letters = useMemo(() => shuffle(puzzle.letters, seeded(seed + 83)), [puzzle, seed]);
   const [entry, setEntry] = useState("");
@@ -1231,8 +1231,8 @@ function SpellingHive({ seed, onDone }: Props) {
     onDone(score, maximum, found.length === puzzle.words.length, "Medical Spelling Hive · " + found.length + "/" + puzzle.words.length + " words\n" + "🟩".repeat(Math.min(7, found.length)) + (found.includes(puzzle.pangram) ? " ⭐" : ""));
   };
   return <div className="game-layout">
-    <div className="game-instructions"><span className="instruction-dot mint" /> Find as many words as you can using the seven hive letters. Words need at least four letters and must include the center letter. Use all seven for a pangram bonus.</div>
-    <div className="hive-header"><span className="eyebrow">TODAY'S HIVE</span><strong>{puzzle.title}</strong><small>{found.length} / {puzzle.words.length} words found · {score} points</small></div>
+    <div className="game-instructions"><span className="instruction-dot mint" /> Find as many words as you can using the seven hive letters. Words need at least four letters and must include the center letter. Use all seven for a pangram bonus; clinical definitions appear as you discover medical terms.</div>
+    <div className="hive-header"><span className="eyebrow">{practice ? "FREE PLAY HIVE" : "DAILY HIVE"}</span><strong>{puzzle.title}</strong><small>{found.length} / {puzzle.words.length} words found · {score} points</small></div>
     <div className="hive-board" aria-label="Seven letter spelling hive">
       <button className="hive-letter center-letter" onClick={() => setEntry((v) => v + puzzle.center)}>{puzzle.center}</button>
       {letters.filter((letter) => letter !== puzzle.center).map((letter, i) => <button key={letter} className={"hive-letter hive-position-" + i} onClick={() => setEntry((v) => v + letter)}>{letter}</button>)}
