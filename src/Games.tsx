@@ -752,8 +752,9 @@ function WordLadder({ seed, onDone }: Props) {
 }
 
 
+const MEDICAL_HIVE_PUZZLES = spellingHivePuzzles.filter((puzzle) => !["Practice Round","Capture the Clue","Tricone Terms"].includes(puzzle.title));
 function SpellingHive({ seed, onDone }: Props) {
-  const puzzle = spellingHivePuzzles[seed % spellingHivePuzzles.length];
+  const puzzle = MEDICAL_HIVE_PUZZLES[seed % MEDICAL_HIVE_PUZZLES.length];
   const letters = useMemo(() => shuffle(puzzle.letters, seeded(seed + 83)), [puzzle, seed]);
   const [entry, setEntry] = useState("");
   const [found, setFound] = useState<string[]>([]);
