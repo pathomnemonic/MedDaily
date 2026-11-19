@@ -454,6 +454,19 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
     setMessage(correct ? "Exactly right. Nice diagnosis of a word." : finished ? "The word was " + answer + "." : "Not quite. Use the tile clues to narrow it down.");
     if (finished) { setEnded(true); setWon(correct); if (!done.current) { done.current = true; onDone(correct ? 100 - (next.length - 1) * 12 : 0, 100, correct && next.length === 1); } }
   };
+  const keyboardRows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+  const keyboardMarks: Record<string, "correct" | "present" | "absent"> = {};
+  const priority = { absent: 1, present: 2, correct: 3 };
+  rows.forEach((row) => scoreWord(row, answer).forEach((mark, index) => {
+    const letter = row[index];
+    if (!keyboardMarks[letter] || priority[mark] > priority[keyboardMarks[letter]]) keyboardMarks[letter] = mark;
+  }));
+  const pressKey = (key: string) => {
+    if (ended) return;
+    if (key === "ENTER") submit();
+    else if (key === "⌫") setGuess((value) => value.slice(0, -1));
+    else if (guess.length < 5) setGuess((value) => value + key);
+  };
   return <div className="game-layout medle-game">
     <div className="game-instructions"><span className="instruction-dot mint" /> Guess the five-letter medical word in six tries. Green is the right letter in the right place; gold is in the word elsewhere.</div>
     <div className="word-grid" aria-label="Six guess rows">{Array.from({ length: 6 }, (_, r) => {
@@ -461,7 +474,10 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
       const marks = rows[r] ? scoreWord(rows[r], answer) : [];
       return <div className="word-row" key={r}>{Array.from({ length: 5 }, (_, c) => <div key={c} className={"word-cell " + (marks[c] ?? (word[c] ? "filled" : ""))}>{word[c] ?? ""}</div>)}</div>;
     })}</div>
-    {!ended ? <form className="word-entry" onSubmit={(e) => { e.preventDefault(); submit(); }}><input autoComplete="off" autoCapitalize="characters" value={guess} maxLength={5} onChange={(e) => setGuess(e.target.value.replace(/[^a-z]/gi, "").slice(0, 5))} aria-label="Five-letter guess" placeholder="TYPE A WORD" /><button className="button button-primary" type="submit">Guess <span>↗</span></button></form> : <Finish title={won ? "Word found!" : "A word for your rounds"} detail={won ? "You solved it in " + rows.length + (rows.length === 1 ? " guess." : " guesses.") : "The answer was " + answer + ". Try another daily puzzle tomorrow."} score={won ? (100 - (rows.length - 1) * 12) + " / 100" : "0 / 100"} />}
+    {!ended ? <>
+      <form className="word-entry" onSubmit={(e) => { e.preventDefault(); submit(); }}><input autoComplete="off" autoCapitalize="characters" value={guess} maxLength={5} onChange={(e) => setGuess(e.target.value.replace(/[^a-z]/gi, "").slice(0, 5))} aria-label="Five-letter guess" placeholder="TYPE A WORD" /><button className="button button-primary" type="submit">Guess <span>↗</span></button></form>
+      <div className="medle-keyboard" aria-label="On-screen keyboard">{keyboardRows.map((row, index) => <div key={row} className="medle-key-row">{row.split("").map((key) => <button key={key} type="button" className={keyboardMarks[key]??""} onClick={() => pressKey(key)}>{key}</button>)}{index===2&&<><button type="button" className="wide-key" onClick={() => pressKey("ENTER")}>ENTER</button><button type="button" className="wide-key" onClick={() => pressKey("⌫")}>⌫</button></>}</div>)}</div>
+    </> : <Finish title={won ? "Word found!" : "A word for your rounds"} detail={won ? "You solved it in " + rows.length + (rows.length === 1 ? " guess." : " guesses.") : "The answer was " + answer + ". Try another daily puzzle tomorrow."} score={won ? (100 - (rows.length - 1) * 12) + " / 100" : "0 / 100"} />}
     <p className="game-feedback" aria-live="polite">{message}</p>
   </div>;
 }
