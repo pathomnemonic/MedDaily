@@ -33,8 +33,8 @@ export function GameBoard({ game, seed, onDone, specialty = "general" }: Props &
 
 const SPECIALTY_INDEX: Partial<Record<Specialty, Partial<Record<string, number[]>>>> = {
   neurology: { diagnosis:[1,4,5,12,13,19,120,121,122,123,124,125], nextstep:[2,16,120,121,122,123,124], connections:[3,10,72,73,78], labline:[18,19,20], pairs:[12,13], microbe:[0,5], triage:[4] },
-  cardiology: { diagnosis:[7,16,17,126,127,128,129], nextstep:[3,13,126,127,128,129], connections:[0,1,4,74,79], labline:[1,3,4,17], pairs:[0,1,2,3], triage:[10] },
-  emergency: { diagnosis:[0,4,5,7,10,16,17,18,19,125,126,130,153,154,155,163,164,167,180,189,193,194,195,196,197,198], nextstep:[0,1,2,4,7,8,10,11,12,13,14,18,19,125,126,130,146,153,154,155,163,164,167,170,171,177,178,179,180,189,193,194,195,196,197,198], connections:[4,5,7,8,9,73,75,85,89,90,92,100,101,104,106,109,110], triage:[0,1,2,4,5,6,7,9,10] },
+  cardiology: { diagnosis:[7,16,17,126,127,128,129,209,210], nextstep:[3,13,126,127,128,129,209,210], connections:[0,1,4,74,79,115,121], labline:[1,3,4,17], pairs:[0,1,2,3], triage:[10] },
+  emergency: { diagnosis:[0,4,5,7,10,16,17,18,19,125,126,130,153,154,155,163,164,167,180,189,193,194,195,196,197,198,200,201,209,210,211,212,213,218], nextstep:[0,1,2,4,7,8,10,11,12,13,14,18,19,125,126,130,146,153,154,155,163,164,167,170,171,177,178,179,180,189,193,194,195,196,197,198,200,201,209,210,212,213,218], connections:[4,5,7,8,9,73,75,85,89,90,92,100,101,104,106,109,110,114,115,116,119,121], triage:[0,1,2,4,5,6,7,9,10] },
   criticalcare: { diagnosis:[4,5,7,10,11,16,17,18,19], nextstep:[0,1,2,4,7,10,11,12,13,14,18,19], connections:[4,5,7,9,11], labline:[0,1,2,3,4,5,11,17,22], triage:[0,1,2,4,5,6,7,9,10,11] },
   anesthesia: { diagnosis:[5,16,17,178,179], nextstep:[0,2,4,12,14,178,179], connections:[0,1,7,96,100], labline:[0,1,2,4,17], pairs:[0,1,2,3,4,5], triage:[0,4,5,6,9,11] },
   surgery: { diagnosis:[0,5,17,18,160,161,162,163,164,165,166,167], nextstep:[8,9,14,17,160,161,162,163,164,165,166,167], connections:[4,8,9,92,93,100,101], triage:[3,8,9] },
@@ -42,7 +42,7 @@ const SPECIALTY_INDEX: Partial<Record<Specialty, Partial<Record<string, number[]
   urology: { diagnosis:[8,9,148,149,150,151], nextstep:[14,148,149,150,151], connections:[4,11,84,87,89,90,91], labline:[2,3,4,12,13], triage:[0] },
   otolaryngology: { diagnosis:[18,19], nextstep:[12], connections:[5,9], triage:[0,11] },
   ophthalmology: { diagnosis:[3,12,159], nextstep:[19,159], connections:[3,10,88], pairs:[12,13,17,18], triage:[2] },
-  pediatrics: { diagnosis:[8,9,11,14,18,19,100,101,102,103,104,105], nextstep:[18,100,101,102,103,104], connections:[4,5,8,62,67], labline:[14,15], triage:[11] },
+  pediatrics: { diagnosis:[8,9,11,14,18,19,100,101,102,103,104,105,206,218], nextstep:[18,100,101,102,103,104,206,218], connections:[4,5,8,62,67,112,120], labline:[14,15], triage:[11] },
   obgyn: { diagnosis:[0,134,135,136,137,138,139], nextstep:[5,9,16,134,135,136,137,138,139], connections:[8,76,77,80], triage:[3,8] },
   psychiatry: { diagnosis:[1,2,7,12,13,190,191,192,193,194,195,196,197,198,199], nextstep:[2,6,190,191,192,193,194,195,196,197,198,199], connections:[7,10,105,106,107,109], labline:[21], triage:[4] },
   infectious: { diagnosis:[8,11,14,16,18,19,118,119,155,169,171,181,182,183,184,185,186,187,188,189], nextstep:[11,12,118,119,155,169,171,181,182,183,184,185,186,187,188,189], connections:[5,7,9,65,67,94,102,103,104,110,111], microbe:[0,1,2,3,4,5,6,7], triage:[6,7] },
@@ -52,8 +52,8 @@ const SPECIALTY_INDEX: Partial<Record<Specialty, Partial<Record<string, number[]
   endocrine: { diagnosis:[7,9,10,15,130,131,132,133,176,177], nextstep:[0,14,17,130,131,132,133,176,177], connections:[2,11,75,81,96,99], labline:[8,9,10,23], triage:[5] },
   dermatology: { diagnosis:[14,15,16,140,141,142,143,144,145], nextstep:[4,140,141,142,143,144,145], connections:[4,5,9,82,83,89,91], labline:[24], triage:[1] },
   rheumatology: { diagnosis:[3,15,110,111,158], nextstep:[6,110,111,158], connections:[4,9,10,64,70,88], pairs:[30,31,32,33,34,35], triage:[1] },
-  hemeonc: { diagnosis:[10,11,180], nextstep:[7,14,180], connections:[4,5,11,102,104,110], labline:[14,15,16,17], pairs:[42,43,44,45], triage:[6] },
-  gastro: { diagnosis:[17,114,115,116,117,168,169,170,171], nextstep:[11,114,115,116,117,165,166,168,169,171], connections:[4,12,65,69,71,92,93,94,97,101], labline:[24], pairs:[35], triage:[6] },
+  hemeonc: { diagnosis:[10,11,180,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218], nextstep:[7,14,180,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218], connections:[4,5,11,102,104,110,112,113,114,115,116,117,118,119,120,121], labline:[14,15,16,17], pairs:[42,43,44,45], triage:[6] },
+  gastro: { diagnosis:[17,114,115,116,117,168,169,170,171,214,219], nextstep:[11,114,115,116,117,165,166,168,169,171,205,214,219], connections:[4,12,65,69,71,92,93,94,97,101,118,121], labline:[24], pairs:[35], triage:[6] },
   geriatrics: { diagnosis:[6,7,10,17,156,157], nextstep:[7,13,14,156,157], connections:[4,11,86,88,89], labline:[12,13,14,15,16,17], triage:[0,2,6] },
   radiology: { diagnosis:[4,5,6,12,17,18], nextstep:[1,10], connections:[3,9,10], triage:[2,7] },
   anatomy: { connections:[3,9], pairs:[12,13,14,15,16,17], microbe:[0], triage:[] },
@@ -216,7 +216,6 @@ function TriviaRumble({ seed, onDone }: Props) {
   const [category, setCategory] = useState<TriviaCategory | null>(null);
   const [question, setQuestion] = useState<(typeof triviaQuestions)[number] | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
-  const [message, setMessage] = useState("");
   const [winner, setWinner] = useState<string | null>(null);
   const [used, setUsed] = useState<Partial<Record<TriviaCategoryId, string[]>>>({});
   const done = useRef(false);
@@ -269,9 +268,6 @@ function TriviaRumble({ seed, onDone }: Props) {
     setPlayers(nextPlayers);
     const newWinner = nextPlayers.find((player) => player.crowns.length === triviaCategories.length);
     if (newWinner) setWinner(newWinner.name);
-    setMessage(correct
-      ? (nextPlayers[turn].crowns.includes(category.id) && !players[turn].crowns.includes(category.id) ? "Badge unlocked! " + category.name + " mastered." : "Correct! One step closer to the " + category.name + " badge.")
-      : "Not quite. Read the explanation, then spin again.");
     setStage("reveal");
   };
 
@@ -288,7 +284,7 @@ function TriviaRumble({ seed, onDone }: Props) {
     if (winner || round + 1 >= limit) { finish(); return; }
     setTurn((value) => mode === "solo" ? 0 : (value + 1) % players.length);
     setRound((value) => value + 1);
-    setCategory(null); setQuestion(null); setPicked(null); setMessage("");
+    setCategory(null); setQuestion(null); setPicked(null);
     setStage("spin");
   };
 
