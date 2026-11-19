@@ -279,7 +279,7 @@ main{max-width:1440px;margin:0 auto;padding:0 38px 54px;min-height:calc(100vh - 
 .ladder-rungs i{border-style:dashed;color:var(--gold)}
 .stats-page,.settings-page,.friends-page{max-width:900px;margin:50px auto;padding-bottom:45px}
 .stats-page h1,.settings-page h1,.friends-hero h1{font:700 38px "Space Grotesk";letter-spacing:-1.7px;margin:9px 0 28px}
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .stats-grid>div{padding:22px;border-radius:17px;border:1px solid var(--line);background:rgba(22,31,61,.75)}
 .stats-grid b{display:block;font:600 29px "Space Grotesk";color:var(--mint)}.stats-grid span{color:#97a8ca;font-size:9px}
 .stats-table,.settings-card{padding:20px;margin-top:16px;border:1px solid var(--line);border-radius:17px;background:rgba(22,31,61,.72)}
@@ -1121,3 +1121,24 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 @media(max-width:640px){.arcade-intro{align-items:flex-start}.arcade-intro-actions{justify-items:start}.arcade-intro-actions .arcade-game-count{display:none}.home-play-mode button{padding:7px 9px}}
 
 .ladder-mode-label{margin:0 0 8px;color:#a7b6d5;font-size:8px;letter-spacing:1.2px}
+
+
+/* ---------- Achievements and friend-room rankings ---------- */
+.achievement-shelf{margin-top:18px;padding:20px;border:1px solid var(--line);border-radius:17px;background:rgba(22,31,61,.72)}
+.achievement-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:14px}
+.achievement-heading h2{font:600 18px "Space Grotesk";margin:4px 0 0}
+.achievement-heading>b{font:600 12px "DM Mono";color:var(--mint)}
+.achievement-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.achievement-tile{display:flex;align-items:flex-start;gap:11px;min-width:0;padding:13px;border:1px solid rgba(190,202,255,.13);border-radius:13px;background:rgba(7,13,33,.24)}
+.achievement-tile.earned{border-color:rgba(114,240,197,.3);background:linear-gradient(135deg,rgba(114,240,197,.1),rgba(22,31,61,.55))}
+.achievement-tile.locked{opacity:.64}
+.achievement-mark{display:grid;place-items:center;flex:0 0 31px;height:31px;border-radius:10px;background:rgba(170,157,255,.13);color:#b9adff;font-size:17px}
+.achievement-tile.earned .achievement-mark{background:rgba(114,240,197,.15);color:var(--mint)}
+.achievement-tile b{font:700 11px "Space Grotesk";color:#e9efff}
+.achievement-tile p{margin:4px 0 7px;color:#9eaccd;font-size:9px;line-height:1.5}
+.achievement-tile small{font:500 7px "DM Mono";letter-spacing:.5px;color:#8798bb}
+.achievement-tile.earned small{color:var(--mint)}
+.room-score-inline span{display:flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid rgba(190,202,255,.1);border-radius:9px;background:rgba(6,12,31,.28)}
+.room-score-inline span b{color:var(--gold);font:600 9px "DM Mono"}
+@media(max-width:760px){.achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.achievement-grid{grid-template-columns:1fr}.stats-grid>div{padding:15px 11px}.stats-grid b{font-size:24px}}
