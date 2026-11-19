@@ -1145,6 +1145,57 @@ function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boo
 }
 
 
+const HIVE_MEDICAL_DEFINITIONS: Record<string, string> = {
+  TRIAGE:"Prioritizing patients by urgency and need for immediate care.",
+  TRIAGES:"Plural of triage; prioritization decisions.",
+  STOMA:"A surgically created opening between an internal organ and the body surface.",
+  STOMACH:"The muscular organ that mixes food with acid and enzymes.",
+  MEDIC:"A person trained to provide medical care, especially in emergency settings.",
+  MEDICAL:"Relating to the diagnosis, treatment, or prevention of disease.",
+  THERAPY:"Treatment intended to improve or manage a condition.",
+  NUCLEAR:"In nuclear medicine, relating to radiopharmaceutical imaging or treatment.",
+  RETINA:"The light-sensitive tissue lining the back of the eye.",
+  RETINAL:"Pertaining to the retina.",
+  GLUCOSE:"The principal circulating monosaccharide measured as blood sugar.",
+  FOLATE:"Vitamin B9, required for DNA synthesis and red-cell production.",
+  FOLATES:"Forms or salts of folate.",
+  STEROID:"A lipid-derived molecule; several steroid drugs have anti-inflammatory effects.",
+  STEROIDS:"A class of lipid-derived hormones and medications.",
+  STERILE:"Free of viable microorganisms.",
+  CULTURE:"A laboratory method for growing and identifying microorganisms or cells.",
+  ULCER:"A break in the skin or mucosal lining that fails to heal normally.",
+  HEMATIC:"Pertaining to blood.",
+  GASTRIC:"Pertaining to the stomach.",
+  INHALER:"A device that delivers medication into the respiratory tract.",
+  INHALE:"To draw air or aerosolized medication into the lungs.",
+  HERNIA:"Protrusion of an organ or tissue through a weakness in its containing wall.",
+  RENAL:"Pertaining to the kidneys.",
+  PULSE:"The palpable arterial pressure wave produced by each heartbeat.",
+  FRACTURE:"A break in the continuity of a bone.",
+  ACUTE:"Having sudden onset or a short course.",
+  BACTERIA:"Single-celled prokaryotic microorganisms.",
+  MIGRAINE:"A primary headache disorder with recurrent attacks and associated symptoms.",
+  PREGNANT:"Being in the state of gestation.",
+  ANTIGEN:"A substance recognized by the immune system that can provoke an immune response.",
+  DIAGNOSIS:"The identification of a disease or condition from its findings.",
+  GONAD:"An ovary or testis; an organ that produces gametes and sex hormones.",
+  PHARMACY:"The practice and place of preparing, dispensing, and advising on medications.",
+  CORTISOL:"The principal glucocorticoid hormone produced by the adrenal cortex.",
+  GLUCAGON:"A pancreatic hormone that raises blood glucose.",
+  VITAMIN:"An essential organic micronutrient required for normal physiology.",
+  HEPARIN:"An anticoagulant that potentiates antithrombin.",
+  NEURON:"A nerve cell that receives and transmits information.",
+  NEURAL:"Pertaining to nerves or the nervous system.",
+  NEURONAL:"Pertaining to neurons.",
+  ADRENAL:"Pertaining to the endocrine glands situated above the kidneys.",
+  PITUITARY:"The endocrine gland at the base of the brain that regulates several other glands.",
+  VASCULAR:"Pertaining to blood vessels.",
+  CAPILLARY:"A tiny blood vessel where exchange occurs between blood and tissues.",
+  ADRENALS:"The paired endocrine glands above the kidneys.",
+  CARDIA:"The region of the stomach adjoining the esophagus.",
+  ARTERIA:"A Latin anatomical term for an artery.",
+  ARTERIES:"Blood vessels that carry blood away from the heart."
+};
 const MEDICAL_HIVE_PUZZLES = spellingHivePuzzles.filter((puzzle) => medicalHiveTitles.has(puzzle.title));
 function SpellingHive({ seed, onDone }: Props) {
   const puzzle = MEDICAL_HIVE_PUZZLES[seed % MEDICAL_HIVE_PUZZLES.length];
@@ -1195,7 +1246,7 @@ function SpellingHive({ seed, onDone }: Props) {
     <div className="hive-tools"><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Need a hint?</button><button className="text-button" onClick={finish} disabled={ended}>Finish for today</button></div>
     {hint && <p className="game-feedback">{puzzle.hint}</p>}
     <p className="game-feedback" aria-live="polite">{note}</p>
-    {found.length>0&&<div className="hive-found"><SectionLabel>FOUND WORDS</SectionLabel>{found.map((word) => <span key={word} className={word===puzzle.pangram?"pangram-word":""}>{word}<b>+{points(word)}</b></span>)}</div>}
+    {found.length>0&&<div className="hive-found"><SectionLabel>FOUND WORDS</SectionLabel>{found.map((word) => <span key={word} className={word===puzzle.pangram?"pangram-word":""}>{word}<b>+{points(word)}</b></span>)}</div>}\n    {found.some((word) => HIVE_MEDICAL_DEFINITIONS[word]) && <div className="hive-medical-notes"><SectionLabel>CLINICAL VOCABULARY</SectionLabel>{found.filter((word) => HIVE_MEDICAL_DEFINITIONS[word]).map((word) => <p key={word}><b>{word}</b>{HIVE_MEDICAL_DEFINITIONS[word]}</p>)}</div>}
     {ended && <Finish title={found.includes(puzzle.pangram) ? "Pangram found" : "Hive closed"} detail={found.length + " of " + puzzle.words.length + " words found. The longest word is " + puzzle.pangram + "."} score={score + " / " + maximum}><div className="hive-reveal">{puzzle.words.filter((word)=>!found.includes(word)).map((word)=><span key={word}>{word}</span>)}</div></Finish>}
   </div>;
 }
