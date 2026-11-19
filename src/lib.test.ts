@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { connectionPuzzles, medleWords, diagnosisCases, nextStepCases, labPrompts, triageCases, pairsBank, microbePacks } from "./data";
 import { deductionCases, glyphPatterns, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
 import { hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
+import { deepDivePrompts, triviaCategories, triviaQuestions } from "./dataArcade";
 
 describe("daily puzzle primitives", () => {
   it("creates stable seeds for stable keys", () => {
@@ -194,6 +195,37 @@ describe("expanded content integrity", () => {
       for (let i = 1; i < ladder.path.length; i++) {
         expect([...ladder.path[i - 1]].filter((letter, index) => letter !== ladder.path[i][index]), ladder.path.join(" → ")).toHaveLength(1);
       }
+    }
+  });
+});
+
+
+describe("new arcade content banks", () => {
+  it("keeps the daily deep-dive prompts broad, unique, and tiered", () => {
+    expect(deepDivePrompts.length).toBeGreaterThanOrEqual(30);
+    expect(new Set(deepDivePrompts.map((prompt) => prompt.id)).size).toBe(deepDivePrompts.length);
+    for (const prompt of deepDivePrompts) {
+      expect(prompt.prompt.length, prompt.id).toBeGreaterThan(12);
+      expect(prompt.answers.length, prompt.id).toBeGreaterThanOrEqual(6);
+      const normalized = prompt.answers.map((item) => item.answer.toLowerCase().trim());
+      expect(new Set(normalized).size, prompt.id).toBe(normalized.length);
+      expect(prompt.answers.every((item) => item.answer.length > 1 && item.tier >= 1 && item.tier <= 6), prompt.id).toBe(true);
+    }
+  });
+
+  it("keeps Trivia Rumble balanced across six categories with valid choices", () => {
+    expect(triviaCategories).toHaveLength(6);
+    expect(new Set(triviaCategories.map((category) => category.id)).size).toBe(6);
+    expect(new Set(triviaQuestions.map((question) => question.id)).size).toBe(triviaQuestions.length);
+    for (const category of triviaCategories) {
+      expect(triviaQuestions.filter((question) => question.category === category.id).length, category.id).toBeGreaterThanOrEqual(8);
+    }
+    for (const question of triviaQuestions) {
+      expect(question.options).toHaveLength(4);
+      expect(new Set(question.options).size, question.id).toBe(4);
+      expect(question.answer, question.id).toBeGreaterThanOrEqual(0);
+      expect(question.answer, question.id).toBeLessThan(4);
+      expect(question.explanation.length, question.id).toBeGreaterThan(15);
     }
   });
 });
