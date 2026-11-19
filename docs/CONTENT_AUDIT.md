@@ -20,7 +20,7 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 | Cell Sketch | 31 unique-named 5×5 nonograms (19 original patterns plus 12 rotations/reflections) | Row and column run clues; CI verifies one valid solution per board |
 | What Has More? | 72 comparisons | Clinical quantities plus playful food, medication, and everyday comparisons; values are explicitly approximate where appropriate |
 | Word Ladder | 26 ladders | Each intended solution path uses real words and one-letter changes |
-| Medical Spelling Hive | 24 seven-letter boards | Medical-themed boards and curated answer sets; generic filler should continue to be replaced |
+| Medical Spelling Hive | 28 seven-letter boards | 28 themed boards with an expanded medical vocabulary; generic filler should continue to be replaced |
 | Casefile Logic | 15 cases | Fictional deduction puzzles; one-to-one assignment rules |
 
 ## What this means for daily longevity
