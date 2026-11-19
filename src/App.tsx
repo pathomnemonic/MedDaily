@@ -70,6 +70,7 @@ export default function App() {
   const [specialty,setSpecialty] = useState<Specialty>("internal");
   const [activeGame,setActiveGame] = useState<GameId|null>(null);
   const [practice,setPractice] = useState(false);
+  const [homeFreePlay,setHomeFreePlay] = useState(false);
   const [notice,setNotice] = useState("");
   const [installPrompt,setInstallPrompt] = useState<InstallPrompt|null>(null);
   const [startAt,setStartAt] = useState(0);
