@@ -114,7 +114,7 @@ export default function App() {
   const seedFor=(game:GameId)=>hashSeed(date+"|"+scope+"|"+game);
 
   const openGame=(id:GameId,isPractice=false,forcedSeed?:number)=>{
-    setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??seedFor(id));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
+    setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??(isPractice?hashSeed(id+"-free-"+Date.now()):seedFor(id)));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
     window.scrollTo({top:0,behavior:player.reducedMotion?"auto":"smooth"});
   };
   const finishGame=(score:number,maxScore:number,perfect:boolean)=>{
@@ -216,22 +216,23 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
   player:PlayerData;scope:string;mode:Mode;specialty:Specialty;setMode:(m:Mode)=>void;setSpecialty:(s:Specialty)=>void;today:string;doneToday:number;openGame:(id:GameId,practice?:boolean)=>void;
 }){
   const done=doneToday;
+  const [freePlay,setFreePlay]=useState(false);
   
   return <div className="home-page">
-    <section className="arcade-intro"><div><span className="eyebrow">MEDDAILY ARCADE</span><h1>Pick a game. Play another.</h1><p>Medical puzzles, word hunts, wild comparisons, and quick logic challenges. Daily rounds are optional; practice is unlimited.</p></div><span className="arcade-game-count">{GAMES.length} GAMES</span></section>
+    <section className="arcade-intro"><div><span className="eyebrow">MEDDAILY ARCADE</span><h1>Pick a game. Play another.</h1><p>Medical puzzles, word hunts, wild comparisons, and quick logic challenges. Daily rounds are optional; practice is unlimited.</p></div><div className="arcade-intro-actions"><span className="arcade-game-count">{GAMES.length} GAMES</span><div className="home-play-mode" role="group" aria-label="Choose daily or free play"><button className={!freePlay?"selected":""} onClick={()=>setFreePlay(false)}>Daily</button><button className={freePlay?"selected":""} onClick={()=>setFreePlay(true)}>Free Play ∞</button></div></div></section>
     <section className="dx-dash-feature"><div className="feature-copy"><span className="eyebrow">PERMANENT FEATURE</span><h2>Dx Dash</h2><p>Run the list. Learn the diagnosis. The companion game stays featured here.</p><a className="button button-primary" href="https://pathomnemonic.github.io/buzzword-dash-v2/" target="_blank" rel="noreferrer">PLAY DX DASH ↗</a></div><div className="dx-dash-mark" aria-hidden="true">DX<span>↗</span></div></section>
-    <section className="mode-panel"><div className="mode-panel-head"><div><span className="eyebrow">CHOOSE YOUR PLAYGROUND</span><h2>One arcade. Your kind of daily.</h2></div><div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialty Dailies <span>NEW</span></button></div></div>
+    <section className="mode-panel"><div className="mode-panel-head"><div><span className="eyebrow">CHOOSE YOUR PLAYGROUND</span><h2>{freePlay?"One arcade. Unlimited runs.":"One arcade. Your kind of daily."}</h2></div><div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialty Dailies <span>NEW</span></button></div></div>
       {mode==="specialty"?<div className="specialty-picker"><div className="specialty-intro"><b>Play with your people.</b><p>Choose a specialty or subject. Everyone in the same track gets the same daily set. Subspecialty topics live inside their parent specialty, so the arcade stays balanced across fields.</p></div><div className="specialty-chips">{SPECIALTIES.map(s=><button key={s.id} onClick={()=>setSpecialty(s.id)} className={specialty===s.id?"selected":""}><span>{s.icon}</span>{s.short}</button>)}</div><div className="specialty-selected"><b>{SPECIALTIES.find(s=>s.id===specialty)?.name}</b><span>{SPECIALTIES.find(s=>s.id===specialty)?.blurb}</span></div></div>:<p className="mode-description">The same broad daily set for everyone: medicine, wordplay, estimation, and pure puzzle fun.</p>}
     </section>
 
     <section className="daily-strip"><div className="daily-strip-main"><div className="daily-icon">☀</div><div><span className="eyebrow">{mode==="general"?"THE DAILY ROUNDS":"SPECIALTY DAILY ROUNDS"}</span><h2>{done===GAMES.length?"Your rounds are complete.":done===0?GAMES.length+" games. One fresh day.":"You're on your way."}</h2><p>{mode==="general"?"Same puzzles for everyone today. Play in any order, or jump straight into a favorite.":"A shared specialty-specific daily set. Invite friends from your field to compare how you did."}</p></div></div>
       <div className="progress-box"><div className="progress-numbers"><b>{done}<small>/{GAMES.length}</small></b><span>completed</span></div><div className="progress-track"><i style={{width:(done/GAMES.length*100)+"%"}}/></div><div className="progress-caption">{Math.round(done/GAMES.length*100)}% of today's arcade</div></div></section>
 
-    <section className="section-head"><div><span className="eyebrow">PICK YOUR LOADOUT</span><h2>Choose your next run</h2><p>Every game has its own world, rules, and high score to chase.</p></div><span className="section-aside">TODAY · {today}</span></section>
+    <section className="section-head"><div><span className="eyebrow">PICK YOUR LOADOUT</span><h2>Choose your next run</h2><p>Every game has its own world, rules, and high score to chase.</p></div><span className="section-aside">{freePlay?"UNLIMITED FREE PLAY":"TODAY · "+today}</span></section>
     <div className="game-grid">{GAMES.map((game,index)=>{
       const result=player.results.find(r=>r.date===today&&r.game===game.id&&r.scope===scope);
-      return <button key={game.id} className={"game-card "+game.wash+(result?" card-done":"")} onClick={()=>openGame(game.id)} style={{animationDelay:(index*40)+"ms"}}>
-        <div className="card-topline"><span className="game-category">{game.category}</span><span className={"card-status"+(result?" status-done":"")}>{result?"✓ Done":"Daily"}</span></div>
+      return <button key={game.id} className={"game-card "+game.wash+(result&&!freePlay?" card-done":"")} onClick={()=>openGame(game.id,freePlay)} style={{animationDelay:(index*40)+"ms"}}>
+        <div className="card-topline"><span className="game-category">{game.category}</span><span className={"card-status"+(result&&!freePlay?" status-done":"")}>{freePlay?"∞ Free Play":result?"✓ Done":"Daily"}</span></div>
         <div className="game-icon-wrap"><span className="game-icon">{game.icon}</span><span className="icon-halo"/></div>
         <div className="game-card-body"><h3>{game.title}</h3><span className="game-subtitle">{game.subtitle}</span><p>{game.description}</p></div>
         <div className="game-card-footer"><span>{game.time} <i>·</i> {game.level}</span><span className="card-arrow">↗</span></div>
