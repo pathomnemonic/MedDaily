@@ -161,7 +161,8 @@ export default function App() {
       const joined=await joinOrCreateRoom(joinCode,{gameId:game,scope,specialty:mode==="specialty"?specialty:"general",date,seed:seedFor(game),name:roomName||"Guest"});
       setRoomCode(joined.code);setRoom(joined);setMode(joined.scope==="general"?"general":"specialty");
       if(joined.specialty&&joined.specialty!=="general")setSpecialty(joined.specialty as Specialty);
-      setNotice("Connected to room "+joined.code+". If the code was new, you started the room; everyone entering it gets the same game.");
+      const actualTitle=GAMES.find(g=>g.id===joined.gameId)?.title??"shared game";
+      setNotice(joined.gameId===game?"Connected to room "+joined.code+" for "+actualTitle+". Everyone entering this code gets the same game.":"That code already hosts "+actualTitle+". You joined the existing game rather than starting a different one.");
     }catch(e){setNotice((e as Error).message);}
     finally{setRoomBusy(false);}
   };
