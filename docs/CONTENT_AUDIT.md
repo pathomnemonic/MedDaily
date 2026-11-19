@@ -18,7 +18,7 @@ MedDaily exposes sixteen playable game formats. The retired Next Best Step bank 
 | Anagram Sprint | 111 terms | Five-word, 75-second timed scramble with hints and attempt-based scoring |
 | Cell Sketch | 36 curated 5×5 patterns + 8 seeded transformations each in Free Play | Row and column run clues; CI verifies one valid solution per board |
 | What Has More? | 116 comparisons (50 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
-| Word Ladder | 26 curated ladders + procedural Free Play | Each intended solution path uses real words and one-letter changes |
+| Word Ladder | 36 curated ladders + procedural Free Play | Each intended solution path uses real words and one-letter changes |
 | Medical Spelling Hive | 50 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
 | Casefile Logic | 30 curated cases + seeded procedural daily rotation and Free Play | Alternates curated cases with generated, uniquely solvable 3×3 deduction grids; both modes include pencil marks and scored hints |
 | Deep Dive | 70 prompts | Timed open-answer prompts with curated long-tail rarity tiers |
