@@ -68,7 +68,7 @@ export const connectionPuzzlesExpansion4: ConnectionGroup[][] = [
 [
 {category:"Tumor lysis syndrome",words:["Hyperkalemia","Hyperphosphatemia","Hypocalcemia","Hyperuricemia"],hint:"Electrolyte pattern after rapid tumor-cell breakdown."},
 {category:"DIC",words:["Low fibrinogen","High D-dimer","Prolonged PT","Thrombocytopenia"],hint:"Consumptive coagulopathy laboratory pattern."},
-{category:"TTP",words:["ADAMTS13 deficiency","MAHA","Thrombocytopenia","Neurologic symptoms"],hint:"Classic thrombotic microangiopathy clues."},
+{category:"TTP",words:["ADAMTS13 deficiency","MAHA","Schistocytes","Neurologic symptoms"],hint:"Classic thrombotic microangiopathy clues."},
 {category:"HIT",words:["Heparin exposure","Platelet fall","New thrombosis","PF4 antibody"],hint:"Immune heparin-associated thrombosis."}
 ],
 [
