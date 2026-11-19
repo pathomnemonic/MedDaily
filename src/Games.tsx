@@ -550,33 +550,69 @@ function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
   const board = useMemo(() => makeWordSearch(pack.words, 14, seed + 99), [pack, seed]);
   const words = board.placed;
   const [found, setFound] = useState<string[]>([]);
+  const [foundPaths, setFoundPaths] = useState<number[][]>([]);
   const [start, setStart] = useState<number | null>(null);
   const [path, setPath] = useState<number[]>([]);
-  const [note, setNote] = useState("Find every hidden term. Select the first and last letter in a straight line, including diagonals, then mark it.");
+  const [note, setNote] = useState("Drag across a word in any straight direction. You can also tap its first and last letters.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
-  const tap = (index: number) => {
-    if (ended) return;
-    if (start === null) { setStart(index); setPath([index]); return; }
+
+  const begin = (index: number) => {
+    if (ended || foundPaths.some((cells) => cells.includes(index))) return;
+    if (start === null) { setStart(index); setPath([index]); }
+  };
+  const preview = (index: number) => {
+    if (ended || start === null) return;
     const cells = lineCells(start, index, 14);
-    if (!cells.length) { setStart(index); setPath([index]); setNote("Words run in straight lines, including diagonals."); return; }
-    setPath(cells);
+    if (cells.length) setPath(cells);
   };
-  const add = () => {
-    if (path.length < 2) { setNote("Choose a start and end cell first."); return; }
-    const word = path.map((i) => board.grid[Math.floor(i / 14)][i % 14]).join("");
-    const match = words.find((w) => !found.includes(w) && (w === word || w === [...word].reverse().join("")));
-    if (!match) { setNote("No target word on that line. Try again."); setStart(null); setPath([]); return; }
-    const next = [...found, match]; setFound(next); setStart(null); setPath([]); setNote(match + " found.");
-    if (next.length === words.length) { setEnded(true); if (!done.current) { done.current = true; onDone(100, 100, true); } }
+  const resolve = (cells: number[]) => {
+    if (cells.length < 2) return;
+    const word = cells.map((i) => board.grid[Math.floor(i / 14)][i % 14]).join("");
+    const match = words.find((candidate) => !found.includes(candidate) && (candidate === word || candidate === [...word].reverse().join("")));
+    if (!match) {
+      setNote("That line is not a remaining word. Try another direction or clear your selection.");
+      setStart(null); setPath([]);
+      return;
+    }
+    const next = [...found, match];
+    setFound(next);
+    setFoundPaths((current) => [...current, cells]);
+    setStart(null); setPath([]);
+    setNote(match + " found. " + (words.length - next.length) + " remaining.");
+    if (next.length === words.length) {
+      setEnded(true);
+      if (!done.current) { done.current = true; onDone(100, 100, true); }
+    }
   };
-  return <div className="game-layout">
-    <div className="case-banner microbe-banner"><span>WORD HUNT · THEMED SEARCH</span><strong>{pack.name}</strong><small>Find every hidden word in the themed grid.</small></div>
-    <div className="wordsearch-board" role="group" aria-label="Letter grid">{board.grid.flat().map((letter, i) => <button key={i} className={"letter-tile" + (path.includes(i) ? " path-cell" : "")} onClick={() => tap(i)} disabled={ended}>{letter}</button>)}</div>
-    <div className="target-words"><SectionLabel>WORDS TO FIND</SectionLabel><div>{words.map((word) => <span key={word} className={found.includes(word) ? "target-found" : ""}>{word}</span>)}</div></div>
-    <div className="connection-controls"><span className="mistake-count">{found.length} / {words.length} found</span><button className="button button-soft" onClick={() => { setStart(null); setPath([]); }}>Clear</button><button className="button button-primary" onClick={add} disabled={ended}>Mark word</button></div>
+  const finish = (index: number) => {
+    if (ended || start === null) return;
+    const cells = lineCells(start, index, 14);
+    if (!cells.length) {
+      setNote("Words run horizontally, vertically, or diagonally in a straight line.");
+      setStart(null); setPath([]);
+      return;
+    }
+    if (cells.length > 1) resolve(cells);
+  };
+  const clear = () => { setStart(null); setPath([]); };
+
+  return <div className="game-layout wordhunt-game">
+    <div className="case-banner microbe-banner"><span>WORD HUNT · THEMED SEARCH</span><strong>{pack.name}</strong><small>Find every hidden word. Words may run forwards, backwards, vertically, horizontally, or diagonally.</small></div>
+    <div className="wordhunt-layout">
+      <div className="wordsearch-board" role="group" aria-label="Letter grid">
+        {board.grid.flat().map((letter, i) => {
+          const isFound = foundPaths.some((cells) => cells.includes(i));
+          return <button key={i} type="button" className={"letter-tile" + (path.includes(i) ? " path-cell" : "") + (isFound ? " found-cell" : "")} onPointerDown={() => begin(i)} onPointerEnter={() => preview(i)} onPointerUp={() => finish(i)} onPointerCancel={clear} onClick={(event) => { if (event.detail === 0) { if (start === null) begin(i); else finish(i); } }} disabled={ended || isFound} aria-label={"Row " + (Math.floor(i / 14) + 1) + ", column " + (i % 14 + 1) + ", " + letter}>
+            {letter}
+          </button>;
+        })}
+      </div>
+      <aside className="target-words"><SectionLabel>WORDS TO FIND</SectionLabel><div>{words.map((word) => <span key={word} className={found.includes(word) ? "target-found" : ""}>{word}</span>)}</div></aside>
+    </div>
+    <div className="connection-controls"><span className="mistake-count">{found.length} / {words.length} found</span><button className="button button-soft" onClick={clear} disabled={ended || start === null}>Clear selection</button><span className="wordhunt-progress">{words.length - found.length} left</span></div>
     <p className="game-feedback" aria-live="polite">{note}</p>
-    {ended && <Finish title="Field guide complete" detail={"You identified all " + words.length + " organisms in this board."} score="100 / 100" />}
+    {ended && <Finish title="Grid cleared!" detail={"Every hidden word in " + pack.name + " found."} score="100 / 100" />}
   </div>;
 }
 
