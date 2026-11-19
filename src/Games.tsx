@@ -729,7 +729,14 @@ function Labline({ seed, onDone, specialty = "general" }: Props) {
 
 function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   const pool = useMemo(() => specialty === "neurology" ? pairsBank.slice(12, 24) : specialty === "infectious" ? pairsBank.slice(36, 46) : specialty === "cardiology" ? pairsBank.slice(0, 12) : pairsBank, [specialty]);
-  const pairSet = useMemo(() => shuffle(pool.length >= 12 ? pool : pairsBank, seeded(seed + 11)).slice(0, 12), [seed, pool]);
+  const pairSet = useMemo(() => {
+    // Preserve the selected specialty first; pad small specialty subsets without silently
+    // replacing the entire specialty pool (the infectious set currently has ten pairs).
+    const expanded = pool.length >= 12
+      ? pool
+      : [...pool, ...pairsBank.filter(([term]) => !pool.some(([selected]) => selected === term))].slice(0, 12);
+    return shuffle(expanded, seeded(seed + 11)).slice(0, 12);
+  }, [seed, pool]);
   const cards = useMemo(() => shuffle(pairSet.flatMap(([term, meaning], pairId) => [
     { id: pairId * 2, pairId, label: term, side: "TERM" },
     { id: pairId * 2 + 1, pairId, label: meaning, side: "ASSOCIATION" }
@@ -759,7 +766,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     done.current = true;
     setEnded(true);
     setNote("Time. Review the pairs you uncovered and try to build a longer streak next run.");
-    onDone(score, 1800, false);
+    onDone(score, 1650, false);
   }, [seconds, ended, score, onDone]);
 
   const flip = (id: number) => {
@@ -787,7 +794,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
         done.current = true;
         setEnded(true);
         setNote("All twelve pairs found. Time bonus: " + seconds * 2 + " points.");
-        onDone(finalScore, 1800, mismatches === 0);
+        onDone(finalScore, 1650, mismatches === 0);
       }
     } else {
       setLocked(true);
@@ -821,7 +828,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     </div>
     <div className="association-footer"><span>{moves} turns · {mismatches} mismatches</span><span>Match streaks earn bonus points</span></div>
     <p className="game-feedback" aria-live="polite">{note}</p>
-    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All twelve associations found in " + moves + " turns." : matched.length + " of twelve pairs found. " + mismatches + " mismatches."} score={score + " / 1800"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
+    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All twelve associations found in " + moves + " turns." : matched.length + " of twelve pairs found. " + mismatches + " mismatches."} score={score + " / 1650"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
   </div>;
 }
 
