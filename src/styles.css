@@ -1273,3 +1273,14 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .mime-scoreline{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0 18px}
 .mime-scoreline span{padding:7px 14px;border-radius:99px;background:rgba(0,0,0,.3);color:#e6defa;font:600 14px var(--font-game)}
 .mime-scoreline span.active{background:#ffd54a;color:#3b2200}.mime-scoreline b{margin-left:5px;font:400 17px var(--font-display)}
+
+/* ===== Helper tools: Cell Sketch, Letter Rungs, Hexicon ===== */
+.nonogram-tools{display:flex;gap:6px;flex-wrap:wrap}.nonogram-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.nonogram-cell{touch-action:none;user-select:none}
+.auto-toggle{display:flex;align-items:center;gap:8px;margin:8px 0;color:#c3b9ef;font:600 12px var(--font-game)}
+.ladder-rungs span em{font-style:normal}.ladder-rungs span em.changed{color:#ffd54a;text-shadow:0 0 12px rgba(255,213,74,.7);transform:scale(1.25);display:inline-block}
+.ladder-live{min-height:22px;margin:6px 0;text-align:center;color:#c3b9ef;font:700 13px var(--font-game)}.ladder-live.ok{color:#7dffd0}.ladder-live.bad{color:#ff8fb0}.ladder-live.maybe{color:#ffd54a}
+.hive-progress{display:grid;gap:8px;margin:10px 0}
+.hive-rank{display:flex;align-items:center;gap:10px}.hive-rank b{min-width:96px;font:400 18px var(--font-display);color:#ffd54a}
+.hive-rank i{flex:1;height:10px;border-radius:99px;background:rgba(0,0,0,.35);overflow:hidden}.hive-rank i span{display:block;height:100%;background:linear-gradient(90deg,#ffd54a,#ff9b3d);transition:width .4s}
+.hive-lengths{display:flex;flex-wrap:wrap;gap:6px}.hive-lengths span{padding:3px 10px;border-radius:99px;background:rgba(0,0,0,.28);color:#d8d0f7;font:600 11px var(--font-game)}.hive-lengths span.done{background:#1c9c76;color:#fff}

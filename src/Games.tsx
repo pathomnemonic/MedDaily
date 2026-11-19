@@ -968,19 +968,44 @@ function CellSketch({ seed, onDone }: Props) {
   const item = glyphPatterns[seed % glyphPatterns.length];
   const [cells, setCells] = useState<number[][]>(() => item.pattern.map((row) => row.map(() => 0)));
   const [checked, setChecked] = useState(false);
+  const [history, setHistory] = useState<number[][][]>([]);
+  const [autoMark, setAutoMark] = useState(true);
+  const [hints, setHints] = useState(0);
+  const painting = useRef<number | null>(null);
   const rowClues = item.pattern.map((row) => nonogramRuns(row));
   const colClues = item.pattern[0].map((_, c) => nonogramRuns(item.pattern.map((row) => row[c])));
   const lineSolved = (line: number[], clue: number[]) => line.every((value) => value !== 0) && JSON.stringify(nonogramRuns(line.map((value) => value === 1 ? 1 : 0))) === JSON.stringify(clue);
+  /** When a line's filled runs already match its clue, the remaining unknown cells in it must be empty. */
+  const withAutoMarks = (grid: number[][]): number[][] => {
+    if (!autoMark) return grid;
+    const next = grid.map((row) => [...row]);
+    const done = (line: number[], clue: number[]) => JSON.stringify(nonogramRuns(line.map((v) => v === 1 ? 1 : 0))) === JSON.stringify(clue);
+    next.forEach((row, r) => { if (done(row, rowClues[r])) row.forEach((v, c) => { if (v === 0) next[r][c] = 2; }); });
+    colClues.forEach((clue, c) => { if (done(next.map((row) => row[c]), clue)) next.forEach((row) => { if (row[c] === 0) row[c] = 2; }); });
+    return next;
+  };
+  const commit = (grid: number[][]) => { setHistory((h) => [...h.slice(-30), cells]); setCells(withAutoMarks(grid)); };
+  const setCell = (r: number, c: number, value: number) => commit(cells.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? value : v) : x));
+  const undo = () => setHistory((h) => { if (!h.length) return h; setCells(h[h.length - 1]); return h.slice(0, -1); });
+  const hint = () => {
+    const wrong: [number, number][] = [];
+    item.pattern.forEach((row, r) => row.forEach((v, c) => { if ((v === 1 && cells[r][c] !== 1) || (v === 0 && cells[r][c] === 1)) wrong.push([r, c]); }));
+    if (!wrong.length) return;
+    const [r, c] = wrong[Math.floor(seeded(seed + hints * 31)() * wrong.length)];
+    setHints((n) => n + 1);
+    commit(cells.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? (item.pattern[r][c] ? 1 : 2) : v) : x));
+  };
   const check = () => {
     const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, value, c) => m + ((value === 1 && cells[r][c] === 1) || (value === 0 && cells[r][c] === 2) ? 1 : 0), 0), 0);
     setChecked(true);
-    onDone(Math.round(correct / 25 * 100), 100, correct === 25);
+    onDone(Math.max(0, Math.round(correct / 25 * 100) - hints * 8), 100, correct === 25 && hints === 0);
   };
   return <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot lilac" /> Solve the 5×5 nonogram. Each clue gives the length of consecutive filled runs. Cycle each cell through unknown, filled, and marked empty to keep track without paper.</div>
     <div className="nonogram-legend"><span><b>●</b> Filled</span><span><b>×</b> Empty</span><span><b>·</b> Unknown</span></div>
-    <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue)?"clue-complete":""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue"+(lineSolved(row,rowClues[r])?" clue-complete":"")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1) + ": " + (value===1?"filled":value===2?"marked empty":"unknown")} className={"nonogram-cell" + (value===1 ? " filled-cell" : "") + (value===2 ? " empty-marked" : "") + (checked && (item.pattern[r][c] ? value!==1 : value!==2) ? " error-cell" : "")} onClick={() => setCells((all) => all.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? (v + 1) % 3 : v) : x))}>{value===1?"●":value===2?"×":""}</button>)}</div>)}</div></div>
-    <div className="nonogram-actions"><span>{cells.flat().filter((value)=>value!==0).length} / 25 cells marked</span><button className="button button-quiet" onClick={()=>setCells(item.pattern.map((row)=>row.map(()=>0)))} disabled={checked}>Reset grid</button></div>
+    <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue)?"clue-complete":""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue"+(lineSolved(row,rowClues[r])?" clue-complete":"")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1) + ": " + (value===1?"filled":value===2?"marked empty":"unknown")} className={"nonogram-cell" + (value===1 ? " filled-cell" : "") + (value===2 ? " empty-marked" : "") + (checked && (item.pattern[r][c] ? value!==1 : value!==2) ? " error-cell" : "")} onPointerDown={(e) => { e.preventDefault(); painting.current = (value + 1) % 3; setCell(r, c, painting.current); }} onPointerEnter={(e) => { if (painting.current !== null && e.buttons === 1 && value !== painting.current) setCell(r, c, painting.current); }} onPointerUp={() => { painting.current = null; }} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setCell(r, c, (value + 1) % 3); } }}>{value===1?"●":value===2?"×":""}</button>)}</div>)}</div></div>
+    <div className="nonogram-actions" onPointerLeave={() => { painting.current = null; }}><span>{cells.flat().filter((value)=>value!==0).length} / 25 marked{hints ? " · " + hints + " hint" + (hints > 1 ? "s" : "") : ""}</span><span className="nonogram-tools"><button className="button button-quiet" onClick={undo} disabled={checked || !history.length}>↶ Undo</button><button className="button button-quiet" onClick={hint} disabled={checked}>💡 Hint −8</button><button className="button button-quiet" onClick={()=>{setHistory((h)=>[...h,cells]);setCells(item.pattern.map((row)=>row.map(()=>0)));}} disabled={checked}>Reset</button></span></div>
+    <label className="auto-toggle"><input type="checkbox" checked={autoMark} onChange={(e) => setAutoMark(e.target.checked)} /> Auto-mark × on finished lines · drag across cells to paint</label>
     {!checked ? <button className="button button-primary full-button" onClick={check}>Check pattern</button> : <Finish title="Pattern revealed" detail={"The hidden shape was " + item.name + ". " + item.hint + ". Filled cells are compared with the solution."} score={Math.round(item.pattern.reduce((n, row, r) => n + row.reduce((m, v, c) => m + ((v===1 && cells[r][c]===1) || (v===0 && cells[r][c]===2) ? 1 : 0), 0), 0) / 25 * 100) + " / 100"} />}
   </div>;
 }
@@ -1020,6 +1045,7 @@ function WordLadder({ seed, onDone }: Props) {
   const [note, setNote] = useState("Change one letter at a time. Every step must be a real word.");
   const [showPath, setShowPath] = useState(false);
   const [ended, setEnded] = useState(false);
+  const [nudges, setNudges] = useState(0);
   const maxMoves = Math.max(2, item.path.length + 2);
   const diffOne = (a: string, b: string) => a.length === b.length && [...a].filter((c, i) => c !== b[i]).length === 1;
   const add = () => {
@@ -1029,16 +1055,18 @@ function WordLadder({ seed, onDone }: Props) {
     if (!LADDER_WORDS.has(word)) { setNote("That one-letter combination isn't in this round's word list. Try a listed word."); return; }
     if (entered.includes(word)) { setNote("You've already used that word."); return; }
     const next = [...entered, word]; setEntered(next); setText("");
-    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (showPath ? 20 : 0))), 100, next.length === item.path.length && !showPath); }
+    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (showPath ? 20 : 0) - nudges * 8)), 100, next.length === item.path.length && !showPath && nudges === 0); }
     else if (next.length >= maxMoves) { setEnded(true); onDone(0, 100, false); }
     else setNote("Good step. Keep going.");
   };
   return <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot peach" /> Build a word ladder from the start word to the end word. Change one letter at a time; all intermediate steps must be words.</div>
     <div className="ladder-ends"><span>START <b>{item.start}</b></span><span>FINISH <b>{item.end}</b></span></div>
-    <div className="ladder-rungs">{entered.map((w, i) => <span key={i}>{w}</span>)}{!ended && <i>?</i>}</div>
+    <div className="ladder-rungs">{entered.map((w, i) => <span key={i}>{[...w].map((ch, k) => <em key={k} className={i > 0 && ch !== entered[i - 1][k] ? "changed" : ""}>{ch}</em>)}</span>)}{!ended && <i>?</i>}</div>
     {!ended ? <>
       <form className="word-entry" onSubmit={(e) => { e.preventDefault(); add(); }}><input value={text} maxLength={item.start.length} onChange={(e) => setText(e.target.value.replace(/[^a-z]/gi,"").toUpperCase())} placeholder="Next word" /><button className="button button-primary">Add step</button></form>
+      <p className={"ladder-live" + (text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (LADDER_WORDS.has(text) ? " ok" : " maybe") : " bad") : "")} aria-live="polite">{text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (LADDER_WORDS.has(text) ? "✓ Valid step" : "One letter changed, but not a word in this round") : "✗ Change exactly one letter from " + entered[entered.length - 1]) : "Type the next " + item.start.length + "-letter word"}</p>
+      <button className="text-button" onClick={() => { const i = entered.length; const nxt = item.path[i]; if (!nxt) return; setNudges((n) => n + 1); const prev = entered[entered.length - 1]; const pos = [...nxt].findIndex((ch, k) => ch !== prev[k]); setNote("Nudge: change letter " + (pos + 1) + " to " + nxt[pos] + "."); }}>Nudge me one letter (−8)</button>
       <button className="text-button" onClick={() => setShowPath((value) => !value)}>{showPath ? "Hide suggested path" : "Need a nudge? Reveal one possible path"}</button>
       {showPath && <p className="ladder-hint">One valid route: {item.path.join(" → ")}</p>}
     </> : <Finish title={entered[entered.length-1] === item.end ? "Ladder climbed" : "The ladder revealed"} detail={"One possible path: " + item.path.join(" → ")} score={entered[entered.length-1] === item.end ? (showPath ? "Hint used" : "Solved") : "Try another run"} />}
@@ -1056,6 +1084,9 @@ function SpellingHive({ seed, onDone }: Props) {
   const [note, setNote] = useState("Make words of four or more letters. Every word must use the center letter.");
   const [hint, setHint] = useState(false);
   const [ended, setEnded] = useState(false);
+  const [shuffles, setShuffles] = useState(0);
+  const outer = useMemo(() => shuffle(letters.filter((letter) => letter !== puzzle.center), seeded(seed + 17 + shuffles * 101)), [letters, puzzle, seed, shuffles]);
+  const [starter, setStarter] = useState<string | null>(null);
   const maximum = useMemo(() => puzzle.words.reduce((n, word) => n + wordPoints(word, puzzle), 0), [puzzle]);
   const score = found.reduce((n, word) => n + wordPoints(word, puzzle), 0);
   const points = (word: string) => wordPoints(word, puzzle);
@@ -1086,7 +1117,7 @@ function SpellingHive({ seed, onDone }: Props) {
     <div className="hive-header"><span className="eyebrow">TODAY'S HIVE</span><strong>{puzzle.title}</strong><small>{found.length} / {puzzle.words.length} words found · {score} points</small></div>
     <div className="hive-board" aria-label="Seven letter spelling hive">
       <button className="hive-letter center-letter" onClick={() => setEntry((v) => v + puzzle.center)}>{puzzle.center}</button>
-      {letters.filter((letter) => letter !== puzzle.center).map((letter, i) => <button key={letter} className={"hive-letter hive-position-" + i} onClick={() => setEntry((v) => v + letter)}>{letter}</button>)}
+      {outer.map((letter, i) => <button key={letter} className={"hive-letter hive-position-" + i} onClick={() => setEntry((v) => v + letter)}>{letter}</button>)}
     </div>
     <div className="hive-entry-row">
       <input value={entry} onChange={(e) => setEntry(e.target.value.toUpperCase().replace(/[^A-Z]/g,""))} onKeyDown={(e) => { if (e.key === "Enter") submit(); }} aria-label="Build a word" placeholder="Build a word…" disabled={ended} />
@@ -1094,8 +1125,16 @@ function SpellingHive({ seed, onDone }: Props) {
       <button className="button button-soft" onClick={() => setEntry((v) => v.slice(0,-1))} disabled={ended || !entry}>⌫</button>
       <button className="button button-quiet" onClick={() => setEntry("")} disabled={ended}>Clear</button>
     </div>
-    <div className="hive-tools"><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Need a hint?</button><button className="text-button" onClick={finish} disabled={ended}>Finish for today</button></div>
+    {(() => {
+      const ratio = score / Math.max(1, maximum);
+      const ranks = [["Larva", 0], ["Worker", 0.1], ["Forager", 0.25], ["Guardian", 0.4], ["Royal Jelly", 0.6], ["Queen", 0.8]] as const;
+      const rank = [...ranks].reverse().find(([, min]) => ratio >= min)![0];
+      const lengths = [...new Set(puzzle.words.map((w) => w.length))].sort((a, b) => a - b);
+      return <div className="hive-progress"><div className="hive-rank"><b>{rank}</b><i><span style={{ width: Math.min(100, ratio * 100 / 0.8) + "%" }} /></i></div><div className="hive-lengths">{lengths.map((n) => <span key={n} className={puzzle.words.filter((w) => w.length === n && !found.includes(w)).length === 0 ? "done" : ""}>{n}-letter <b>{puzzle.words.filter((w) => w.length === n && found.includes(w)).length}/{puzzle.words.filter((w) => w.length === n).length}</b></span>)}</div></div>;
+    })()}
+    <div className="hive-tools"><button className="text-button" onClick={() => setShuffles((n) => n + 1)}>🔀 Shuffle</button><button className="text-button" onClick={() => { const left = puzzle.words.filter((w) => !found.includes(w)); if (left.length) setStarter(left[Math.floor(Math.random() * left.length)].slice(0, 2) + "…"); }} disabled={ended}>Starter hint</button><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Need a hint?</button><button className="text-button" onClick={finish} disabled={ended}>Finish for today</button></div>
     {hint && <p className="game-feedback">{puzzle.hint}</p>}
+    {starter && !ended && <p className="game-feedback">A word still hiding starts with <b>{starter}</b></p>}
     <p className="game-feedback" aria-live="polite">{note}</p>
     {found.length>0&&<div className="hive-found"><SectionLabel>FOUND WORDS</SectionLabel>{found.map((word) => <span key={word} className={word===puzzle.pangram?"pangram-word":""}>{word}<b>+{points(word)}</b></span>)}</div>}
     {ended && <Finish title={found.includes(puzzle.pangram) ? "Pangram found" : "Hive closed"} detail={found.length + " of " + puzzle.words.length + " words found. The longest word is " + puzzle.pangram + "."} score={score + " / " + maximum}><div className="hive-reveal">{puzzle.words.filter((word)=>!found.includes(word)).map((word)=><span key={word}>{word}</span>)}</div></Finish>}
