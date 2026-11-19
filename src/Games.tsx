@@ -711,7 +711,7 @@ function Labline({ seed, onDone, specialty = "general" }: Props) {
   }, [seed, specialty]);
   const [round, setRound] = useState(0);
   const item = rounds[round];
-  const range = useMemo(() => labRange(item.value, seed + round * 13), [item, seed, round]);
+  const range = useMemo(() => labRange(item.value, seed + round * 13, item.tolerance), [item, seed, round]);
   // Slider step: a clean fraction of the tolerance (or 1% of the value for threshold prompts).
   const step = useMemo(() => {
     const raw = item.tolerance > 0 ? item.tolerance / 5 : Math.max(Math.abs(item.value) / 100, 0.01);

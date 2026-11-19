@@ -1,4 +1,4 @@
-import { seeded, shuffle } from "./lib";
+import { hashSeed, seeded, shuffle } from "./lib";
 
 const DICE = [
   "AAEEGN","ABBJOO","ACHOPS","AFFKPS","AOOTTW","CIMOTU","DEILRX","DELRVY",
@@ -293,12 +293,22 @@ export function labScore(estimate: number, value: number, tolerance: number): nu
   if (diff <= tolerance) return Math.max(85, Math.round(100 * (1 - 0.15 * diff / tolerance)));
   return Math.max(0, Math.round(100 * (1 - diff / Math.max(tolerance * 3, Math.abs(value) * 0.2))));
 }
-/** A slider range that contains the true value but does not put it at the midpoint. */
-export function labRange(value: number, seed: number): { min: number; max: number } {
-  const r = seeded((seed + 0x9e3779b1) >>> 0);
-  const a = 0.3 + r() * 0.35, b = 1.5 + r() * 0.9;
-  const base = Math.abs(value) < 1e-9 ? 1 : Math.abs(value);
-  return { min: Math.max(0, value - base * (1 - a) * 1), max: value + base * (b - 1) };
+/**
+ * A slider range that contains the true value but gives no clue to it. The width depends only on the scoring
+ * tolerance (about 12–26 tolerances wide), and the answer sits at a random 15–85% of the way along, so neither the
+ * midpoint nor the distance from either end points at the answer. Non-negative answers keep a non-negative range.
+ */
+export function labRange(value: number, seed: number, tolerance = 0): { min: number; max: number } {
+  // Nearby seeds (round offsets) must not give nearby layouts, so the seed is hashed before use.
+  const r = seeded(hashSeed("labrange|" + seed + "|" + value));
+  r(); r();
+  const base = tolerance > 0 ? tolerance : Math.max(Math.abs(value) * 0.1, 0.5);
+  const span = base * (12 + r() * 14);
+  const at = 0.15 + r() * 0.7;
+  let min = value - span * at;
+  let max = min + span;
+  if (value >= 0 && min < 0) { max -= min; min = 0; }
+  return { min, max };
 }
 /** Bonus for consecutive strong rounds: 0, 10, 20, 30, 30... (the first strong round starts the streak). */
 export const labStreakBonus = (streakBefore: number): number => Math.min(30, streakBefore * 10);
