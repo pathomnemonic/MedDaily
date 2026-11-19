@@ -135,14 +135,14 @@ export const connectionPuzzlesExpansion11: ConnectionGroup[][] = [
 ],
 [
 {category:"Type 1 distal renal tubular acidosis",words:["Urine pH above 5.5","Nephrolithiasis","Hypokalemia","Alpha-intercalated cell defect"],hint:"Impaired distal hydrogen secretion."},
-{category:"Type 2 proximal renal tubular acidosis",words:["Bicarbonate wasting","Fanconi syndrome","Hypokalemia","Urine pH falls after steady state"],hint:"Reduced proximal bicarbonate reabsorption."},
+{category:"Type 2 proximal renal tubular acidosis",words:["Bicarbonate wasting","Fanconi syndrome","Low serum bicarbonate","Urine pH falls after steady state"],hint:"Reduced proximal bicarbonate reabsorption."},
 {category:"Type 4 renal tubular acidosis",words:["Hyperkalemia","Hypoaldosteronism","Diabetes mellitus association","Urine pH often below 5.5"],hint:"Reduced aldosterone effect or distal potassium secretion."},
 {category:"Bartter syndrome",words:["Hypokalemic metabolic alkalosis","Hypercalciuria","High renin and aldosterone","Loop-diuretic-like defect"],hint:"Thick ascending limb salt-wasting disorder."}
 ],
 [
 {category:"Tetralogy of Fallot",words:["Ventricular septal defect","Pulmonary stenosis","Overriding aorta","Right ventricular hypertrophy"],hint:"Four structural components of the classic cyanotic defect."},
 {category:"Transposition of the great arteries",words:["Parallel circulations","Egg-on-a-string radiograph","Cyanosis soon after birth","Requires mixing"],hint:"Aorta arises from the right ventricle and pulmonary artery from the left."},
-{category:"Truncus arteriosus",words:["Single arterial trunk","Common semilunar valve","Ventricular septal defect","22q11 deletion association"],hint:"Failure of aorticopulmonary septation."},
+{category:"Truncus arteriosus",words:["Single arterial trunk","Common semilunar valve","Aortopulmonary septation failure","22q11 deletion association"],hint:"Failure of aorticopulmonary septation."},
 {category:"Total anomalous pulmonary venous return",words:["Pulmonary veins drain to systemic venous circulation","Snowman sign","Cyanosis","Obstructed pulmonary venous return"],hint:"Pulmonary venous return fails to reach the left atrium normally."}
 ]
 
