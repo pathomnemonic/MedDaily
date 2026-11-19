@@ -73,7 +73,17 @@ export const pairsBankExpansion3 = [
 ["Methimazole","Thyroid peroxidase inhibitor"],
 ["Propylthiouracil","Thyroid peroxidase and peripheral T4-to-T3 inhibitor"],
 ["Cinacalcet","Calcimimetic that activates the calcium-sensing receptor"],
-["Hydroxychloroquine","Antimalarial immunomodulator used in SLE"]
+["Hydroxychloroquine","Antimalarial immunomodulator used in SLE"],
+["Sotalol","Class III antiarrhythmic with beta-blocking activity"],
+["Dofetilide","Selective IKr potassium-channel blocker"],
+["Flecainide","Class Ic sodium-channel blocker"],
+["Mirabegron","Beta-3 adrenergic agonist for overactive bladder"],
+["Vibegron","Beta-3 adrenergic agonist for overactive bladder"],
+["Semaglutide","GLP-1 receptor agonist"],
+["Tirzepatide","Dual GIP and GLP-1 receptor agonist"],
+["Natalizumab","Anti-alpha-4 integrin monoclonal antibody"],
+["Ocrelizumab","Anti-CD20 monoclonal antibody used in MS"],
+["Fingolimod","Sphingosine-1-phosphate receptor modulator"]
 ];
 
 export const microbePacksExpansion3 = [
