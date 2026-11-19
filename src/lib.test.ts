@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { connectionPuzzles, medleWords, diagnosisCases, nextStepCases, labPrompts, triageCases, pairsBank, microbePacks } from "./data";
 import { deductionCases, glyphPatterns, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
 import { hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
+import { extendStrandsPath, makeStrandsBoard, readStrandsPath } from "./strandsLogic";
 import { deepDivePrompts, triviaCategories, triviaQuestions } from "./dataArcade";
 
 describe("daily puzzle primitives", () => {
@@ -110,6 +111,42 @@ describe("additional daily puzzle packs", () => {
   });
 });
 
+
+describe("Strands-style Word Hunt boards", () => {
+  it("places every theme word on an adjacent path and spans the board with its spangram", () => {
+    for (const [index, pack] of microbePacks.entries()) {
+      const board = makeStrandsBoard(pack.words, 20261119 + index);
+      expect(board.grid).toHaveLength(8);
+      expect(board.grid.every((row) => row.length === 10)).toBe(true);
+      expect(board.words).toHaveLength(pack.words.length);
+      expect(board.spangram).toBeTruthy();
+      const span = board.paths[board.spangram];
+      expect(Math.floor(span[0] / board.columns)).toBe(0);
+      expect(Math.floor(span[span.length - 1] / board.columns)).toBe(board.rows - 1);
+      for (const word of board.words) {
+        const path = board.paths[word];
+        expect(path, pack.name + ": " + word).toHaveLength(word.length);
+        expect(readStrandsPath(board.grid, path, board.columns)).toBe(word);
+        expect(new Set(path).size).toBe(path.length);
+        for (let i = 1; i < path.length; i++) {
+          const previous = path[i - 1], current = path[i];
+          const rowGap = Math.abs(Math.floor(previous / board.columns) - Math.floor(current / board.columns));
+          const columnGap = Math.abs(previous % board.columns - current % board.columns);
+          expect(Math.max(rowGap, columnGap)).toBe(1);
+        }
+      }
+    }
+  });
+
+  it("keeps generation deterministic and supports path backtracking", () => {
+    const first = makeStrandsBoard(microbePacks[0].words, 77);
+    const second = makeStrandsBoard(microbePacks[0].words, 77);
+    expect(first).toEqual(second);
+    expect(extendStrandsPath([11], 12, 8, 10)).toEqual([11, 12]);
+    expect(extendStrandsPath([11, 12], 11, 8, 10)).toEqual([11]);
+    expect(extendStrandsPath([11], 33, 8, 10)).toEqual([11]);
+  });
+});
 
 describe("Cell Sketch nonogram clues", () => {
   const runs = (line: number[]) => {
