@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank, triageCases } from "./data";
-import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
+import { deductionCases, glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
 import { associationPairPoints, associationTimeBonus, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
@@ -1006,9 +1006,9 @@ function HigherLower({ seed, onDone }: Props) {
   </div>;
 }
 
-const LADDER_WORDS = new Set(["COLD","CORD","CARD","WARD","WARM","HEAL","HEAR","SEAR","SEER","SEEK","PAIN","GAIN","CARE","CURE","VEIN","VEIL","VAIL","PAIL","MIND","MILD","BOLD","BOND","BEND","SEND","SAND","SANE","CANE","CONE","BONE","TONE","TUNE","MULE","MILE","TILE","TIDE","SIDE","SINE","LINE","LION","IRON","ICON","RING","SING","SONG","LONG","LUNG","FINE","FIVE","DIVE","LIVE","LOVE","MOVE","MORE","CARE","CASE","CASH","WASH","WISH","FISH","FIST","LIST","LAST","LOST","COST","CAST","EAST","EASE","EARS","EARN","BARN","BARK","DARK","DART","PART","PARK","MARK","MARS","MASS","PASS","PAST","FAST","FATE","LATE","MATE","MATH","PATH","BATH","BETA","DATA","DATE","GATE","GAME","NAME","SAME","SAVE","SAFE","SAGE","PAGE","PACE","RACE","RARE","CARE","CORE","CURE","PURE","PURL","PEAR","HEAR","BEAR","BEAD","HEAD","HEAT","SEAT","MEAT","MELT","BELT","BELL","CELL","SELL","SELF","SHELF"]);
+
 function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
-  const item = useMemo(() => practice ? (generateWordLadder(seed, [...LADDER_WORDS]) ?? wordLadders[seed % wordLadders.length]) : wordLadders[seed % wordLadders.length], [seed, practice]);
+  const item = useMemo(() => practice ? (generateWordLadder(seed, [...ladderDictionary]) ?? wordLadders[seed % wordLadders.length]) : wordLadders[seed % wordLadders.length], [seed, practice]);
   const [entered, setEntered] = useState<string[]>([item.start]);
   const [text, setText] = useState("");
   const [note, setNote] = useState("Change one letter at a time. Every step must be a real word.");
@@ -1020,7 +1020,7 @@ function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boo
     const word = text.trim().toUpperCase();
     if (ended || !word) return;
     if (!diffOne(entered[entered.length - 1], word)) { setNote("Change exactly one letter."); return; }
-    if (!LADDER_WORDS.has(word)) { setNote("That word is not in the ladder dictionary. Try another one-letter neighbor."); return; }
+    if (!ladderDictionary.has(word)) { setNote("That word is not in the ladder dictionary. Try another one-letter neighbor."); return; }
     if (entered.includes(word)) { setNote("You've already used that word."); return; }
     const next = [...entered, word]; setEntered(next); setText("");
     if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (showPath ? 20 : 0))), 100, next.length === item.path.length && !showPath); }
