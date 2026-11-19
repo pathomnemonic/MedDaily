@@ -145,7 +145,12 @@ function DeepDive({ seed, onDone }: Props) {
       setFinished(true);
       if (!done.current) {
         done.current = true;
-        onDone(score, maximum, score === maximum);
+        const shareRows = currentResults.map((result) => {
+          const count = Math.min(5, result.answers.length);
+          return "🟩".repeat(count) + "⬜".repeat(5 - count);
+        }).join("\n");
+        const answerCount = currentResults.reduce((count, result) => count + result.answers.length, 0);
+        onDone(score, maximum, score === maximum, "Deep Dive · " + answerCount + " answers\n" + shareRows + "\n" + score + " points");
       }
       return;
     }
