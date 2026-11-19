@@ -10,17 +10,17 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 |---|---:|---|
 | Medle | 140 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
 | Connections | 122 boards | Four groups of four per board; 20 new cross-specialty boards |
-| Mystery Case | 220 cases | Progressive clinical-diagnosis clues with explanations and source notes |
+| DoctorDle | 220 cases | Six-guess typed diagnosis puzzle with progressive clues, explanations, and source notes |
 | Next Best Step | 220 cases | Original clinical decision vignettes with explanations and source notes |
 | Microbe Hunt | 68 organism packs | Each pack generates a deterministic word-search grid |
 | Labline | 100 prompts | Reference values, thresholds, and a few vital-sign estimates; normal ranges vary by laboratory and patient |
-| Memory Match | 208 pairs | Medication, mechanism, anatomy, finding, and diagnosis associations |
+| Association Blitz | 208 pairs | Expanded eight-pair association board; still needs more varied mechanics and timed/combo modes |
 | Triage Order | 42 sequences | Clinical and emergency sequence-reconstruction puzzles |
 | Anagram Sprint | 111 terms | Three-guess word scramble |
 | Cell Sketch | 31 unique-named 5×5 nonograms (19 original patterns plus 12 rotations/reflections) | Row and column run clues; CI verifies one valid solution per board |
-| Higher or Lower | 66 comparisons | Quantitative comparisons, including ties |
+| What Has More? | 72 comparisons | Clinical quantities plus playful food, medication, and everyday comparisons; values are explicitly approximate where appropriate |
 | Word Ladder | 26 ladders | Each intended solution path uses real words and one-letter changes |
-| Spelling Hive | 24 seven-letter boards | Curated answer sets, center-letter rule, and pangram bonus |
+| Medical Spelling Hive | 24+ seven-letter boards | Medical-themed boards and curated answer sets; generic filler should continue to be replaced |
 | Casefile Logic | 15 cases | Fictional deduction puzzles; one-to-one assignment rules |
 
 ## What this means for daily longevity
@@ -38,7 +38,7 @@ Clinical cases are filtered toward specialties where curated mappings exist, inc
 ## Recommended next content work
 
 Prioritize the smallest banks first:
-1. Expand Casefile Logic and Spelling Hive to at least 50 distinct daily sets each (current: 15 and 24).
+1. Expand Casefile Logic and Medical Spelling Hive to at least 50 distinct daily sets each; continue replacing generic word boards with medically meaningful sets.
 2. Expand Cell Sketch and Word Ladder while preserving one-solution and valid-path checks (Cell Sketch now has 19 original patterns; Word Ladder has 26 paths).
 3. Add specialty-reviewed Connections boards and clinical cases for tracks whose current content falls back to general banks.
 4. Add original/licensed visual material for Framed-style ECG, imaging, histology, gross pathology, and anatomy recognition.
