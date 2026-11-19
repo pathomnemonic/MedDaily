@@ -702,7 +702,7 @@ function CellSketch({ seed, onDone }: Props) {
 }
 
 function HigherLower({ seed, onDone }: Props) {
-  const list = useMemo(() => shuffle(higherLowerPairs, seeded(seed + 29)).slice(0, 5), [seed]);
+  const list = useMemo(() => shuffle(higherLowerPairs.filter((item) => "fun" in item), seeded(seed + 29)).slice(0, 5), [seed]);
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [reveal, setReveal] = useState(false);
