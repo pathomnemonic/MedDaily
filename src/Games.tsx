@@ -518,11 +518,11 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
     const group = tiles.find((t) => selected.includes(t.word))?.group;
     if (group !== undefined && selected.every((word) => board[group].words.includes(word))) {
       const next = [...solved, group]; setSolved(next); setSelected([]); setNote(board[group].category + " — " + board[group].hint);
-      if (next.length === 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 100 - mistakes * 15), 100, mistakes === 0, "Connections\n" + board.map((group, index) => (next.includes(index) ? "🟪🟪🟪🟪" : "⬜⬜⬜⬜")).join("\n") + "\n" + mistakes + "/4 mistakes"); } }
+      if (next.length === 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 100 - mistakes * 15), 100, mistakes === 0, "Connections\n" + board.map((_, index) => (next.includes(index) ? "🟪🟪🟪🟪" : "⬜⬜⬜⬜")).join("\n") + "\n" + mistakes + "/4 mistakes"); } }
     } else {
       const nearMiss = group !== undefined && selected.filter((word) => board[group].words.includes(word)).length === 3;
       const next = mistakes + 1; setMistakes(next); setNote(next >= 4 ? "No mistakes left. The remaining groups are shown below." : nearMiss ? "One away… Three of those terms belong together, but one is from another group." : "Not a set. Look for a different connection."); setSelected([]);
-      if (next >= 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 40 - next * 5), 100, false, "Connections\n" + board.map((group, index) => (solved.includes(index) ? "🟪🟪🟪🟪" : "⬜⬜⬜⬜")).join("\n") + "\n" + next + "/4 mistakes"); } }
+      if (next >= 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 40 - next * 5), 100, false, "Connections\n" + board.map((_, index) => (solved.includes(index) ? "🟪🟪🟪🟪" : "⬜⬜⬜⬜")).join("\n") + "\n" + next + "/4 mistakes"); } }
     }
   };
   const shuffleTiles = () => {
