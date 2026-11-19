@@ -3,7 +3,7 @@ import { GameBoard } from "./Games";
 import type { GameId } from "./lib";
 import { hashSeed, dailyDateKey } from "./lib";
 import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, totalPlays, type PlayerData } from "./storage";
-import { createRoom, joinRoom, leaveRoom, multiplayerConfigured, submitRoomScore, watchRoom, type RoomState } from "./firebase";
+import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, submitRoomScore, watchRoom, type RoomState } from "./firebase";
 import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnected } from "./googleDrive";
 
 type Mode = "general" | "specialty";
@@ -151,21 +151,13 @@ export default function App() {
       }catch{setNotice("That file does not look like a MedDaily progress export.");}
     };reader.readAsText(file);
   };
-  const createFriendsRoom=async(game:GameId)=>{
+  const joinFriendsRoom=async(game:GameId)=>{
     setRoomBusy(true);setNotice("");
     try{
-      const code=await createRoom({gameId:game,scope,specialty:mode==="specialty"?specialty:"general",date,seed:seedFor(game),name:roomName||"Guest"});
-      setRoomCode(code);setJoinCode(code);setNotice("Room created. Share the code with your group.");
-    }catch(e){setNotice((e as Error).message);}
-    finally{setRoomBusy(false);}
-  };
-  const joinFriendsRoom=async()=>{
-    setRoomBusy(true);setNotice("");
-    try{
-      const joined=await joinRoom(joinCode,roomName||"Guest");
+      const joined=await joinOrCreateRoom(joinCode,{gameId:game,scope,specialty:mode==="specialty"?specialty:"general",date,seed:seedFor(game),name:roomName||"Guest"});
       setRoomCode(joined.code);setRoom(joined);setMode(joined.scope==="general"?"general":"specialty");
       if(joined.specialty&&joined.specialty!=="general")setSpecialty(joined.specialty as Specialty);
-      setNotice("Joined room "+joined.code+". Everyone has the same daily puzzle.");
+      setNotice("Connected to room "+joined.code+". If the code was new, you started the room; everyone entering it gets the same game.");
     }catch(e){setNotice((e as Error).message);}
     finally{setRoomBusy(false);}
   };
@@ -208,7 +200,7 @@ export default function App() {
         </section>
         {room&&<RoomScores room={room}/>}
         <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode"}</span></div>
-      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak}/>:screen==="settings"?<SettingsPage player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} configured={multiplayerConfigured()} game={firstTodo} games={GAMES} onCreate={createFriendsRoom} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,false,r.seed)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} today={date} doneToday={doneToday} streak={streak} openGame={openGame} firstTodo={firstTodo}/>}
+      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak}/>:screen==="settings"?<SettingsPage player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} configured={multiplayerConfigured()} game={firstTodo} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,false,r.seed)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} today={date} doneToday={doneToday} streak={streak} openGame={openGame} firstTodo={firstTodo}/>}
     </main>
     <footer className="site-footer"><div><span className="footer-mark">✳</span><b>meddaily.</b><span>PRESS START · FIND YOUR NEXT FAVORITE</span></div><p>For education only · Not a clinical decision tool · Verify care decisions against current guidance.</p><span className="version">v1.1 · Local-first · Optional Drive sync</span></footer>
   </div>;
@@ -244,29 +236,25 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
 }
 
 const PARTY_GAME_IDS = new Set<GameId>(["connections","microbe","triage","casefile","dive","trivia","lettergrid"]);
-function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,configured,game,games,onCreate,onJoin,onPlay,onLeave}:{
+function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,configured,game,games,onJoin,onPlay,onLeave}:{
   room:RoomState|null;roomName:string;setRoomName:(s:string)=>void;joinCode:string;setJoinCode:(s:string)=>void;busy:boolean;configured:boolean;game:GameId;games:GameMeta[];
-  onCreate:(g:GameId)=>void;onJoin:()=>void;onPlay:(r:RoomState)=>void;onLeave:()=>void;
+  onJoin:(g:GameId)=>void;onPlay:(r:RoomState)=>void;onLeave:()=>void;
 }){
   const partyGames=games.filter(g=>PARTY_GAME_IDS.has(g.id));
   const [selected,setSelected]=useState<GameId>(PARTY_GAME_IDS.has(game)?game:"connections");
   return <div className="friends-page"><div className="friends-hero"><span className="eyebrow">THE PARTY LOBBY</span><h1>Bring your crew.</h1><p>Set up a room, share the code, and challenge your crew to the same daily puzzle. Everyone keeps their own progress while the lobby tracks the round.</p></div>
-    {!configured&&<div className="setup-warning"><b>Room play needs a one-time connection.</b><p>Solo and practice games work without setup or sign-in. To enable real-time rooms, configure Firebase using the included <code>.env.example</code> and <code>firestore.rules</code>. Multiplayer uses anonymous guest sessions; no Google account is required.</p></div>}
-    {room?<div className="room-card"><div className="room-code-head"><div><span className="eyebrow">YOUR ROOM CODE</span><strong>{room.code}</strong></div><div className="share-actions"><button className="button button-soft" onClick={()=>void navigator.clipboard?.writeText(room.code)}>Copy code</button><button className="button button-primary" onClick={()=>{const url=location.origin+location.pathname+"?room="+room.code;const text="Join my MedDaily "+(games.find(g=>g.id===room.gameId)?.title??"game")+" room: "+room.code;if(navigator.share)void navigator.share({title:"MedDaily room",text,url}).catch(()=>{});else void navigator.clipboard?.writeText(text+" "+url);}}>Share invite ↗</button></div></div>
+    {!configured&&<div className="setup-warning"><b>Online rooms need Firebase enabled.</b><p>Solo and free-play modes work without setup. Real-time shared rooms require the Firebase project settings in the deployment environment; the room-code workflow is ready once connected.</p></div>}
+    {room?<div className="room-card"><div className="room-code-head"><div><span className="eyebrow">YOUR SHARED GAME CODE</span><strong>{room.code}</strong></div><div className="share-actions"><button className="button button-soft" onClick={()=>void navigator.clipboard?.writeText(room.code)}>Copy code</button><button className="button button-primary" onClick={()=>{const url=location.origin+location.pathname+"?room="+room.code;const text="Join my MedDaily "+(games.find(g=>g.id===room.gameId)?.title??"game")+" room: "+room.code;if(navigator.share)void navigator.share({title:"MedDaily room",text,url}).catch(()=>{});else void navigator.clipboard?.writeText(text+" "+url);}}>Share invite ↗</button></div></div>
       <p className="room-message">{room.specialty==="general"?"Open Arcade":"Specialty daily"} · {games.find(g=>g.id===room.gameId)?.title} · {room.date}</p>
       <div className="room-players">{room.players.map((p,i)=><div key={p.uid} className="room-player"><span className="player-number">{i+1}</span><b>{p.name}</b><span>{p.finished?(p.score??0)+" pts":"Ready to play"}</span>{p.perfect&&<i>✦</i>}</div>)}</div>
-      <div className="room-actions"><button className="button button-primary" onClick={()=>onPlay(room)}>Play this daily <span>↗</span></button><button className="button button-quiet" onClick={onLeave}>Leave room</button></div>
-      <small>Rooms allow up to eight players. Players can start the same puzzle independently; scores appear here when submitted.</small>
-    </div>:<div className="friends-grid">
-      <section className="friends-card"><div className="friends-card-icon">✳</div><span className="eyebrow">START A TABLE</span><h2>Create a room</h2><p>Choose a game that works as a shared challenge. A six-character code will be created for your group.</p>
+      <div className="room-actions"><button className="button button-primary" onClick={()=>onPlay(room)}>Play this game <span>↗</span></button><button className="button button-quiet" onClick={onLeave}>Leave room</button></div>
+      <small>Up to eight players. Everyone who enters the same code joins the same game; scores appear here when submitted.</small>
+    </div>:<div className="friends-grid single-room-entry">
+      <section className="friends-card"><div className="friends-card-icon">⌁</div><span className="eyebrow">SAME CODE · SAME GAME</span><h2>Enter a room code</h2><p>Use a code your group has agreed on. The first person to enter a new code starts the room; everyone else types that exact code to join.</p>
         <label>Your nickname<input maxLength={20} value={roomName} onChange={e=>setRoomName(e.target.value)} placeholder="What should we call you?"/></label>
-        <label>Game<select value={selected} onChange={e=>setSelected(e.target.value as GameId)}>{partyGames.map(g=><option value={g.id} key={g.id}>{g.title}</option>)}</select></label>
-        <button className="button button-primary full-button" onClick={()=>onCreate(selected)} disabled={busy||!configured}>{busy?"Opening room…":"Create room"}</button>
-      </section>
-      <section className="friends-card"><div className="friends-card-icon">⌁</div><span className="eyebrow">JOIN YOUR CREW</span><h2>Have a code?</h2><p>Enter the code shared by your friend. You'll join their exact daily and specialty.</p>
-        <label>Your nickname<input maxLength={20} value={roomName} onChange={e=>setRoomName(e.target.value)} placeholder="What should we call you?"/></label>
-        <label>Room code<input className="room-code-input" maxLength={6} value={joinCode} onChange={e=>setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,""))} placeholder="ABC123"/></label>
-        <button className="button button-primary full-button" onClick={onJoin} disabled={busy||!configured||joinCode.length!==6}>{busy?"Joining…":"Join room"}</button>
+        <label>Shared game<select value={selected} onChange={e=>setSelected(e.target.value as GameId)}>{partyGames.map(g=><option value={g.id} key={g.id}>{g.title}</option>)}</select></label>
+        <label>Six-character code<input className="room-code-input" maxLength={6} value={joinCode} onChange={e=>setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,""))} placeholder="ABC123"/></label>
+        <button className="button button-primary full-button" onClick={()=>onJoin(selected)} disabled={busy||!configured||joinCode.length!==6}>{busy?"Connecting…":"Join / start game"}</button>
       </section>
     </div>}
     <div className="privacy-note"><b>Private by default.</b> Solo play never requires an account. Friends rooms use temporary anonymous guest identities and contain only nicknames, game metadata, and scores. Do not enter patient information or other sensitive data.</div>
