@@ -19,6 +19,7 @@ The same UTC date + mode + specialty + game key yields the same daily seed, so g
 - Association Blitz is a timed 24-card memory game with twelve pairs, combo streaks, and a 75-second clock. Seven Cells now includes 50 playable seven-letter boards with validated center-letter rules and pangrams. What Has More? draws from 116 comparisons, including 50 fun-first matchups such as propofol lipid calories versus bacon fat.
 - Labline and Anagram Sprint now use multi-round progression; Letter Lab is a playable Boggle-style adjacent-letter hunt; Quad Squad adds one-away feedback and reliable reshuffling. Shared-code rooms are offered only for formats that support same-puzzle score competition: Quad Squad, Specimen Search, Association Blitz, Triage Order, Anagram Sprint, Labline, What Has More?, Casefile Logic, Deep Scan, Trivia Rumble, and Letter Lab. One person enters a six-character code to start a room; everyone else enters the same code to join. Firebase credentials are still required for live cross-device multiplayer.
 - The Trophies page has a 14-trophy cabinet calculated from saved results; room codes need no setup, and an optional Firebase scoreboard adds live ranking.
+- Quad Squad has 160 curated boards. Cell Sketch alternates curated daily boards with seeded generated variants.
 - Completion is shown per game. MedDaily does not calculate a combined arcade score across games of different difficulty.
 - Dx Dash is permanently featured in the arcade and remains a separate game.
 

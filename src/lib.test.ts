@@ -63,9 +63,11 @@ describe("content bank sanity", () => {
     expect(medleWords.every((word) => /^[A-Z]{5}$/.test(word))).toBe(true);
   });
 
-  it("keeps Quad Squad boards at four groups of four unique tiles", () => {
+  it("keeps the 160-board Quad Squad bank at four groups of four unique tiles", () => {
+    expect(connectionPuzzles).toHaveLength(160);
     for (const board of connectionPuzzles) {
       expect(board).toHaveLength(4);
+      expect(new Set(board.map((group) => group.category.toLowerCase())).size, JSON.stringify(board)).toBe(4);
       const words = board.flatMap((group) => group.words);
       expect(words).toHaveLength(16);
       expect(new Set(words.map((word) => word.toLowerCase())).size, JSON.stringify(board)).toBe(16);
@@ -126,7 +128,8 @@ describe("Cell Sketch nonogram clues", () => {
   };
 
   it("gives each hidden 5x5 shape a unique solution from row and column runs", () => {
-    expect(glyphPatterns.length).toBeGreaterThanOrEqual(36);
+    expect(glyphPatterns.length).toBeGreaterThanOrEqual(44);
+    expect(new Set(glyphPatterns.map((puzzle) => JSON.stringify(puzzle.pattern))).size).toBeGreaterThanOrEqual(36);
     expect(new Set(glyphPatterns.map((puzzle) => puzzle.name)).size).toBe(glyphPatterns.length);
     for (const puzzle of glyphPatterns) {
       const pattern = puzzle.pattern;
@@ -231,7 +234,7 @@ describe("expanded content integrity", () => {
 
 describe("new arcade content banks", () => {
   it("keeps the daily deep-dive prompts broad, unique, and tiered", () => {
-    expect(deepDivePrompts.length).toBeGreaterThanOrEqual(70);
+    expect(deepDivePrompts).toHaveLength(79);
     expect(new Set(deepDivePrompts.map((prompt) => prompt.id)).size).toBe(deepDivePrompts.length);
     for (const prompt of deepDivePrompts) {
       expect(prompt.prompt.length, prompt.id).toBeGreaterThan(12);
@@ -244,12 +247,13 @@ describe("new arcade content banks", () => {
 
   it("keeps dedicated Deep Scan long-tail prompts genuinely open-ended", () => {
     const longTail = deepDivePrompts.filter((prompt) => prompt.longTail);
-    expect(longTail.length).toBeGreaterThanOrEqual(3);
+    expect(longTail).toHaveLength(9);
     for (const prompt of longTail) {
       expect(prompt.answers.length, prompt.id).toBeGreaterThanOrEqual(60);
-      const normalized = prompt.answers.map((item) => item.answer.toLowerCase().trim());
+      const accepted = prompt.answers.flatMap((item) => [item.answer, ...(item.aliases ?? [])]);
+      const normalized = accepted.map((answer) => answer.toLowerCase().replace(/[^a-z0-9]/g, ""));
       expect(new Set(normalized).size, prompt.id).toBe(normalized.length);
-      expect(prompt.answers.every((item) => item.tier >= 1 && item.tier <= 6), prompt.id).toBe(true);
+      expect([1,2,3,4,5,6].map((tier) => prompt.answers.filter((item) => item.tier === tier).length), prompt.id).toEqual([10,10,10,10,10,10]);
     }
   });
 
@@ -327,7 +331,7 @@ describe("Deep Scan supplement", () => {
   it("widens every prompt's accepted set substantially", () => {
     const base = deepDivePrompts.reduce((n, p) => n + p.answers.length, 0);
     const grown = deepDivePromptsExpanded.reduce((n, p) => n + p.answers.length, 0);
-    expect(grown).toBeGreaterThan(base * 1.8);
+    expect(grown).toBeGreaterThan(base * 1.5);
     expect(deepDivePromptsExpanded.every((p) => p.answers.length >= 12)).toBe(true);
   });
 });

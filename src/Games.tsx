@@ -4,7 +4,7 @@ import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks
 import { deductionCases, glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram } from "./arcadeLogic";
+import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
 import { mimeDeck } from "./dataMime";
 import { medicalRungWords } from "./dataRungs";
@@ -317,12 +317,12 @@ function TriviaRumble({ seed, onDone }: Props) {
   };
 
   const finish = () => {
-    const best = Math.max(0, ...players.map((player) => player.correct));
+    const result = triviaRumbleResult(players.map((player) => player.correct), mode, limit);
     setStage("done");
     if (!done.current) {
       done.current = true;
       const top = [...players].sort((a, b) => b.crowns.length - a.crowns.length || b.correct - a.correct)[0];
-      onDone(best * 100, limit * 100, best === limit, "Trivia Rumble · " + top.crowns.length + "/6 badges\n" + triviaCategories.map((cat) => top.crowns.includes(cat.id) ? cat.icon : "▫️").join(" ") + "\n" + top.correct + " correct" + (mode === "pass" ? " · " + players.length + "-player game" : ""));
+      onDone(result.score, result.maxScore, result.perfect, "Trivia Rumble · " + top.crowns.length + "/6 badges\n" + triviaCategories.map((cat) => top.crowns.includes(cat.id) ? cat.icon : "▫️").join(" ") + "\n" + top.correct + " correct" + (mode === "pass" ? " · " + players.length + "-player game" : ""));
     }
   };
 
@@ -900,7 +900,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     </div>
     <div className="association-footer"><span>{moves} turns · {mismatches} mismatches</span><span>Match streaks earn bonus points</span></div>
     <p className="game-feedback" aria-live="polite">{note}</p>
-    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All twelve associations found in " + moves + " turns." : matched.length + " of twelve pairs found. " + mismatches + " mismatches."} score={score + " / 1650"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
+    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All twelve associations found in " + moves + " turns." : matched.length + " of twelve pairs found. " + mismatches + " mismatches."} score={score + " / 1800"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
   </div>;
 }
 
@@ -1024,7 +1024,8 @@ function AnagramSprint({ seed, onDone }: Props) {
 
 function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
   const base = glyphPatterns[seed % glyphPatterns.length];
-  const item = useMemo(() => practice ? { ...base, name: base.name + " · Variant", pattern: transformNonogram(base.pattern, seed) } : base, [base, seed, practice]);
+  const generated = practice || seed % 2 === 1;
+  const item = useMemo(() => generated ? { ...base, name: base.name + (practice ? " · Variant" : " · Daily Variant"), pattern: transformNonogram(base.pattern, seed) } : base, [base, seed, practice, generated]);
   const [cells, setCells] = useState<number[][]>(() => item.pattern.map((row) => row.map(() => 0)));
   const [checked, setChecked] = useState(false);
   const [history, setHistory] = useState<number[][][]>([]);
@@ -1061,7 +1062,7 @@ function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boo
     onDone(Math.max(0, Math.round(correct / 25 * 100) - hints * 8), 100, correct === 25 && hints === 0);
   };
   return <div className="game-layout">
-    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY PATTERN" : "CURATED DAILY PATTERN"}</div>
+    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY PATTERN" : generated ? "GENERATED DAILY PATTERN" : "CURATED DAILY PATTERN"}</div>
     <div className="game-instructions"><span className="instruction-dot lilac" /> Solve the 5×5 nonogram. Each clue gives the length of consecutive filled runs. Cycle each cell through unknown, filled, and marked empty to keep track without paper.</div>
     <div className="pen-row" role="radiogroup" aria-label="Pen mode"><span>Pen</span>{([["fill", "● Fill"], ["cross", "× Cross"], ["cycle", "↻ Cycle"]] as const).map(([k, l]) => <button key={k} role="radio" aria-checked={pen === k} className={pen === k ? "on" : ""} onClick={() => setPen(k)}>{l}</button>)}</div>
     <div className="nonogram-legend"><span><b>●</b> Filled</span><span><b>×</b> Empty</span><span><b>·</b> Unknown</span></div>
@@ -1109,6 +1110,7 @@ function WordLadder({ seed, onDone }: Props) {
   const [text, setText] = useState("");
   const [note, setNote] = useState("Change one letter at a time. Every step must be a real word.");
   const [showPath, setShowPath] = useState(false);
+  const [hintUsed, setHintUsed] = useState(false);
   const [ended, setEnded] = useState(false);
   const [nudges, setNudges] = useState(0);
   const maxMoves = Math.max(2, item.path.length + 2);
@@ -1120,7 +1122,7 @@ function WordLadder({ seed, onDone }: Props) {
     if (!ladderDictionary.has(word)) { setNote("That word is not in the ladder dictionary. Try another one-letter neighbor."); return; }
     if (entered.includes(word)) { setNote("You've already used that word."); return; }
     const next = [...entered, word]; setEntered(next); setText("");
-    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (showPath ? 20 : 0) - nudges * 8)), 100, next.length === item.path.length && !showPath && nudges === 0); }
+    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (hintUsed ? 20 : 0) - nudges * 8)), 100, next.length === item.path.length && !hintUsed && nudges === 0); }
     else if (next.length >= maxMoves) { setEnded(true); onDone(0, 100, false); }
     else setNote("Good step. Keep going.");
   };
@@ -1133,7 +1135,7 @@ function WordLadder({ seed, onDone }: Props) {
       <form className="word-entry" onSubmit={(e) => { e.preventDefault(); add(); }}><input value={text} maxLength={item.start.length} onChange={(e) => setText(e.target.value.replace(/[^a-z]/gi,"").toUpperCase())} placeholder="Next word" /><button className="button button-primary">Add step</button></form>
       <p className={"ladder-live" + (text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (ladderDictionary.has(text) ? " ok" : " maybe") : " bad") : "")} aria-live="polite">{text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (ladderDictionary.has(text) ? "✓ Valid step" : "One letter changed, but not a word in this round") : "✗ Change exactly one letter from " + entered[entered.length - 1]) : "Type the next " + item.start.length + "-letter word"}</p>
       <button className="text-button" onClick={() => { const i = entered.length; const nxt = item.path[i]; if (!nxt) return; setNudges((n) => n + 1); const prev = entered[entered.length - 1]; const pos = [...nxt].findIndex((ch, k) => ch !== prev[k]); setNote("Nudge: change letter " + (pos + 1) + " to " + nxt[pos] + "."); }}>Nudge me one letter (−8)</button>
-      <button className="text-button" onClick={() => setShowPath((value) => !value)}>{showPath ? "Hide suggested path" : "Need a nudge? Reveal one possible path"}</button>
+      <button className="text-button" onClick={() => { setShowPath((value) => !value); setHintUsed(true); }}>{showPath ? "Hide suggested path" : "Need a nudge? Reveal one possible path"}</button>
       {showPath && <p className="ladder-hint">One valid route: {item.path.join(" → ")}</p>}
     </> : <Finish title={entered[entered.length-1] === item.end ? "Ladder climbed" : "The ladder revealed"} detail={"One possible path: " + item.path.join(" → ")} score={entered[entered.length-1] === item.end ? (showPath ? "Hint used" : "Solved") : "Try another run"} />}
     <p className="game-feedback">{note}</p>

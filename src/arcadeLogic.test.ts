@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, editDistance, generateWordLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram } from "./arcadeLogic";
+import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, editDistance, generateWordLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
+import { ladderDictionary } from "./dataExtra";
 
 describe("Letter Lab grid rules", () => {
   const grid = [
@@ -101,6 +102,21 @@ describe("generated Word Ladder puzzles", () => {
   it("is deterministic for the same seed", () => {
     expect(generateWordLadder(17, dictionary)).toEqual(generateWordLadder(17, dictionary));
   });
+
+  it("can supply a valid generated daily ladder across a full year of seeds", () => {
+    const words = [...ladderDictionary];
+    for (let day = 0; day < 365; day++) {
+      const puzzle = generateWordLadder(day * 7919, words);
+      expect(puzzle, "day " + day).not.toBeNull();
+      expect(puzzle!.path.length).toBeGreaterThanOrEqual(4);
+      expect(puzzle!.path.length).toBeLessThanOrEqual(6);
+      expect(puzzle!.path.every((word) => ladderDictionary.has(word))).toBe(true);
+      expect(new Set(puzzle!.path).size).toBe(puzzle!.path.length);
+      for (let index = 1; index < puzzle!.path.length; index++) {
+        expect([...puzzle!.path[index - 1]].filter((letter, i) => letter !== puzzle!.path[index][i])).toHaveLength(1);
+      }
+    }
+  });
 });
 
 describe("generated Cell Sketch variants", () => {
@@ -157,5 +173,17 @@ describe("Deep Dive rarity scoring", () => {
     expect(deepDiveAnswerAward(0, 0)).toBe(0);
     expect(deepDiveAnswerAward(7, 0)).toBe(0);
 
+  });
+});
+
+
+describe("Trivia Rumble result scoring", () => {
+  it("uses the full turn count for solo play", () => {
+    expect(triviaRumbleResult([24], "solo", 24)).toEqual({ score: 2400, maxScore: 2400, perfect: true });
+  });
+
+  it("uses each player's actual turn count for pass-and-play", () => {
+    expect(triviaRumbleResult([18, 15], "pass", 36)).toEqual({ score: 1800, maxScore: 1800, perfect: true });
+    expect(triviaRumbleResult([12, 10], "pass", 36)).toEqual({ score: 1200, maxScore: 1800, perfect: false });
   });
 });

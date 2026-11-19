@@ -233,3 +233,9 @@ export function generateMedicalLadder(seed: number, dictionary: readonly string[
   const path = shuffle(found, random)[0];
   return { start: path[0], end: path[path.length - 1], path, note: "Medical ladder: both ends are medical words." };
 }
+
+export function triviaRumbleResult(correctCounts: readonly number[], mode: "solo" | "pass", totalTurns: number): { score: number; maxScore: number; perfect: boolean } {
+  const best = Math.max(0, ...correctCounts);
+  const perPlayerTurns = mode === "solo" ? totalTurns : Math.ceil(totalTurns / 2);
+  return { score: best * 100, maxScore: perPlayerTurns * 100, perfect: best === perPlayerTurns };
+}
