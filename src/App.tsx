@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { GameBoard } from "./Games";
-import GameArt, { DxArt } from "./components/GameArt";
+import GameArt from "./components/GameArt";
 import { computeTrophies } from "./achievements";
 import Mascot from "./components/Mascot";
-import Icon, { type IconName } from "./components/Icon";
+import Icon from "./components/Icon";
 import Splash from "./components/Splash";
 import StageScene from "./components/StageScene";
 import PipCompanion from "./components/PipCompanion";
@@ -44,18 +44,6 @@ const GAMES: GameMeta[] = [
   {id:"labline",title:"Labline",subtitle:"Calibrate your eye",description:"Five rapid-fire estimates of classic lab values and clinical thresholds.",icon:"⌁",wash:"pink",time:"2 min",category:"Numbers",level:"Foundational"},
   {id:"ladder",title:"Letter Rungs",subtitle:"One letter at a time",description:"Build a one-letter-at-a-time path from the start word to the finish.",icon:"⌁",wash:"peach",time:"3 min",category:"Word play",level:"Moderate"},
 ];
-type Shelf = "all" | "quick" | "brain" | "word" | "clinical" | "party";
-const SHELVES: { id: Shelf; label: string; icon: IconName }[] = [
-  {id:"all",label:"All",icon:"all"},{id:"quick",label:"Quick",icon:"bolt"},{id:"brain",label:"Brain",icon:"brain"},{id:"word",label:"Words",icon:"letters"},{id:"clinical",label:"Clinical",icon:"steth"},{id:"party",label:"Party",icon:"party"}
-];
-const SHELF_OF: Record<Shelf, GameId[]> = {
-  all:[],
-  quick:["splice","labline","higher","medle","dive","glyph","mime","bodymap","riddle"],
-  brain:["connections","glyph","casefile","ladder","pairs","hive","riddle","crossword","trail"],
-  word:["medle","splice","ladder","hive","lettergrid","diagnosis","crossword","trail"],
-  clinical:["diagnosis","labline","dive","riddle","bodymap"],
-  party:[...PARTY_GAMES,"trivia","mime"]
-};
 /** Rotating spotlight: the open-answer and trivia games trade the featured slot each UTC day. */
 const FEATURE_ROTATION: GameId[] = ["dive","trivia"];
 const featuredToday = (date: string): GameId => FEATURE_ROTATION[hashSeed("feature|"+date)%FEATURE_ROTATION.length];
@@ -101,7 +89,6 @@ export default function App() {
   const [specialty,setSpecialty] = useState<Specialty>("internal");
   const [activeGame,setActiveGame] = useState<GameId|null>(null);
   const [practice,setPractice] = useState(false);
-  const [homeFreePlay,setHomeFreePlay] = useState(false);
   const [notice,setNotice] = useState("");
   const [installPrompt,setInstallPrompt] = useState<InstallPrompt|null>(null);
   const [startAt,setStartAt] = useState(0);
@@ -288,7 +275,7 @@ export default function App() {
         <button className={screen==="stats"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}>Trophies</button>
         <button className={screen==="settings"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}>Options</button>
       </nav>
-      <div className="top-actions"><button className="sound-toggle" aria-label="Next color palette" title="Change palette" onClick={cyclePalette}><Icon name="palette" size={22}/></button><button className={"sound-toggle"+(player.music?" on":"")} aria-pressed={player.music} aria-label={player.music?"Mute music":"Turn music on"} onClick={()=>updateSetting("music",!player.music)}><Icon name={player.music?"music":"musicOff"} size={22}/></button><button className={"sound-toggle"+(player.sound?" on":"")} aria-pressed={player.sound} aria-label={player.sound?"Mute sound effects":"Turn sound effects on"} onClick={()=>updateSetting("sound",!player.sound)}><Icon name={player.sound?"speaker":"speakerOff"} size={22}/></button>{installPrompt&&<button className="install-button" onClick={install}>＋ Install</button>}<div className="avatar-chip">MD</div></div>
+      <div className="top-actions"><button className="level-pill" onClick={()=>{setActiveGame(null);setScreen("stats");}} aria-label={"Level "+levelFor(player.xp??0).level+", "+levelFor(player.xp??0).title+". Open your profile"} title={levelFor(player.xp??0).title+" · "+levelFor(player.xp??0).into+"/"+levelFor(player.xp??0).span+" XP"} style={{"--pct":levelFor(player.xp??0).pct+"%"} as React.CSSProperties}><i/><b>{levelFor(player.xp??0).level}</b></button><button className="sound-toggle" aria-label="Next color palette" title="Change palette" onClick={cyclePalette}><Icon name="palette" size={22}/></button><button className={"sound-toggle"+(player.music?" on":"")} aria-pressed={player.music} aria-label={player.music?"Mute music":"Turn music on"} onClick={()=>updateSetting("music",!player.music)}><Icon name={player.music?"music":"musicOff"} size={22}/></button><button className={"sound-toggle"+(player.sound?" on":"")} aria-pressed={player.sound} aria-label={player.sound?"Mute sound effects":"Turn sound effects on"} onClick={()=>updateSetting("sound",!player.sound)}><Icon name={player.sound?"speaker":"speakerOff"} size={22}/></button>{installPrompt&&<button className="install-button" onClick={install}>＋ Install</button>}<div className="avatar-chip">MD</div></div>
     </header>
 
     <nav className="mobile-nav" aria-label="Mobile navigation">
@@ -311,7 +298,7 @@ export default function App() {
         {room&&<RoomScores room={room}/>}
         {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"MedDaily result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
         <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode"}</span></div>
-      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak}/>:screen==="settings"?<SettingsPage updateTheme={updateTheme} player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} today={date} doneToday={doneToday} openGame={openGame} freePlay={homeFreePlay} setFreePlay={setHomeFreePlay}/>}
+      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak} done={doneToday}/>:screen==="settings"?<SettingsPage mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} updateTheme={updateTheme} player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} today={date} openGame={openGame}/>}
     </main>
     {completion&&<div className="complete-overlay" role="dialog" aria-modal="true" aria-label="Round complete" onClick={()=>setCompletion(null)}>
       <div className={"complete-card"+(completion.perfect?" perfect":"")} onClick={e=>e.stopPropagation()}>
@@ -338,48 +325,37 @@ export default function App() {
   </div>;
 }
 
-function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneToday,openGame,freePlay,setFreePlay}:{
-  player:PlayerData;scope:string;mode:Mode;specialty:Specialty;setMode:(m:Mode)=>void;setSpecialty:(s:Specialty)=>void;today:string;doneToday:number;openGame:(id:GameId,practice?:boolean)=>void;freePlay:boolean;setFreePlay:(value:boolean)=>void;
-}){
-  const done=doneToday;
-  const [shelf,setShelf]=useState<Shelf>("all");
-  
-  const streakNow=playStreak(player,scope);
+function HomePage({player,scope,today,openGame}:{player:PlayerData;scope:string;today:string;openGame:(id:GameId,practice?:boolean)=>void}){
   const featuredId=featuredToday(today);
-  const visible=shelf==="all"?GAMES:GAMES.filter(g=>SHELF_OF[shelf].includes(g.id));
-  const ordered=[...visible.filter(g=>g.id===featuredId),...visible.filter(g=>g.id!==featuredId)];
-  const specialtyName=SPECIALTIES.find(s=>s.id===specialty)?.name;
-  const lvl=levelFor(player.xp??0);
+  const ordered=[...GAMES.filter(g=>g.id===featuredId),...GAMES.filter(g=>g.id!==featuredId)];
+  const surprise=()=>{
+    const left=GAMES.filter(g=>!player.results.some(r=>r.date===today&&r.game===g.id&&r.scope===scope));
+    const pool=left.length?left:GAMES;
+    openGame(pool[Math.floor(Math.random()*pool.length)].id,left.length===0);
+  };
   return <div className="home-page page-enter">
-    <section className="arcade-hud">
-      <div className="hud-level"><Mascot mood="happy" size={44}/><div><b>Lv {lvl.level} · {lvl.title}</b><i role="progressbar" aria-valuenow={lvl.pct} aria-valuemin={0} aria-valuemax={100}><span style={{width:lvl.pct+"%"}}/></i><small>{lvl.into} / {lvl.span} XP to next level</small></div></div>
-      {!freePlay&&<div className="hud-goal" aria-label={"Daily goal "+Math.min(done,3)+" of 3"}><div className="goal-dots">{[0,1,2].map(i=><i key={i} className={i<Math.min(done,3)?"on":""}/>)}<span className="goal-chest">{done>=3?"🎁":"🔒"}</span></div><small>{done>=3?"Daily chest claimed":"Daily goal "+Math.min(done,3)+"/3 · +60 XP chest"}</small></div>}
-      <div className="hud-controls">
-        <div className="home-play-mode" role="group" aria-label="Choose daily or free play"><button className={!freePlay?"selected":""} onClick={()=>setFreePlay(false)}>Daily</button><button className={freePlay?"selected":""} onClick={()=>setFreePlay(true)}>Free Play ∞</button></div>
-        <div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialties</button></div>
-      </div>
-      <button className="button button-soft surprise-btn" onClick={()=>{const left=GAMES.filter(g=>!player.results.some(r=>r.date===today&&r.game===g.id&&r.scope===scope));const pool=(freePlay||left.length===0)?GAMES:left;openGame(pool[Math.floor(Math.random()*pool.length)].id,freePlay);}}><Icon name="dice" size={20}/> Surprise me</button>
-      <div className="hud-stats">
-        <div className="hud-chip"><span><Icon name="flame" size={24}/></span><b>{streakNow}</b></div>
-        <div className="hud-chip"><span><Icon name="star" size={24}/></span><b>{freePlay?"∞":done+"/"+GAMES.length}</b></div>
-      </div>
-      {mode==="specialty"&&<div className="specialty-picker"><div className="specialty-chips">{SPECIALTIES.map(s=><button key={s.id} onClick={()=>setSpecialty(s.id)} className={specialty===s.id?"selected":""}><span>{s.icon}</span>{s.short}</button>)}</div><div className="specialty-selected"><b>{specialtyName}</b><span>{SPECIALTIES.find(s=>s.id===specialty)?.blurb}</span></div></div>}
-    </section>
-
-        <div className="shelf-chips" role="tablist" aria-label="Filter games">{SHELVES.map(sh=><button key={sh.id} role="tab" aria-selected={shelf===sh.id} className={shelf===sh.id?"selected":""} onClick={()=>setShelf(sh.id)}><Icon name={sh.icon} size={20}/>{sh.label}</button>)}</div>
+    <a className="dx-banner" href="https://pathomnemonic.github.io/buzzword-dash-v2/" target="_blank" rel="noreferrer" aria-label="Play Dx Dash, our companion game, in a new tab">
+      <span className="dx-rays" aria-hidden="true"/>
+      <svg className="dx-pulse" viewBox="0 0 300 60" aria-hidden="true" preserveAspectRatio="none"><path d="M0 34h60l12-24 14 46 14-34 10 12h190" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      <span className="dx-logo" aria-hidden="true">DX<small>DASH</small></span>
+      <span className="dx-copy"><b>Name the diagnosis. Beat the clock!</b><small>Our companion game · opens in a new tab</small></span>
+      <span className="dx-play">PLAY<i>▶</i></span>
+    </a>
     <div className="game-grid" onPointerMove={e=>{if(e.pointerType!=="mouse")return;const card=(e.target as HTMLElement).closest(".game-card") as HTMLElement|null;if(!card)return;const b=card.getBoundingClientRect();card.style.setProperty("--ry",(((e.clientX-b.left)/b.width-.5)*10).toFixed(1)+"deg");card.style.setProperty("--rx",(-((e.clientY-b.top)/b.height-.5)*10).toFixed(1)+"deg");}} onPointerOut={e=>{const card=(e.target as HTMLElement).closest(".game-card") as HTMLElement|null;if(card){card.style.removeProperty("--rx");card.style.removeProperty("--ry");}}}>
-      {(shelf==="all"||shelf==="clinical")&&<a className="game-card dx-card" href="https://pathomnemonic.github.io/buzzword-dash-v2/" target="_blank" rel="noreferrer"><div className="game-cover"><DxArt/><span className="card-status">★ FEATURED</span></div><div className="game-card-body"><span className="game-category">Companion game</span><h3>Dx Dash</h3><span className="game-subtitle">Run the list. Learn the diagnosis.</span></div><div className="game-card-footer"><span>↗ opens Dx Dash</span><span className="card-play">PLAY ▶</span></div></a>}
       {ordered.map((game,index)=>{
-      const spotlight=game.id===featuredId;
-      const result=player.results.find(r=>r.date===today&&r.game===game.id&&r.scope===scope);
-      const cleared=!!result&&!freePlay;
-      return <button key={game.id} className={"game-card "+game.wash+(cleared?" card-done":"")+(spotlight?" card-spotlight":"")} onClick={()=>openGame(game.id,freePlay)} style={{animationDelay:(index*40)+"ms"}}>
-        <div className="game-cover"><GameArt game={game.id}/><span className={"card-status"+(cleared?" status-done":"")}>{cleared?"★ CLEARED":spotlight?"★ FEATURED TODAY":freePlay?"∞":"DAILY"}</span></div>
-        <div className="game-card-body"><span className="game-category">{game.category}</span><h3>{game.title}</h3><span className="game-subtitle">{game.subtitle}</span></div>
-        <div className="game-card-footer"><span>⏱ {game.time}</span><span className="card-play">PLAY ▶</span></div>
-      </button>;
-    })}</div>
-
+        const spotlight=game.id===featuredId;
+        const cleared=player.results.some(r=>r.date===today&&r.game===game.id&&r.scope===scope);
+        return <div key={game.id} className="game-card-wrap" style={{animationDelay:(index*40)+"ms"}}>
+          <button className={"game-card "+game.wash+(cleared?" card-done":"")+(spotlight?" card-spotlight":"")} onClick={()=>openGame(game.id,false)} aria-label={"Play "+game.title+(cleared?" (cleared today)":"")}>
+            <div className="game-cover"><GameArt game={game.id}/><span className={"card-status"+(cleared?" status-done":"")}>{cleared?"★ CLEARED":spotlight?"★ FEATURED":"DAILY"}</span></div>
+            <div className="game-card-body"><span className="game-category">{game.category}</span><h3>{game.title}</h3><span className="game-subtitle">{game.subtitle}</span></div>
+            <div className="game-card-footer"><span>⏱ {game.time}</span><span className="card-play">PLAY ▶</span></div>
+          </button>
+          <button className="card-free" onClick={()=>openGame(game.id,true)} aria-label={"Free Play "+game.title} title="Free Play: unlimited, not recorded">∞</button>
+        </div>;
+      })}
+      <div className="game-card-wrap"><button className="game-card surprise-card" onClick={surprise} aria-label="Surprise me with a random game"><div className="game-cover"><Icon name="dice" size={64}/></div><div className="game-card-body"><span className="game-category">Can't decide?</span><h3>Surprise me</h3><span className="game-subtitle">A random game you haven't cleared</span></div><div className="game-card-footer"><span>🎲 random</span><span className="card-play">GO ▶</span></div></button></div>
+    </div>
   </div>;
 }
 
@@ -413,23 +389,30 @@ function RoomScores({room}:{room:RoomState}){
   return <section className="room-score-inline"><div className="eyebrow">FRIENDS ROOM LEADERBOARD · {room.code}</div>{ranked.map((p,index)=><span key={p.uid}><b>#{index+1}</b> {p.name}: {p.finished?(p.score??0)+" points"+(p.perfect?" · perfect":""):"playing"}</span>)}</section>;
 }
 
-function StatsPage({player,scope,streak}:{player:PlayerData;scope:string;streak:number}){
+function StatsPage({player,scope,streak,done}:{player:PlayerData;scope:string;streak:number;done:number}){
+  const lvl=levelFor(player.xp??0);
   const trophies=computeTrophies(player,GAMES.length);
   const results=player.results.filter(r=>r.scope===scope);
   const perfect=results.filter(r=>r.perfect).length;
-  return <div className="stats-page"><span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div></div>
+  return <div className="stats-page"><section className="profile-card"><Mascot mood="happy" size={84}/><div className="profile-main"><span className="eyebrow">YOUR PROFILE</span><h1>Lv {lvl.level} · {lvl.title}</h1><i className="profile-bar" role="progressbar" aria-valuenow={lvl.pct} aria-valuemin={0} aria-valuemax={100}><span style={{width:lvl.pct+"%"}}/></i><small>{lvl.into} / {lvl.span} XP to the next level</small>
+        <div className="profile-chips"><span><Icon name="flame" size={22}/> {player.hideStreaks?"—":streak}-day streak</span><span><Icon name="star" size={22}/> {done}/{GAMES.length} cleared today</span><span className="profile-goal" title="Finish three daily games for a bonus chest">{[0,1,2].map(i=><i key={i} className={i<Math.min(done,3)?"on":""}/>)} {done>=3?"🎁 chest claimed":"daily goal"}</span></div></div></section>
+    <span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div></div>
     <section className="trophy-cabinet"><h2>Trophy cabinet <small>{trophies.filter(t=>t.earned).length} / {trophies.length}</small></h2><div className="trophy-grid">{trophies.map(t=><div key={t.id} className={"trophy"+(t.earned?" earned":"")}><span className="trophy-icon">{t.earned?t.icon:"🔒"}</span><b>{t.name}</b><small>{t.hint}</small></div>)}</div></section>
     <section className="stats-table"><h2>Game shelf</h2>{GAMES.map(g=>{const played=results.filter(r=>r.game===g.id);return <div key={g.id}><span>{g.title}</span><span>{played.length} played</span><b>Best run {Math.max(0,...played.map(r=>r.score))}</b></div>;})}</section>
     <p className="privacy-note">Progress and achievements are calculated from this device's saved results for the current arcade mode. Records stay local unless you choose Google Drive sync in Settings. Room leaderboards are private to the six-character room code.</p>
   </div>;
 }
 
-function SettingsPage({updateTheme,player,driveConnected,updateSetting,exportData,importData,onDriveSync}:{
-  updateTheme:(p:Partial<ThemeSettings>)=>void;player:PlayerData;driveConnected:boolean;updateSetting:(k:"sound"|"music"|"haptics"|"reducedMotion"|"hideStreaks",v:boolean)=>void;exportData:()=>void;importData:(file:File|undefined)=>void;onDriveSync:()=>Promise<void>;
+function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,driveConnected,updateSetting,exportData,importData,onDriveSync}:{
+  mode:Mode;specialty:Specialty;setMode:(m:Mode)=>void;setSpecialty:(s:Specialty)=>void;updateTheme:(p:Partial<ThemeSettings>)=>void;player:PlayerData;driveConnected:boolean;updateSetting:(k:"sound"|"music"|"haptics"|"reducedMotion"|"hideStreaks",v:boolean)=>void;exportData:()=>void;importData:(file:File|undefined)=>void;onDriveSync:()=>Promise<void>;
 }){
   const [syncing,setSyncing]=useState(false);
   const sync=async()=>{setSyncing(true);try{await onDriveSync();}finally{setSyncing(false);}};
   return <div className="settings-page"><span className="eyebrow">MAKE IT YOURS</span><h1>Preferences & backup</h1>
+    <section className="settings-card"><h2>Daily track</h2><p>Everyone on the same track gets the same daily puzzles. Open Arcade is the broad mix; pick a specialty to play your own field's dailies.</p>
+      <div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialties</button></div>
+      {mode==="specialty"&&<div className="specialty-picker"><div className="specialty-chips">{SPECIALTIES.map(sp=><button key={sp.id} onClick={()=>setSpecialty(sp.id)} className={specialty===sp.id?"selected":""}><span>{sp.icon}</span>{sp.short}</button>)}</div><div className="specialty-selected"><b>{SPECIALTIES.find(sp=>sp.id===specialty)?.name}</b><span>{SPECIALTIES.find(sp=>sp.id===specialty)?.blurb}</span></div></div>}
+    </section>
     <section className="settings-card look-card"><h2>Look &amp; feel</h2>{(()=>{const t=normalizeTheme(player.theme);return <>
       <p>Pick a palette, or tune your own. Changes apply instantly.</p>
       <div className="preset-grid" role="radiogroup" aria-label="Color palette">{PRESETS.map(p=><button key={p.id} role="radio" aria-checked={t.preset===p.id} className={"preset"+(t.preset===p.id?" on":"")} onClick={()=>updateTheme({preset:p.id,hue:p.hue,sat:p.sat})}><span className="preset-swatch" style={{background:swatch(p.hue,p.sat)}}><i/><i/><i/></span><b>{p.name}</b></button>)}</div>

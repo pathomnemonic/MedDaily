@@ -873,116 +873,154 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
 }
 
 
+/** Anagram Sprint: an endless unscramble run. Solves earn time back, misses cost time; speed and combos add points. */
+const SPRINT_START = 60, SPRINT_BONUS = 6, SPRINT_PENALTY = 4, SPRINT_TARGET = 240;
 function AnagramSprint({ seed, onDone }: Props) {
-  const rounds = useMemo(() => shuffle(scrambleWords, seeded(seed + 51)).slice(0, 5), [seed]);
-  const [round, setRound] = useState(0);
-  const [text, setText] = useState("");
-  const [tries, setTries] = useState(0);
-  const [hint, setHint] = useState(false);
-  const [roundFinished, setRoundFinished] = useState(false);
-  const [won, setWon] = useState(false);
+  const deck = useMemo(() => shuffle(scrambleWords, seeded(seed + 51)).filter(([w]) => w.length >= 5 && w.length <= 11), [seed]);
+  const [index, setIndex] = useState(0);
+  const [seconds, setSeconds] = useState(SPRINT_START);
+  const [picked, setPicked] = useState<number[]>([]);
+  const [order, setOrder] = useState(0);
   const [score, setScore] = useState(0);
-  const [seconds, setSeconds] = useState(75);
-  const [note, setNote] = useState("Five words. Seventy-five seconds. Solve each specimen before moving on.");
+  const [streak, setStreak] = useState(0);
+  const [log, setLog] = useState<{ word: string; points: number; fast: boolean }[]>([]);
+  const [note, setNote] = useState("Tap letters (or type) to spell the medical term. Each solve earns +" + SPRINT_BONUS + "s.");
+  const [hint, setHint] = useState(false);
+  const [bad, setBad] = useState(0);
   const [ended, setEnded] = useState(false);
+  const startedAt = useRef(Date.now());
   const done = useRef(false);
-  const word = rounds[round];
-  const scrambled = useMemo(() => {
-    const value = shuffle(word[0].split(""), seeded(seed + 51 + round * 73)).join("");
-    return value === word[0] ? value.slice(1) + value[0] : value;
-  }, [seed, word, round]);
+  const [word, definition] = deck[index % deck.length];
+  const tiles = useMemo(() => {
+    const letters = shuffle(word.split("").map((ch, i) => ({ ch, id: i })), seeded(seed + 51 + index * 73 + order * 7));
+    if (letters.map((t) => t.ch).join("") === word) letters.reverse();
+    return letters;
+  }, [seed, word, index, order]);
 
   useEffect(() => {
     if (ended) return;
-    const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    const timer = window.setInterval(() => setSeconds((v) => Math.max(0, v - 1)), 1000);
     return () => window.clearInterval(timer);
   }, [ended]);
+  useEffect(() => { if (!ended && seconds > 0 && seconds <= 5) sfx("tick"); }, [seconds, ended]);
   useEffect(() => {
     if (seconds !== 0 || ended || done.current) return;
-    done.current = true;
-    setEnded(true);
-    setNote("Time. The remaining words are revealed below.");
-    onDone(score, 100, score === 100);
-  }, [seconds, ended, score, onDone]);
+    done.current = true; setEnded(true); sfx("whoosh");
+    const solved = log.filter((l) => l.points > 0);
+    const fastSquares = log.map((l) => l.points === 0 ? "🟥" : l.fast ? "🟩" : "🟨").join("");
+    onDone(score, SPRINT_TARGET, score >= SPRINT_TARGET, "Anagram Sprint · " + solved.length + " word" + (solved.length === 1 ? "" : "s") + " · " + score + " pts\n" + (fastSquares || "⬛") + (streak >= 3 ? "\n🔥 best run on fire" : ""));
+  }, [seconds, ended, score, onDone, log, streak]);
 
-  const check = () => {
-    const answer = text.trim().replace(/\s/g, "").toUpperCase();
-    if (ended || roundFinished || !answer) return;
-    const nextTries = tries + 1;
-    setTries(nextTries);
-    if (answer === word[0]) {
-      const earned = hint ? 12 : nextTries === 1 ? 20 : nextTries === 2 ? 15 : 10;
-      setScore((current) => current + earned);
-      setWon(true);
-      setRoundFinished(true);
-      setNote("Unscrambled. +" + earned + " points.");
-    } else if (nextTries >= 3) {
-      setWon(false);
-      setRoundFinished(true);
-      setNote("Three attempts used. The answer is " + word[0] + ".");
-    } else {
-      setText("");
-      setNote("Not quite. " + (3 - nextTries) + " attempts left.");
+  const nextWord = (entry: { word: string; points: number; fast: boolean }) => {
+    setLog((l) => [...l, entry]); setIndex((i) => i + 1); setPicked([]); setHint(false); startedAt.current = Date.now();
+  };
+  const pick = (tileIndex: number) => {
+    if (ended || picked.includes(tileIndex)) return;
+    const next = [...picked, tileIndex];
+    setPicked(next); sfx("pop"); vibrate(6);
+    if (next.length === word.length) {
+      const guess = next.map((i) => tiles[i].ch).join("");
+      if (guess === word) {
+        const elapsed = (Date.now() - startedAt.current) / 1000;
+        const fast = elapsed <= 8;
+        const points = 10 + Math.max(0, word.length - 5) * 2 + (fast ? 5 : 0) + Math.min(10, streak * 2) - (hint ? 4 : 0);
+        setScore((v) => v + points); setStreak((v) => v + 1); setSeconds((v) => Math.min(90, v + SPRINT_BONUS));
+        reward(true, null, "+" + points);
+        setNote(word + " ✓  +" + points + (fast ? " (fast!)" : "") + " · +" + SPRINT_BONUS + "s");
+        nextWord({ word, points, fast });
+      } else {
+        reward(false); setBad((n) => n + 1); setStreak(0); setSeconds((v) => Math.max(0, v - SPRINT_PENALTY));
+        setNote("Not quite. −" + SPRINT_PENALTY + "s. Try again.");
+        window.setTimeout(() => setPicked([]), 280);
+      }
     }
   };
-  const next = () => {
-    if (!roundFinished || ended) return;
-    if (round === rounds.length - 1) {
-      const finalScore = score;
-      setEnded(true);
-      if (!done.current) { done.current = true; onDone(finalScore, 100, finalScore === 100); }
-      return;
-    }
-    setRound((current) => current + 1);
-    setText("");
-    setTries(0);
-    setHint(false);
-    setWon(false);
-    setRoundFinished(false);
-    setNote("Next specimen. Keep the pace.");
+  const unpick = (slot: number) => { if (!ended) setPicked((p) => p.slice(0, slot)); };
+  const skip = () => {
+    if (ended) return;
+    setStreak(0); setSeconds((v) => Math.max(0, v - 3)); setNote("Skipped " + word + ". −3s.");
+    nextWord({ word, points: 0, fast: false });
   };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (ended || e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      if (/^[a-zA-Z]$/.test(e.key)) {
+        const i = tiles.findIndex((tile, k) => tile.ch === e.key.toUpperCase() && !picked.includes(k));
+        if (i >= 0) { e.preventDefault(); pick(i); }
+      } else if (e.key === "Backspace") { e.preventDefault(); setPicked((p) => p.slice(0, -1)); }
+      else if (e.key === " " ) { e.preventDefault(); setOrder((o) => o + 1); setPicked([]); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tiles, picked, ended]);
 
-  return <div className="game-layout anagram-sprint">
-    <div className="anagram-hud"><div><span className="eyebrow">ANAGRAM SPRINT</span><b>{round + 1}<small> / 5</small></b></div><div className={"anagram-clock" + (seconds <= 10 ? " urgent" : "")}>{seconds}s</div><div><b>{score}<small> pts</small></b></div></div>
-    <div className="anagram-progress"><i style={{width:((round + Number(roundFinished))/5*100)+"%"}} /></div>
+  const solved = log.filter((l) => l.points > 0).length;
+  return <div className="game-layout anagram-sprint" data-own-sfx="true">
+    <div className="anagram-hud"><div><span className="eyebrow">WORDS</span><b>{solved}</b></div><div className={"anagram-clock" + (seconds <= 10 ? " urgent" : "")}>{seconds}s</div><div><b>{score}<small> pts</small></b>{streak >= 2 && <span className="sprint-streak">🔥 ×{streak}</span>}</div></div>
+    <div className="anagram-progress"><i style={{ width: Math.min(100, seconds / 90 * 100) + "%" }} /></div>
     {!ended ? <>
-      <div className="game-instructions"><span className="instruction-dot mint" /> Unscramble the medical term. Three attempts per word; a hint reduces the maximum points.</div>
-      <div className="anagram-board"><span className="eyebrow">SPECIMEN {round + 1} · {word[0].length} LETTERS</span><div className="anagram-letters">{scrambled.split("").map((ch, i) => <b key={i}>{ch}</b>)}</div>{hint && <p>{word[1]}</p>}</div>
-      {!roundFinished ? <>
-        <form className="word-entry" onSubmit={(event) => { event.preventDefault(); check(); }}><input value={text} onChange={(event) => setText(event.target.value.replace(/[^a-z]/gi, "").toUpperCase())} maxLength={word[0].length} placeholder="Your answer" autoComplete="off" /><button className="button button-primary" type="submit" disabled={!text.trim()}>Submit</button></form>
-        <div className="anagram-tools"><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Reveal definition hint</button><span>{tries} / 3 attempts</span></div>
-      </> : <div className="anagram-round-result"><b>{won ? "Correct" : "Answer revealed"} · {won ? "Points added" : "No points"}</b><h3>{word[0]}</h3><p>{word[1]}</p><button className="button button-primary full-button" onClick={next}>{round === 4 ? "Finish sprint" : "Next specimen →"}</button></div>}
+      <div className="anagram-board"><span className="eyebrow">UNSCRAMBLE · {word.length} LETTERS</span>
+        <div className={"ana-slots" + (bad ? "" : "")} key={bad}>{word.split("").map((_, slot) => <button key={slot} className={"ana-slot" + (picked[slot] !== undefined ? " filled" : "")} onClick={() => unpick(slot)} aria-label={picked[slot] !== undefined ? "Remove letter " + tiles[picked[slot]].ch : "Empty slot " + (slot + 1)}>{picked[slot] !== undefined ? tiles[picked[slot]].ch : ""}</button>)}</div>
+        <div className="ana-tiles">{tiles.map((tile, i) => <button key={i} className={"ana-tile" + (picked.includes(i) ? " used" : "")} disabled={picked.includes(i)} onClick={() => pick(i)}>{tile.ch}</button>)}</div>
+        {hint && <p className="ana-hint">{definition}</p>}
+      </div>
+      <div className="ana-tools"><button className="button button-quiet" onClick={() => { setOrder((o) => o + 1); setPicked([]); }}>🔀 Shuffle</button><button className="button button-quiet" onClick={() => setHint(true)} disabled={hint}>Clue (−4 pts)</button><button className="button button-quiet" onClick={skip}>Skip (−3s)</button></div>
       <p className="game-feedback" aria-live="polite">{note}</p>
-    </> : <Finish title="Sprint complete" detail={"You solved " + (round + Number(roundFinished)) + " of five specimens before the clock ran out."} score={score + " / 100"}><div className="reveal-groups">{rounds.map(([answer, clue], index) => <span key={answer}><b>{index + 1}. {answer}</b>{clue}</span>)}</div></Finish>}
+    </> : <Finish title="Time!" detail={"You unscrambled " + solved + " term" + (solved === 1 ? "" : "s") + " in the sprint."} score={score + " pts"}><div className="reveal-groups">{log.map((l, i) => <span key={i} className={l.points ? "" : "missed"}>{l.word}{l.points ? " +" + l.points : " skipped"}</span>)}</div></Finish>}
   </div>;
 }
 
-function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
-  const base = glyphPatterns[seed % glyphPatterns.length];
-  const generated = practice || seed % 2 === 1;
-  const item = useMemo(() => generated ? { ...base, name: base.name + (practice ? " · Variant" : " · Daily Variant"), pattern: transformNonogram(base.pattern, seed) } : base, [base, seed, practice, generated]);
+interface SketchItem { name: string; hint: string; pattern: number[][] }
+interface SketchResult { name: string; points: number; hints: number; secs: number; solved: boolean }
+
+/** One nonogram. Reports back when the grid satisfies every clue (or the player gives up). */
+function SketchBoard({ item, index, total, seed, onFinished }: { item: SketchItem; index: number; total: number; seed: number; onFinished: (r: SketchResult) => void }) {
   const [cells, setCells] = useState<number[][]>(() => item.pattern.map((row) => row.map(() => 0)));
-  const [checked, setChecked] = useState(false);
   const [history, setHistory] = useState<number[][][]>([]);
   const [autoMark, setAutoMark] = useState(true);
   const [pen, setPen] = useState<"cycle" | "fill" | "cross">("cycle");
   const [hints, setHints] = useState(0);
+  const [secs, setSecs] = useState(0);
+  const [result, setResult] = useState<SketchResult | null>(null);
   const painting = useRef<number | null>(null);
   const rowClues = item.pattern.map((row) => nonogramRuns(row));
   const colClues = item.pattern[0].map((_, c) => nonogramRuns(item.pattern.map((row) => row[c])));
-  const lineSolved = (line: number[], clue: number[]) => line.every((value) => value !== 0) && JSON.stringify(nonogramRuns(line.map((value) => value === 1 ? 1 : 0))) === JSON.stringify(clue);
+  const sameRuns = (line: number[], clue: number[]) => JSON.stringify(nonogramRuns(line.map((v) => v === 1 ? 1 : 0))) === JSON.stringify(clue);
+  const lineSolved = (line: number[], clue: number[]) => line.every((value) => value !== 0) && sameRuns(line, clue);
+  const satisfies = (grid: number[][]) => grid.every((row, r) => sameRuns(row, rowClues[r])) && colClues.every((clue, c) => sameRuns(grid.map((row) => row[c]), clue));
+
+  useEffect(() => {
+    if (result) return;
+    const t = window.setInterval(() => setSecs((v) => v + 1), 1000);
+    return () => window.clearInterval(t);
+  }, [result]);
+
+  const finish = (solved: boolean, grid: number[][]) => {
+    const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, v, c) => m + ((v === 1 && grid[r][c] === 1) || (v === 0 && grid[r][c] !== 1) ? 1 : 0), 0), 0);
+    const points = solved ? Math.max(40, 100 - hints * 8 - Math.max(0, Math.floor((secs - 60) / 10))) : Math.round(correct / 25 * 45);
+    const r = { name: item.name, points, hints, secs, solved };
+    setResult(r);
+    if (solved) { reward(true, null, "SOLVED!"); window.setTimeout(() => sfx("badge"), 350); } else sfx("wrong");
+  };
   /** When a line's filled runs already match its clue, the remaining unknown cells in it must be empty. */
   const withAutoMarks = (grid: number[][]): number[][] => {
     if (!autoMark) return grid;
     const next = grid.map((row) => [...row]);
-    const done = (line: number[], clue: number[]) => JSON.stringify(nonogramRuns(line.map((v) => v === 1 ? 1 : 0))) === JSON.stringify(clue);
-    next.forEach((row, r) => { if (done(row, rowClues[r])) row.forEach((v, c) => { if (v === 0) next[r][c] = 2; }); });
-    colClues.forEach((clue, c) => { if (done(next.map((row) => row[c]), clue)) next.forEach((row) => { if (row[c] === 0) row[c] = 2; }); });
+    next.forEach((row, r) => { if (sameRuns(row, rowClues[r])) row.forEach((v, c) => { if (v === 0) next[r][c] = 2; }); });
+    colClues.forEach((clue, c) => { if (sameRuns(next.map((row) => row[c]), clue)) next.forEach((row) => { if (row[c] === 0) row[c] = 2; }); });
     return next;
   };
-  const commit = (grid: number[][]) => { setHistory((h) => [...h.slice(-30), cells]); setCells(withAutoMarks(grid)); };
+  const commit = (grid: number[][]) => {
+    if (result) return;
+    const next = withAutoMarks(grid);
+    setHistory((h) => [...h.slice(-30), cells]); setCells(next);
+    if (satisfies(next)) finish(true, next);
+  };
   const setCell = (r: number, c: number, value: number) => commit(cells.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? value : v) : x));
-  const undo = () => setHistory((h) => { if (!h.length) return h; setCells(h[h.length - 1]); return h.slice(0, -1); });
+  const undo = () => setHistory((h) => { if (!h.length || result) return h; setCells(h[h.length - 1]); return h.slice(0, -1); });
   const hint = () => {
     const wrong: [number, number][] = [];
     item.pattern.forEach((row, r) => row.forEach((v, c) => { if ((v === 1 && cells[r][c] !== 1) || (v === 0 && cells[r][c] === 1)) wrong.push([r, c]); }));
@@ -991,20 +1029,56 @@ function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boo
     setHints((n) => n + 1);
     commit(cells.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? (item.pattern[r][c] ? 1 : 2) : v) : x));
   };
-  const check = () => {
-    const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, value, c) => m + ((value === 1 && cells[r][c] === 1) || (value === 0 && cells[r][c] === 2) ? 1 : 0), 0), 0);
-    setChecked(true);
-    onDone(Math.max(0, Math.round(correct / 25 * 100) - hints * 8), 100, correct === 25 && hints === 0);
+  const giveUp = () => { const grid = item.pattern.map((row) => row.map((v) => v ? 1 : 2)); setCells(grid); finish(false, cells); };
+
+  return <div className="game-layout cellsketch" data-own-sfx="true">
+    <div className="sketch-head"><span>PICTURE {index + 1} / {total}</span><b>{Math.floor(secs / 60)}:{String(secs % 60).padStart(2, "0")}</b><span>{hints ? "💡 " + hints : "no hints"}</span></div>
+    <div className="pen-row" role="radiogroup" aria-label="Pen mode"><span>Pen</span>{([["fill", "● Fill"], ["cross", "× Cross"], ["cycle", "↻ Cycle"]] as const).map(([k, l]) => <button key={k} role="radio" aria-checked={pen === k} className={pen === k ? "on" : ""} onClick={() => setPen(k)}>{l}</button>)}</div>
+    <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue) ? "clue-complete" : ""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue" + (lineSolved(row, rowClues[r]) ? " clue-complete" : "")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={!!result} aria-label={"Row " + (r + 1) + " column " + (c + 1) + ": " + (value === 1 ? "filled" : value === 2 ? "marked empty" : "unknown")} className={"nonogram-cell" + (value === 1 ? " filled-cell" : "") + (value === 2 ? " empty-marked" : "") + (result ? " reveal-cell r" + r : "")} onContextMenu={(e) => { e.preventDefault(); setCell(r, c, value === 2 ? 0 : 2); }} onPointerDown={(e) => { if (e.button === 2) return; e.preventDefault(); painting.current = pen === "fill" ? (value === 1 ? 0 : 1) : pen === "cross" ? (value === 2 ? 0 : 2) : (value + 1) % 3; setCell(r, c, painting.current); vibrate(6); }} onPointerEnter={(e) => { if (painting.current !== null && e.buttons === 1 && value !== painting.current) setCell(r, c, painting.current); }} onPointerUp={() => { painting.current = null; }} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setCell(r, c, (value + 1) % 3); } }}>{value === 1 ? "●" : value === 2 ? "×" : ""}</button>)}</div>)}</div></div>
+    {!result ? <>
+      <div className="nonogram-actions" onPointerLeave={() => { painting.current = null; }}><span>It solves itself the moment every clue is met.</span><span className="nonogram-tools"><button className="button button-quiet" onClick={undo} disabled={!history.length}>↶ Undo</button><button className="button button-quiet" onClick={hint}>💡 Hint −8</button><button className="button button-quiet" onClick={giveUp}>Reveal</button></span></div>
+      <label className="auto-toggle"><input type="checkbox" checked={autoMark} onChange={(e) => setAutoMark(e.target.checked)} /> Auto-mark × on finished lines · drag across cells to paint · right-click for ×</label>
+    </> : <div className="sketch-reveal"><div className="sketch-art" aria-hidden="true">{item.pattern.map((row, r) => <div key={r}>{row.map((v, c) => <i key={c} className={v ? "on" : ""} style={{ "--h": (r * 38 + c * 11) % 360, animationDelay: (r * 5 + c) * 35 + "ms" } as React.CSSProperties} />)}</div>)}</div>
+      <h3>{item.name.replace(/ ·.*$/, "")}</h3><p>{item.hint}</p><span className={"sketch-score" + (result.solved ? "" : " lost")}>{result.solved ? "Solved in " + result.secs + "s · +" + result.points : "Revealed · +" + result.points}</span>
+      <button className="button button-primary full-button" onClick={() => onFinished(result)}>{index + 1 === total ? "See results" : "Next picture ▶"}</button></div>}
+  </div>;
+}
+
+/** Cell Sketch: three pictures per run. Daily and generated variants alternate; solved boards finish themselves. */
+function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
+  const generated = practice || seed % 2 === 1;
+  const items = useMemo<SketchItem[]>(() => {
+    const names = new Set<string>(), picks: SketchItem[] = [];
+    for (const base of shuffle(glyphPatterns, seeded(seed + 61))) {
+      const key = base.name.replace(/ ·.*$/, "");
+      if (names.has(key)) continue;
+      names.add(key);
+      picks.push(generated ? { ...base, pattern: transformNonogram(base.pattern, seed + picks.length) } : base);
+      if (picks.length === 3) break;
+    }
+    return picks;
+  }, [seed, generated]);
+  const [index, setIndex] = useState(0);
+  const [results, setResults] = useState<SketchResult[]>([]);
+  const [finished, setFinished] = useState(false);
+  const done = useRef(false);
+  const total = results.reduce((n, r) => n + r.points, 0);
+  const advance = (r: SketchResult) => {
+    const all = [...results, r];
+    setResults(all);
+    if (all.length === items.length) {
+      setFinished(true);
+      if (!done.current) {
+        done.current = true;
+        const sum = all.reduce((n, x) => n + x.points, 0);
+        onDone(sum, items.length * 100, all.every((x) => x.solved && x.hints === 0 && x.points >= 90), "Cell Sketch · " + all.reduce((n, x) => n + x.secs, 0) + "s\n" + all.map((x) => !x.solved ? "🟥" : x.points >= 90 ? "🟩" : "🟨").join("") + (all.some((x) => x.hints) ? "\n💡 " + all.reduce((n, x) => n + x.hints, 0) + " hint(s)" : ""));
+      }
+    } else setIndex((i) => i + 1);
   };
   return <div className="game-layout">
-    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY PATTERN" : generated ? "GENERATED DAILY PATTERN" : "CURATED DAILY PATTERN"}</div>
-    <div className="game-instructions"><span className="instruction-dot lilac" /> Solve the 5×5 nonogram. Each clue gives the length of consecutive filled runs. Cycle each cell through unknown, filled, and marked empty to keep track without paper.</div>
-    <div className="pen-row" role="radiogroup" aria-label="Pen mode"><span>Pen</span>{([["fill", "● Fill"], ["cross", "× Cross"], ["cycle", "↻ Cycle"]] as const).map(([k, l]) => <button key={k} role="radio" aria-checked={pen === k} className={pen === k ? "on" : ""} onClick={() => setPen(k)}>{l}</button>)}</div>
-    <div className="nonogram-legend"><span><b>●</b> Filled</span><span><b>×</b> Empty</span><span><b>·</b> Unknown</span></div>
-    <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue)?"clue-complete":""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue"+(lineSolved(row,rowClues[r])?" clue-complete":"")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1) + ": " + (value===1?"filled":value===2?"marked empty":"unknown")} className={"nonogram-cell" + (value===1 ? " filled-cell" : "") + (value===2 ? " empty-marked" : "") + (checked && (item.pattern[r][c] ? value!==1 : value!==2) ? " error-cell" : "")} onContextMenu={(e) => { e.preventDefault(); setCell(r, c, value === 2 ? 0 : 2); }} onPointerDown={(e) => { if (e.button === 2) return; e.preventDefault(); painting.current = pen === "fill" ? (value === 1 ? 0 : 1) : pen === "cross" ? (value === 2 ? 0 : 2) : (value + 1) % 3; setCell(r, c, painting.current); vibrate(6); }} onPointerEnter={(e) => { if (painting.current !== null && e.buttons === 1 && value !== painting.current) setCell(r, c, painting.current); }} onPointerUp={() => { painting.current = null; }} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setCell(r, c, (value + 1) % 3); } }}>{value===1?"●":value===2?"×":""}</button>)}</div>)}</div></div>
-    <div className="nonogram-actions" onPointerLeave={() => { painting.current = null; }}><span>{cells.flat().filter((value)=>value!==0).length} / 25 marked{hints ? " · " + hints + " hint" + (hints > 1 ? "s" : "") : ""}</span><span className="nonogram-tools"><button className="button button-quiet" onClick={undo} disabled={checked || !history.length}>↶ Undo</button><button className="button button-quiet" onClick={hint} disabled={checked}>💡 Hint −8</button><button className="button button-quiet" onClick={()=>{setHistory((h)=>[...h,cells]);setCells(item.pattern.map((row)=>row.map(()=>0)));}} disabled={checked}>Reset</button></span></div>
-    <label className="auto-toggle"><input type="checkbox" checked={autoMark} onChange={(e) => setAutoMark(e.target.checked)} /> Auto-mark × on finished lines · drag across cells to paint</label>
-    {!checked ? <button className="button button-primary full-button" onClick={check}>Check pattern</button> : <Finish title="Pattern revealed" detail={"The hidden shape was " + item.name + ". " + item.hint + ". Filled cells are compared with the solution."} score={Math.round(item.pattern.reduce((n, row, r) => n + row.reduce((m, v, c) => m + ((v===1 && cells[r][c]===1) || (v===0 && cells[r][c]===2) ? 1 : 0), 0), 0) / 25 * 100) + " / 100"} />}
+    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY SET" : generated ? "GENERATED DAILY SET" : "CURATED DAILY SET"} · {total} pts</div>
+    {!finished ? <SketchBoard key={index} item={items[index]} index={index} total={items.length} seed={seed + index * 7} onFinished={advance} />
+      : <Finish title="Gallery complete" detail={results.map((r) => r.name + (r.solved ? " (" + r.secs + "s)" : " (revealed)")).join(" · ")} score={total + " / " + items.length * 100} />}
   </div>;
 }
 
