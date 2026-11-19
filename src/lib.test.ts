@@ -147,6 +147,14 @@ describe("Cell Sketch nonogram clues", () => {
 
 
 describe("expanded content integrity", () => {
+  it("keeps the expanded daily banks large and distributes answer positions", () => {
+    expect(connectionPuzzles.length).toBeGreaterThanOrEqual(70);
+    expect(diagnosisCases.length).toBeGreaterThanOrEqual(100);
+    expect(nextStepCases.length).toBeGreaterThanOrEqual(100);
+    const latestAnswers = nextStepCases.slice(-20).map((item) => item.answer);
+    expect([0, 1, 2, 3].map((position) => latestAnswers.filter((answer) => answer === position).length)).toEqual([5, 5, 5, 5]);
+  });
+
   it("keeps clinical case IDs unique and answer keys valid", () => {
     expect(new Set(diagnosisCases.map((item) => item.id)).size).toBe(diagnosisCases.length);
     expect(new Set(nextStepCases.map((item) => item.id)).size).toBe(nextStepCases.length);
