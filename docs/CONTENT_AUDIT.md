@@ -16,9 +16,9 @@ MedDaily exposes sixteen playable game formats. The retired Next Best Step bank 
 | Association Blitz | 208 unique pairs | 24-card, twelve-pair timed memory board with combo streaks, a 75-second clock, and a time bonus |
 | Triage Order | 42 sequences | Clinical sequence reconstruction with optional scored position hints |
 | Anagram Sprint | 111 terms | Five-word, 75-second timed scramble with hints and attempt-based scoring |
-| Cell Sketch | 44 named 5×5 boards (36 distinct shapes, including symmetry variants) + seeded Free Play transforms | Row and column run clues; CI verifies one valid solution per board |
+| Cell Sketch | 44 named 5×5 boards (36 distinct shapes, including symmetry variants) + seeded generated daily and Free Play transforms | Row and column run clues; CI verifies one valid solution per board |
 | What Has More? | 116 comparisons (50 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
-| Word Ladder | 36 curated ladders + procedural Free Play | Each intended solution path uses real words and one-letter changes |
+| Word Ladder | 36 curated ladders + seeded generated daily and Free Play ladders | Each intended solution path uses real words and one-letter changes |
 | Medical Spelling Hive | 50 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
 | Casefile Logic | 30 curated cases + seeded procedural daily rotation and Free Play | Alternates curated cases with generated, uniquely solvable 3×3 deduction grids; both modes include pencil marks and scored hints |
 | Deep Dive | 79 prompts, including 9 long-tail prompts with 60 accepted answers each | Timed multi-answer recall with capped round scoring and editorial rarity tiers |
