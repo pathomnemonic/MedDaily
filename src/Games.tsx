@@ -80,16 +80,18 @@ const DIVE_TIERS = ["Surface find", "Familiar current", "Reef discovery", "Rare 
 function DeepDive({ seed, onDone }: Props) {
   const prompts = useMemo(() => shuffle(deepDivePrompts, seeded(seed + 811)).slice(0, 7), [seed]);
   const [round, setRound] = useState(0);
-  const [seconds, setSeconds] = useState(25);
+  const [seconds, setSeconds] = useState(45);
   const [entry, setEntry] = useState("");
   const [revealed, setRevealed] = useState(false);
-  const [results, setResults] = useState<{ answer: string | null; points: number; tier: number | null }[]>([]);
-  const [last, setLast] = useState<DeepAnswer | null>(null);
-  const [message, setMessage] = useState("One answer per round. A valid, less-obvious answer dives deeper.");
+  const [roundAnswers, setRoundAnswers] = useState<DeepAnswer[]>([]);
+  const [roundPoints, setRoundPoints] = useState(0);
+  const [results, setResults] = useState<{ answers: DeepAnswer[]; points: number }[]>([]);
+  const [message, setMessage] = useState("Enter as many valid answers as you can before the timer expires. Less obvious answers earn more.");
   const [finished, setFinished] = useState(false);
   const done = useRef(false);
   const item = prompts[round];
-  const total = results.reduce((n, r) => n + r.points, 0);
+  const total = results.reduce((n, result) => n + result.points, 0) + (revealed ? 0 : roundPoints);
+  const maximum = prompts.reduce((sum, prompt) => sum + prompt.answers.reduce((n, answer) => n + DIVE_POINTS[answer.tier - 1], 0), 0);
 
   useEffect(() => {
     if (revealed || finished) return;
@@ -99,11 +101,10 @@ function DeepDive({ seed, onDone }: Props) {
 
   useEffect(() => {
     if (seconds !== 0 || revealed || finished) return;
+    setResults((current) => [...current.slice(0, round), { answers: roundAnswers, points: roundPoints }]);
     setRevealed(true);
-    setLast(null);
-    setResults((current) => current.length > round ? current : [...current, { answer: null, points: 0, tier: null }]);
-    setMessage("Signal lost. No accepted answer this round.");
-  }, [seconds, revealed, finished, round]);
+    setMessage("Time. Your answers are locked; review the full answer pool below.");
+  }, [seconds, revealed, finished, round, roundAnswers, roundPoints]);
 
   const submit = () => {
     if (revealed || finished || !entry.trim()) return;
@@ -112,81 +113,89 @@ function DeepDive({ seed, onDone }: Props) {
       [candidate.answer, ...(candidate.aliases ?? [])].some((accepted) => normalize(accepted) === value)
     );
     if (!match) {
-      setMessage("Not in the accepted-answer set. Check the category wording and try another answer.");
+      setMessage("Not in the accepted-answer set. Try a different valid answer; there is no penalty for a miss.");
+      return;
+    }
+    if (roundAnswers.some((answer) => normalize(answer.answer) === normalize(match.answer))) {
+      setMessage("Already counted. Find another answer.");
+      setEntry("");
       return;
     }
     const points = DIVE_POINTS[match.tier - 1];
-    setLast(match);
-    setResults((current) => [...current.slice(0, round), { answer: match.answer, points, tier: match.tier }]);
-    setRevealed(true);
-    setMessage("Accepted. Your answer earned " + points + " points.");
+    setRoundAnswers((current) => [...current, match]);
+    setRoundPoints((current) => current + points);
+    setEntry("");
+    setMessage("Accepted: " + match.answer + " · +" + points + " points. Keep going.");
   };
 
-  const pass = () => {
+  const lockRound = () => {
     if (revealed || finished) return;
-    setLast(null);
-    setResults((current) => [...current.slice(0, round), { answer: null, points: 0, tier: null }]);
+    setResults((current) => [...current.slice(0, round), { answers: roundAnswers, points: roundPoints }]);
     setRevealed(true);
-    setMessage("Round passed. No depth gained.");
+    setMessage("Round locked. Review the accepted answer pool and your discoveries.");
   };
 
   const next = () => {
-    const currentResults = results.length > round ? results.slice(0, round + 1) : [...results, { answer: null, points: 0, tier: null }];
+    const currentResults = results.length > round
+      ? results.slice(0, round + 1)
+      : [...results, { answers: roundAnswers, points: roundPoints }];
     if (round === prompts.length - 1) {
-      const score = currentResults.reduce((n, r) => n + r.points, 0);
+      const score = currentResults.reduce((n, result) => n + result.points, 0);
+      setResults(currentResults);
       setFinished(true);
       if (!done.current) {
         done.current = true;
-        onDone(score, 700, score === 700);
+        onDone(score, maximum, score === maximum);
       }
       return;
     }
     setResults(currentResults);
     setRound((value) => value + 1);
-    setSeconds(25);
+    setSeconds(45);
     setEntry("");
-    setLast(null);
+    setRoundAnswers([]);
+    setRoundPoints(0);
     setRevealed(false);
-    setMessage("New category. Think past the first obvious answer.");
+    setMessage("New category. Build a long list before the clock runs out.");
   };
 
   return <div className="game-layout dive-game">
     <div className="dive-hud">
-      <div><span className="eyebrow">DAILY DEEP DIVE</span><strong>{total * 10}<small> m</small></strong><span>depth reached</span></div>
-      <div className={"dive-timer" + (seconds <= 5 ? " urgent" : "")}><b>{revealed ? "✓" : seconds}</b><span>{revealed ? "LOCKED" : "SECONDS"}</span></div>
-      <div><span className="eyebrow">EXPEDITION</span><strong>{round + 1}<small> / 7</small></strong><span>prompts</span></div>
+      <div><span className="eyebrow">DAILY DEEP DIVE</span><strong>{total}<small> pts</small></strong><span>depth score</span></div>
+      <div className={"dive-timer" + (seconds <= 8 ? " urgent" : "")}><b>{revealed ? "✓" : seconds}</b><span>{revealed ? "LOCKED" : "SECONDS"}</span></div>
+      <div><span className="eyebrow">EXPEDITION</span><strong>{round + 1}<small> / 7</small></strong><span>{roundAnswers.length} answers found</span></div>
     </div>
-    <div className="dive-depth-track"><i style={{ width: Math.min(100, total / 7) + "%" }} /></div>
+    <div className="dive-depth-track"><i style={{ width: Math.min(100, total / Math.max(1, maximum) * 100) + "%" }} /></div>
     {!finished ? <>
       <div className="dive-prompt-card">
         <div className="dive-surface-art" aria-hidden="true"><span>◉</span><i>✦</i><b>≈</b></div>
         <span className="eyebrow">{item.scope.toUpperCase()} · PROMPT {round + 1}</span>
         <h2>{item.prompt}</h2>
-        <p>Type one answer. The accepted set is curated for this game; rarity tiers are editorial, not live population statistics.</p>
+        <p>List as many distinct answers as you can. Common answers score less; rarer curated answers score more. Rarity tiers are editorial, not live population statistics.</p>
       </div>
-      {!revealed ? <form className="dive-answer-row" onSubmit={(event) => { event.preventDefault(); submit(); }}>
-        <input value={entry} onChange={(event) => setEntry(event.target.value)} autoComplete="off" placeholder="Your answer…" aria-label="Your answer" />
-        <button className="button button-primary" type="submit" disabled={!entry.trim()}>Dive in ↗</button>
-        <button className="button button-quiet" type="button" onClick={pass}>Pass</button>
-      </form> : <div className="dive-result-card">
-        {last ? <>
-          <span className={"dive-tier tier-" + last.tier}>{DIVE_TIERS[last.tier - 1]} · {DIVE_POINTS[last.tier - 1]} pts</span>
-          <h3>{last.answer}</h3>
-          <p>{item.explanation}</p>
-          <div className="dive-answer-examples">{item.answers.slice().sort((a, b) => b.tier - a.tier).slice(0, 5).map((answer) => <span key={answer.answer}>{answer.answer}<b>{DIVE_POINTS[answer.tier - 1]}</b></span>)}</div>
-        </> : <>
-          <span className="dive-tier tier-0">No score this round</span>
-          <h3>Keep moving.</h3>
-          <p>{item.explanation}</p>
-        </>}
+      {!revealed ? <>
+        <form className="dive-answer-row" onSubmit={(event) => { event.preventDefault(); submit(); }}>
+          <input value={entry} onChange={(event) => setEntry(event.target.value)} autoComplete="off" placeholder="Type an answer…" aria-label="Your answer" />
+          <button className="button button-primary" type="submit" disabled={!entry.trim()}>Add answer ↗</button>
+          <button className="button button-quiet" type="button" onClick={lockRound}>Lock round</button>
+        </form>
+        <div className="dive-live-answers"><span>YOUR ANSWERS · {roundAnswers.length}</span>{roundAnswers.length ? roundAnswers.map((answer) => <div key={answer.answer}><b>{answer.answer}</b><span className={"dive-tier tier-" + answer.tier}>{DIVE_TIERS[answer.tier - 1]}</span><strong>+{DIVE_POINTS[answer.tier - 1]}</strong></div>) : <small>No answers yet. Keep digging.</small>}</div>
+      </> : <div className="dive-result-card">
+        <span className="dive-tier tier-5">ROUND COMPLETE · {roundPoints} POINTS · {roundAnswers.length} FOUND</span>
+        <h3>{roundAnswers.length ? "Your discoveries" : "No answers this round"}</h3>
+        <p>{item.explanation}</p>
+        <div className="dive-answer-examples">{item.answers.slice().sort((a, b) => b.tier - a.tier).map((answer) => {
+          const wasFound = roundAnswers.some((found) => found.answer === answer.answer);
+          return <span key={answer.answer} className={wasFound ? "answer-found" : "answer-missed"}>{wasFound ? "✓ " : "· "}{answer.answer}<b>{DIVE_POINTS[answer.tier - 1]}</b></span>;
+        })}</div>
         <button className="button button-primary full-button" onClick={next}>{round === 6 ? "Surface & see score" : "Next prompt ↓"}</button>
       </div>}
       <p className="game-feedback" aria-live="polite">{message}</p>
       <div className="dive-progress-dots">{prompts.map((_, i) => <i key={i} className={i < results.length ? "complete" : i === round ? "current" : ""} />)}</div>
     </> : <div className="dive-finale">
       <div className="dive-medal">✦</div><span className="eyebrow">EXPEDITION COMPLETE</span>
-      <h2>{total} / 700</h2><p>{total * 10} metres below the surface. {total >= 500 ? "A deep and impressive run." : "Every dive teaches you a new part of the map."}</p>
-      <div className="dive-log">{prompts.map((prompt, i) => <div key={prompt.id}><span>{i + 1}</span><b>{results[i]?.answer ?? "—"}</b><strong>+{results[i]?.points ?? 0}</strong></div>)}</div>
+      <h2>{total} / {maximum}</h2><p>{roundAnswers.length} accepted answers in the final prompt. Rarity tiers reward depth, not just speed.</p>
+      <div className="dive-log">{prompts.map((prompt, i) => <div key={prompt.id}><span>{i + 1}</span><b>{results[i]?.answers.map((answer) => answer.answer).join(", ") || "—"}</b><strong>+{results[i]?.points ?? 0}</strong></div>)}</div>
     </div>}
   </div>;
 }
