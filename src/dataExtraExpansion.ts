@@ -1,3 +1,5 @@
+import type { DeductionCase } from "./dataExtra";
+
 export const spellingHiveExpansion = [
 {title:"Clarity Round",letters:["C","L","A","R","I","T","Y"],center:"A",words:["CLARITY","TRIAL","TRAIL","TAIL","TALC","CART","TRAY","CLAY","RACY","TARRY","RIAL","LACY"],pangram:"CLARITY",hint:"The pangram is essential when communicating a clinical plan."},
 {title:"Capture the Clue",letters:["C","A","P","T","U","R","E"],center:"A",words:["CAPTURE","CAPER","CATER","CRATE","TRACE","REACT","CARP","CART","CARE","PEAR","PARE","RACE","TAPE","TAPER","PART","TRAP","PACT","ACRE"],pangram:"CAPTURE",hint:"The pangram describes what a good detective does."},
@@ -24,7 +26,7 @@ export const wordLaddersExpansion = [
 {start:"FEAR",end:"MEET",path:["FEAR","BEAR","BEER","BEET","MEET"],note:"A ladder that changes one letter per move."}
 ];
 
-export const deductionCasesExpansion = [
+export const deductionCasesExpansion: DeductionCase[] = [
 {
 title:"The Simulation Cart",
 briefing:"Three clinicians used different rooms and each checked out one simulation tool. Match every clinician to a room and tool.",
