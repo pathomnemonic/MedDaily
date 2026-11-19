@@ -150,7 +150,7 @@ export const scrambleWordsExpansion2 = [
 ["BLAST","An immature precursor cell"],
 ["SPERM","Male reproductive gamete"],
 ["VULVA","External female genital structures"],
-["VITAL","Essential; as in vital signs"],
+["VITAL","Essential to life; describes pulse, pressure, and temperature signs"],
 ["FLUID","A substance that flows"],
 ["FEVER","An elevated body temperature"],
 ["COUGH","A protective respiratory reflex"],

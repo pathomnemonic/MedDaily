@@ -1083,6 +1083,11 @@ function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boo
   </div>;
 }
 
+/** Card titles hide parenthetical working (per-item amounts, "approximate"), which would let players do the sum; it is shown after the reveal. */
+const splitNotes = (label: string): { title: string; notes: string } => {
+  const notes = [...label.matchAll(/\(([^)]*)\)/g)].map((m) => m[1].trim()).filter((n) => n.toLowerCase() !== "approximate");
+  return { title: label.replace(/\s*\([^)]*\)/g, "").trim(), notes: notes.join("; ") };
+};
 function HigherLower({ seed, onDone }: Props) {
   const list = useMemo(() => shuffle(higherLowerPairs.filter((item) => "fun" in item), seeded(seed + 29)).slice(0, 5).map((item, i) => seeded(seed * 31 + i * 17 + 5)() < 0.5 ? { ...item, a: item.b, av: item.bv, b: item.a, bv: item.av } : item), [seed]);
   const [round, setRound] = useState(0);
@@ -1108,7 +1113,7 @@ function HigherLower({ seed, onDone }: Props) {
   return <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot gold" /> Which quantity is greater? Five quick comparisons. Sometimes the answer is a tie.</div>
     <div className="higher-progress">COMPARISON {Math.min(round + 1, 5)} / 5 <span>{score} right</span></div>
-    {!finished ? <div className="higher-cards"><button className={"higher-card" + (reveal && correct === "a" ? " right" : reveal && picked === "a" ? " wrong" : "")} onClick={() => choose("a")} disabled={reveal}><span>A</span><b>{item.a}</b>{reveal && <strong>{item.av.toLocaleString("en-US")} <small>{item.unit}</small></strong>}</button><div className="higher-or">{reveal && correct === "tie" ? "TIE" : "OR"} <button onClick={() => choose("tie")} disabled={reveal}>=</button></div><button className={"higher-card" + (reveal && correct === "b" ? " right" : reveal && picked === "b" ? " wrong" : "")} onClick={() => choose("b")} disabled={reveal}><span>B</span><b>{item.b}</b>{reveal && <strong>{item.bv.toLocaleString("en-US")} <small>{item.unit}</small></strong>}</button></div> : <Finish title="Comparison complete" detail={"You called " + score + " of " + list.length + " comparisons correctly."} score={Math.round(score/list.length*100) + " / 100"} />}
+    {!finished ? <div className="higher-cards"><button className={"higher-card" + (reveal && correct === "a" ? " right" : reveal && picked === "a" ? " wrong" : "")} onClick={() => choose("a")} disabled={reveal}><span>A</span><b>{splitNotes(item.a).title}</b>{reveal && <strong>{item.av.toLocaleString("en-US")} <small>{item.unit}</small>{splitNotes(item.a).notes && <small className="higher-note">{splitNotes(item.a).notes}</small>}</strong>}</button><div className="higher-or">{reveal && correct === "tie" ? "TIE" : "OR"} <button onClick={() => choose("tie")} disabled={reveal}>=</button></div><button className={"higher-card" + (reveal && correct === "b" ? " right" : reveal && picked === "b" ? " wrong" : "")} onClick={() => choose("b")} disabled={reveal}><span>B</span><b>{splitNotes(item.b).title}</b>{reveal && <strong>{item.bv.toLocaleString("en-US")} <small>{item.unit}</small>{splitNotes(item.b).notes && <small className="higher-note">{splitNotes(item.b).notes}</small>}</strong>}</button></div> : <Finish title="Comparison complete" detail={"You called " + score + " of " + list.length + " comparisons correctly."} score={Math.round(score/list.length*100) + " / 100"} />}
     {reveal && <p className="game-feedback">{item.explanation} <span className="source-note">{item.source}</span></p>}
   </div>;
 }
