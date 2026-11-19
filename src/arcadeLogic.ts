@@ -129,3 +129,13 @@ export function transformNonogram(pattern: readonly (readonly number[])[], seed:
   if (flip) result = result.map((row) => [...row].reverse());
   return result;
 }
+
+/** Score a correct Association Blitz pair; combo is the streak before this match. */
+export function associationPairPoints(combo: number): number {
+  return 100 + Math.min(Math.max(0, Math.floor(combo)) * 10, 50);
+}
+
+/** Association Blitz time bonus, capped at the 75-second round maximum. */
+export function associationTimeBonus(secondsRemaining: number): number {
+  return Math.max(0, Math.min(75, Math.floor(secondsRemaining))) * 2;
+}
