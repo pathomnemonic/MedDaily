@@ -291,7 +291,8 @@ function TriviaRumble({ seed, onDone }: Props) {
     setStage("done");
     if (!done.current) {
       done.current = true;
-      onDone(best * 100, limit * 100, best === limit);
+      const share = "Trivia Rumble · " + best + " correct\\n" + players.map((player) => player.name + ": " + player.crowns.map((id) => triviaCategories.find((category) => category.id === id)?.name ?? id).join(" · ")).join("\\n");
+      onDone(best * 100, limit * 100, best === limit, share);
     }
   };
 
@@ -743,7 +744,7 @@ function Labline({ seed, onDone, specialty = "general" }: Props) {
     setMessage(diff <= item.tolerance ? "Bullseye — inside the expected reference window." : diff <= item.tolerance * 2 ? "Close estimate. Tighten your range next round." : "A useful reference point to remember.");
     if (round === rounds.length - 1) {
       setFinished(true);
-      if (!done.current) { done.current = true; onDone(nextTotal, rounds.length * 100, nextTotal === rounds.length * 100); }
+      if (!done.current) { done.current = true; const share = "Labline · " + rounds.length + " estimates\\n" + [...results, {points:earned}].map((result) => result.points >= 80 ? "🟩" : result.points >= 50 ? "🟨" : "⬛").join("") + "\\n" + nextTotal + " / " + rounds.length * 100; onDone(nextTotal, rounds.length * 100, nextTotal === rounds.length * 100, share); }
     }
   };
   const next = () => {
