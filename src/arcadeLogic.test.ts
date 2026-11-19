@@ -209,3 +209,13 @@ describe("Labline scoring", () => {
     expect(labStreakBonus(0)).toBe(0); expect(labStreakBonus(2)).toBe(20); expect(labStreakBonus(9)).toBe(30);
   });
 });
+
+import { bodyTapPoints } from "./arcadeLogic";
+describe("Body Map Blitz proximity scoring", () => {
+  it("scores hits by speed and near misses by distance", () => {
+    expect([2, 6, 12].map((t) => bodyTapPoints(true, 0, t))).toEqual([10, 8, 6]);
+    expect([0.02, 0.05, 0.09, 0.2].map((d) => bodyTapPoints(false, d, 1))).toEqual([5, 3, 1, 0]);
+    expect(bodyTapPoints(false, NaN, 1)).toBe(0);
+    expect(bodyTapPoints(false, Infinity, 1)).toBe(0);
+  });
+});

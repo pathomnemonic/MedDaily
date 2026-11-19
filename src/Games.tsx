@@ -4,8 +4,9 @@ import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks
 import { deductionCases, glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
+import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
+import { anteriorMuscles, posteriorMuscles } from "./dataBodyMuscles";
 import { mimeDeck } from "./dataMime";
 import { fiveLetterWords } from "./dataFiveLetter";
 import { medicalRungWords } from "./dataRungs";
@@ -1449,17 +1450,66 @@ const ORGANS: Organ[] = [
   { id: "brain", name: "Brain", fact: "About 2% of body weight but around 20% of the body's energy use.", node: (h) => <g><ellipse cx={100} cy={26} rx={17} ry={13} {...organStyle("#ff9fc2", h)} /><path d="M92 22q4 4 0 8M104 20q-4 4 0 9M99 16v6" fill="none" stroke={BODY_INK} strokeWidth={1.5} strokeLinecap="round" /></g> }
 ];
 const BODY_SECONDS = 15;
+type BodyView = "organs" | "front" | "back";
+interface BodyTarget { id: string; name: string; fact: string; view: BodyView; keys?: string[] }
+/** Muscle targets use outlines from `dataBodyMuscles.ts` (keys select the polygons; a muscle may span both sides). */
+const MUSCLE_TARGETS: BodyTarget[] = [
+  { id: "pec", view: "front", keys: ["chest"], name: "Pectoralis major", fact: "Adducts and medially rotates the arm; supplied by the medial and lateral pectoral nerves." },
+  { id: "rectus", view: "front", keys: ["abs"], name: "Rectus abdominis", fact: "The \"six-pack\" muscle, divided by tendinous intersections; supplied by the thoracoabdominal nerves (T7–T12)." },
+  { id: "extobl", view: "front", keys: ["obliques"], name: "External oblique", fact: "The flank muscle that rotates and flexes the trunk; its aponeurosis forms the anterior wall of the inguinal canal." },
+  { id: "biceps", view: "front", keys: ["biceps"], name: "Biceps brachii", fact: "Flexes the elbow and supinates the forearm; supplied by the musculocutaneous nerve (C5–C6)." },
+  { id: "deltA", view: "front", keys: ["front-deltoids"], name: "Deltoid (anterior fibres)", fact: "Flexes the shoulder; the axillary nerve supplies it and is at risk in surgical-neck humerus fractures." },
+  { id: "quads", view: "front", keys: ["quadriceps"], name: "Quadriceps femoris", fact: "Extends the knee; supplied by the femoral nerve (L2–L4), which the patellar reflex tests." },
+  { id: "flexors", view: "front", keys: ["forearm"], name: "Forearm flexors", fact: "Mostly median nerve, with flexor carpi ulnaris and the medial flexor digitorum profundus on the ulnar nerve." },
+  { id: "trap", view: "back", keys: ["trapezius"], name: "Trapezius", fact: "Elevates, retracts and rotates the scapula; supplied by the spinal accessory nerve (CN XI)." },
+  { id: "lats", view: "back", keys: ["upper-back"], name: "Latissimus dorsi", fact: "Extends, adducts and medially rotates the arm; supplied by the thoracodorsal nerve." },
+  { id: "deltP", view: "back", keys: ["back-deltoids"], name: "Deltoid (posterior fibres)", fact: "Extends and laterally rotates the shoulder; supplied by the axillary nerve." },
+  { id: "triceps", view: "back", keys: ["triceps"], name: "Triceps brachii", fact: "Extends the elbow; supplied by the radial nerve, so a humeral shaft fracture can weaken it." },
+  { id: "erector", view: "back", keys: ["lower-back"], name: "Lower back (erector spinae)", fact: "Extends and stabilizes the spine; supplied by the dorsal rami of spinal nerves." },
+  { id: "glute", view: "back", keys: ["gluteal"], name: "Gluteus maximus", fact: "The main hip extensor; supplied by the inferior gluteal nerve." },
+  { id: "hams", view: "back", keys: ["hamstring"], name: "Hamstrings", fact: "Extend the hip and flex the knee; supplied by the sciatic nerve (tibial division, plus common fibular for biceps femoris short head)." },
+  { id: "adduct", view: "back", keys: ["adductor"], name: "Hip adductors", fact: "The inner-thigh group; mostly supplied by the obturator nerve." },
+  { id: "gastroc", view: "back", keys: ["calves"], name: "Gastrocnemius (calf)", fact: "Plantarflexes the ankle and flexes the knee; supplied by the tibial nerve (S1–S2)." },
+  { id: "extensors", view: "back", keys: ["forearm"], name: "Forearm extensors", fact: "Supplied by the radial nerve (mainly its posterior interosseous branch)." }
+];
+const ORGAN_TARGETS: BodyTarget[] = ORGANS.map((o) => ({ id: o.id, name: o.name, fact: o.fact, view: "organs" as BodyView }));
+const BODY_VIEW_LABEL: Record<BodyView, string> = { organs: "Organs", front: "Muscles · front", back: "Muscles · back" };
+const BODY_CM_PER_UNIT: Record<BodyView, number> = { organs: 0.73, front: 0.87, back: 0.87 };
+const BODY_GEOM = "path,ellipse,rect,polygon,circle";
+
+/** Measures a tap against the rendered shapes of one target: inside the fill/stroke, or the nearest outline distance in screen px. */
+function measureTap(shapes: Element[], clientX: number, clientY: number): { inside: boolean; px: number } {
+  let inside = false, best = Infinity;
+  for (const node of shapes) {
+    const el = node as unknown as SVGGeometryElement;
+    const m = el.getScreenCTM?.();
+    if (!m || typeof el.getTotalLength !== "function") continue;
+    const local = new DOMPoint(clientX, clientY).matrixTransform(m.inverse());
+    if (el.isPointInFill(local) || el.isPointInStroke(local)) { inside = true; best = 0; break; }
+    const len = el.getTotalLength();
+    for (let i = 0; i <= 60; i++) {
+      const pt = el.getPointAtLength((len * i) / 60).matrixTransform(m);
+      best = Math.min(best, Math.hypot(pt.x - clientX, pt.y - clientY));
+    }
+  }
+  return { inside, px: best };
+}
+
 function BodyMapBlitz({ seed, onDone }: Props) {
-  const targets = useMemo(() => shuffle(ORGANS, seeded(seed + 313)).slice(0, 10), [seed]);
+  const targets = useMemo(() => {
+    const rnd = seeded(seed + 313);
+    return [...shuffle(ORGAN_TARGETS, rnd).slice(0, 4), ...shuffle(MUSCLE_TARGETS.filter((t) => t.view === "front"), rnd).slice(0, 3), ...shuffle(MUSCLE_TARGETS.filter((t) => t.view === "back"), rnd).slice(0, 3)];
+  }, [seed]);
   const [round, setRound] = useState(0);
-  const [tries, setTries] = useState(0);
   const [started, setStarted] = useState(Date.now());
   const [seconds, setSeconds] = useState(BODY_SECONDS);
   const [state, setState] = useState<"ask" | "reveal">("ask");
   const [message, setMessage] = useState("");
   const [pts, setPts] = useState<number[]>([]);
   const [marks, setMarks] = useState<string[]>([]);
+  const [pin, setPin] = useState<{ x: number; y: number } | null>(null);
   const [finished, setFinished] = useState(false);
+  const svgRef = useRef<SVGSVGElement>(null);
   const done = useRef(false);
   const target = targets[round];
   const total = pts.reduce((n, v) => n + v, 0);
@@ -1476,20 +1526,29 @@ function BodyMapBlitz({ seed, onDone }: Props) {
     setMessage(lead + target.name + ": " + target.fact);
     setState("reveal");
   };
-  const tap = (organ: Organ, el: Element) => {
-    if (state !== "ask") return;
-    const kidney = organ.id === "kidney" && target.id === "kidney";
-    if (organ.id === target.id || kidney) {
-      const elapsed = (Date.now() - started) / 1000;
-      const first = tries === 0;
-      const points = first ? (elapsed <= 4 ? 10 : elapsed <= 8 ? 8 : 6) : tries === 1 ? 3 : 1;
-      reward(true, el, "+" + points);
-      resolve(points, first ? (elapsed <= 4 ? "🟩" : "🟨") : tries === 1 ? "🟧" : "🟥", "Yes! ");
+  const shapesOf = (id: string) => Array.from(svgRef.current?.querySelectorAll('[data-shape="' + id + '"] ' + BODY_GEOM) ?? []);
+  const tap = (clientX: number, clientY: number, el: Element | null) => {
+    const svg = svgRef.current;
+    if (state !== "ask" || !svg) return;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return;
+    const at = new DOMPoint(clientX, clientY).matrixTransform(ctm.inverse());
+    setPin({ x: at.x, y: at.y });
+    const width = svg.getBoundingClientRect().width || 1;
+    const hit = measureTap(shapesOf(target.id), clientX, clientY);
+    const elapsed = (Date.now() - started) / 1000;
+    const distFrac = hit.px / width;
+    const points = bodyTapPoints(hit.inside, distFrac, elapsed);
+    const unitPx = ctm.a || 1;
+    const cm = Math.round((hit.px / unitPx) * BODY_CM_PER_UNIT[target.view]);
+    const other = !hit.inside ? targets.concat(ORGAN_TARGETS, MUSCLE_TARGETS).find((t) => t.view === target.view && t.id !== target.id && measureTap(shapesOf(t.id), clientX, clientY).inside) : undefined;
+    if (hit.inside) {
+      if (el) reward(true, el, "+" + points); else reward(true, svg, "+" + points);
+      resolve(points, elapsed <= 4 ? "🟩" : "🟨", "Bullseye! ");
     } else {
-      reward(false, el);
-      setTries((t) => t + 1);
-      setMessage("That's the " + organ.name.toLowerCase() + ". Try again!");
-      if (tries >= 2) resolve(0, "⬛", "Out of tries. ");
+      reward(false, svg);
+      const gap = cm <= 0 ? "just off" : "about " + cm + " cm off";
+      resolve(points, points >= 5 ? "🟧" : points > 0 ? "🟥" : "⬛", (other ? "That was the " + other.name.toLowerCase() + ". " : "") + (points > 0 ? "So close, " + gap + " (+" + points + "). " : "Missed, " + gap + ". "));
     }
   };
   const next = () => {
@@ -1501,13 +1560,18 @@ function BodyMapBlitz({ seed, onDone }: Props) {
       }
       return;
     }
-    setRound((v) => v + 1); setTries(0); setMessage(""); setSeconds(BODY_SECONDS); setStarted(Date.now()); setState("ask");
+    setRound((v) => v + 1); setMessage(""); setPin(null); setSeconds(BODY_SECONDS); setStarted(Date.now()); setState("ask");
   };
+  const view = target?.view ?? "organs";
+  const hotFill = (id: string) => (state === "reveal" && id === target.id ? "#ffd54a" : "#ffd9b8");
+  const muscles = view === "front" ? anteriorMuscles : posteriorMuscles;
+  const muscleIds = (key: string) => MUSCLE_TARGETS.filter((t) => t.view === view && t.keys?.includes(key));
   return <div className="game-layout bodymap-game" data-own-sfx="true">
     <div className="bodymap-hud"><span>{Math.min(round + 1, targets.length)} / {targets.length}</span><b>{total} pts</b><div className={"bodymap-clock" + (seconds <= 5 ? " urgent" : "")}><i style={{ width: (state === "ask" ? seconds / BODY_SECONDS * 100 : 0) + "%" }} /></div></div>
     {!finished ? <>
       <div className="bodymap-prompt">Tap the <b>{target.name}</b></div>
-      <svg className="bodymap-svg" viewBox="20 0 160 240" role="group" aria-label="Body diagram. The patient's right side is on your left.">
+      <p className="bodymap-view">{BODY_VIEW_LABEL[view]} · closer taps score more</p>
+      {view === "organs" ? <svg ref={svgRef} data-target={target.id} className="bodymap-svg" viewBox="20 0 160 240" role="group" aria-label="Body diagram. The patient's right side is on your left." onClick={(e) => tap(e.clientX, e.clientY, e.detail === 0 ? e.target as Element : null)}>
         <path d="M52 74Q30 84 26 132" fill="none" stroke={BODY_INK} strokeWidth={16} strokeLinecap="round" /><path d="M52 74Q30 84 26 132" fill="none" stroke="#ffd9b8" strokeWidth={11} strokeLinecap="round" />
         <path d="M148 74Q170 84 174 132" fill="none" stroke={BODY_INK} strokeWidth={16} strokeLinecap="round" /><path d="M148 74Q170 84 174 132" fill="none" stroke="#ffd9b8" strokeWidth={11} strokeLinecap="round" />
         <circle cx={100} cy={28} r={23} fill="#ffd9b8" stroke={BODY_INK} strokeWidth={2.5} />
@@ -1515,12 +1579,21 @@ function BodyMapBlitz({ seed, onDone }: Props) {
         <path d="M58 66Q100 58 142 66Q154 70 154 92L152 192Q150 236 100 238Q50 236 48 192L46 92Q46 70 58 66Z" fill="#ffd9b8" stroke={BODY_INK} strokeWidth={2.5} />
         {ORGANS.map((organ) => {
           const hot = state === "reveal" && organ.id === target.id;
-          return <g key={organ.id} className={"organ" + (hot ? " organ-hot" : "")} role="button" tabIndex={0} aria-label={organ.name} onClick={(e) => tap(organ, e.currentTarget as Element)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tap(organ, e.currentTarget as Element); } }}>{organ.node(hot)}</g>;
+          return <g key={organ.id} data-shape={organ.id} className={"organ" + (hot ? " organ-hot" : "")} role="button" tabIndex={0} aria-label={organ.name} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); (e.currentTarget as unknown as HTMLElement).dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 0 })); } }}>{organ.node(hot)}</g>;
         })}
-      </svg>
-      <p className="bodymap-note">The patient's right is on your left.</p>
+        {pin && <circle className="bodymap-pin" cx={pin.x} cy={pin.y} r={4} />}
+      </svg> : <svg ref={svgRef} data-target={target.id} className="bodymap-svg bodymap-muscles" viewBox="0 0 100 200" role="img" aria-label={"Muscle diagram, " + (view === "front" ? "front view" : "back view") + ". Tap the named muscle."} onClick={(e) => tap(e.clientX, e.clientY, null)}>
+        {muscles.map((group) => {
+          const owners = muscleIds(group.m);
+          return <g key={group.m} data-shape={owners[0]?.id} className={"muscle" + (owners.some((t) => t.id === target.id) && state === "reveal" ? " organ-hot" : "")}>
+            {group.p.map((points, i) => <polygon key={i} points={points} fill={owners.length && hotFill(owners[0].id) === "#ffd54a" && owners[0].id === target.id ? "#ffd54a" : group.m === "head" ? "#ffd9b8" : "#f2c4a0"} stroke={BODY_INK} strokeWidth={0.7} strokeLinejoin="round" />)}
+          </g>;
+        })}
+        {pin && <circle className="bodymap-pin" cx={pin.x} cy={pin.y} r={2.2} />}
+      </svg>}
+      <p className="bodymap-note">{view === "back" ? "Back view: the patient's right is on your right." : "The patient's right is on your left."}</p>
       <p className="game-feedback" aria-live="polite">{message}</p>
-      {state === "reveal" && <button className="button button-primary full-button" onClick={next}>{round === targets.length - 1 ? "See my score" : "Next organ ▶"}</button>}
+      {state === "reveal" && <button className="button button-primary full-button" onClick={next}>{round === targets.length - 1 ? "See my score" : "Next ▶"}</button>}
     </> : <Finish title="Map complete" detail={marks.join("")} score={total + " / 100"} />}
   </div>;
 }

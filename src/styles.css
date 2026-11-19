@@ -1770,3 +1770,9 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .diff-1{--dc:#3ddc97}.diff-2{--dc:#ffc247}.diff-3{--dc:#ff6b73}
 .diff{color:var(--dc)}.diff-pips b{background:var(--dc)}
 .diff-pips b{opacity:.28}
+
+.bodymap-view{margin:0 0 6px;text-align:center;font:700 10px var(--font-game);letter-spacing:1px;text-transform:uppercase;color:hsl(calc(var(--hue) - 10) calc(50% * var(--sat)) 78%)}
+.bodymap-muscles .muscle polygon{transition:fill .15s}
+.bodymap-muscles .muscle:hover polygon{filter:brightness(1.08)}
+.bodymap-pin{fill:#ff3b6b;stroke:#fff;stroke-width:1.2;pointer-events:none;animation:pinDrop .3s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pinDrop{from{transform:scale(0);transform-box:fill-box;transform-origin:center}to{transform:scale(1);transform-box:fill-box;transform-origin:center}}
