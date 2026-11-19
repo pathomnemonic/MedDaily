@@ -578,10 +578,16 @@ function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
   return <div className="game-layout wordhunt-game">
     <div className="case-banner microbe-banner"><span>WORD HUNT · THEMED SEARCH</span><strong>{pack.name}</strong><small>Find every hidden word. Words may run forwards, backwards, vertically, horizontally, or diagonally.</small></div>
     <div className="wordhunt-layout">
-      <div className="wordsearch-board" role="group" aria-label="Letter grid">
+      <div className="wordsearch-board" role="group" aria-label="Letter grid" onPointerMove={(event) => {
+        const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-cell-index]") as HTMLElement | null;
+        if (tile) preview(Number(tile.dataset.cellIndex));
+      }} onPointerUp={(event) => {
+        const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-cell-index]") as HTMLElement | null;
+        if (tile) finish(Number(tile.dataset.cellIndex));
+      }} onPointerCancel={clear}>
         {board.grid.flat().map((letter, i) => {
           const isFound = foundPaths.some((cells) => cells.includes(i));
-          return <button key={i} type="button" className={"letter-tile" + (path.includes(i) ? " path-cell" : "") + (isFound ? " found-cell" : "")} onPointerDown={() => begin(i)} onPointerEnter={() => preview(i)} onPointerUp={() => finish(i)} onPointerCancel={clear} onClick={(event) => { if (event.detail === 0) { if (start === null) begin(i); else finish(i); } }} disabled={ended || isFound} aria-label={"Row " + (Math.floor(i / 14) + 1) + ", column " + (i % 14 + 1) + ", " + letter}>
+          return <button key={i} data-cell-index={i} type="button" className={"letter-tile" + (path.includes(i) ? " path-cell" : "") + (isFound ? " found-cell" : "")} onPointerDown={() => begin(i)} onClick={(event) => { if (event.detail === 0) { if (start === null) begin(i); else finish(i); } }} disabled={ended || isFound} aria-label={"Row " + (Math.floor(i / 14) + 1) + ", column " + (i % 14 + 1) + ", " + letter}>
             {letter}
           </button>;
         })}
