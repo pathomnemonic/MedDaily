@@ -25,6 +25,9 @@ const GAMES: GameMeta[] = [
   {id:"ladder",title:"Word Ladder",subtitle:"One letter at a time",description:"Climb from one word to another with tiny changes.",icon:"⌁",wash:"peach",time:"3 min",category:"Word play",level:"Moderate"},
   {id:"hive",title:"Spelling Hive",subtitle:"Seven letters, a swarm of words",description:"Find as many words as you can from seven letters and the center tile.",icon:"✿",wash:"gold",time:"3 min",category:"Word play",level:"Easy → tricky"},
   {id:"casefile",title:"Casefile Logic",subtitle:"The clues don't lie",description:"Solve a fictional three-person deduction grid using rooms, objects, and clues.",icon:"⌕",wash:"lilac",time:"4 min",category:"Logic puzzle",level:"Moderate"},
+  {id:"dive",title:"Deep Dive",subtitle:"Rare finds go deeper",description:"Seven timed open-answer prompts. Less obvious accepted answers earn more points.",icon:"🌊",wash:"blue",time:"4 min",category:"Open-answer trivia",level:"Think sideways"},
+  {id:"trivia",title:"Trivia Rumble",subtitle:"Spin. Answer. Collect badges.",description:"A six-category trivia wheel with solo and pass-and-play modes.",icon:"🎡",wash:"orange",time:"8–12 min",category:"Party quiz",level:"All levels"},
+  {id:"lettergrid",title:"Letter Lab",subtitle:"Find words in the grid",description:"Connect neighboring letters to uncover as many hidden words as possible before time runs out.",icon:"🔤",wash:"mint",time:"2 min",category:"Word hunt",level:"Fast & fun"},
 ];
 const SPECIALTIES: { id: Specialty; name: string; short: string; icon: string; blurb: string }[] = [
   {id:"internal",name:"Internal Medicine",short:"IM",icon:"✚",blurb:"The broad medical wards: physiology, diagnosis, and management."},
@@ -180,18 +183,18 @@ export default function App() {
       </button>
       <nav className="top-nav" aria-label="Main navigation">
         <button className={!activeGame&&screen==="home"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("home");}}>Arcade</button>
-        <button className={screen==="friends"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("friends");}}>Play with friends</button>
-        <button className={screen==="stats"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}>Progress</button>
-        <button className={screen==="settings"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}>Settings</button>
+        <button className={screen==="friends"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("friends");}}>Party</button>
+        <button className={screen==="stats"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}>Trophies</button>
+        <button className={screen==="settings"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}>Options</button>
       </nav>
       <div className="top-actions">{installPrompt&&<button className="install-button" onClick={install}>＋ Install</button>}<div className="avatar-chip">MD</div></div>
     </header>
 
     <nav className="mobile-nav" aria-label="Mobile navigation">
       <button className={!activeGame&&screen==="home"?"active":""} onClick={()=>{setActiveGame(null);setScreen("home");}}><span>⌂</span>Arcade</button>
-      <button className={screen==="friends"?"active":""} onClick={()=>{setActiveGame(null);setScreen("friends");}}><span>✳</span>Friends</button>
-      <button className={screen==="stats"?"active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}><span>▤</span>Progress</button>
-      <button className={screen==="settings"?"active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}><span>⚙</span>Settings</button>
+      <button className={screen==="friends"?"active":""} onClick={()=>{setActiveGame(null);setScreen("friends");}}><span>✳</span>Party</button>
+      <button className={screen==="stats"?"active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}><span>▤</span>Trophies</button>
+      <button className={screen==="settings"?"active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}><span>⚙</span>Options</button>
     </nav>
     {notice&&<button className="notice" onClick={()=>setNotice("")} aria-label="Dismiss message">{notice}<span>×</span></button>}
     {room&&<div className="room-strip"><span className="room-dot" /> <b>ROOM {room.code}</b><span>{room.players.length} players · {room.players.filter(p=>p.finished).length} finished</span><button onClick={()=>setScreen("friends")}>Room details</button><button onClick={closeRoom}>Leave</button></div>}
@@ -208,7 +211,7 @@ export default function App() {
         <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode"}</span></div>
       </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak}/>:screen==="settings"?<SettingsPage player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} configured={multiplayerConfigured()} game={firstTodo} games={GAMES} onCreate={createFriendsRoom} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,false,r.seed)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} today={date} doneToday={doneToday} streak={streak} openGame={openGame} firstTodo={firstTodo}/>}
     </main>
-    <footer className="site-footer"><div><span className="footer-mark">✳</span><b>meddaily.</b><span>Little puzzles. Big pattern recognition.</span></div><p>For education only · Not a clinical decision tool · Verify care decisions against current guidance.</p><span className="version">v1.1 · Local-first · Optional Drive sync</span></footer>
+    <footer className="site-footer"><div><span className="footer-mark">✳</span><b>meddaily.</b><span>PRESS START · FIND YOUR NEXT FAVORITE</span></div><p>For education only · Not a clinical decision tool · Verify care decisions against current guidance.</p><span className="version">v1.1 · Local-first · Optional Drive sync</span></footer>
   </div>;
 }
 
@@ -220,10 +223,10 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
   const average=player.results.filter(r=>r.scope===scope).length?Math.round(player.results.filter(r=>r.scope===scope).reduce((n,r)=>n+r.score,0)/player.results.filter(r=>r.scope===scope).length):0;
   return <div className="home-page">
     <section className="hero"><div className="hero-copy">
-      <div className="hero-kicker"><span className="pulse-dot"/> YOUR DAILY DOSE OF PLAY</div>
-      <h1>A little curiosity.<br/><em>A lot of medicine.</em></h1>
-      <p>A rotating collection of medical puzzles, word games, visual challenges, and estimation rounds. Learn something, spot a pattern, or simply play for the fun of it.</p>
-      <div className="hero-buttons"><button className="button button-primary hero-cta" onClick={()=>openGame(firstTodo)}>Start today's rounds <span>↗</span></button><span className="no-account-note">No account needed</span></div>
+      <div className="hero-kicker"><span className="pulse-dot"/> WELCOME TO THE PLAYGROUND</div>
+      <h1>Level up your curiosity.<br/><em>Enter the medical arcade.</em></h1>
+      <p>Spin, dive, decode, and collect badges across a growing lineup of medical mini-games. Quick rounds, daily challenges, and plenty of reasons to hit Play again.</p>
+      <div className="hero-buttons"><button className="button button-primary hero-cta" onClick={()=>openGame(firstTodo)}>PLAY TODAY'S SET <span>↗</span></button><span className="no-account-note">No account needed</span></div>
       <div className="hero-stats"><span><b>{GAMES.length}</b> games</span><i/><span><b>{done}</b> played today</span><i/><span><b>{player.hideStreaks?"—":streak}</b> day streak</span></div>
     </div>
     <div className="hero-art" aria-hidden="true"><div className="hero-orbit hero-orbit-a"/><div className="hero-orbit hero-orbit-b"/><div className="hero-cross">+</div>
@@ -239,7 +242,7 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
     <section className="daily-strip"><div className="daily-strip-main"><div className="daily-icon">☀</div><div><span className="eyebrow">{mode==="general"?"THE DAILY ROUNDS":"SPECIALTY DAILY ROUNDS"}</span><h2>{done===GAMES.length?"Your rounds are complete.":done===0?GAMES.length+" games. One fresh day.":"You're on your way."}</h2><p>{mode==="general"?"Same puzzles for everyone today. Play in any order, or jump straight into a favorite.":"A shared specialty-specific daily set. Invite friends from your field to compare how you did."}</p></div></div>
       <div className="progress-box"><div className="progress-numbers"><b>{done}<small>/{GAMES.length}</small></b><span>completed</span></div><div className="progress-track"><i style={{width:(done/GAMES.length*100)+"%"}}/></div><div className="progress-caption">{Math.round(done/GAMES.length*100)}% of today's arcade</div></div></section>
 
-    <section className="section-head"><div><span className="eyebrow">PICK YOUR PRESCRIPTION</span><h2>Step into the arcade</h2><p>Different puzzles, different parts of your brain.</p></div><span className="section-aside">TODAY · {today}</span></section>
+    <section className="section-head"><div><span className="eyebrow">PICK YOUR LOADOUT</span><h2>Choose your next run</h2><p>Every game has its own world, rules, and high score to chase.</p></div><span className="section-aside">TODAY · {today}</span></section>
     <div className="game-grid">{GAMES.map((game,index)=>{
       const result=player.results.find(r=>r.date===today&&r.game===game.id&&r.scope===scope);
       return <button key={game.id} className={"game-card "+game.wash+(result?" card-done":"")} onClick={()=>openGame(game.id)} style={{animationDelay:(index*40)+"ms"}}>
@@ -258,7 +261,7 @@ function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,config
   onCreate:(g:GameId)=>void;onJoin:()=>void;onPlay:(r:RoomState)=>void;onLeave:()=>void;
 }){
   const [selected,setSelected]=useState<GameId>(game);
-  return <div className="friends-page"><div className="friends-hero"><span className="eyebrow">THE SHARED WARD</span><h1>Good games travel.</h1><p>Make a room, send the code, and everyone plays the same daily puzzle. Each person keeps their own progress; the room shows the group's results.</p></div>
+  return <div className="friends-page"><div className="friends-hero"><span className="eyebrow">THE PARTY LOBBY</span><h1>Bring your crew.</h1><p>Set up a room, share the code, and challenge your crew to the same daily puzzle. Everyone keeps their own progress while the lobby tracks the round.</p></div>
     {!configured&&<div className="setup-warning"><b>Room play needs a one-time connection.</b><p>Solo and practice games work without setup or sign-in. To enable real-time rooms, configure Firebase using the included <code>.env.example</code> and <code>firestore.rules</code>. Multiplayer uses anonymous guest sessions; no Google account is required.</p></div>}
     {room?<div className="room-card"><div className="room-code-head"><div><span className="eyebrow">YOUR ROOM CODE</span><strong>{room.code}</strong></div><button className="button button-soft" onClick={()=>void navigator.clipboard?.writeText(location.href+"?room="+room.code)}>Copy page link</button></div>
       <p className="room-message">{room.specialty==="general"?"Open Arcade":"Specialty daily"} · {games.find(g=>g.id===room.gameId)?.title} · {room.date}</p>
