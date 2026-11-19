@@ -219,6 +219,8 @@ function TriviaRumble({ seed, onDone }: Props) {
   const [winner, setWinner] = useState<string | null>(null);
   const [used, setUsed] = useState<Partial<Record<TriviaCategoryId, string[]>>>({});
   const done = useRef(false);
+  const spinTimer = useRef<number | null>(null);
+  useEffect(() => () => { if (spinTimer.current !== null) window.clearTimeout(spinTimer.current); }, []);
   const currentPlayer = players[turn];
   const limit = mode === "solo" ? 24 : 36;
 
@@ -249,7 +251,8 @@ function TriviaRumble({ seed, onDone }: Props) {
     const segment = 360 / 7;
     setRotation((value) => value + 1440 + 360 - (index + 0.5) * segment);
     setStage("spinning");
-    window.setTimeout(() => {
+    spinTimer.current = window.setTimeout(() => {
+      spinTimer.current = null;
       if (index === 6) setStage("wild");
       else deal(triviaCategories[index]);
     }, 1500);
@@ -980,6 +983,8 @@ function HigherLower({ seed, onDone }: Props) {
   const [picked, setPicked] = useState<"a" | "b" | "tie" | null>(null);
   const [reveal, setReveal] = useState(false);
   const [finished, setFinished] = useState(false);
+  const advanceTimer = useRef<number | null>(null);
+  useEffect(() => () => { if (advanceTimer.current !== null) window.clearTimeout(advanceTimer.current); }, []);
   const item = list[round];
   const correct = item.av === item.bv ? "tie" : item.av > item.bv ? "a" : "b";
   const choose = (v: "a"|"b"|"tie") => {
@@ -987,7 +992,8 @@ function HigherLower({ seed, onDone }: Props) {
     const ok = v === correct;
     const next = score + (ok ? 1 : 0);
     setPicked(v); setScore(next); setReveal(true);
-    window.setTimeout(() => {
+    advanceTimer.current = window.setTimeout(() => {
+      advanceTimer.current = null;
       if (round + 1 === list.length) { setFinished(true); onDone(Math.round(next / list.length * 100), 100, next === list.length); }
       else { setRound((r) => r + 1); setPicked(null); setReveal(false); }
     }, 900);
