@@ -1,3 +1,5 @@
+import { higherLowerPairsExpansion } from "./dataExpansion";
+
 export const glyphPatterns: { name: string; pattern: number[][]; hint: string }[] = [
   { name:"Neuron", hint:"A cell that carries signals", pattern:[[0,0,1,0,0],[0,1,1,1,0],[1,1,1,1,1],[0,0,1,0,0],[0,1,0,1,0]] },
   { name:"Heart", hint:"A very hardworking muscle", pattern:[[0,1,0,1,0],[1,1,1,1,1],[1,1,1,1,1],[0,1,1,1,0],[0,0,1,0,0]] },
@@ -10,6 +12,61 @@ export const glyphPatterns: { name: string; pattern: number[][]; hint: string }[
 export const scrambleWords = [
   ["NEURON","A cell that sends electrical signals"],["PLASMA","The liquid component of blood"],["FEMUR","The longest bone in the body"],["INSULIN","A hormone that lowers blood glucose"],["RETINA","The light-sensitive layer of the eye"],["TENDON","Connects muscle to bone"],["CORTEX","The outer layer of an organ"],["SUTURE","A stitch used to close a wound"],["SPLEEN","An organ involved in blood filtration and immunity"],["MUCOSA","A moist membrane lining body cavities"],["GANGLIA","Collections of neuronal cell bodies"],["OXYGEN","A gas required for aerobic metabolism"],["PLATELET","A cell fragment involved in hemostasis"],["NEPHRON","The functional unit of the kidney"],["CILIUM","A hair-like cellular projection"],["AXON","The long projection of a neuron"],["ALVEOLI","Tiny air sacs in the lungs"],["LIGAMENT","Connects bone to bone"],["TIBIA","The larger medial bone of the lower leg"],["GLUCOSE","A major circulating monosaccharide"],["MYELIN","Insulating sheath around many axons"],["ARTERY","A vessel carrying blood away from the heart"],["URETER","Carries urine from kidney to bladder"],["CORNEA","Transparent anterior part of the eye"],["MITOSIS","Division of a cell nucleus"],["CYTOKINE","A signaling protein in immunity"],["HEMOGLOBIN","Oxygen-carrying protein in red cells"],["CEREBELLUM","A brain region important for coordination"],["PANCREAS","An organ with endocrine and exocrine functions"],["OSTEON","A structural unit of compact bone"]
 ] as const;
+
+export const scrambleWordsExpansion = [
+["ACIDOSIS","A primary metabolic or respiratory acid-base disturbance"],
+["ALKALOSIS","A primary alkalinizing acid-base disturbance"],
+["ANEURYSM","A focal dilation of an artery"],
+["ANEMIA","Reduced circulating hemoglobin concentration"],
+["APLASIA","Failure of an organ or tissue to develop"],
+["ARTHRITIS","Inflammation of a joint"],
+["ATROPHY","Reduction in the size of a tissue or organ"],
+["BIOPSY","Sampling tissue for diagnostic examination"],
+["BRADYCARDIA","An abnormally slow heart rate"],
+["CARDIAC","Pertaining to the heart"],
+["CEREBRAL","Pertaining to the brain"],
+["CIRRHOSIS","Advanced hepatic fibrosis with architectural distortion"],
+["CYTOSOL","Fluid component of the cell cytoplasm"],
+["DYSARTHRIA","Motor speech impairment from impaired articulation"],
+["DYSPHAGIA","Difficulty swallowing"],
+["DYSPNEA","Subjective sensation of breathing discomfort"],
+["EMBOLUS","Material traveling through the bloodstream and causing obstruction"],
+["ENCEPHALITIS","Inflammation of brain parenchyma"],
+["ENDOSCOPY","Visual examination of an internal organ or cavity"],
+["ERYTHEMA","Redness of the skin"],
+["FIBROSIS","Excess deposition of connective tissue"],
+["HEMATOMA","A localized collection of blood"],
+["HEMOLYSIS","Destruction of red blood cells"],
+["HYPERKALEMIA","Elevated serum potassium"],
+["HYPONATREMIA","Reduced serum sodium"],
+["ISCHEMIA","Insufficient blood flow to tissue"],
+["JAUNDICE","Yellow discoloration from elevated bilirubin"],
+["KETOSIS","Increased ketone production or concentration"],
+["LEUKOCYTE","A white blood cell"],
+["LYMPHOMA","A malignancy of lymphoid cells"],
+["MELANOMA","A malignant tumor of melanocytes"],
+["METASTASIS","Spread of malignant cells to a distant site"],
+["NECROSIS","Unregulated cell death in tissue"],
+["NEPHRITIS","Inflammation of the kidney"],
+["NEUROPATHY","Disorder of peripheral nerves"],
+["OSTEOPOROSIS","Reduced bone strength from low bone mass and altered microarchitecture"],
+["PALPITATION","Awareness of an abnormal or forceful heartbeat"],
+["PARESTHESIA","An abnormal sensation such as tingling"],
+["PERFUSION","Delivery of blood to tissue"],
+["PNEUMONIA","Infection of lung parenchyma"],
+["PROGNOSIS","The anticipated course or outcome of a disease"],
+["PRURITUS","Itching"],
+["SEPSIS","Life-threatening organ dysfunction due to dysregulated response to infection"],
+["STENOSIS","Abnormal narrowing of a passage or vessel"],
+["SYNCOPE","Transient loss of consciousness from cerebral hypoperfusion"],
+["TACHYCARDIA","An abnormally fast heart rate"],
+["THROMBOSIS","Formation of a blood clot within a vessel"],
+["URTICARIA","Transient pruritic wheals"],
+["VASCULITIS","Inflammation of blood vessels"],
+["VENTILATION","Movement of air into and out of the lungs"],
+["VERTIGO","Illusion of movement, often spinning"]
+] as const;
+export const scrambleWordsExtended = [...scrambleWords, ...scrambleWordsExpansion] as const;
 
 export const higherLowerPairs = [
   {a:"Red blood cells per µL (approximate)",av:4500,b:"Platelets per µL (approximate)",bv:250,unit:"thousands/µL",explanation:"RBCs are generally present in the millions per microliter; platelets in the hundreds of thousands.",source:"Standard CBC reference intervals."},
@@ -184,7 +241,7 @@ spellingHivePuzzles.push(
 {title:"Therapy Garden",letters:["T","H","E","R","A","P","Y"],center:"R",words:["THERAPY","HEART","EARTH","HATER","PARTY","PRAY","TRAP","RATE","TARE","PEAR","REAP","HARP","TAPER","RAPT","TARP","RATHER"],pangram:"THERAPY",hint:"The pangram names a broad process of care."},
 {title:"Organic Chemistry",letters:["O","R","G","A","N","I","C"],center:"R",words:["ORGANIC","ORGAN","GRAIN","GROAN","CIGAR","RACING","CARGO","RING","RANG","ROAN","RAIN","IRON","CORN","ROAR","CARING"],pangram:"ORGANIC",hint:"The pangram describes a broad class of compounds."},
 {title:"Nuclear Medicine",letters:["N","U","C","L","E","A","R"],center:"E",words:["NUCLEAR","UNCLEAR","CLEAN","CLEAR","CRANE","LEARN","LANCE","UNCLE","EARN","NEAR","CARE","CURE","REAL","LACE","RACE","REEL"],pangram:"NUCLEAR",hint:"The pangram relates to the atom's central structure."},
-{title:"Stainer's Bench",letters:["S","T","A","I","N","E","R"],center:"R",words:["STAINER","RETAINS","RETAIN","STAIN","TRAIN","RAISE","TEARS","TARES","RATES","STARE","STARS","RANT","RENT","EARN","NEAR","RAIN","RISE","TIRE","SIRE","TERN"],pangram:"STAINER",hint:"The pangram is someone or something that leaves a mark."},
+{title:"Stainer's Bench",letters:["S","T","A","I","N","E","R"],center:"R",words:["STAINER","RETAINS","RETAIN","TRAIN","RAISE","TEARS","TARES","RATES","STARE","STARS","RANT","RENT","EARN","NEAR","RAIN","RISE","TIRE","SIRE","TERN"],pangram:"STAINER",hint:"The pangram is someone or something that leaves a mark."},
 {title:"Retinal Signals",letters:["R","E","T","I","N","A","L"],center:"A",words:["RETINAL","RELIANT","LINEAR","RETAIN","TRAIN","TRAIL","TRIAL","LATER","ALERT","ALTER","IRATE","REAL","RATE","TARE","RAIL","TAIL","RANT"],pangram:"RETINAL",hint:"The pangram refers to the light-sensing tissue."},
 {title:"Glucose Circuit",letters:["G","L","U","C","O","S","E"],center:"O",words:["GLUCOSE","CLOSE","CLOGS","SOLE","SOUL","LOSE","LOOSE","COOLS","COOL","GOES","LOGS","CLOG","COGS","LOGO","COLE"],pangram:"GLUCOSE",hint:"The pangram is a major circulating fuel."},
 {title:"Folates and Salts",letters:["F","O","L","A","T","E","S"],center:"A",words:["FOLATES","FETAL","LEAST","STEAL","TALES","TEALS","SEAL","SALE","LATE","TALE","TEAL","LOAF","SOFA","FAST","FEAT","FLAT","FLOAT"],pangram:"FOLATES",hint:"The pangram is a vitamin family important in cell division."},
@@ -246,3 +303,6 @@ clues:["Ari used neither the East Desk nor the West Desk.","The Atlas was at the
 solution:[{suspect:"Ari",location:"Reference Desk",object:"Atlas"},{suspect:"Mina",location:"East Desk",object:"Textbook"},{suspect:"Jon",location:"West Desk",object:"Flashcards"}]
 }
 );
+
+
+higherLowerPairs.push(...higherLowerPairsExpansion);

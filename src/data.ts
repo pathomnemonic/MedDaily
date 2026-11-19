@@ -1,4 +1,4 @@
-import { connectionPuzzlesExpansion, diagnosisCasesExpansion, nextStepCasesExpansion, labPromptsExpansion, pairsBankExpansion, microbePacksExpansion } from "./dataExpansion";
+import { connectionPuzzlesExpansion, diagnosisCasesExpansion, nextStepCasesExpansion, labPromptsExpansion, pairsBankExpansion, microbePacksExpansion, medleWordsExpansion, triageCasesExpansion, microbePacksExpansion2 } from "./dataExpansion";
 
 export interface ConnectionGroup {
   category: string;
@@ -238,12 +238,14 @@ export const triageCases = [
   { id:"t12", title:"Neonatal resuscitation", scenario:"A newborn remains apneic after initial warming, positioning, drying, and stimulation.", steps:["Complete initial steps and assess breathing and heart rate.","Begin positive-pressure ventilation for apnea/gasping or heart rate below 100/min.","Check chest movement and heart-rate response; correct ventilation technique if needed.","Begin coordinated compressions and advanced steps only if heart rate remains below 60/min after effective ventilation."] }
 ];
 
+medleWords.push(...medleWordsExpansion.filter((word) => !medleWords.includes(word)));
+triageCases.push(...triageCasesExpansion);
 connectionPuzzles.push(...connectionPuzzlesExpansion);
 diagnosisCases.push(...diagnosisCasesExpansion);
 nextStepCases.push(...nextStepCasesExpansion);
 labPrompts.push(...labPromptsExpansion);
 pairsBank.push(...pairsBankExpansion);
-microbePacks.push(...microbePacksExpansion);
+microbePacks.push(...microbePacksExpansion, ...microbePacksExpansion2);
 
 export const gameContentCounts = {
   medleAnswers: medleWords.length,
