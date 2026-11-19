@@ -45,7 +45,9 @@ A particularly useful design principle from the current daily-puzzle guides is t
 
 ## Release inventory
 
-The tracks are intentionally broad and balanced. Neurology is represented as one specialty track rather than several top-level neuro subspecialties; other specialties and foundational subjects have the same first-level status. Open Arcade remains the all-comers daily mode. All players share a UTC daily date key, so a specialty group across time zones receives the same puzzle seed.\n\nSixteen playable formats are currently exposed in the arcade:
+The tracks are intentionally broad and balanced. Neurology is represented as one specialty track rather than several top-level neuro subspecialties; other specialties and foundational subjects have the same first-level status. Open Arcade remains the all-comers daily mode. All players share a UTC daily date key, so a specialty group across time zones receives the same puzzle seed.
+
+Sixteen playable formats are currently exposed in the arcade:
 
 1. Medle — five-letter guessing.
 2. Connections — four hidden groups of four.
