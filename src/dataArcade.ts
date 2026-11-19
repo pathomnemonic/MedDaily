@@ -117,6 +117,110 @@ export const deepDivePrompts: DeepPrompt[] = [
   dive("d36","Name a medication or exposure associated with serotonin syndrome.","Pharmacology","Serotonergic toxicity follows combinations or overdose of serotonergic agents; clonus and hyperreflexia are useful clues.",[
     ["SSRI"],["SNRI","MAO inhibitor"],["Tramadol","Linezolid"],["Dextromethorphan","Lithium"],["MDMA","St. John's wort"],["Methylene blue"]
   ])
+
+  ,dive("d37","Name a cause of hypernatremia.","Renal","Hypernatremia reflects water deficit relative to sodium; distinguish water loss from sodium gain.",[
+    ["Water deprivation"],["Central diabetes insipidus","Nephrogenic diabetes insipidus"],["Osmotic diuresis","Profuse diarrhea"],["Excess sodium bicarbonate","Hypertonic saline administration"],["Primary hypodipsia","Hypothalamic injury"],["Salt poisoning"]
+  ]),
+  dive("d38","Name a cause of hyponatremia.","Renal","Hyponatremia requires assessment of tonicity, volume status, medications, and urine studies.",[
+    ["SIADH"],["Thiazide diuretics","Heart failure"],["Cirrhosis","Adrenal insufficiency"],["Hypothyroidism","Nephrotic syndrome"],["Primary polydipsia","Low-solute intake (beer potomania)"],["Reset osmostat"]
+  ]),
+  dive("d39","Name a cause of a widened pulse pressure.","Cardiology","A widened pulse pressure can follow increased stroke volume or reduced arterial compliance.",[
+    ["Aortic regurgitation"],["Patent ductus arteriosus","Arteriovenous fistula"],["Hyperthyroidism","Severe anemia"],["Fever","Pregnancy"],["Paget disease of bone"],["Wet beriberi"]
+  ]),
+  dive("d40","Name a cause of bradycardia.","Cardiology","Bradycardia may be physiologic, medication-related, conduction-system disease, or metabolic.",[
+    ["Sinus node dysfunction"],["Atrioventricular block","Hypothermia"],["Beta-blocker toxicity","Calcium-channel blocker toxicity"],["Hypothyroidism","Hyperkalemia"],["Increased intracranial pressure"],["Chagas cardiomyopathy"]
+  ]),
+  dive("d41","Name a cause of tachycardia.","Cardiology","Sinus tachycardia is a response to many physiologic and pathologic stressors; also consider tachyarrhythmias.",[
+    ["Fever"],["Hypovolemia","Anemia"],["Hyperthyroidism","Pain"],["Pulmonary embolism","Sepsis"],["Pheochromocytoma","Atrial fibrillation"],["Inappropriate sinus tachycardia"]
+  ]),
+  dive("d42","Name a cause of hyperthyroidism.","Endocrinology","Hyperthyroidism can result from gland stimulation, autonomous hormone production, thyroiditis, or exogenous hormone.",[
+    ["Graves disease"],["Toxic multinodular goiter","Toxic adenoma"],["Subacute thyroiditis","Iodine-induced hyperthyroidism"],["Amiodarone-induced thyrotoxicosis","Exogenous thyroid hormone"],["Struma ovarii"],["TSH-secreting pituitary adenoma"]
+  ]),
+  dive("d43","Name a cause of peripheral neuropathy.","Neurology","Peripheral neuropathy has metabolic, toxic, nutritional, immune, infectious, hereditary, and infiltrative causes.",[
+    ["Diabetes mellitus"],["Alcohol use","Vitamin B12 deficiency"],["Chemotherapy","Chronic kidney disease"],["Amyloidosis","HIV"],["Charcot-Marie-Tooth disease","Guillain-Barré syndrome"],["Vasculitic neuropathy"]
+  ]),
+  dive("d44","Name a type or cause of nephrolithiasis.","Renal","Stone composition and urine chemistry help identify metabolic causes and recurrence risks.",[
+    ["Calcium oxalate stones"],["Uric acid stones","Struvite stones"],["Cystine stones","Calcium phosphate stones"],["Topiramate-associated stones","Indinavir stones"],["Matrix stones"],["2,8-dihydroxyadenine stones"]
+  ]),
+  dive("d45","Name an organism that can cause infective endocarditis.","Microbiology","Organisms vary with native versus prosthetic valves, injection exposure, healthcare contact, and culture status.",[
+    ["Staphylococcus aureus"],["Viridans group streptococci","Enterococcus faecalis"],["Staphylococcus epidermidis","Streptococcus gallolyticus"],["HACEK organisms","Coxiella burnetii"],["Bartonella species","Brucella species"],["Tropheryma whipplei"]
+  ]),
+  dive("d46","Name a complication of portal hypertension.","Gastroenterology","Portal hypertension causes collateral formation, splenic congestion, ascites, and complications of advanced liver disease.",[
+    ["Esophageal varices"],["Ascites","Splenomegaly"],["Portal hypertensive gastropathy","Spontaneous bacterial peritonitis"],["Hepatic encephalopathy","Hepatorenal syndrome"],["Caput medusae"],["Hepatopulmonary syndrome"]
+  ]),
+  dive("d47","Name a disease associated with uveitis.","Ophthalmology","Uveitis may be infectious or associated with systemic inflammatory disease; pattern and context guide evaluation.",[
+    ["HLA-B27-associated spondyloarthritis"],["Sarcoidosis","Behçet disease"],["Syphilis","Tuberculosis"],["Toxoplasmosis","Herpes zoster"],["Juvenile idiopathic arthritis"],["Vogt-Koyanagi-Harada disease"]
+  ]),
+  dive("d48","Name an inherited or acquired cause of hypercoagulability.","Hematology","Thrombophilia can be inherited, autoimmune, malignant, medication-associated, or acquired during pregnancy and illness.",[
+    ["Factor V Leiden"],["Prothrombin G20210A","Antiphospholipid syndrome"],["Protein C deficiency","Protein S deficiency"],["Antithrombin deficiency","Malignancy-associated thrombosis"],["Pregnancy","Estrogen therapy"],["Paroxysmal nocturnal hemoglobinuria"]
+  ]),
+  dive("d49","Name a cause of acquired coagulopathy.","Hematology","Coagulation abnormalities may arise from impaired synthesis, consumption, anticoagulants, or acquired inhibitors.",[
+    ["Vitamin K deficiency"],["Liver failure","Disseminated intravascular coagulation"],["Warfarin exposure","Heparin exposure"],["Massive transfusion","Dilutional coagulopathy"],["Acquired factor VIII inhibitor"],["Amyloid-associated factor X deficiency"]
+  ]),
+  dive("d50","Name a medication associated with drug-induced lupus.","Pharmacology","Drug-induced lupus is associated with several medications; antihistone antibodies are common but not universal.",[
+    ["Hydralazine"],["Procainamide","Isoniazid"],["Minocycline","Methyldopa"],["Chlorpromazine","Quinidine"],["TNF inhibitor-associated lupus-like syndrome"],["Interferon alfa"]
+  ]),
+  dive("d51","Name a cause of postpartum hemorrhage.","Obstetrics","The classic framework is tone, trauma, tissue, and thrombin; uterine atony is the most common cause.",[
+    ["Uterine atony"],["Retained placental tissue","Genital tract trauma"],["Coagulopathy","Uterine inversion"],["Placenta accreta spectrum","Uterine rupture"],["Amniotic fluid embolism-associated DIC"],["Subinvolution of the placental site"]
+  ]),
+  dive("d52","Name a cause or risk factor for fetal growth restriction.","Obstetrics","Fetal growth restriction may be placental, maternal, fetal, infectious, or genetic.",[
+    ["Placental insufficiency"],["Preeclampsia","Maternal hypertension"],["Tobacco exposure","Alcohol use"],["Cytomegalovirus","Congenital toxoplasmosis"],["Trisomy 18","Trisomy 13"],["Antiphospholipid syndrome"]
+  ]),
+  dive("d53","Name a cause of neonatal jaundice.","Pediatrics","Neonatal jaundice may be unconjugated from increased bilirubin production or impaired conjugation, or conjugated from hepatobiliary disease.",[
+    ["Physiologic jaundice"],["Breastfeeding jaundice","Breast milk jaundice"],["ABO incompatibility","Rh incompatibility"],["G6PD deficiency","Hereditary spherocytosis"],["Biliary atresia","Neonatal hepatitis"],["Crigler-Najjar syndrome"]
+  ]),
+  dive("d54","Name a cause of pulsus paradoxus.","Cardiology","Pulsus paradoxus is an exaggerated inspiratory fall in systolic blood pressure and is classically associated with tamponade.",[
+    ["Cardiac tamponade"],["Severe asthma","COPD exacerbation"],["Constrictive pericarditis","Tension pneumothorax"],["Hypovolemic shock","Pulmonary embolism"],["Large pericardial effusion"],["Severe obstructive sleep apnea"]
+  ]),
+  dive("d55","Name a cause of acute altered mental status.","Emergency Medicine","Rapidly assess glucose, oxygenation, temperature, medications, infection, trauma, and neurologic emergencies.",[
+    ["Hypoglycemia"],["Hypoxia","Hypercapnia"],["Sepsis","Medication toxicity"],["Electrolyte disturbance","Uremia"],["Stroke","Intracranial hemorrhage"],["Wernicke encephalopathy"]
+  ]),
+  dive("d56","Name a cause of an acute abdomen.","Emergency Medicine","Time-critical diagnoses include vascular, inflammatory, obstructive, perforating, and reproductive emergencies.",[
+    ["Appendicitis"],["Acute cholecystitis","Bowel obstruction"],["Pancreatitis","Perforated peptic ulcer"],["Mesenteric ischemia","Diverticulitis"],["Ectopic pregnancy","Ovarian torsion"],["Ruptured abdominal aortic aneurysm"]
+  ]),
+  dive("d57","Name a cause of hemoptysis.","Pulmonology","Hemoptysis ranges from airway inflammation to infection, malignancy, vascular disease, and pulmonary-renal syndromes.",[
+    ["Acute bronchitis"],["Pneumonia","Bronchiectasis"],["Tuberculosis","Lung cancer"],["Pulmonary embolism","Mitral stenosis"],["Goodpasture syndrome","Granulomatosis with polyangiitis"],["Pulmonary arteriovenous malformation"]
+  ]),
+  dive("d58","Name a cause of a low anion gap.","Laboratory Medicine","Hypoalbuminemia is the most common cause; paraproteins, cations, halides, and analytic error are other possibilities.",[
+    ["Hypoalbuminemia"],["Lithium intoxication","Multiple myeloma"],["Hypermagnesemia","Hypercalcemia"],["Bromide intoxication","Iodide intoxication"],["Polyclonal gammopathy"],["Laboratory measurement error"]
+  ]),
+  dive("d59","Name a cause of elevated alkaline phosphatase.","Laboratory Medicine","Alkaline phosphatase is found in liver and bone; correlate with GGT and the clinical setting.",[
+    ["Cholestasis"],["Paget disease of bone","Healing fracture"],["Pregnancy","Normal childhood growth"],["Osteomalacia","Bone metastases"],["Primary biliary cholangitis","Primary sclerosing cholangitis"],["Benign transient hyperphosphatasemia"]
+  ]),
+  dive("d60","Name a cause of mineralocorticoid excess or a similar phenotype.","Endocrinology","Primary aldosteronism is common, but low-renin hypertension can also arise from inherited or acquired mimics.",[
+    ["Adrenal aldosterone-producing adenoma"],["Bilateral adrenal hyperplasia","Familial hyperaldosteronism"],["Renin-secreting tumor","Renovascular hypertension"],["Apparent mineralocorticoid excess","Licorice ingestion"],["Liddle syndrome"],["11β-hydroxylase deficiency"]
+  ]),
+  dive("d61","Name a cause of hypocalcemia.","Endocrinology","Hypocalcemia results from impaired PTH action, vitamin D deficiency, renal disease, calcium shifts, or binding.",[
+    ["Hypoparathyroidism"],["Vitamin D deficiency","Chronic kidney disease"],["Acute pancreatitis","Sepsis"],["Hypomagnesemia","Hungry bone syndrome"],["Massive transfusion citrate load"],["Pseudohypoparathyroidism"]
+  ]),
+  dive("d62","Name a cause of hyperkalemia.","Renal","Hyperkalemia results from reduced renal excretion, transcellular shift, or release from damaged cells; exclude pseudohyperkalemia.",[
+    ["Renal failure"],["ACE inhibitor or ARB therapy","Potassium-sparing diuretics"],["Adrenal insufficiency","Rhabdomyolysis"],["Tumor lysis syndrome","Intravascular hemolysis"],["Type 4 renal tubular acidosis"],["Pseudohyperkalemia from sample hemolysis"]
+  ]),
+  dive("d63","Name a cause of hypokalemia.","Renal","Hypokalemia is caused by gastrointestinal loss, renal wasting, low intake, or intracellular shift; magnesium matters.",[
+    ["Loop or thiazide diuretic use"],["Vomiting","Diarrhea"],["Primary hyperaldosteronism","Cushing syndrome"],["Renal tubular acidosis","Hypomagnesemia"],["Beta-agonist exposure","Insulin therapy"],["Gitelman syndrome"]
+  ]),
+  dive("d64","Name a cause of respiratory alkalosis.","Pulmonology","Respiratory alkalosis reflects hyperventilation; assess oxygenation, pregnancy, CNS disease, and systemic illness.",[
+    ["Anxiety or panic"],["Pulmonary embolism","Sepsis"],["Pregnancy","High altitude"],["Salicylate intoxication","Hepatic disease"],["Mechanical overventilation"],["Early severe asthma"]
+  ]),
+  dive("d65","Name a cause of restrictive lung disease.","Pulmonology","Restriction can be parenchymal, pleural, chest-wall, neuromuscular, or related to body habitus.",[
+    ["Idiopathic pulmonary fibrosis"],["Sarcoidosis","Pneumoconiosis"],["Systemic sclerosis","Rheumatoid arthritis"],["Neuromuscular weakness","Obesity-related restriction"],["Pleural effusion","Kyphoscoliosis"],["Hypersensitivity pneumonitis"]
+  ]),
+  dive("d66","Name an organism that can cause a brain abscess.","Microbiology","Brain abscess pathogens depend on source, immune status, and geography; contiguous spread and hematogenous seeding are common routes.",[
+    ["Streptococcus anginosus group"],["Staphylococcus aureus","Anaerobic oral flora"],["Nocardia species","Toxoplasma gondii"],["Aspergillus species","Cryptococcus neoformans"],["Entamoeba histolytica"],["Balamuthia mandrillaris"]
+  ]),
+  dive("d67","Name a trigger or cause of acute respiratory distress syndrome.","Pulmonology","ARDS follows direct or indirect lung injury with acute hypoxemia and bilateral opacities not fully explained by cardiac failure.",[
+    ["Sepsis"],["Pneumonia","Aspiration"],["Major trauma","Acute pancreatitis"],["Massive transfusion","Near drowning"],["Inhalational injury","Drug overdose"],["Transfusion-related acute lung injury"]
+  ]),
+  dive("d68","Name a cause of unconjugated hyperbilirubinemia.","Gastroenterology","Unconjugated bilirubin rises with increased production, impaired conjugation, or altered uptake.",[
+    ["Hemolysis"],["Gilbert syndrome","Crigler-Najjar syndrome"],["Ineffective erythropoiesis","Hematoma resorption"],["Physiologic neonatal jaundice"],["Drug-mediated UGT1A1 inhibition"],["Breast milk jaundice"]
+  ]),
+  dive("d69","Name a cause of hematuria.","Renal","Hematuria may be glomerular or nonglomerular; consider infection, stones, malignancy, and vascular causes.",[
+    ["Urinary tract infection"],["Urolithiasis","Glomerulonephritis"],["Bladder carcinoma","Renal cell carcinoma"],["Papillary necrosis","Polycystic kidney disease"],["Sickle cell trait"],["Nutcracker syndrome"]
+  ]),
+  dive("d70","Name a cause of secondary erythrocytosis or polycythemia.","Hematology","Secondary erythrocytosis is driven by increased erythropoietin or chronic hypoxia; distinguish it from polycythemia vera.",[
+    ["Chronic hypoxemia"],["Obstructive sleep apnea","Cigarette smoking or carbon monoxide"],["Erythropoietin-producing renal cell carcinoma","High altitude"],["Testosterone therapy","Chronic lung disease"],["Renal artery stenosis"],["Post-transplant erythrocytosis"]
+  ])
+
 ];
 
 export type TriviaCategoryId = "anatomy" | "physiology" | "pathology" | "pharmacology" | "microbiology" | "clinical";
