@@ -1,5 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
+import { generateConnectionsBoard, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
+import { connectionPuzzles } from "./data";
+
+describe("procedural Connections Free Play", () => {
+  it("assembles four distinct categories with sixteen non-overlapping terms", () => {
+    for (let seed = 0; seed < 60; seed++) {
+      const board = generateConnectionsBoard(connectionPuzzles, seed);
+      expect(board).toHaveLength(4);
+      expect(new Set(board.map((group) => group.category)).size).toBe(4);
+      const words = board.flatMap((group) => group.words.map((word) => word.toLowerCase()));
+      expect(words).toHaveLength(16);
+      expect(new Set(words).size).toBe(16);
+      expect(board.every((group) => group.words.length === 4 && group.hint.length > 0)).toBe(true);
+    }
+  });
+
+  it("is deterministic for the same seed", () => {
+    expect(generateConnectionsBoard(connectionPuzzles, 9876)).toEqual(generateConnectionsBoard(connectionPuzzles, 9876));
+  });
+});
 
 describe("Letter Lab grid rules", () => {
   const grid = [
