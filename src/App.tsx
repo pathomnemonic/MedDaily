@@ -200,14 +200,14 @@ export default function App() {
         </section>
         {room&&<RoomScores room={room}/>}
         <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode"}</span></div>
-      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak}/>:screen==="settings"?<SettingsPage player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} configured={multiplayerConfigured()} game={firstTodo} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,false,r.seed)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} today={date} doneToday={doneToday} streak={streak} openGame={openGame} firstTodo={firstTodo}/>}
+      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak}/>:screen==="settings"?<SettingsPage player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} configured={multiplayerConfigured()} game={firstTodo} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,false,r.seed)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} today={date} doneToday={doneToday} openGame={openGame} firstTodo={firstTodo}/>}
     </main>
     <footer className="site-footer"><div><span className="footer-mark">✳</span><b>meddaily.</b><span>PRESS START · FIND YOUR NEXT FAVORITE</span></div><p>For education only · Not a clinical decision tool · Verify care decisions against current guidance.</p><span className="version">v1.1 · Local-first · Optional Drive sync</span></footer>
   </div>;
 }
 
-function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneToday,streak,openGame,firstTodo}:{
-  player:PlayerData;scope:string;mode:Mode;specialty:Specialty;setMode:(m:Mode)=>void;setSpecialty:(s:Specialty)=>void;today:string;doneToday:number;streak:number;openGame:(id:GameId,practice?:boolean)=>void;firstTodo:GameId;
+function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneToday,openGame,firstTodo}:{
+  player:PlayerData;scope:string;mode:Mode;specialty:Specialty;setMode:(m:Mode)=>void;setSpecialty:(s:Specialty)=>void;today:string;doneToday:number;openGame:(id:GameId,practice?:boolean)=>void;firstTodo:GameId;
 }){
   const done=doneToday;
   
