@@ -252,7 +252,7 @@ spellingHivePuzzles.push(
 wordLadders.push(
 {start:"BOLD",end:"TUNE",path:["BOLD","BOND","BEND","SEND","SAND","SANE","CANE","CONE","BONE","TONE","TUNE"],note:"A long ladder through common words."},
 {start:"FINE",end:"MOVE",path:["FINE","FIVE","DIVE","LIVE","LOVE","MOVE"],note:"One letter changes at each step."},
-{start:"MILE",end:"ICON",path:["MILE","TILE","TIDE","SIDE","SINE","LINE","LION","IRON","ICON"],note:"Follow the letter changes carefully."},
+{start:"MILE",end:"LINE",path:["MILE","TILE","TIDE","SIDE","SINE","LINE"],note:"Follow the letter changes carefully."},
 {start:"CARE",end:"LAST",path:["CARE","CASE","CASH","WASH","WISH","FISH","FIST","LIST","LAST"],note:"A multi-step path from care to last."},
 {start:"COST",end:"PATH",path:["COST","LOST","LAST","PAST","FAST","FATE","LATE","MATE","MATH","PATH"],note:"A word ladder with several turns."},
 {start:"EARS",end:"PAST",path:["EARS","EARN","BARN","BARK","DARK","DART","PART","PARK","MARK","MARS","MASS","PASS","PAST"],note:"Change exactly one letter at every rung."},
