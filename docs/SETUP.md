@@ -2,7 +2,7 @@
 
 ## Local development
 
-Requirements: Node.js 20 or newer.
+Requirements: Node.js 24 or newer (Vitest's current release line requires Node 24.12+).
 
 \`\`\`sh
 npm install
