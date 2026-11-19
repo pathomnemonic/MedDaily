@@ -15,11 +15,12 @@ export interface PlayerData {
   bests: Partial<Record<GameId, number>>;
   sound: boolean;
   music: boolean;
+  xp: number;
   reducedMotion: boolean;
   hideStreaks: boolean;
 }
 const KEY = "meddaily:player:v1";
-const empty = (): PlayerData => ({ results: [], bests: {}, sound: true, music: true, reducedMotion: false, hideStreaks: false });
+const empty = (): PlayerData => ({ results: [], bests: {}, sound: true, music: true, xp: 0, reducedMotion: false, hideStreaks: false });
 export function loadPlayer(): PlayerData {
   try {
     const parsed = JSON.parse(localStorage.getItem(KEY) ?? "null") as Partial<PlayerData> | null;

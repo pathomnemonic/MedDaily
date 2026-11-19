@@ -81,6 +81,7 @@ export function mergePlayerData(local: PlayerData, remote: PlayerData): PlayerDa
     bests,
     sound: local.sound,
     music: local.music,
+    xp: Math.max(local.xp ?? 0, remote.xp ?? 0),
     reducedMotion: local.reducedMotion,
     hideStreaks: local.hideStreaks
   };
@@ -97,6 +98,7 @@ async function syncData(local: PlayerData): Promise<PlayerData> {
     bests: {},
     sound: true,
     music: true,
+    xp: 0,
     reducedMotion: false,
     hideStreaks: false
   } as PlayerData;

@@ -7,6 +7,7 @@ const emptyPlayer = (): PlayerData => ({
   bests: {},
   sound: false,
   music: false,
+  xp: 0,
   reducedMotion: false,
   hideStreaks: false
 });

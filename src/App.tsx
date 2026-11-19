@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { GameBoard } from "./Games";
 import GameArt, { DxArt } from "./components/GameArt";
 import { computeTrophies } from "./achievements";
+import Mascot from "./components/Mascot";
+import Splash from "./components/Splash";
+import { levelFor, starsFor, xpForResult } from "./levels";
 import { watchStage } from "./juice";
 import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } from "./audio";
 import type { GameId } from "./lib";
@@ -106,7 +109,8 @@ export default function App() {
   const [roomBusy,setRoomBusy] = useState(false);
   const [lastShare,setLastShare] = useState("");
   const [partyRun,setPartyRun] = useState(false);
-  const [completion,setCompletion] = useState<{title:string;score:number;maxScore:number;perfect:boolean;text:string;party:boolean}|null>(null);
+  const [completion,setCompletion] = useState<{title:string;score:number;maxScore:number;perfect:boolean;text:string;party:boolean;stars:number;gain:number;levelUp:string|null}|null>(null);
+  const [splash,setSplash] = useState(()=>{try{return sessionStorage.getItem("meddaily:splash")!=="1";}catch{return true;}});
   const [copied,setCopied] = useState(false);
 
   const date = dailyDateKey();
@@ -164,16 +168,22 @@ export default function App() {
     const where=partyRun?" · Room "+roomCode:practice?" · Free Play":" · "+date;
     const text=share?"MedDaily"+where+"\n"+share:"MedDaily · "+gameTitle+where+"\n"+fallback+"\nhttps://pathomnemonic.github.io/MedDaily/"+(partyRun?"?room="+roomCode:"");
     setLastShare(text);setCopied(false);
-    setCompletion({title:gameTitle,score,maxScore,perfect,text,party:partyRun});
+    const isNewDaily=!partyRun&&!practice&&!player.results.some(r=>r.date===date&&r.game===activeGame&&r.scope===scope);
+    const gain=xpForResult({score,maxScore,perfect,practice:!partyRun&&!isNewDaily,party:partyRun});
+    const before=levelFor(player.xp??0),after=levelFor((player.xp??0)+gain);
+    setCompletion({title:gameTitle,score,maxScore,perfect,text,party:partyRun,stars:starsFor(score,maxScore,perfect),gain,levelUp:after.level>before.level?after.title+" · Level "+after.level:null});
     sfx(perfect?"perfect":"win");
+    if(after.level>before.level)window.setTimeout(()=>sfx("badge"),900);
     if(partyRun){
       setRoom(current=>current?{...current,players:current.players.map(p=>p.uid==="me"?{...p,score,maxScore,perfect,finished:true}:p)}:current);
       if(multiplayerConfigured()&&roomCode) void submitRoomScore(roomCode,score,maxScore,perfect).catch(()=>{/* local result still shown */});
+      setPlayer(cur=>{const n={...cur,xp:(cur.xp??0)+gain};savePlayer(n);return n;});
       return;
     }
-    if(practice){return;}
+    if(practice){setPlayer(cur=>{const n={...cur,xp:(cur.xp??0)+gain};savePlayer(n);return n;});return;}
     const result={date,game:activeGame!,scope,score,maxScore,perfect,durationSeconds:Math.max(0,Math.round((Date.now()-gameStartedAt)/1000))};
-    const nextPlayer = recordResult(player,result);
+    const nextPlayer = {...recordResult(player,result),xp:(player.xp??0)+gain};
+    savePlayer(nextPlayer);
     setPlayer(nextPlayer);
     setNotice(hasDriveConnection() ? "Result saved. Syncing your private Drive copy…" : "Daily result saved on this device.");
     if (hasDriveConnection()) {
@@ -203,7 +213,7 @@ export default function App() {
       try{
         const parsed=JSON.parse(String(reader.result)) as Partial<PlayerData>;
         if(!Array.isArray(parsed.results)||typeof parsed.bests!=="object")throw new Error("Invalid file");
-        const next:PlayerData={results:parsed.results.filter(r=>r&&typeof r.date==="string"&&GAMES.some(g=>g.id===r.game)).map(r=>({...r,scope:r.scope??"general"})),bests:parsed.bests??{},sound:parsed.sound!==false,music:parsed.music!==false,reducedMotion:Boolean(parsed.reducedMotion),hideStreaks:Boolean(parsed.hideStreaks)};
+        const next:PlayerData={results:parsed.results.filter(r=>r&&typeof r.date==="string"&&GAMES.some(g=>g.id===r.game)).map(r=>({...r,scope:r.scope??"general"})),bests:parsed.bests??{},sound:parsed.sound!==false,music:parsed.music!==false,xp:Number(parsed.xp)||0,reducedMotion:Boolean(parsed.reducedMotion),hideStreaks:Boolean(parsed.hideStreaks)};
         savePlayer(next);setPlayer(next);setNotice("Progress imported.");
       }catch{setNotice("That file does not look like a MedDaily progress export.");}
     };reader.readAsText(file);
@@ -251,11 +261,11 @@ export default function App() {
     {room&&<div className="room-strip"><span className="room-dot" /> <b>ROOM {room.code}</b><span>{room.players.length} players · {room.players.filter(p=>p.finished).length} finished</span><button onClick={()=>setScreen("friends")}>Room details</button><button onClick={closeRoom}>Leave</button></div>}
 
     <main>
-      {activeGame?<div className={"play-page tone-"+(GAMES.find(g=>g.id===activeGame)?.wash??"lilac")}>
+      {activeGame?<div className={"page-enter play-page tone-"+(GAMES.find(g=>g.id===activeGame)?.wash??"lilac")}>
         <div className="breadcrumb"><button onClick={()=>{setActiveGame(null);setPractice(false);}}>← All games</button><span>/</span><span>{title}</span></div>
         <div className="play-heading"><div className="play-badge" aria-hidden="true"><GameArt game={activeGame}/></div><div className="play-heading-text"><span className="eyebrow">{partyRun?"PARTY ROOM · "+roomCode:practice?"FREE PLAY":selectedTitle.toUpperCase()+" · "+date}</span><h1>{title}</h1><p>{GAMES.find(g=>g.id===activeGame)?.description}</p></div>
           {!partyRun&&<div className="mode-switch" role="group" aria-label="Game mode"><button className={!practice?"selected":""} onClick={()=>{if(practice)openGame(activeGame,false,room?.seed);}}>Daily</button><button className={practice?"selected":""} onClick={()=>{if(!practice)openGame(activeGame,true,hashSeed(activeGame+"-practice-"+Date.now()));}}>Free Play</button></div>}</div>
-        <section className="game-stage"><div className="stage-orbit orbit-one"/><div className="stage-orbit orbit-two"/>
+        <section className="game-stage"><div className="stage-orbit orbit-one"/><div className="stage-orbit orbit-two"/><div className="stage-watermark" aria-hidden="true"><GameArt game={activeGame}/></div>
           <GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onDone={finishGame}/>
         </section>
         {room&&<RoomScores room={room}/>}
@@ -266,9 +276,12 @@ export default function App() {
     {completion&&<div className="complete-overlay" role="dialog" aria-modal="true" aria-label="Round complete" onClick={()=>setCompletion(null)}>
       <div className={"complete-card"+(completion.perfect?" perfect":"")} onClick={e=>e.stopPropagation()}>
         {!player.reducedMotion&&<div className="confetti" aria-hidden="true">{Array.from({length:26},(_,i)=><i key={i} style={{left:((i*37)%100)+"%",animationDelay:((i%9)*0.12)+"s",background:["#ffd54a","#ff5d9e","#52e3b0","#36bdf5","#a99aff"][i%5]}}/>)}</div>}
-        <span className="complete-stamp">{completion.perfect?"PERFECT":"COMPLETE"}</span>
+        <div className="complete-mascot"><Mascot mood={completion.stars>=3?"cheer":completion.stars===0?"sad":"happy"} size={96}/></div>
+        <div className="complete-stars" aria-label={completion.stars+" of 3 stars"}>{[1,2,3].map(n=><span key={n} className={n<=completion.stars?"on":""} style={{animationDelay:(0.25+n*0.22)+"s"}}>★</span>)}</div>
+        <span className="complete-stamp">{completion.perfect?"PERFECT":completion.stars>=3?"GREAT":completion.stars===0?"TRY AGAIN":"COMPLETE"}</span>
         <h2>{completion.title}</h2>
         <p className="complete-sub">{completion.party?"Room "+roomCode+" · send this to your group":practice?"Free Play round finished":"Daily saved · come back tomorrow"}</p>
+        <div className="complete-xp"><b>+{completion.gain} XP</b>{completion.levelUp&&<span className="level-up">LEVEL UP! {completion.levelUp}</span>}</div>
         <pre className="share-preview">{completion.text.split("\n").filter(l=>!l.startsWith("http")).join("\n")}</pre>
         <div className="complete-actions">
           <button className="button button-primary" onClick={()=>void shareResult()}>{copied?"✓ Copied!":"Share result ↗"}</button>
@@ -278,6 +291,7 @@ export default function App() {
         <button className="complete-close" aria-label="Close" onClick={()=>setCompletion(null)}>×</button>
       </div>
     </div>}
+    {splash&&<Splash onStart={()=>{try{sessionStorage.setItem("meddaily:splash","1");}catch{/* ignore */}sfx("start");setSplash(false);}}/>}
     <footer className="site-footer"><div><span className="footer-mark">✳</span><b>meddaily.</b><span>PRESS START · FIND YOUR NEXT FAVORITE</span></div><p>For education only · Not a clinical decision tool · Verify care decisions against current guidance.</p><span className="version">v1.1 · Local-first · Optional Drive sync</span></footer>
   </div>;
 }
@@ -293,8 +307,10 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
   const visible=shelf==="all"?GAMES:GAMES.filter(g=>SHELF_OF[shelf].includes(g.id));
   const ordered=[...visible.filter(g=>g.id===featuredId),...visible.filter(g=>g.id!==featuredId)];
   const specialtyName=SPECIALTIES.find(s=>s.id===specialty)?.name;
-  return <div className="home-page">
+  const lvl=levelFor(player.xp??0);
+  return <div className="home-page page-enter">
     <section className="arcade-hud">
+      <div className="hud-level"><Mascot mood="happy" size={44}/><div><b>Lv {lvl.level} · {lvl.title}</b><i role="progressbar" aria-valuenow={lvl.pct} aria-valuemin={0} aria-valuemax={100}><span style={{width:lvl.pct+"%"}}/></i><small>{lvl.into} / {lvl.span} XP to next level</small></div></div>
       <div className="hud-controls">
         <div className="home-play-mode" role="group" aria-label="Choose daily or free play"><button className={!freePlay?"selected":""} onClick={()=>setFreePlay(false)}>Daily</button><button className={freePlay?"selected":""} onClick={()=>setFreePlay(true)}>Free Play ∞</button></div>
         <div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialties</button></div>

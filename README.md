@@ -68,3 +68,7 @@ Medical material is for education and entertainment, not patient care or a clini
 - Mime Time is a pass-the-phone charades game with a 135-prompt deck.
 
 - Every game is medical-themed: Deep Scan descends through tissue layers, Letter Rungs ladders start and end on medical words, and Theme Trail packs are medical word themes.
+
+## Game feel
+
+Title screen with the mascot Pip (also unlocks audio), a player level and XP bar, 1–3 star ratings with confetti on every finish, synthesized music and sound effects per game, chunky tile and key styling, and per-game cover art. See `docs/ADDING_A_GAME.md` to add a game.

@@ -94,3 +94,24 @@ describe("Theme Trail boards", () => {
     }
   });
 });
+
+import { levelFor, starsFor, xpForLevel, xpForResult } from "./levels";
+describe("levels and stars", () => {
+  it("rises monotonically with sensible thresholds", () => {
+    expect(levelFor(0).level).toBe(1);
+    expect(levelFor(xpForLevel(2)).level).toBe(2);
+    expect(levelFor(xpForLevel(2) - 1).level).toBe(1);
+    expect(levelFor(99999).title).toBe("Legend");
+    let last = -1;
+    for (let xp = 0; xp < 5000; xp += 37) { const l = levelFor(xp).level; expect(l).toBeGreaterThanOrEqual(last); last = l; }
+    expect(levelFor(xpForLevel(3) + 10).pct).toBeLessThan(10);
+  });
+  it("pays daily rounds more than free play and rewards perfect runs", () => {
+    const base = { score: 50, maxScore: 100, perfect: false, party: false };
+    expect(xpForResult({ ...base, practice: false })).toBeGreaterThan(xpForResult({ ...base, practice: true }));
+    expect(xpForResult({ ...base, practice: false, perfect: true })).toBe(xpForResult({ ...base, practice: false }) + 25);
+  });
+  it("awards stars by ratio", () => {
+    expect([starsFor(0, 100, false), starsFor(30, 100, false), starsFor(60, 100, false), starsFor(90, 100, false), starsFor(10, 100, true)]).toEqual([0, 1, 2, 3, 3]);
+  });
+});

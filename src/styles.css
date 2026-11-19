@@ -1389,3 +1389,76 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .trail-cell.hint{outline:3px dashed #52e3b0;outline-offset:1px}
 .trail-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
 .trail-found{display:flex;flex-wrap:wrap;gap:6px}.trail-found span{padding:4px 12px;border-radius:99px;background:#36bdf5;color:#04243a;font:700 12px var(--font-game)}.trail-found span.is-trail{background:#ff63a9;color:#fff}
+
+/* ===== Game feel: splash, mascot, level HUD, stars, stage art ===== */
+.mascot{display:block;overflow:visible;animation:mascotBob 2.4s ease-in-out infinite;filter:drop-shadow(0 6px 0 rgba(0,0,0,.25))}
+@keyframes mascotBob{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-6px) rotate(1.5deg)}}
+.mascot-eyes{transform-box:fill-box;transform-origin:center;animation:mascotBlink 4.5s infinite}
+@keyframes mascotBlink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.mascot-wave{transform-box:fill-box;transform-origin:0 100%;animation:mascotWave .7s ease-in-out infinite alternate}
+@keyframes mascotWave{from{transform:rotate(-14deg)}to{transform:rotate(14deg)}}
+.mascot-cheer{animation:mascotJump .6s ease-in-out infinite}
+@keyframes mascotJump{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+[data-motion="reduced"] .mascot,[data-motion="reduced"] .mascot-eyes,[data-motion="reduced"] .mascot-wave{animation:none}
+
+.splash{position:fixed;inset:0;z-index:100;display:grid;place-items:center;overflow:hidden;cursor:pointer;background:radial-gradient(circle at 50% 38%,#6b32d6 0%,#2c1670 45%,#0f0830 100%);animation:overlayIn .4s ease-out;outline:none}
+.splash-rays{position:absolute;inset:-50%;background:repeating-conic-gradient(from 0deg at 50% 45%,rgba(255,255,255,.07) 0 8deg,transparent 8deg 20deg);animation:featSpin 60s linear infinite}
+.splash-floaters{position:absolute;inset:0;pointer-events:none}
+.splash-floaters span{position:absolute;bottom:-40px;opacity:.5;animation:splashRise 12s linear infinite;filter:drop-shadow(0 4px 0 rgba(0,0,0,.3))}
+@keyframes splashRise{to{transform:translateY(-115vh) rotate(40deg)}}
+.splash-center{position:relative;display:grid;justify-items:center;gap:6px;padding:20px;text-align:center}
+.splash-logo{display:flex;align-items:baseline;font:400 clamp(54px,15vw,110px)/1 var(--font-display);color:#fff;text-shadow:0 6px 0 #321268,0 10px 0 #1b0b4a,0 0 40px rgba(255,98,170,.5)}
+.splash-logo b{font-weight:400;display:inline-block;animation:logoBounce 1.4s cubic-bezier(.2,1.6,.4,1) both}
+.splash-logo i{font-style:normal;color:#ffd54a}
+@keyframes logoBounce{0%{transform:translateY(-120px) scale(.4);opacity:0}60%{transform:translateY(8px) scale(1.1);opacity:1}100%{transform:none}}
+.splash-tag{margin-top:4px;color:#ffe27a;font:700 clamp(10px,2.6vw,14px) var(--font-game);letter-spacing:4px}
+.splash-mascot{margin:14px 0 6px}
+.splash-start{padding:14px 40px;border:4px solid #fff;border-radius:99px;background:linear-gradient(180deg,#ffe27a,#ffb82e);color:#3b2200;font:400 clamp(22px,6vw,32px) var(--font-display);letter-spacing:1px;cursor:pointer;box-shadow:0 8px 0 #a86a00,0 14px 30px rgba(0,0,0,.4);animation:startPulse 1.2s ease-in-out infinite}
+@keyframes startPulse{50%{transform:scale(1.07)}}
+.splash-hint{margin-top:10px;color:#c3b9ef;font:600 12px var(--font-game)}
+[data-motion="reduced"] .splash-rays,[data-motion="reduced"] .splash-floaters span,[data-motion="reduced"] .splash-start,[data-motion="reduced"] .splash-logo b{animation:none}
+
+.hud-level{display:flex;align-items:center;gap:10px;padding:6px 14px 6px 8px;border-radius:16px;background:rgba(0,0,0,.28);border:2px solid rgba(255,255,255,.14)}
+.hud-level>div{display:grid;gap:3px;min-width:150px}.hud-level b{font:400 16px var(--font-display);color:#fff}
+.hud-level i{display:block;height:10px;border-radius:99px;background:rgba(0,0,0,.4);overflow:hidden;box-shadow:inset 0 2px 0 rgba(0,0,0,.3)}
+.hud-level i span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#52e3b0,#ffd54a);transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.hud-level small{color:#b9afe3;font:600 10px var(--font-game)}
+
+.complete-mascot{display:flex;justify-content:center;margin:-8px 0 -6px}
+.complete-stars{display:flex;justify-content:center;gap:6px;margin:4px 0 8px}
+.complete-stars span{font-size:46px;line-height:1;color:rgba(255,255,255,.18);text-shadow:0 4px 0 rgba(0,0,0,.35);transform:scale(.4);opacity:0;animation:starIn .5s cubic-bezier(.2,1.8,.4,1) forwards}
+.complete-stars span.on{color:#ffd54a;text-shadow:0 4px 0 #a86a00,0 0 18px rgba(255,213,74,.7)}
+@keyframes starIn{to{transform:scale(1);opacity:1}}
+.complete-xp{display:flex;flex-direction:column;align-items:center;gap:6px;margin:0 0 12px}
+.complete-xp b{padding:4px 16px;border-radius:99px;background:linear-gradient(180deg,#52e3b0,#1c9c76);color:#032d35;font:400 18px var(--font-display);box-shadow:0 3px 0 #0e6a50}
+.level-up{padding:6px 16px;border-radius:99px;background:linear-gradient(90deg,#ff63a9,#ffd54a);color:#2a1658;font:400 16px var(--font-display);animation:startPulse .8s ease-in-out infinite}
+
+.stage-watermark{position:absolute;right:-18px;bottom:-14px;width:min(46%,260px);opacity:.1;transform:rotate(-8deg);pointer-events:none;z-index:0;filter:saturate(0) brightness(2)}
+@media(max-width:760px){.hud-level{width:100%}}
+
+/* ===== Arcade tile pass: depth, gloss, and press feedback on the pieces you touch most ===== */
+.medle-keyboard button,.connection-tile,.association-card,.hive-letter,.letter-grid-tile,.letter-tile,.rumble-options button,.riddle-options button,.higher-card,.nonogram-cell{
+  position:relative;transition:transform .09s,box-shadow .09s,filter .15s;
+}
+.medle-keyboard button{border:2px solid rgba(255,255,255,.55);border-radius:11px;background:linear-gradient(180deg,#8f7fe0,#5a49b8);color:#fff;font:400 16px var(--font-display);box-shadow:0 5px 0 #2f2370,0 7px 10px rgba(0,0,0,.3),inset 0 2px 0 rgba(255,255,255,.35)}
+.medle-keyboard button:active{transform:translateY(4px);box-shadow:0 1px 0 #2f2370,inset 0 2px 0 rgba(255,255,255,.2)}
+.connection-tile{border:2px solid rgba(255,255,255,.5);background:linear-gradient(180deg,#7f77d8,#4a3fa6);color:#fff;font-weight:800;box-shadow:0 5px 0 #271c66,inset 0 2px 0 rgba(255,255,255,.3)}
+.connection-tile:hover{filter:brightness(1.12);transform:translateY(-2px)}
+.connection-tile:active,.connection-tile.selected{transform:translateY(3px);box-shadow:0 2px 0 #271c66;background:linear-gradient(180deg,#ffe27a,#ffb82e);color:#3b2200}
+.association-card{border:3px solid #fff;border-radius:14px;background:linear-gradient(145deg,#8d70ff,#4a2fb0);box-shadow:0 6px 0 #25125f,0 10px 16px rgba(0,0,0,.3),inset 0 2px 0 rgba(255,255,255,.35)}
+.association-card:hover{transform:translateY(-3px) rotate(-1deg)}
+.association-card.revealed{background:linear-gradient(145deg,#fff7ea,#ffe9c0);color:#2a1658}
+.association-card.matched{background:linear-gradient(145deg,#7dffd0,#1fb88a);color:#033;animation:cardPop .35s cubic-bezier(.2,1.6,.4,1)}
+.hive-letter{filter:drop-shadow(0 5px 0 rgba(0,0,0,.35))}.hive-letter:active{transform:translateY(3px) scale(.96)}
+.letter-grid-tile,.letter-tile{border:3px solid #fff;border-radius:14px;background:linear-gradient(180deg,#fff7ea,#ffe0a8);color:#2a1658;font:400 clamp(20px,6vw,30px) var(--font-display);box-shadow:0 5px 0 #a8742a,inset 0 2px 0 #fff}
+.letter-grid-tile.selected,.letter-tile.path-cell{background:linear-gradient(180deg,#ffe27a,#ff9b3d);transform:translateY(3px);box-shadow:0 2px 0 #a8742a}
+.letter-grid-tile.found,.letter-tile.found-cell{background:linear-gradient(180deg,#9bffd8,#2fcf9f)}
+.rumble-options button,.riddle-options button{border:3px solid rgba(255,255,255,.6);border-radius:16px;box-shadow:0 5px 0 rgba(15,8,50,.6),inset 0 2px 0 rgba(255,255,255,.25)}
+.rumble-options button:active:not(:disabled),.riddle-options button:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 rgba(15,8,50,.6)}
+.higher-card{border-width:3px;box-shadow:0 7px 0 rgba(15,8,50,.55),inset 0 2px 0 rgba(255,255,255,.25)}
+.nonogram-cell{border:2px solid rgba(255,255,255,.4);border-radius:8px;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.nonogram-cell.filled-cell{background:linear-gradient(180deg,#ff8dbd,#ff4f94);box-shadow:0 3px 0 #a02462,inset 0 2px 0 rgba(255,255,255,.4)}
+.game-stage{background-image:radial-gradient(circle at 92% 5%,color-mix(in srgb,var(--c1,#8d70ff) 30%,transparent),transparent 34%),radial-gradient(circle at 5% 100%,color-mix(in srgb,var(--c2,#36bdf5) 24%,transparent),transparent 36%),linear-gradient(145deg,rgba(39,25,92,.96),rgba(10,28,69,.96))}
+.game-instructions{border-radius:14px;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.finish-panel{border:3px solid #ffd54a;border-radius:20px;background:linear-gradient(160deg,rgba(255,213,74,.18),rgba(255,98,170,.12));box-shadow:0 6px 0 rgba(120,70,0,.4);animation:cardPop .45s cubic-bezier(.2,1.5,.4,1)}
+.finish-score{font:400 28px var(--font-display);color:#ffd54a;text-shadow:0 3px 0 rgba(0,0,0,.4)}
