@@ -166,6 +166,10 @@ describe("expanded content integrity", () => {
     expect(new Set(microbePacks.map((pack) => pack.name)).size).toBe(microbePacks.length);
     expect(microbePacks.every((pack) => pack.words.every((word) => word.length <= 14))).toBe(true);
     expect(new Set(triageCases.map((item) => item.id)).size).toBe(triageCases.length);
+    expect(medleWords.every((word) => /^[A-Z]{5}$/.test(word))).toBe(true);
+    expect(new Set(medleWords).size).toBe(medleWords.length);
+    expect(new Set(scrambleWordsExtended.map(([word]) => word)).size).toBe(scrambleWordsExtended.length);
+    expect(triageCases.every((item) => item.steps.length === 4)).toBe(true);
     expect(diagnosisCases.length).toBeGreaterThanOrEqual(220);
     expect(nextStepCases.length).toBeGreaterThanOrEqual(220);
     const latestAnswers = nextStepCases.slice(-20).map((item) => item.answer);
