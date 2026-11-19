@@ -57,7 +57,7 @@ export const connectionPuzzlesExpansion4: ConnectionGroup[][] = [
 {category:"Axial spondyloarthritis",words:["Inflammatory back pain","Sacroiliitis","HLA-B27","Anterior uveitis"],hint:"Clinical and imaging clues."},
 {category:"Psoriatic arthritis",words:["Dactylitis","Nail pitting","Enthesitis","Psoriasis"],hint:"Common disease features."},
 {category:"Dermatomyositis",words:["Heliotrope rash","Gottron papules","Perifascicular atrophy","Elevated CK"],hint:"Characteristic skin and muscle findings."},
-{category:"Polymyositis",words:["Proximal weakness","Endomysial inflammation","CD8-positive cells","Elevated CK"],hint:"Classic inflammatory muscle disease findings."}
+{category:"Polymyositis",words:["Myopathic EMG","Endomysial inflammation","CD8-positive cells","Elevated CK"],hint:"Classic inflammatory muscle disease findings."}
 ],
 [
 {category:"Multiple myeloma",words:["M spike","Lytic lesions","Bence Jones protein","CRAB features"],hint:"Plasma-cell malignancy findings."},
