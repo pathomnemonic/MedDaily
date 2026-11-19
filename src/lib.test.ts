@@ -265,7 +265,9 @@ describe("expanded content integrity", () => {
 
 describe("new arcade content banks", () => {
   it("keeps the daily deep-dive prompts broad, unique, and tiered", () => {
-    expect(deepDivePrompts.length).toBeGreaterThanOrEqual(70);
+    expect(deepDivePrompts.length).toBeGreaterThanOrEqual(80);
+    expect(Math.max(...deepDivePrompts.map((prompt) => prompt.answers.length))).toBeGreaterThanOrEqual(15);
+    expect(deepDivePrompts.reduce((sum, prompt) => sum + prompt.answers.length, 0) / deepDivePrompts.length).toBeGreaterThanOrEqual(9);
     expect(new Set(deepDivePrompts.map((prompt) => prompt.id)).size).toBe(deepDivePrompts.length);
     for (const prompt of deepDivePrompts) {
       expect(prompt.prompt.length, prompt.id).toBeGreaterThan(12);
