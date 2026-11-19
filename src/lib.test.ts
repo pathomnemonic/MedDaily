@@ -65,6 +65,7 @@ describe("content bank sanity", () => {
   it("keeps Connections boards at four groups of four unique tiles", () => {
     for (const board of connectionPuzzles) {
       expect(board).toHaveLength(4);
+      expect(new Set(board.map((group) => group.category.toLowerCase())).size, JSON.stringify(board)).toBe(4);
       const words = board.flatMap((group) => group.words);
       expect(words).toHaveLength(16);
       expect(new Set(words.map((word) => word.toLowerCase())).size, JSON.stringify(board)).toBe(16);
