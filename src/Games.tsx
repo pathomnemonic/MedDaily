@@ -292,8 +292,6 @@ function TriviaRumble({ seed, onDone }: Props) {
     setStage("spin");
   };
 
-  const crownsOpen = currentPlayer?.crowns.length ?? 0;
-
   return <div className="game-layout trivia-rumble">
     {stage === "setup" ? <div className="rumble-setup">
       <div className="rumble-logo">TRIVIA <b>RUMBLE</b><span>⚡</span></div>
@@ -334,7 +332,7 @@ function TriviaRumble({ seed, onDone }: Props) {
         <div className="rumble-question-card"><span className="eyebrow">{category.short} · QUESTION {round + 1}</span><h2>{question.question}</h2></div>
         <div className="rumble-options">{question.options.map((option, i) => <button key={option} disabled={stage === "reveal"} className={stage === "reveal" ? (i === question.answer ? "right" : i === picked ? "wrong" : "dim") : picked === i ? "selected" : ""} onClick={() => answer(i)}><span>{String.fromCharCode(65 + i)}</span>{option}</button>)}</div>
         {stage === "reveal" && <div className={"rumble-explanation" + (picked === question.answer ? " correct" : "")}>
-          <b>{picked === question.answer ? "Nice answer!" : "The correct answer is " + question.options[question.answer] + "."}</b><p>{question.explanation}</p>
+          <b>{message} {picked !== question.answer ? "Correct answer: " + question.options[question.answer] + "." : ""}</b><p>{question.explanation}</p>
           <button className="button button-primary full-button" onClick={next}>{winner ? "See the winner" : round + 1 === limit ? "View final scores" : mode === "pass" ? "Next player's turn →" : "Spin again →"}</button>
         </div>}
       </div> : null}
