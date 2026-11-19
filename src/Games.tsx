@@ -966,7 +966,8 @@ function AnagramSprint({ seed, onDone }: Props) {
 
 function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
   const base = glyphPatterns[seed % glyphPatterns.length];
-  const item = useMemo(() => practice ? { ...base, name: base.name + " · Variant", pattern: transformNonogram(base.pattern, seed) } : base, [base, seed, practice]);
+  const generated = practice || seed % 2 === 1;
+  const item = useMemo(() => generated ? { ...base, name: base.name + (practice ? " · Variant" : " · Daily Variant"), pattern: transformNonogram(base.pattern, seed) } : base, [base, seed, practice, generated]);
   const [cells, setCells] = useState<number[][]>(() => item.pattern.map((row) => row.map(() => 0)));
   const [checked, setChecked] = useState(false);
   const rowClues = item.pattern.map((row) => nonogramRuns(row));
@@ -978,7 +979,7 @@ function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boo
     onDone(Math.round(correct / 25 * 100), 100, correct === 25);
   };
   return <div className="game-layout">
-    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY PATTERN" : "CURATED DAILY PATTERN"}</div>
+    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY PATTERN" : generated ? "GENERATED DAILY PATTERN" : "CURATED DAILY PATTERN"}</div>
     <div className="game-instructions"><span className="instruction-dot lilac" /> Solve the 5×5 nonogram. Each clue gives the length of consecutive filled runs. Cycle each cell through unknown, filled, and marked empty to keep track without paper.</div>
     <div className="nonogram-legend"><span><b>●</b> Filled</span><span><b>×</b> Empty</span><span><b>·</b> Unknown</span></div>
     <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue)?"clue-complete":""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue"+(lineSolved(row,rowClues[r])?" clue-complete":"")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1) + ": " + (value===1?"filled":value===2?"marked empty":"unknown")} className={"nonogram-cell" + (value===1 ? " filled-cell" : "") + (value===2 ? " empty-marked" : "") + (checked && (item.pattern[r][c] ? value!==1 : value!==2) ? " error-cell" : "")} onClick={() => setCells((all) => all.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? (v + 1) % 3 : v) : x))}>{value===1?"●":value===2?"×":""}</button>)}</div>)}</div></div>
@@ -1019,7 +1020,8 @@ function HigherLower({ seed, onDone }: Props) {
 
 
 function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
-  const item = useMemo(() => practice ? (generateWordLadder(seed, [...ladderDictionary]) ?? wordLadders[seed % wordLadders.length]) : wordLadders[seed % wordLadders.length], [seed, practice]);
+  const generated = useMemo(() => practice || seed % 2 === 1 ? generateWordLadder(seed, [...ladderDictionary]) : null, [seed, practice]);
+  const item = generated ?? wordLadders[seed % wordLadders.length];
   const [entered, setEntered] = useState<string[]>([item.start]);
   const [text, setText] = useState("");
   const [note, setNote] = useState("Change one letter at a time. Every step must be a real word.");
@@ -1040,7 +1042,7 @@ function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boo
     else setNote("Good step. Keep going.");
   };
   return <div className="game-layout">
-    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY LADDER" : "CURATED DAILY LADDER"}</div>
+    <div className="eyebrow ladder-mode-label">{practice ? (generated ? "GENERATED FREE-PLAY LADDER" : "CURATED FALLBACK LADDER") : generated ? "GENERATED DAILY LADDER" : "CURATED DAILY LADDER"}</div>
     <div className="game-instructions"><span className="instruction-dot peach" /> Build a word ladder from the start word to the end word. Change one letter at a time; all intermediate steps must be words.</div>
     <div className="ladder-ends"><span>START <b>{item.start}</b></span><span>FINISH <b>{item.end}</b></span></div>
     <div className="ladder-rungs">{entered.map((w, i) => <span key={i}>{w}</span>)}{!ended && <i>?</i>}</div>
