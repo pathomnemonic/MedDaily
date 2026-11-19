@@ -117,3 +117,15 @@ export function generateWordLadder(seed: number, dictionary: readonly string[]):
   const path = shuffle(candidates, random)[0];
   return { start: path[0], end: path[path.length - 1], path, note: "Generated from the medical word bank." };
 }
+
+/** Apply one of the eight rotations/reflections of a square nonogram pattern. */
+export function transformNonogram(pattern: readonly (readonly number[])[], seed: number): number[][] {
+  let result = pattern.map((row) => [...row]);
+  const turns = Math.abs(seed) % 4;
+  const flip = Math.floor(Math.abs(seed) / 4) % 2 === 1;
+  for (let turn = 0; turn < turns; turn++) {
+    result = result[0].map((_, column) => result.map((row) => row[column]).reverse());
+  }
+  if (flip) result = result.map((row) => [...row].reverse());
+  return result;
+}
