@@ -148,3 +148,10 @@ export function deepDiveAnswerAward(tier: number, currentRoundScore: number): nu
   const base = Number.isInteger(tier) && tier >= 1 && tier <= 6 ? deepDivePointsByTier[tier - 1] : 0;
   return Math.max(0, Math.min(base, 100 - Math.max(0, currentRoundScore)));
 }
+
+
+export function triviaRumbleResult(correctCounts: readonly number[], mode: "solo" | "pass", totalTurns: number): { score: number; maxScore: number; perfect: boolean } {
+  const best = Math.max(0, ...correctCounts);
+  const perPlayerTurns = mode === "solo" ? totalTurns : Math.ceil(totalTurns / 2);
+  return { score: best * 100, maxScore: perPlayerTurns * 100, perfect: best === perPlayerTurns };
+}
