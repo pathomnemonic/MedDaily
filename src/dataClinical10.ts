@@ -57,7 +57,7 @@ export const connectionPuzzlesExpansion10: ConnectionGroup[][] = [
 {category:"Vitamin B12 deficiency",words:["Macrocytosis","Hypersegmented neutrophils","Elevated methylmalonic acid","Neurologic deficits"],hint:"Megaloblastic anemia with neurologic disease."},
 {category:"Iron deficiency anemia",words:["Low ferritin","High TIBC","Pica","Microcytosis"],hint:"Classic iron deficiency profile."},
 {category:"Anemia of chronic inflammation",words:["Low serum iron","Low TIBC","High ferritin","Hepcidin"],hint:"Inflammation-associated iron restriction."},
-{category:"Folate deficiency",words:["Macrocytosis","Hypersegmented neutrophils","Normal methylmalonic acid","No neurologic deficits"],hint:"Megaloblastic anemia without B12-type neurologic injury."}
+{category:"Folate deficiency",words:["Low serum folate","Elevated homocysteine","Normal methylmalonic acid","No neurologic deficits"],hint:"Megaloblastic anemia without B12-type neurologic injury."}
 ],
 [
 {category:"Hemophilia A",words:["Factor VIII deficiency","Hemarthrosis","Prolonged aPTT","X-linked inheritance"],hint:"Classic coagulation factor deficiency."},
