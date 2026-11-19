@@ -1,0 +1,15 @@
+{
+  "id": "./",
+  "name": "MedDaily — Medical Mini-game Arcade",
+  "short_name": "MedDaily",
+  "description": "A little daily dose of medical puzzles.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101c2d",
+  "theme_color": "#101c2d",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "./meddaily-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
