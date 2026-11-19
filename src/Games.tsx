@@ -531,6 +531,7 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
   const [guess, setGuess] = useState("");
   const [guesses, setGuesses] = useState<string[]>([]);
   const [clueCount, setClueCount] = useState(2);
+  const [manualHints, setManualHints] = useState(0);
   const [ended, setEnded] = useState(false);
   const [won, setWon] = useState(false);
   const [note, setNote] = useState("Read the case, then type the diagnosis. Six guesses; each miss unlocks another clue.");
@@ -546,7 +547,7 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
     if (correct || next.length >= 6) {
       setEnded(true); setWon(correct);
       setNote(correct ? "Diagnosis confirmed." : "No guesses remaining. Review the case.");
-      if (!done.current) { done.current = true; onDone(correct ? Math.max(20, 100 - (next.length - 1) * 15) : 0, 100, correct && next.length === 1); }
+      if (!done.current) { done.current = true; onDone(correct ? Math.max(0, 100 - (next.length - 1) * 15 - manualHints * 5) : 0, 100, correct && next.length === 1 && manualHints === 0); }
     } else {
       setClueCount((n) => Math.min(item.clues.length, n + 1));
       setNote("Not quite. A new clue has been added.");
@@ -555,7 +556,8 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
   const revealClue = () => {
     if (ended || clueCount >= item.clues.length) return;
     setClueCount((n) => Math.min(item.clues.length, n + 1));
-    setNote("Clue revealed. Use it to narrow your diagnosis.");
+    setManualHints((n) => n + 1);
+    setNote("Optional clue revealed. This costs 5 points.");
   };
   return <div className="game-layout doctordle-game">
     <div className="case-banner"><span>DOCTORDLE · CASE {item.id.toUpperCase()}</span><strong>{item.title}</strong><small>{clueCount} of {item.clues.length} clues revealed · {6 - guesses.length} guesses left</small></div>
@@ -566,7 +568,7 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
         <label htmlFor="doctordle-guess">Your diagnosis</label>
         <div><input id="doctordle-guess" value={guess} onChange={(event) => setGuess(event.target.value)} placeholder="Type a diagnosis…" autoComplete="off" /><button className="button button-primary" type="submit" disabled={!guess.trim()}>Guess ↗</button></div>
       </form>
-      <div className="doctordle-tools"><button className="text-button" onClick={revealClue} disabled={clueCount >= item.clues.length}>Reveal another clue</button><span>{guesses.length}/6 guesses used</span></div>
+      <div className="doctordle-tools"><button className="text-button" onClick={revealClue} disabled={clueCount >= item.clues.length}>Reveal another clue · −5 pts</button><span>{guesses.length}/6 guesses used</span></div>
     </> : <Finish title={won ? "Diagnosis found" : "Case revealed"} detail={(won ? "Solved in " + guesses.length + " of 6 guesses. " : "Six guesses used. ") + item.explanation}><p className="doctordle-answer">Answer: <b>{item.answer}</b></p><p className="source-note">Source note: {item.source}</p></Finish>}
     <p className="game-feedback" aria-live="polite">{note}</p>
   </div>;
