@@ -747,7 +747,7 @@ function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
           const isHint = hintedWord !== null && board.paths[hintedWord][0] === index;
           return <button key={index} data-strands-cell={index} type="button"
             className={"letter-tile strands-tile" + (path.includes(index) ? " path-cell" : "") + (isFound ? " found-cell" : "") + (isSpangram ? " spangram-cell" : "") + (isHint ? " hinted-cell" : "")}
-            onPointerDown={(event) => { event.preventDefault(); event.currentTarget.closest(".strands-board")?.setPointerCapture(event.pointerId); begin(index); }}
+            onPointerDown={(event) => { event.preventDefault(); (event.currentTarget.closest(".strands-board") as HTMLElement | null)?.setPointerCapture(event.pointerId); begin(index); }}
             onClick={(event) => { if (event.detail === 0) { if (!path.length) begin(index); else extend(index); } }}
             disabled={ended} aria-label={"Row " + (Math.floor(index / board.columns) + 1) + ", column " + (index % board.columns + 1) + ", " + letter}>
             {letter}
