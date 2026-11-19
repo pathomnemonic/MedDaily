@@ -8,23 +8,23 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 
 | Game | Current bank | Notes |
 |---|---:|---|
-| Medle | 140 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
+| Medle | 143 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
 | Connections | 122 boards | Four groups of four per board; 20 new cross-specialty boards |
 | DoctorDle | 220 cases | Six-guess typed diagnosis puzzle with progressive clues, explanations, and source notes |
 | Word Hunt | 71 unique medical theme packs | 14×14 drag-to-select word-search grids; themes span organisms, anatomy, organ systems, and pharmacology |
-| Labline | 100 prompts | Five-round estimation challenge with cumulative scoring and reference explanations | Reference values, thresholds, and a few vital-sign estimates; normal ranges vary by laboratory and patient |
+| Labline | 100 prompts | Five-round estimation challenge with cumulative scoring and reference explanations |
 | Association Blitz | 208 unique pairs | 20-card, ten-pair timed memory board with combo streaks and a time bonus |
 | Triage Order | 42 sequences | Clinical and emergency sequence-reconstruction puzzles |
-| Anagram Sprint | 111 terms | Three-guess word scramble |
+| Anagram Sprint | 111 terms | Five-word, 75-second timed scramble with hints and attempt-based scoring |
 | Cell Sketch | 31 unique-named 5×5 nonograms (19 original patterns plus 12 rotations/reflections) | Row and column run clues; CI verifies one valid solution per board |
 | What Has More? | 90 comparisons (24 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
 | Word Ladder | 26 ladders | Each intended solution path uses real words and one-letter changes |
 | Medical Spelling Hive | 42 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
-| Casefile Logic | 15 cases | Fictional deduction puzzles; one-to-one assignment rules |
+| Casefile Logic | 15 cases | Fictional deduction puzzles with tri-state pencil marks and one-to-one assignment rules |
 
 ## What this means for daily longevity
 
-Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. Across the clinical expansion batches to date, 110 Connections boards, 200 diagnosis cases, and 200 next-step cases have been added beyond the original banks, 40 Labline prompts, 116 memory pairs, 40 organism packs, 19 Spelling Hive boards, 20 Word Ladders, 13 original nonogram patterns plus 12 transformations, 12 fictional logic cases, 59 new Medle answers, 20 triage sequences, 30 quantitative comparisons, and 51 Anagram Sprint terms. Several games still have far fewer than 365 unique days, and the smallest puzzle formats remain the immediate priority. Practice mode draws from the same available content; it does not create new questions.
+Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. Across the clinical expansion batches to date, 110 Connections boards, 200 diagnosis cases, and 200 next-step cases have been added beyond the original banks, 40 Labline prompts, 116 memory pairs, 40 organism packs, 19 Spelling Hive boards, 20 Word Ladders, 13 original nonogram patterns plus 12 transformations, 12 fictional logic cases, 59 new Medle answers, 20 triage sequences, 30 quantitative comparisons, and 51 Anagram Sprint terms. Several games still have far fewer than 365 unique days. Daily and unlimited Free Play are both supported; Free Play reshuffles or re-seeds existing curated banks rather than generating new content. Practice mode draws from the same available content; it does not create new questions.
 
 The architecture deliberately separates game engines from content datasets so banks can grow without rewriting the UI or scoring systems. However, **do not describe the current release as having 365 unique daily puzzles**.
 
