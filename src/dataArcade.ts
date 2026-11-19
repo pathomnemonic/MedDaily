@@ -95,7 +95,7 @@ export const deepDivePrompts: DeepPrompt[] = [
     ["Glucocorticoid exposure"],["Hyperthyroidism","Hyperparathyroidism"],["Hypogonadism","Celiac disease"],["Multiple myeloma","Chronic kidney disease"],["Systemic mastocytosis"],["Osteogenesis imperfecta"]
   ]),
   dive("d30","Name an organism associated with a foodborne neurologic syndrome.","Microbiology","Foodborne illness can involve neurotoxins or organisms with characteristic neurologic complications.",[
-    ["Clostridium botulinum"],["Listeria monocytogenes","Campylobacter jejuni"],["Clostridium perfringens","Bacillus cereus"],["Vibrio vulnificus","E. coli producing Shiga toxin"],["Anisakis simplex"],["Tetanus from wound contamination (not foodborne)"]
+    ["Clostridium botulinum"],["Listeria monocytogenes","Campylobacter jejuni"],["Clostridium perfringens","Bacillus cereus"],["Vibrio vulnificus","E. coli producing Shiga toxin"],["Anisakis simplex"],["Bacillus cereus"]
   ]),
   dive("d31","Name a cause of acute vision loss.","Ophthalmology","Differentiate monocular from binocular loss and painful from painless loss; retinal and optic nerve disorders are urgent.",[
     ["Central retinal artery occlusion"],["Retinal detachment","Optic neuritis"],["Central retinal vein occlusion","Vitreous hemorrhage"],["Giant cell arteritis","Acute angle-closure glaucoma"],["Nonarteritic anterior ischemic optic neuropathy"],["Endophthalmitis"]
