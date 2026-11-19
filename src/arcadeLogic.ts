@@ -239,3 +239,24 @@ export function triviaRumbleResult(correctCounts: readonly number[], mode: "solo
   const perPlayerTurns = mode === "solo" ? totalTurns : Math.ceil(totalTurns / 2);
   return { score: best * 100, maxScore: perPlayerTurns * 100, perfect: best === perPlayerTurns };
 }
+
+/**
+ * Labline scoring (0–100). Prompts with a tolerance score by distance as before; threshold prompts (tolerance 0)
+ * used to be all-or-nothing, so they now award partial credit within ~12% of the value and full marks only when exact.
+ */
+export function labScore(estimate: number, value: number, tolerance: number): number {
+  const diff = Math.abs(estimate - value);
+  if (diff < 1e-9) return 100;
+  if (tolerance === 0) return Math.max(0, Math.round(100 * (1 - diff / Math.max(Math.abs(value) * 0.12, 1e-6))) );
+  if (diff <= tolerance) return Math.max(85, Math.round(100 * (1 - 0.15 * diff / tolerance)));
+  return Math.max(0, Math.round(100 * (1 - diff / Math.max(tolerance * 3, Math.abs(value) * 0.2))));
+}
+/** A slider range that contains the true value but does not put it at the midpoint. */
+export function labRange(value: number, seed: number): { min: number; max: number } {
+  const r = seeded((seed + 0x9e3779b1) >>> 0);
+  const a = 0.3 + r() * 0.35, b = 1.5 + r() * 0.9;
+  const base = Math.abs(value) < 1e-9 ? 1 : Math.abs(value);
+  return { min: Math.max(0, value - base * (1 - a) * 1), max: value + base * (b - 1) };
+}
+/** Bonus for consecutive strong rounds: 0, 10, 20, 30, 30... (the first strong round starts the streak). */
+export const labStreakBonus = (streakBefore: number): number => Math.min(30, streakBefore * 10);

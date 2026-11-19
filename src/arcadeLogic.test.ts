@@ -187,3 +187,25 @@ describe("Trivia Rumble result scoring", () => {
     expect(triviaRumbleResult([12, 10], "pass", 36)).toEqual({ score: 1200, maxScore: 1800, perfect: false });
   });
 });
+
+import { labRange, labScore, labStreakBonus } from "./arcadeLogic";
+describe("Labline scoring", () => {
+  it("gives partial credit on threshold prompts instead of all-or-nothing", () => {
+    expect(labScore(6.5, 6.5, 0)).toBe(100);
+    expect(labScore(6.4, 6.5, 0)).toBeGreaterThan(70);
+    expect(labScore(6.4, 6.5, 0)).toBeLessThan(100);
+    expect(labScore(9, 6.5, 0)).toBe(0);
+  });
+  it("rewards closeness monotonically and caps the window above 85", () => {
+    const values = [0, 1, 2, 3, 5, 8, 20].map((d) => labScore(14 + d, 14, 1.5));
+    for (let i = 1; i < values.length; i++) expect(values[i]).toBeLessThanOrEqual(values[i - 1]);
+    expect(labScore(14.5, 14, 1.5)).toBeGreaterThanOrEqual(85);
+  });
+  it("builds a slider range that always contains the answer without centering it", () => {
+    for (let seed = 0; seed < 60; seed++) for (const v of [0, 7.4, 14, 126, 500]) {
+      const { min, max } = labRange(v, seed);
+      expect(min).toBeLessThanOrEqual(v); expect(max).toBeGreaterThanOrEqual(v); expect(max).toBeGreaterThan(min);
+    }
+    expect(labStreakBonus(0)).toBe(0); expect(labStreakBonus(2)).toBe(20); expect(labStreakBonus(9)).toBe(30);
+  });
+});

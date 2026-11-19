@@ -36,7 +36,7 @@ describe("local achievement progression", () => {
       result("medle", 0),
       result("connections", 1),
       result("diagnosis", 2),
-      result("microbe", 3),
+      result("pairs", 3),
       result("labline", 4)
     ];
     const achievements = achievementsFor(player, "general", 2, 16);
@@ -54,11 +54,11 @@ describe("local achievement progression", () => {
 
   it("unlocks the veteran, perfect-run, full-arcade, and streak milestones at their thresholds", () => {
     const player = emptyPlayer();
-    const games: GameId[] = ["medle","connections","diagnosis","microbe","labline","pairs","triage","splice","glyph","higher","ladder","hive","casefile","dive","trivia","lettergrid"];
+    const games: GameId[] = ["medle","connections","diagnosis","labline","pairs","splice","glyph","higher","ladder","hive","casefile","dive","trivia","lettergrid"];
     player.results = Array.from({ length: 100 }, (_, index) => result(games[index % games.length], index, "general", index < 5));
     const achievements = achievementsFor(player, "general", 7, games.length);
     expect(achievements.every((item) => item.earned)).toBe(true);
-    expect(achievements.map((item) => item.progress)).toEqual(["1/1","5/5","16/16","5/5","100/100","7/7"]);
+    expect(achievements.map((item) => item.progress)).toEqual(["1/1","5/5",games.length + "/" + games.length,"5/5","100/100","7/7"]);
   });
 });
 

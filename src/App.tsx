@@ -41,10 +41,8 @@ const GAMES: GameMeta[] = [
   {id:"casefile",title:"Casefile Logic",subtitle:"The clues don't lie",description:"Solve a fictional three-person deduction grid using rooms, objects, and clues.",icon:"⌕",wash:"lilac",time:"4 min",category:"Logic puzzle",level:"Moderate"},
   {id:"splice",title:"Anagram Sprint",subtitle:"Unscramble the specimen",description:"Unscramble five medical terms before the 75-second clock expires.",icon:"↝",wash:"mint",time:"1 min",category:"Word play",level:"Easy"},
   {id:"glyph",title:"Cell Sketch",subtitle:"Tiny picture logic",description:"Solve a nonogram with fill, empty, and pencil-mark cells.",icon:"▦",wash:"lilac",time:"2 min",category:"Visual logic",level:"Easy → tricky"},
-  {id:"microbe",title:"Specimen Search",subtitle:"Find the hidden terms",description:"Drag through a themed 14×14 letter grid to find every hidden word.",icon:"✣",wash:"blue",time:"4 min",category:"Word search",level:"Moderate"},
   {id:"labline",title:"Labline",subtitle:"Calibrate your eye",description:"Five rapid-fire estimates of classic lab values and clinical thresholds.",icon:"⌁",wash:"pink",time:"2 min",category:"Numbers",level:"Foundational"},
   {id:"ladder",title:"Letter Rungs",subtitle:"One letter at a time",description:"Build a one-letter-at-a-time path from the start word to the finish.",icon:"⌁",wash:"peach",time:"3 min",category:"Word play",level:"Moderate"},
-  {id:"triage",title:"Triage Order",subtitle:"What comes first?",description:"Put the priorities of an emergency response in order.",icon:"⇅",wash:"orange",time:"3 min",category:"Clinical reasoning",level:"Step 2"}
 ];
 type Shelf = "all" | "quick" | "brain" | "word" | "clinical" | "party";
 const SHELVES: { id: Shelf; label: string; icon: IconName }[] = [
@@ -54,8 +52,8 @@ const SHELF_OF: Record<Shelf, GameId[]> = {
   all:[],
   quick:["splice","labline","higher","medle","dive","glyph","mime","bodymap","riddle"],
   brain:["connections","glyph","casefile","ladder","pairs","hive","riddle","crossword","trail"],
-  word:["medle","microbe","splice","ladder","hive","lettergrid","diagnosis","crossword","trail"],
-  clinical:["diagnosis","triage","labline","dive","riddle","bodymap"],
+  word:["medle","splice","ladder","hive","lettergrid","diagnosis","crossword","trail"],
+  clinical:["diagnosis","labline","dive","riddle","bodymap"],
   party:[...PARTY_GAMES,"trivia","mime"]
 };
 /** Rotating spotlight: the open-answer and trivia games trade the featured slot each UTC day. */

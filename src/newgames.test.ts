@@ -66,7 +66,7 @@ import { makeTrailPuzzle, trailPackOk } from "./trailLogic";
 describe("Theme Trail boards", () => {
   it("lays out every word pack with adjacent, non-overlapping paths and a board-spanning trail word", () => {
     const packs = microbePacks.filter(trailPackOk);
-    expect(packs.length).toBeGreaterThanOrEqual(25);
+    expect(packs.length, "packs usable by Theme Trail").toBeGreaterThanOrEqual(60);
     for (const pack of packs) {
       for (const seed of [1, 2, 3]) {
         const puzzle = makeTrailPuzzle(pack, seed);
@@ -113,5 +113,17 @@ describe("levels and stars", () => {
   });
   it("awards stars by ratio", () => {
     expect([starsFor(0, 100, false), starsFor(30, 100, false), starsFor(60, 100, false), starsFor(90, 100, false), starsFor(10, 100, true)]).toEqual([0, 1, 2, 3, 3]);
+  });
+});
+
+
+import { fiveLetterWords } from "./dataFiveLetter";
+import { medleWords as statWords } from "./data";
+describe("Stat Word fairness", () => {
+  it("only asks for real words, and accepts a wide dictionary of guesses", () => {
+    const notWords = statWords.filter((w) => !fiveLetterWords.has(w) && !["STENT", "APGAR", "EXOME", "ACRAL", "CATHS"].includes(w));
+    expect(notWords, "answers that are not real words: " + notWords.join(",")).toEqual([]);
+    expect(fiveLetterWords.size).toBeGreaterThan(8000);
+    expect(fiveLetterWords.has("CRANE")).toBe(true);
   });
 });

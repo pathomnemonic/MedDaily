@@ -42,11 +42,6 @@ const ART: Record<GameId, () => ReactNode> = {
     <text x={30} y={68} fontSize={34} fontFamily="Lilita One, sans-serif" fill="#ffd54a" stroke={INK} strokeWidth={2.5} paintOrder="stroke" transform="rotate(-12 30 68)">?</text>
     <text x={172} y={50} fontSize={26} fontFamily="Lilita One, sans-serif" fill="#7dffd0" stroke={INK} strokeWidth={2.5} paintOrder="stroke" transform="rotate(12 172 50)">Dx</text>
   </g>,
-  microbe: () => <g>
-    <rect x={44} y={6} width={112} height={98} rx={12} fill="#f4fbff" {...S} />
-    {Array.from({ length: 5 }, (_, r) => Array.from({ length: 6 }, (_, c) => <text key={r + "-" + c} x={58 + c * 17.5} y={30 + r * 19} textAnchor="middle" fontFamily="Lilita One, sans-serif" fontSize={14} fill="#5a4a96">{"MEDICSLABGENEXRAYBONEHEARTVIRUS".charAt((r * 6 + c) % 32)}</text>))}
-    <rect x={50} y={52} width={104} height={18} rx={9} fill="#ff6aa2" opacity={0.55} />
-  </g>,
   labline: () => <g>
     <path d="M30 70h140" stroke={INK} strokeWidth={5} strokeLinecap="round" />
     {[0, 1, 2, 3, 4, 5, 6].map((i) => <path key={i} d={`M${34 + i * 22} 70v${i % 3 === 0 ? 14 : 8}`} stroke={INK} strokeWidth={3} strokeLinecap="round" />)}
@@ -62,13 +57,6 @@ const ART: Record<GameId, () => ReactNode> = {
     <g transform="rotate(8 138 56)"><rect x={106} y={14} width={64} height={84} rx={9} fill={INK} transform="translate(0 4)" /><rect x={106} y={14} width={64} height={84} rx={9} fill="#fff7ea" {...S} />
       <rect x={120} y={42} width={36} height={18} rx={9} fill="#4fc3f7" {...S} transform="rotate(-30 138 51)" /><path d="M138 51l10-15" stroke={INK} strokeWidth={3} /></g>
     <text x={100} y={64} textAnchor="middle" fontFamily="Lilita One, sans-serif" fontSize={26} fill="#ffd54a" stroke={INK} strokeWidth={2.5} paintOrder="stroke">=</text>
-  </g>,
-  triage: () => <g>
-    {[["#ff5d5d", 150, "1"], ["#ffc83d", 120, "2"], ["#3ec28f", 90, "3"]].map(([fill, w, n], i) => <g key={i}>
-      <rect x={24} y={12 + i * 32 + 3} width={Number(w)} height={26} rx={9} fill={INK} />
-      <rect x={24} y={12 + i * 32} width={Number(w)} height={26} rx={9} fill={String(fill)} {...S} />
-      <text x={40} y={31 + i * 32} fontFamily="Lilita One, sans-serif" fontSize={19} fill="#fff" stroke={INK} strokeWidth={2.5} paintOrder="stroke">{n}</text></g>)}
-    <path d="M178 22v66M168 78l10 12 10-12" fill="none" stroke="#fff" strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
   </g>,
   splice: () => <g>
     {["S", "P", "L", "I", "C", "E"].map((l, i) => <Tile key={i} x={10 + i * 31} y={[40, 18, 52, 22, 46, 20][i]} w={28} fill={["#3ec28f", "#c28bff", "#ffc83d", "#4fc3f7", "#ff6aa2", "#ff9251"][i]} letter={l} rot={[-14, 10, -6, 14, -10, 8][i]} />)}

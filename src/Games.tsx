@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank, triageCases } from "./data";
+import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank } from "./data";
 import { deductionCases, glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
-import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
+import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
+import { labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
 import { mimeDeck } from "./dataMime";
+import { fiveLetterWords } from "./dataFiveLetter";
 import { medicalRungWords } from "./dataRungs";
 import { riddles, riddleOptions } from "./dataRiddles";
 import { makeCrossword } from "./crosswordGen";
@@ -25,10 +26,8 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "medle": return <Medle seed={seed} onDone={onDone} specialty={specialty} />;
     case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} />;
     case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} specialty={specialty} />;
-    case "microbe": return <MicrobeHunt seed={seed} onDone={onDone} specialty={specialty} />;
     case "labline": return <Labline seed={seed} onDone={onDone} specialty={specialty} />;
     case "pairs": return <MemoryMatch seed={seed} onDone={onDone} specialty={specialty} />;
-    case "triage": return <TriageOrder seed={seed} onDone={onDone} specialty={specialty} />;
     case "splice": return <AnagramSprint seed={seed} onDone={onDone} specialty={specialty} />;
     case "glyph": return <CellSketch seed={seed} onDone={onDone} practice={practice} />;
     case "higher": return <HigherLower seed={seed} onDone={onDone} specialty={specialty} />;
@@ -496,7 +495,7 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
     if (ended) return;
     const invalid = (text: string) => { setMessage(text); setShake((n) => n + 1); sfx("wrong"); vibrate([30, 40, 30]); };
     if (word.length !== 5 || !/^[A-Z]{5}$/.test(word)) { invalid("Not enough letters. Five, please."); return; }
-    if (!medleWords.includes(word)) { invalid("That word isn't in the medical word list."); return; }
+    if (!medleWords.includes(word) && !fiveLetterWords.has(word)) { invalid("That isn't a word we know. Try another."); return; }
     if (rows.includes(word)) { invalid("You've already tried that word."); return; }
     const next = [...rows, word]; setRows(next); setGuess("");
     const correct = word === answer, finished = correct || next.length >= 6;
@@ -668,82 +667,6 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
 }
 
 
-function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
-  const pack = pick(microbePacks, seed, specialty, "microbe");
-  const board = useMemo(() => makeWordSearch(pack.words, 14, seed + 99), [pack, seed]);
-  const words = board.placed;
-  const [found, setFound] = useState<string[]>([]);
-  const [foundPaths, setFoundPaths] = useState<number[][]>([]);
-  const [start, setStart] = useState<number | null>(null);
-  const [path, setPath] = useState<number[]>([]);
-  const [note, setNote] = useState("Drag across a word in any straight direction. You can also tap its first and last letters.");
-  const [ended, setEnded] = useState(false);
-  const done = useRef(false);
-
-  const begin = (index: number) => {
-    if (ended || foundPaths.some((cells) => cells.includes(index))) return;
-    if (start === null) { setStart(index); setPath([index]); }
-  };
-  const preview = (index: number) => {
-    if (ended || start === null) return;
-    const cells = lineCells(start, index, 14);
-    if (cells.length) setPath(cells);
-  };
-  const resolve = (cells: number[]) => {
-    if (cells.length < 2) return;
-    const word = cells.map((i) => board.grid[Math.floor(i / 14)][i % 14]).join("");
-    const match = words.find((candidate) => !found.includes(candidate) && (candidate === word || candidate === [...word].reverse().join("")));
-    if (!match) {
-      setNote("That line is not a remaining word. Try another direction or clear your selection.");
-      setStart(null); setPath([]);
-      return;
-    }
-    const next = [...found, match];
-    setFound(next);
-    setFoundPaths((current) => [...current, cells]);
-    setStart(null); setPath([]);
-    setNote(match + " found. " + (words.length - next.length) + " remaining.");
-    if (next.length === words.length) {
-      setEnded(true);
-      if (!done.current) { done.current = true; onDone(100, 100, true); }
-    }
-  };
-  const finish = (index: number) => {
-    if (ended || start === null) return;
-    const cells = lineCells(start, index, 14);
-    if (!cells.length) {
-      setNote("Words run horizontally, vertically, or diagonally in a straight line.");
-      setStart(null); setPath([]);
-      return;
-    }
-    if (cells.length > 1) resolve(cells);
-  };
-  const clear = () => { setStart(null); setPath([]); };
-
-  return <div className="game-layout wordhunt-game">
-    <div className="case-banner microbe-banner"><span>WORD HUNT · THEMED SEARCH</span><strong>{pack.name}</strong><small>Find every hidden word. Words may run forwards, backwards, vertically, horizontally, or diagonally.</small></div>
-    <div className="wordhunt-layout">
-      <div className="wordsearch-board" role="group" aria-label="Letter grid" onPointerMove={(event) => {
-        const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-cell-index]") as HTMLElement | null;
-        if (tile) preview(Number(tile.dataset.cellIndex));
-      }} onPointerUp={(event) => {
-        const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-cell-index]") as HTMLElement | null;
-        if (tile) finish(Number(tile.dataset.cellIndex));
-      }} onPointerCancel={clear}>
-        {board.grid.flat().map((letter, i) => {
-          const isFound = foundPaths.some((cells) => cells.includes(i));
-          return <button key={i} data-cell-index={i} type="button" className={"letter-tile" + (path.includes(i) ? " path-cell" : "") + (isFound ? " found-cell" : "")} onPointerDown={() => begin(i)} onClick={(event) => { if (event.detail === 0) { if (start === null) begin(i); else finish(i); } }} disabled={ended} aria-label={"Row " + (Math.floor(i / 14) + 1) + ", column " + (i % 14 + 1) + ", " + letter}>
-            {letter}
-          </button>;
-        })}
-      </div>
-      <aside className="target-words"><SectionLabel>WORDS TO FIND</SectionLabel><div>{words.map((word) => <span key={word} className={found.includes(word) ? "target-found" : ""}>{word}</span>)}</div></aside>
-    </div>
-    <div className="connection-controls"><span className="mistake-count">{found.length} / {words.length} found</span><button className="button button-soft" onClick={clear} disabled={ended || start === null}>Clear selection</button><span className="wordhunt-progress">{words.length - found.length} left</span></div>
-    <p className="game-feedback" aria-live="polite">{note}</p>
-    {ended && <Finish title="Grid cleared!" detail={"Every hidden word in " + pack.name + " found."} score="100 / 100" />}
-  </div>;
-}
 
 function Labline({ seed, onDone, specialty = "general" }: Props) {
   const rounds = useMemo(() => {
@@ -751,51 +674,96 @@ function Labline({ seed, onDone, specialty = "general" }: Props) {
     return shuffle(pool.length >= 5 ? pool : labPrompts, seeded(seed + 27)).slice(0, 5);
   }, [seed, specialty]);
   const [round, setRound] = useState(0);
-  const [value, setValue] = useState("");
+  const item = rounds[round];
+  const range = useMemo(() => labRange(item.value, seed + round * 13), [item, seed, round]);
+  // Slider step: a clean fraction of the tolerance (or 1% of the value for threshold prompts).
+  const step = useMemo(() => {
+    const raw = item.tolerance > 0 ? item.tolerance / 5 : Math.max(Math.abs(item.value) / 100, 0.01);
+    const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+    return [1, 2, 5, 10].map((m) => m * pow).find((c) => c >= raw) ?? raw;
+  }, [item]);
+  const decimals = Math.max(0, Math.min(3, Math.ceil(-Math.log10(step) - 1e-9)));
+  // Slider bounds sit on whole steps (and always contain the true value) so the thumb snaps cleanly.
+  const sMin = Number((Math.floor(range.min / step) * step).toFixed(decimals)), sMax = Number((Math.ceil(range.max / step) * step).toFixed(decimals));
+  const snap = (v: number) => Number(Math.min(sMax, Math.max(sMin, Math.round(v / step) * step)).toFixed(decimals));
+  const [estimate, setEstimate] = useState<number>(() => snap((sMin + sMax) / 2));
+  const [typing, setTyping] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [points, setPoints] = useState(0);
+  const [earned, setEarned] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [bonus, setBonus] = useState(0);
   const [total, setTotal] = useState(0);
-  const [results, setResults] = useState<{prompt:string;estimate:string;actual:number;unit:string;points:number;context:string;source:string}[]>([]);
-  const [message, setMessage] = useState("Five estimates. Trust your clinical intuition; precision earns the points.");
+  const [pins, setPins] = useState(false);
+  const [results, setResults] = useState<{ prompt: string; estimate: number; actual: number; unit: string; points: number }[]>([]);
   const [finished, setFinished] = useState(false);
   const done = useRef(false);
-  const item = rounds[round];
-
-  const check = () => {
-    const estimate = Number(value);
-    if (value.trim() === "" || !Number.isFinite(estimate)) { setMessage("Enter a number to make your estimate."); return; }
+  const maxScore = rounds.length * 100 + 90;
+  const fmt = (v: number) => Number(v.toFixed(Math.max(decimals, 1)));
+  const lock = () => {
     if (submitted || finished) return;
-    const diff = Math.abs(estimate - item.value);
-    const earned = item.tolerance === 0 ? (diff < 0.0001 ? 100 : 0) : Math.max(0, Math.round(100 * (1 - diff / Math.max(item.tolerance * 3, Math.abs(item.value) * 0.2))));
-    const nextTotal = total + earned;
-    setPoints(earned);
-    setTotal(nextTotal);
-    setSubmitted(true);
-    setResults((current) => [...current, {prompt:item.prompt,estimate:value,actual:item.value,unit:item.unit,points:earned,context:item.context,source:item.source}]);
-    setMessage(diff <= item.tolerance ? "Bullseye — inside the expected reference window." : diff <= item.tolerance * 2 ? "Close estimate. Tighten your range next round." : "A useful reference point to remember.");
+    const typed = typing !== null && typing.trim() !== "" ? Number(typing) : NaN;
+    const guess = Number.isFinite(typed) ? typed : estimate;
+    const points = labScore(guess, item.value, item.tolerance);
+    const streakBonus = points >= 80 ? labStreakBonus(streak) : 0;
+    const nextStreak = points >= 80 ? streak + 1 : 0;
+    const nextTotal = total + points + streakBonus;
+    setEstimate(guess); setEarned(points); setBonus(streakBonus); setStreak(nextStreak); setTotal(nextTotal); setSubmitted(true); setTyping(null);
+    setResults((r) => [...r, { prompt: item.prompt, estimate: guess, actual: item.value, unit: item.unit, points }]);
+    window.setTimeout(() => setPins(true), 60);
+    reward(points >= 60, null, points >= 99 ? "BULLSEYE!" : "+" + (points + streakBonus));
     if (round === rounds.length - 1) {
       setFinished(true);
-      if (!done.current) { done.current = true; onDone(nextTotal, rounds.length * 100, nextTotal === rounds.length * 100); }
+      if (!done.current) {
+        done.current = true;
+        const squares = results.concat([{ prompt: "", estimate: guess, actual: item.value, unit: "", points }]).map((r) => r.points >= 95 ? "🟩" : r.points >= 70 ? "🟨" : r.points >= 35 ? "🟧" : "🟥").join("");
+        onDone(nextTotal, maxScore, nextTotal >= rounds.length * 100, "Labline " + nextTotal + "/" + maxScore + "\n" + squares);
+      }
     }
   };
   const next = () => {
-    if (!submitted || finished) return;
-    setRound((current) => current + 1);
-    setValue("");
-    setPoints(0);
-    setSubmitted(false);
-    setMessage("New estimate. How close can you get?");
+    if (!submitted) return;
+    const nextItem = rounds[round + 1];
+    void nextItem;
+    setRound((r) => r + 1); setSubmitted(false); setPins(false); setBonus(0);
+    setTyping(null);
   };
+  useEffect(() => { if (!submitted) setEstimate(snap((sMin + sMax) / 2)); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [round]);
+  // Ruler geometry for the reveal.
+  const lo = Math.min(estimate, item.value - Math.max(item.tolerance, 0)) , hi = Math.max(estimate, item.value + Math.max(item.tolerance, 0));
+  const pad = Math.max((hi - lo) * 0.25, Math.abs(item.value) * 0.03, 0.001);
+  const rLo = lo - pad, rHi = hi + pad;
+  const pct = (v: number) => ((v - rLo) / (rHi - rLo)) * 100;
+  const verdict = earned >= 99 ? "Bullseye! 🎯" : earned >= 85 ? "Inside the window ✓" : earned >= 60 ? "Close" : earned >= 30 ? "Getting warm" : "Far off";
 
-  return <div className="game-layout labline-game">
-    <div className="lab-console"><span className="lab-light" /><span>LABLINE · ESTIMATION CHALLENGE</span><span className="lab-light second" /></div>
-    <div className="labline-hud"><div><b>{round + 1}<small> / 5</small></b><span>ROUND</span></div><div><b>{total}</b><span>POINTS</span></div><div><b>{Math.max(0, 5 - round - Number(submitted))}</b><span>LEFT</span></div></div>
-    <div className="labline-progress"><i style={{width:((round + Number(submitted))/5*100)+"%"}} /></div>
-    {!finished ? <>
-      <div className="lab-prompt"><SectionLabel>CALIBRATE YOUR CLINICAL EYE</SectionLabel><h3>{item.prompt}</h3><p>Enter your best estimate. No calculator needed.</p></div>
-      {!submitted ? <form className="lab-input-row" onSubmit={(event) => { event.preventDefault(); check(); }}><input type="number" step="any" value={value} onChange={(event) => setValue(event.target.value)} aria-label={"Estimate in " + item.unit} placeholder="Your estimate" /><span>{item.unit || "value"}</span><button className="button button-primary" type="submit" disabled={!value.trim()}>Lock estimate</button></form> : <div className="labline-reveal"><span className="eyebrow">REFERENCE VALUE</span><strong>{item.value} {item.unit}</strong><b>{points} / 100</b><p>{item.context}</p><small>Source: {item.source}</small><button className="button button-primary full-button" onClick={next}>Next estimate →</button></div>}
-      <p className="game-feedback" aria-live="polite">{message}</p>
-    </> : <div className="labline-finale"><Finish title="Calibration complete" detail={"Five clinical estimates. " + (total >= 400 ? "Excellent calibration." : total >= 250 ? "Your reference instincts are developing." : "Keep building your mental reference ranges.")} score={total + " / 500"}><div className="reveal-groups">{results.map((result, index) => <span key={index}><b>{index + 1}. {result.points} pts</b>{result.prompt}<br/>Your estimate: {result.estimate} {result.unit} · Reference: {result.actual} {result.unit}</span>)}</div></Finish></div>}
+  return <div className="game-layout labline-game" data-own-sfx="true">
+    <div className="labline-hud"><div><b>{round + 1}<small> / 5</small></b><span>ROUND</span></div><div><b>{total}</b><span>POINTS</span></div><div className={"hot" + (streak >= 2 ? " on" : "")}><b>{streak >= 2 ? "🔥 ×" + streak : "—"}</b><span>HOT STREAK</span></div></div>
+    <div className="labline-progress"><i style={{ width: ((round + Number(submitted)) / 5 * 100) + "%" }} /></div>
+    {!finished || submitted ? <>
+      <div className="lab-prompt"><SectionLabel>CALIBRATE YOUR CLINICAL EYE</SectionLabel><h3>{item.prompt}</h3></div>
+      {!submitted ? <div className="lab-dial">
+        <div className="lab-readout">
+          {typing === null ? <button className="lab-number" onClick={() => setTyping(String(estimate))} aria-label="Tap to type an exact number">{fmt(estimate)}<small>{item.unit}</small></button>
+            : <form onSubmit={(e) => { e.preventDefault(); lock(); }}><input className="lab-number-input" autoFocus type="number" step="any" value={typing} onChange={(e) => setTyping(e.target.value)} onBlur={() => { const n = Number(typing); if (Number.isFinite(n) && typing.trim()) setEstimate(n); setTyping(null); }} aria-label={"Estimate in " + item.unit} /><small>{item.unit}</small></form>}
+        </div>
+        <div className="lab-slider-row">
+          <button className="lab-step" onClick={() => setEstimate((v) => snap(v - step))} aria-label="Decrease">−</button>
+          <input type="range" className="lab-slider" min={sMin} max={sMax} step={step} value={Math.min(sMax, Math.max(sMin, estimate))} onChange={(e) => { setEstimate(Number(e.target.value)); setTyping(null); }} aria-label={"Estimate in " + item.unit} />
+          <button className="lab-step" onClick={() => setEstimate((v) => snap(v + step))} aria-label="Increase">+</button>
+        </div>
+        <div className="lab-scale"><span>{fmt(sMin)}</span><span>drag, nudge, or tap the number to type</span><span>{fmt(sMax)}</span></div>
+        <button className="button button-primary full-button lab-lock" onClick={lock}>Lock in {fmt(typing !== null && Number.isFinite(Number(typing)) && typing.trim() ? Number(typing) : estimate)} {item.unit}</button>
+      </div> : <div className="lab-reveal">
+        <div className="lab-verdict"><b>{verdict}</b><span>+{earned}{bonus ? " · 🔥 streak bonus +" + bonus : ""}</span></div>
+        <div className="lab-ruler" aria-label={"You said " + fmt(estimate) + ", the value is " + item.value}>
+          {item.tolerance > 0 && <i className="lab-band" style={{ left: pct(item.value - item.tolerance) + "%", width: pct(item.value + item.tolerance) - pct(item.value - item.tolerance) + "%" }} />}
+          <span className={"lab-pin you" + (pins ? " go" : "")} style={{ left: pins ? pct(estimate) + "%" : "50%" }}><em>You</em><b>{fmt(estimate)}</b></span>
+          <span className={"lab-pin answer" + (pins ? " go" : "")} style={{ left: pins ? pct(item.value) + "%" : "50%" }}><em>Answer</em><b>{item.value}</b></span>
+        </div>
+        <p className="lab-context">{item.context} <span className="source-note">{item.source}</span></p>
+        {!finished && <button className="button button-primary full-button" onClick={next}>Next estimate ▶</button>}
+      </div>}
+    </> : null}
+    {finished && submitted && <Finish title="Calibration complete" detail={"Five clinical estimates. " + (total >= 450 ? "Superb calibration." : total >= 300 ? "Your reference instincts are sharp." : "Keep building your mental reference ranges.")} score={total + " / " + maxScore}><div className="labline-results">{results.map((r, i) => <div key={i}><span>{r.prompt}</span><b>{fmt(r.estimate)} vs {r.actual} {r.unit}</b><strong>+{r.points}</strong></div>)}</div></Finish>}
   </div>;
 }
 
@@ -904,39 +872,6 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   </div>;
 }
 
-function TriageOrder({ seed, onDone, specialty = "general" }: Props) {
-  const item = pick(triageCases, seed, specialty, "triage");
-  const [steps, setSteps] = useState(() => shuffle(item.steps, seeded(seed + 21)));
-  const [submitted, setSubmitted] = useState(false);
-  const [correct, setCorrect] = useState(0);
-  const [hintsUsed, setHintsUsed] = useState(0);
-  const [hints, setHints] = useState<string[]>([]);
-  const done = useRef(false);
-  const move = (index: number, delta: number) => {
-    if (submitted) return;
-    const target = index + delta; if (target < 0 || target >= steps.length) return;
-    setSteps((current) => { const copy = [...current]; [copy[index], copy[target]] = [copy[target], copy[index]]; return copy; });
-  };
-  const check = () => {
-    const positions = steps.reduce((count, step, i) => count + (step === item.steps[i] ? 1 : 0), 0);
-    setCorrect(positions); setSubmitted(true);
-    if (!done.current) { done.current = true; onDone(Math.max(0, Math.round(positions / steps.length * 100) - hintsUsed * 10), 100, positions === steps.length && hintsUsed === 0); }
-  };
-  const revealHint = () => {
-    if (submitted || hintsUsed >= 2) return;
-    const position = hintsUsed;
-    setHints((current) => [...current, "Position " + (position + 1) + " should be: " + item.steps[position]]);
-    setHintsUsed((current) => current + 1);
-  };
-  return <div className="game-layout">
-    <div className="case-banner triage-banner"><span>ORDER OF OPERATIONS</span><strong>{item.title}</strong><small>{item.scenario}</small></div>
-    <p className="muted-copy">Arrange the response in the safest order. Use the arrows to move each step.</p>
-    {!submitted && <div className="triage-hint-tools"><button className="text-button" onClick={revealHint} disabled={hintsUsed >= 2}>Reveal a correct position · −10 pts</button><span>{hintsUsed}/2 hints used</span></div>}
-    {hints.length > 0 && <div className="logic-hints">{hints.map((hint,index)=><p key={index}><b>HINT {index+1}</b>{hint}</p>)}</div>}
-    <ol className="triage-list">{steps.map((step, i) => <li key={step} className={submitted ? (item.steps[i] === step ? "step-right" : "step-wrong") : ""}><span className="step-number">{i + 1}</span><p>{step}</p><span className="step-moves"><button aria-label={"Move " + step + " up"} disabled={submitted || i === 0} onClick={() => move(i, -1)}>↑</button><button aria-label={"Move " + step + " down"} disabled={submitted || i === steps.length - 1} onClick={() => move(i, 1)}>↓</button></span></li>)}</ol>
-    {!submitted ? <button className="button button-primary full-button" onClick={check}>Check sequence</button> : <Finish title={correct === steps.length ? "Sequence secured" : "Review the response order"} detail={"You placed " + correct + " of " + steps.length + " steps in the correct position."} score={Math.max(0, Math.round(correct / steps.length * 100) - hintsUsed * 10) + " / 100"}><div className="reveal-groups">{item.steps.map((s, i) => <span key={s}><b>{i + 1}.</b> {s}</span>)}</div></Finish>}
-  </div>;
-}
 
 function AnagramSprint({ seed, onDone }: Props) {
   const rounds = useMemo(() => shuffle(scrambleWords, seeded(seed + 51)).slice(0, 5), [seed]);
@@ -1074,7 +1009,7 @@ function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boo
 }
 
 function HigherLower({ seed, onDone }: Props) {
-  const list = useMemo(() => shuffle(higherLowerPairs.filter((item) => "fun" in item), seeded(seed + 29)).slice(0, 5), [seed]);
+  const list = useMemo(() => shuffle(higherLowerPairs.filter((item) => "fun" in item), seeded(seed + 29)).slice(0, 5).map((item, i) => seeded(seed * 31 + i * 17 + 5)() < 0.5 ? { ...item, a: item.b, av: item.bv, b: item.a, bv: item.av } : item), [seed]);
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [picked, setPicked] = useState<"a" | "b" | "tie" | null>(null);
@@ -1098,7 +1033,7 @@ function HigherLower({ seed, onDone }: Props) {
   return <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot gold" /> Which quantity is greater? Five quick comparisons. Sometimes the answer is a tie.</div>
     <div className="higher-progress">COMPARISON {Math.min(round + 1, 5)} / 5 <span>{score} right</span></div>
-    {!finished ? <div className="higher-cards"><button className={"higher-card" + (reveal && correct === "a" ? " right" : reveal && picked === "a" ? " wrong" : "")} onClick={() => choose("a")} disabled={reveal}><span>A</span><b>{item.a}</b>{reveal && <strong>{item.av}</strong>}</button><div className="higher-or">{reveal && correct === "tie" ? "TIE" : "OR"} <button onClick={() => choose("tie")} disabled={reveal}>=</button></div><button className={"higher-card" + (reveal && correct === "b" ? " right" : reveal && picked === "b" ? " wrong" : "")} onClick={() => choose("b")} disabled={reveal}><span>B</span><b>{item.b}</b>{reveal && <strong>{item.bv}</strong>}</button></div> : <Finish title="Comparison complete" detail={"You called " + score + " of " + list.length + " comparisons correctly."} score={Math.round(score/list.length*100) + " / 100"} />}
+    {!finished ? <div className="higher-cards"><button className={"higher-card" + (reveal && correct === "a" ? " right" : reveal && picked === "a" ? " wrong" : "")} onClick={() => choose("a")} disabled={reveal}><span>A</span><b>{item.a}</b>{reveal && <strong>{item.av.toLocaleString("en-US")} <small>{item.unit}</small></strong>}</button><div className="higher-or">{reveal && correct === "tie" ? "TIE" : "OR"} <button onClick={() => choose("tie")} disabled={reveal}>=</button></div><button className={"higher-card" + (reveal && correct === "b" ? " right" : reveal && picked === "b" ? " wrong" : "")} onClick={() => choose("b")} disabled={reveal}><span>B</span><b>{item.b}</b>{reveal && <strong>{item.bv.toLocaleString("en-US")} <small>{item.unit}</small></strong>}</button></div> : <Finish title="Comparison complete" detail={"You called " + score + " of " + list.length + " comparisons correctly."} score={Math.round(score/list.length*100) + " / 100"} />}
     {reveal && <p className="game-feedback">{item.explanation} <span className="source-note">{item.source}</span></p>}
   </div>;
 }
@@ -1614,9 +1549,10 @@ function CrosswordClinic({ seed, onDone }: Props) {
 }
 
 
-const TRAIL_PACKS = microbePacks.filter(trailPackOk);
+let trailPacksCache: typeof microbePacks | null = null;
+const trailPacks = () => (trailPacksCache ??= microbePacks.filter(trailPackOk));
 function ThemeTrail({ seed, onDone, specialty = "general" }: Props) {
-  const pack = pick(TRAIL_PACKS, seed, specialty, "microbe");
+  const pack = pick(trailPacks(), seed, specialty, "microbe");
   const puzzle = useMemo(() => makeTrailPuzzle(pack, seed), [pack, seed]);
   const { grid, rows, columns } = puzzle;
   const [found, setFound] = useState<string[]>([]);
