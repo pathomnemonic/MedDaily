@@ -11,15 +11,15 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 | Medle | 140 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
 | Connections | 122 boards | Four groups of four per board; 20 new cross-specialty boards |
 | DoctorDle | 220 cases | Six-guess typed diagnosis puzzle with progressive clues, explanations, and source notes |
-| Word Hunt | 68 organism packs | Each pack generates a deterministic word-search grid |
-| Labline | 100 prompts | Reference values, thresholds, and a few vital-sign estimates; normal ranges vary by laboratory and patient |
-| Association Blitz | 208 pairs | Expanded eight-pair association board; still needs more varied mechanics and timed/combo modes |
+| Word Hunt | 71 unique medical theme packs | 14×14 drag-to-select word-search grids; themes span organisms, anatomy, organ systems, and pharmacology |
+| Labline | 100 prompts | Five-round estimation challenge with cumulative scoring and reference explanations | Reference values, thresholds, and a few vital-sign estimates; normal ranges vary by laboratory and patient |
+| Association Blitz | 208 unique pairs | 20-card, ten-pair timed memory board with combo streaks and a time bonus |
 | Triage Order | 42 sequences | Clinical and emergency sequence-reconstruction puzzles |
 | Anagram Sprint | 111 terms | Three-guess word scramble |
 | Cell Sketch | 31 unique-named 5×5 nonograms (19 original patterns plus 12 rotations/reflections) | Row and column run clues; CI verifies one valid solution per board |
-| What Has More? | 90 comparisons (24 fun-first rounds) | Clinical quantities plus playful food, medication, and everyday comparisons; values are explicitly approximate where appropriate |
+| What Has More? | 90 comparisons (24 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
 | Word Ladder | 26 ladders | Each intended solution path uses real words and one-letter changes |
-| Medical Spelling Hive | 42 medical-themed seven-letter boards | 42 curated medical-themed boards; three generic boards are excluded from play |
+| Medical Spelling Hive | 42 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
 | Casefile Logic | 15 cases | Fictional deduction puzzles; one-to-one assignment rules |
 
 ## What this means for daily longevity
