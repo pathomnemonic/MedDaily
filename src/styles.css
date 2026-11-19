@@ -1147,3 +1147,15 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .strands-found-list>b{padding:5px 8px;border:1px solid rgba(114,240,197,.2);border-radius:8px;background:rgba(45,142,121,.13);color:#c9ffed;font:700 9px "DM Mono"}
 .strands-found-list>b.found-spangram{border-color:rgba(255,224,138,.4);background:rgba(183,123,54,.2);color:#ffe9a8}
 @media(max-width:520px){.strands-board{gap:3px;padding:6px}.strands-tile{font-size:clamp(10px,3.3vw,15px)}.strands-word-tools{align-items:stretch;flex-direction:column}.strands-actions{justify-content:stretch}.strands-actions .button{flex:1}.strands-footer{flex-direction:column}.strands-found-list{max-width:100%}}
+
+.dive-live-answers{display:grid;gap:7px;margin:12px 0;padding:12px;border:1px solid rgba(255,225,129,.2);border-radius:13px;background:rgba(5,10,34,.36)}
+.dive-live-answers>span{color:#ffe17b;font:700 9px "DM Mono";letter-spacing:1px}
+.dive-live-answers>div{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(220,224,255,.1)}
+.dive-live-answers>div:last-child{border-bottom:0}
+.dive-live-answers>div>b{color:#fff;font-size:12px}
+.dive-live-answers>div>strong{color:#ffe17b;font:700 11px "DM Mono"}
+.dive-live-answers small{color:#aeb9d6;font-size:11px}
+.dive-answer-examples span.answer-found{border-color:rgba(90,225,188,.3);background:rgba(45,142,121,.2);color:#d8fff2}
+.dive-answer-examples span.answer-missed{opacity:.76}
+.dive-answer-examples .dive-tier{padding:2px 6px;font-size:8px}
+@media(max-width:520px){.dive-live-answers>div{grid-template-columns:minmax(0,1fr) auto}.dive-live-answers .dive-tier{grid-column:1/-1;justify-self:start}}
