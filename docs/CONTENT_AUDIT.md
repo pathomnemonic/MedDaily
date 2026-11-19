@@ -12,7 +12,7 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 | Connections | 122 boards | Four groups of four per board; 20 new cross-specialty boards |
 | DoctorDle | 220 cases | Six-guess typed diagnosis puzzle with progressive clues, explanations, and source notes |
 | Next Best Step | 220 cases | Original clinical decision vignettes with explanations and source notes |
-| Microbe Hunt | 68 organism packs | Each pack generates a deterministic word-search grid |
+| Word Hunt | 68 organism packs | Each pack generates a deterministic word-search grid |
 | Labline | 100 prompts | Reference values, thresholds, and a few vital-sign estimates; normal ranges vary by laboratory and patient |
 | Association Blitz | 208 pairs | Expanded eight-pair association board; still needs more varied mechanics and timed/combo modes |
 | Triage Order | 42 sequences | Clinical and emergency sequence-reconstruction puzzles |
@@ -20,7 +20,7 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 | Cell Sketch | 31 unique-named 5×5 nonograms (19 original patterns plus 12 rotations/reflections) | Row and column run clues; CI verifies one valid solution per board |
 | What Has More? | 72 comparisons | Clinical quantities plus playful food, medication, and everyday comparisons; values are explicitly approximate where appropriate |
 | Word Ladder | 26 ladders | Each intended solution path uses real words and one-letter changes |
-| Medical Spelling Hive | 24+ seven-letter boards | Medical-themed boards and curated answer sets; generic filler should continue to be replaced |
+| Medical Spelling Hive | 24 seven-letter boards | Medical-themed boards and curated answer sets; generic filler should continue to be replaced |
 | Casefile Logic | 15 cases | Fictional deduction puzzles; one-to-one assignment rules |
 
 ## What this means for daily longevity
