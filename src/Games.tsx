@@ -809,6 +809,8 @@ function TriageOrder({ seed, onDone, specialty = "general" }: Props) {
   const [steps, setSteps] = useState(() => shuffle(item.steps, seeded(seed + 21)));
   const [submitted, setSubmitted] = useState(false);
   const [correct, setCorrect] = useState(0);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [hints, setHints] = useState<string[]>([]);
   const done = useRef(false);
   const move = (index: number, delta: number) => {
     if (submitted) return;
@@ -818,13 +820,21 @@ function TriageOrder({ seed, onDone, specialty = "general" }: Props) {
   const check = () => {
     const positions = steps.reduce((count, step, i) => count + (step === item.steps[i] ? 1 : 0), 0);
     setCorrect(positions); setSubmitted(true);
-    if (!done.current) { done.current = true; onDone(Math.round(positions / steps.length * 100), 100, positions === steps.length); }
+    if (!done.current) { done.current = true; onDone(Math.max(0, Math.round(positions / steps.length * 100) - hintsUsed * 10), 100, positions === steps.length && hintsUsed === 0); }
+  };
+  const revealHint = () => {
+    if (submitted || hintsUsed >= 2) return;
+    const position = hintsUsed;
+    setHints((current) => [...current, "Position " + (position + 1) + " should be: " + item.steps[position]]);
+    setHintsUsed((current) => current + 1);
   };
   return <div className="game-layout">
     <div className="case-banner triage-banner"><span>ORDER OF OPERATIONS</span><strong>{item.title}</strong><small>{item.scenario}</small></div>
     <p className="muted-copy">Arrange the response in the safest order. Use the arrows to move each step.</p>
+    {!submitted && <div className="triage-hint-tools"><button className="text-button" onClick={revealHint} disabled={hintsUsed >= 2}>Reveal a correct position · −10 pts</button><span>{hintsUsed}/2 hints used</span></div>}
+    {hints.length > 0 && <div className="logic-hints">{hints.map((hint,index)=><p key={index}><b>HINT {index+1}</b>{hint}</p>)}</div>}
     <ol className="triage-list">{steps.map((step, i) => <li key={step} className={submitted ? (item.steps[i] === step ? "step-right" : "step-wrong") : ""}><span className="step-number">{i + 1}</span><p>{step}</p><span className="step-moves"><button aria-label={"Move " + step + " up"} disabled={submitted || i === 0} onClick={() => move(i, -1)}>↑</button><button aria-label={"Move " + step + " down"} disabled={submitted || i === steps.length - 1} onClick={() => move(i, 1)}>↓</button></span></li>)}</ol>
-    {!submitted ? <button className="button button-primary full-button" onClick={check}>Check sequence</button> : <Finish title={correct === steps.length ? "Sequence secured" : "Review the response order"} detail={"You placed " + correct + " of " + steps.length + " steps in the correct position."} score={Math.round(correct / steps.length * 100) + " / 100"}><div className="reveal-groups">{item.steps.map((s, i) => <span key={s}><b>{i + 1}.</b> {s}</span>)}</div></Finish>}
+    {!submitted ? <button className="button button-primary full-button" onClick={check}>Check sequence</button> : <Finish title={correct === steps.length ? "Sequence secured" : "Review the response order"} detail={"You placed " + correct + " of " + steps.length + " steps in the correct position."} score={Math.max(0, Math.round(correct / steps.length * 100) - hintsUsed * 10) + " / 100"}><div className="reveal-groups">{item.steps.map((s, i) => <span key={s}><b>{i + 1}.</b> {s}</span>)}</div></Finish>}
   </div>;
 }
 
