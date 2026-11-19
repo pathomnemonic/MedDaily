@@ -80,7 +80,8 @@ export function makeStrandsBoard(
     .filter((word) => word.length >= 3 && word.length <= rows * columns);
   if (!words.length) throw new Error("A Strands board needs at least one valid word.");
   const spangram = [...words].sort((a, b) => b.length - a.length || a.localeCompare(b))[0];
-  if (spangram.length < rows) throw new Error("The spangram must be long enough to touch both board edges.");
+  const boardRows = Math.min(rows, spangram.length);
+  if (boardRows < 3) throw new Error("The spangram must contain at least three letters to span the board.");
 
   for (let attempt = 0; attempt < 24; attempt++) {
     const random = seeded((seed + attempt * 7919) >>> 0);
@@ -90,22 +91,22 @@ export function makeStrandsBoard(
     let complete = true;
     for (let index = 0; index < ordered.length; index++) {
       const word = ordered[index];
-      const path = findPath(word, occupied, rows, columns, random, index === 0);
+      const path = findPath(word, occupied, boardRows, columns, random, index === 0);
       if (!path) { complete = false; break; }
       paths[word] = path;
       path.forEach((cell) => occupied.add(cell));
     }
     if (!complete) continue;
     const alphabet = "AAAAAEEEEEEEEIIIIIIOOOOONNNNNRRRRRTTTTTLLLLSSSSUUUDDDGGBCMPFHVWY";
-    const grid = Array.from({ length: rows }, () => Array<string>(columns).fill(""));
+    const grid = Array.from({ length: boardRows }, () => Array<string>(columns).fill(""));
     for (const [word, path] of Object.entries(paths)) {
       path.forEach((cell, index) => { grid[Math.floor(cell / columns)][cell % columns] = word[index]; });
     }
-    for (let index = 0; index < rows * columns; index++) {
+    for (let index = 0; index < boardRows * columns; index++) {
       const row = Math.floor(index / columns), column = index % columns;
       if (!grid[row][column]) grid[row][column] = alphabet[Math.floor(random() * alphabet.length)];
     }
-    return { grid, words, paths, spangram, rows, columns };
+    return { grid, words, paths, spangram, rows: boardRows, columns };
   }
   throw new Error("Could not generate a complete Strands board for this word pack.");
 }
