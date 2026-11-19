@@ -899,7 +899,7 @@ function CasefileLogic({ seed, onDone }: Props) {
   const item = deductionCases[seed % deductionCases.length];
   const blank = () => Object.fromEntries(item.suspects.map((suspect) => [suspect, { location:"", object:"" }]));
   const [assignments, setAssignments] = useState(blank);
-  const [pencilMarks, setPencilMarks] = useState<Record<string, boolean>>({});
+  const [pencilMarks, setPencilMarks] = useState<Record<string, "possible" | "excluded">>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [note, setNote] = useState("Use the clues to assign one unique room and one unique item to each person.");
@@ -914,7 +914,13 @@ function CasefileLogic({ seed, onDone }: Props) {
   };
   const togglePencil = (suspect: string, field: "location" | "object", value: string) => {
     const key = suspect + "|" + field + "|" + value;
-    setPencilMarks((current) => ({ ...current, [key]: !current[key] }));
+    setPencilMarks((current) => {
+      const next = { ...current };
+      if (!current[key]) next[key] = "possible";
+      else if (current[key] === "possible") next[key] = "excluded";
+      else delete next[key];
+      return next;
+    });
   };
   const check = () => {
     if (submitted) return;
@@ -934,7 +940,7 @@ function CasefileLogic({ seed, onDone }: Props) {
     <div className="case-banner logic-banner"><span>FICTIONAL LOGIC PUZZLE</span><strong>{item.title}</strong><small>Deduction, not diagnosis</small></div>
     <p className="logic-briefing">{item.briefing}</p>
     <div className="logic-clues"><SectionLabel>CLUE BOARD</SectionLabel>{item.clues.map((clue,i)=><div key={i}><span>{String(i+1).padStart(2,"0")}</span>{clue}</div>)}</div>
-    <details className="logic-pencil-board"><summary>Open deduction grid <span>Use pencil marks instead of paper</span></summary><p>Tap a candidate to mark it as a possibility. These notes do not change your final assignments.</p><div className="pencil-grid"><div className="pencil-head"><b>PERSON</b><b>LOCATION CANDIDATES</b><b>OBJECT CANDIDATES</b></div>{item.suspects.map((suspect)=><div className="pencil-row" key={suspect}><strong>{suspect}</strong><div>{item.locations.map((value)=><button type="button" key={value} className={pencilMarks[suspect+"|location|"+value]?"marked":""} onClick={()=>togglePencil(suspect,"location",value)} aria-pressed={Boolean(pencilMarks[suspect+"|location|"+value])}>{value}</button>)}</div><div>{item.objects.map((value)=><button type="button" key={value} className={pencilMarks[suspect+"|object|"+value]?"marked":""} onClick={()=>togglePencil(suspect,"object",value)} aria-pressed={Boolean(pencilMarks[suspect+"|object|"+value])}>{value}</button>)}</div></div>)}</div><button type="button" className="text-button" onClick={()=>setPencilMarks({})}>Clear pencil marks</button></details>
+    <details className="logic-pencil-board"><summary>Open deduction grid <span>Use pencil marks instead of paper</span></summary><p>Tap a candidate to cycle through unknown, possible, and ruled out. Use these marks to track deductions across both categories; they never change your final assignments.</p><div className="pencil-legend"><span><b>✓</b> Possible</span><span><b>×</b> Ruled out</span><span><b>·</b> Unknown</span></div><div className="pencil-grid"><div className="pencil-head"><b>PERSON</b><b>LOCATION CANDIDATES</b><b>OBJECT CANDIDATES</b></div>{item.suspects.map((suspect)=><div className="pencil-row" key={suspect}><strong>{suspect}</strong><div>{item.locations.map((value)=><button type="button" key={value} className={pencilMarks[suspect+"|location|"+value]??""} onClick={()=>togglePencil(suspect,"location",value)} aria-pressed={Boolean(pencilMarks[suspect+"|location|"+value])} aria-label={suspect+" location "+value+": "+(pencilMarks[suspect+"|location|"+value]??"unknown")}>{pencilMarks[suspect+"|location|"+value]==="possible"?"✓ ":pencilMarks[suspect+"|location|"+value]==="excluded"?"× ":"· "}{value}</button>)}</div><div>{item.objects.map((value)=><button type="button" key={value} className={pencilMarks[suspect+"|object|"+value]??""} onClick={()=>togglePencil(suspect,"object",value)} aria-pressed={Boolean(pencilMarks[suspect+"|object|"+value])} aria-label={suspect+" object "+value+": "+(pencilMarks[suspect+"|object|"+value]??"unknown")}>{pencilMarks[suspect+"|object|"+value]==="possible"?"✓ ":pencilMarks[suspect+"|object|"+value]==="excluded"?"× ":"· "}{value}</button>)}</div></div>)}</div><button type="button" className="text-button" onClick={()=>setPencilMarks({})}>Clear pencil marks</button></details>
     <div className="logic-table"><div className="logic-table-head"><span>PERSON</span><span>LOCATION</span><span>OBJECT</span></div>
       {item.suspects.map((suspect) => <div className="logic-table-row" key={suspect}>
         <strong>{suspect}</strong>
