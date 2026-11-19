@@ -27,9 +27,9 @@ export function GameBoard({ game, seed, onDone, specialty = "general" }: Props &
 }
 
 const SPECIALTY_INDEX: Partial<Record<Specialty, Partial<Record<string, number[]>>>> = {
-  neurology: { diagnosis:[1,4,5,12,13,19,120,121,122,123,124,125], nextstep:[2,16,120,121,122,123,124], connections:[3,10,72,73,76,77], labline:[18,19,20], pairs:[12,13], microbe:[0,5], triage:[4] },
-  cardiology: { diagnosis:[7,16,17,127,128,129,130], nextstep:[3,13,126,127,128,129], connections:[0,1,4,74,79], labline:[1,3,4,17], pairs:[0,1,2,3], triage:[10] },
-  emergency: { diagnosis:[0,4,5,7,10,16,17,18,19,126,131], nextstep:[0,1,2,4,7,8,10,11,12,13,14,18,19,125,130], connections:[4,5,7,8,9,73,75], triage:[0,1,2,4,5,6,7,9,10] },
+  neurology: { diagnosis:[1,4,5,12,13,19,120,121,122,123,124,125], nextstep:[2,16,120,121,122,123,124], connections:[3,10,72,73,78], labline:[18,19,20], pairs:[12,13], microbe:[0,5], triage:[4] },
+  cardiology: { diagnosis:[7,16,17,126,127,128,129], nextstep:[3,13,126,127,128,129], connections:[0,1,4,74,79], labline:[1,3,4,17], pairs:[0,1,2,3], triage:[10] },
+  emergency: { diagnosis:[0,4,5,7,10,16,17,18,19,125,126,130], nextstep:[0,1,2,4,7,8,10,11,12,13,14,18,19,125,130], connections:[4,5,7,8,9,73,75], triage:[0,1,2,4,5,6,7,9,10] },
   criticalcare: { diagnosis:[4,5,7,10,11,16,17,18,19], nextstep:[0,1,2,4,7,10,11,12,13,14,18,19], connections:[4,5,7,9,11], labline:[0,1,2,3,4,5,11,17,22], triage:[0,1,2,4,5,6,7,9,10,11] },
   anesthesia: { diagnosis:[5,16,17], nextstep:[0,2,4,12,14], connections:[0,1,7], labline:[0,1,2,4,17], pairs:[0,1,2,3,4,5], triage:[0,4,5,6,9,11] },
   surgery: { diagnosis:[0,5,17,18], nextstep:[8,9,14,17], connections:[4,8,9], triage:[3,8,9] },
@@ -38,13 +38,13 @@ const SPECIALTY_INDEX: Partial<Record<Specialty, Partial<Record<string, number[]
   otolaryngology: { diagnosis:[18,19], nextstep:[12], connections:[5,9], triage:[0,11] },
   ophthalmology: { diagnosis:[3,12], nextstep:[19], connections:[3,10], pairs:[12,13,17,18], triage:[2] },
   pediatrics: { diagnosis:[8,9,11,14,18,19,100,101,102,103,104,105], nextstep:[18,100,101,102,103,104], connections:[4,5,8,62,67], labline:[14,15], triage:[11] },
-  obgyn: { diagnosis:[0,135,136,137,138,139], nextstep:[5,9,16,134,135,136,137,138,139], connections:[8,76,77,80], triage:[3,8] },
+  obgyn: { diagnosis:[0,134,135,136,137,138,139], nextstep:[5,9,16,134,135,136,137,138,139], connections:[8,76,77,80], triage:[3,8] },
   psychiatry: { diagnosis:[1,2,7,12,13], nextstep:[2,6], connections:[7,10], labline:[21], triage:[4] },
   infectious: { diagnosis:[8,11,14,16,18,19,118,119], nextstep:[11,12,118,119], connections:[5,7,9,65,67], microbe:[0,1,2,3,4,5,6,7], triage:[6,7] },
   allergy: { diagnosis:[16], nextstep:[4], connections:[5,7], pairs:[0,1,2,3], triage:[1] },
   nephrology: { diagnosis:[8,9,10,11,106,107,108,109], nextstep:[0,11,14,17,105,106,107,108,109], connections:[4,11,63,68], labline:[2,3,4,5,7,11,12,13,14,15,18,19,20,21], triage:[5] },
   pulmonology: { diagnosis:[18,19,112,113], nextstep:[12,112,113], connections:[5,9,64,66], labline:[1,22,27], triage:[0,6] },
-  endocrine: { diagnosis:[7,9,10,15,131,132,133,134], nextstep:[0,14,17,130,131,132,133], connections:[2,11,75,81], labline:[8,9,10,23], triage:[5] },
+  endocrine: { diagnosis:[7,9,10,15,130,131,132,133], nextstep:[0,14,17,130,131,132,133], connections:[2,11,75,81], labline:[8,9,10,23], triage:[5] },
   dermatology: { diagnosis:[14,15,16], nextstep:[4], connections:[4,5,9], labline:[24], triage:[1] },
   rheumatology: { diagnosis:[3,15,110,111], nextstep:[6,110,111], connections:[4,9,10,64,70], pairs:[30,31,32,33,34,35], triage:[1] },
   hemeonc: { diagnosis:[10,11], nextstep:[7,14], connections:[4,5,11], labline:[14,15,16,17], pairs:[42,43,44,45], triage:[6] },
