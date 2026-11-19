@@ -17,5 +17,14 @@ export const glyphPatternsExpansion = [
 {name:"ECG monitor",hint:"A device that displays cardiac electrical activity",pattern:[[1,0,0,0,1],[1,1,0,1,1],[1,0,1,0,1],[1,0,1,0,1],[1,1,1,1,1]]},
 {name:"Eye",hint:"The organ of vision",pattern:[[0,0,1,0,0],[0,1,0,1,0],[1,0,1,0,1],[0,1,0,1,0],[0,0,1,0,0]]},
 {name:"Glove",hint:"Protective equipment used during patient care",pattern:[[0,1,0,1,0],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[0,1,0,1,0]]}
+,
+{name:"Hospital bed",hint:"A piece of equipment used for inpatient care",pattern:[[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,1],[1,0,0,0,0],[1,0,0,0,0]]},
+{name:"Test tube",hint:"A narrow vessel used to hold laboratory samples",pattern:[[0,1,0,1,0],[0,1,0,1,0],[0,1,0,1,0],[0,1,0,1,0],[1,1,1,1,1]]},
+{name:"Ambulance",hint:"An emergency vehicle used to transport patients",pattern:[[0,1,1,1,0],[1,1,1,1,1],[1,0,1,0,1],[1,1,1,1,1],[0,1,0,1,0]]},
+{name:"Medical chart",hint:"A record of a patient's clinical information",pattern:[[1,1,1,1,0],[1,0,0,1,0],[1,0,1,1,0],[1,0,0,1,0],[1,1,1,1,0]]},
+{name:"Face shield",hint:"A transparent barrier used as protective equipment",pattern:[[1,1,1,1,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,1]]},
+{name:"Oxygen tank",hint:"A cylinder used to store supplemental oxygen",pattern:[[0,1,1,1,0],[1,1,0,1,1],[1,1,0,1,1],[1,1,0,1,1],[0,1,1,1,0]]},
+{name:"Wheelchair",hint:"A mobility device with a seat and wheels",pattern:[[1,1,1,1,0],[1,0,0,1,0],[1,1,1,1,1],[1,0,1,0,1],[0,1,0,1,0]]},
+{name:"Bandage",hint:"A dressing used to cover or secure a wound",pattern:[[1,0,0,0,1],[1,1,0,1,1],[0,1,1,1,0],[1,1,0,1,1],[1,0,0,0,1]]}
 
 ];
