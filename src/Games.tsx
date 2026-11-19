@@ -463,7 +463,7 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
     const next = [...rows, word]; setRows(next); setGuess("");
     const correct = word === answer, finished = correct || next.length >= 6;
     setMessage(correct ? "Exactly right. Nice diagnosis of a word." : finished ? "The word was " + answer + "." : "Not quite. Use the tile clues to narrow it down.");
-    if (finished) { setEnded(true); setWon(correct); if (!done.current) { done.current = true; onDone(correct ? 100 - (next.length - 1) * 12 : 0, 100, correct && next.length === 1, "Medle · " + next.length + "/6 guesses\\n" + next.map((row) => scoreWord(row, answer).map((mark) => mark === "correct" ? "🟩" : mark === "present" ? "🟨" : "⬛").join("")).join("\\n")); } }
+    if (finished) { setEnded(true); setWon(correct); if (!done.current) { done.current = true; onDone(correct ? 100 - (next.length - 1) * 12 : 0, 100, correct && next.length === 1, "Medle · " + next.length + "/6 guesses\n" + next.map((row) => scoreWord(row, answer).map((mark) => mark === "correct" ? "🟩" : mark === "present" ? "🟨" : "⬛").join("")).join("\n")); } }
   };
   const keyboardRows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
   const keyboardMarks: Record<string, "correct" | "present" | "absent"> = {};
@@ -512,11 +512,11 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
     const group = tiles.find((t) => selected.includes(t.word))?.group;
     if (group !== undefined && selected.every((word) => board[group].words.includes(word))) {
       const next = [...solved, group]; setSolved(next); setSelected([]); setNote(board[group].category + " — " + board[group].hint);
-      if (next.length === 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 100 - mistakes * 15), 100, mistakes === 0, "Connections\\n" + board.map((group, index) => (next.includes(index) ? "🟪🟪🟪🟪" : "⬜⬜⬜⬜")).join("\\n") + "\\n" + mistakes + "/4 mistakes"); } }
+      if (next.length === 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 100 - mistakes * 15), 100, mistakes === 0, "Connections\n" + board.map((group, index) => (next.includes(index) ? "🟪🟪🟪🟪" : "⬜⬜⬜⬜")).join("\n") + "\n" + mistakes + "/4 mistakes"); } }
     } else {
       const nearMiss = group !== undefined && selected.filter((word) => board[group].words.includes(word)).length === 3;
       const next = mistakes + 1; setMistakes(next); setNote(next >= 4 ? "No mistakes left. The remaining groups are shown below." : nearMiss ? "One away… Three of those terms belong together, but one is from another group." : "Not a set. Look for a different connection."); setSelected([]);
-      if (next >= 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 40 - next * 5), 100, false, "Connections\\n" + board.map((group, index) => (solved.includes(index) ? "🟪🟪🟪🟪" : "⬜⬜⬜⬜")).join("\\n") + "\\n" + next + "/4 mistakes"); } }
+      if (next >= 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 40 - next * 5), 100, false, "Connections\n" + board.map((group, index) => (solved.includes(index) ? "🟪🟪🟪🟪" : "⬜⬜⬜⬜")).join("\n") + "\n" + next + "/4 mistakes"); } }
     }
   };
   const shuffleTiles = () => {
@@ -578,7 +578,7 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
     if (correct || next.length >= 6) {
       setEnded(true); setWon(correct);
       setNote(correct ? "Diagnosis confirmed." : "No guesses remaining. Review the case.");
-      if (!done.current) { done.current = true; onDone(correct ? Math.max(0, 100 - (next.length - 1) * 15 - manualHints * 5) : 0, 100, correct && next.length === 1 && manualHints === 0, "DoctorDle · " + (correct ? next.length : "X") + "/6 guesses\\n" + "🩺".repeat(next.length) + "⬜".repeat(6 - next.length) + "\\n" + manualHints + " optional hints"); }
+      if (!done.current) { done.current = true; onDone(correct ? Math.max(0, 100 - (next.length - 1) * 15 - manualHints * 5) : 0, 100, correct && next.length === 1 && manualHints === 0, "DoctorDle · " + (correct ? next.length : "X") + "/6 guesses\n" + "🩺".repeat(next.length) + "⬜".repeat(6 - next.length) + "\n" + manualHints + " optional hints"); }
     } else {
       setClueCount((n) => Math.min(item.clues.length, n + 1));
       setNote("Not quite. A new clue has been added.");
@@ -646,7 +646,7 @@ function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
     setNote(match === board.spangram ? "SPANGRAM! You found the theme word connecting both sides." : match + " found. " + (board.words.length - next.length) + " words remain.");
     if (next.length === board.words.length) {
       setEnded(true);
-      if (!done.current) { done.current = true; onDone(100, 100, true, "Word Hunt · " + next.length + "/" + board.words.length + " words\\n" + next.map((word) => word === board.spangram ? "⭐" : "🟩").join("") + "\\nSpangram found"); }
+      if (!done.current) { done.current = true; onDone(100, 100, true, "Word Hunt · " + next.length + "/" + board.words.length + " words\n" + next.map((word) => word === board.spangram ? "⭐" : "🟩").join("") + "\nSpangram found"); }
     }
   };
   const revealHint = () => {
@@ -800,7 +800,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     done.current = true;
     setEnded(true);
     setNote("Time. Review the associations you uncovered and try Expert mode next run.");
-    onDone(score, maximum, false, "Association Blitz · " + matched.length + "/" + pairSet.length + " pairs\\n" + "🟩".repeat(matched.length) + "⬜".repeat(pairSet.length - matched.length) + "\\n" + mismatches + " mismatches");
+    onDone(score, maximum, false, "Association Blitz · " + matched.length + "/" + pairSet.length + " pairs\n" + "🟩".repeat(matched.length) + "⬜".repeat(pairSet.length - matched.length) + "\n" + mismatches + " mismatches");
   }, [seconds, started, ended, score, maximum, onDone]);
 
   const flip = (id: number) => {
@@ -829,7 +829,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
         done.current = true;
         setEnded(true);
         setNote("All " + pairSet.length + " pairs found. Time bonus: " + seconds * 2 + " points.");
-        onDone(finalScore, maximum, mismatches === 0, "Association Blitz · " + pairSet.length + "/" + pairSet.length + " pairs\\n" + "🟩".repeat(pairSet.length) + "\\n" + moves + " turns · " + mismatches + " mismatches");
+        onDone(finalScore, maximum, mismatches === 0, "Association Blitz · " + pairSet.length + "/" + pairSet.length + " pairs\n" + "🟩".repeat(pairSet.length) + "\n" + moves + " turns · " + mismatches + " mismatches");
       }
     } else {
       setLocked(true);
@@ -887,7 +887,7 @@ function TriageOrder({ seed, onDone, specialty = "general" }: Props) {
   const check = () => {
     const positions = steps.reduce((count, step, i) => count + (step === item.steps[i] ? 1 : 0), 0);
     setCorrect(positions); setSubmitted(true);
-    if (!done.current) { done.current = true; onDone(Math.max(0, Math.round(positions / steps.length * 100) - hintsUsed * 10), 100, positions === steps.length && hintsUsed === 0, "Triage Order\\n" + steps.map((step, index) => item.steps[index] === step ? "🟩" : "⬛").join("") + "\\n" + positions + "/" + steps.length + " positions"); }
+    if (!done.current) { done.current = true; onDone(Math.max(0, Math.round(positions / steps.length * 100) - hintsUsed * 10), 100, positions === steps.length && hintsUsed === 0, "Triage Order\n" + steps.map((step, index) => item.steps[index] === step ? "🟩" : "⬛").join("") + "\n" + positions + "/" + steps.length + " positions"); }
   };
   const revealHint = () => {
     if (submitted || hintsUsed >= 2) return;
@@ -1101,13 +1101,13 @@ function SpellingHive({ seed, onDone }: Props) {
     setNote(word === puzzle.pangram ? "Pangram! You used all seven letters." : "+" + points(word) + " points. Keep exploring.");
     if (next.length === puzzle.words.length) {
       setEnded(true);
-      onDone(maximum, maximum, true, "Medical Spelling Hive · " + puzzle.words.length + "/" + puzzle.words.length + " words\\n" + "🟩".repeat(Math.min(7, puzzle.words.length)) + (found.includes(puzzle.pangram) ? " ⭐" : ""));
+      onDone(maximum, maximum, true, "Medical Spelling Hive · " + puzzle.words.length + "/" + puzzle.words.length + " words\n" + "🟩".repeat(Math.min(7, puzzle.words.length)) + (found.includes(puzzle.pangram) ? " ⭐" : ""));
     }
   };
   const finish = () => {
     if (ended) return;
     setEnded(true);
-    onDone(score, maximum, found.length === puzzle.words.length, "Medical Spelling Hive · " + found.length + "/" + puzzle.words.length + " words\\n" + "🟩".repeat(Math.min(7, found.length)) + (found.includes(puzzle.pangram) ? " ⭐" : ""));
+    onDone(score, maximum, found.length === puzzle.words.length, "Medical Spelling Hive · " + found.length + "/" + puzzle.words.length + " words\n" + "🟩".repeat(Math.min(7, found.length)) + (found.includes(puzzle.pangram) ? " ⭐" : ""));
   };
   return <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot mint" /> Find as many words as you can using the seven hive letters. Words need at least four letters and must include the center letter. Use all seven for a pangram bonus.</div>
