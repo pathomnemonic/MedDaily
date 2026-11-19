@@ -230,7 +230,7 @@ describe("expanded content integrity", () => {
 
 describe("new arcade content banks", () => {
   it("keeps the daily deep-dive prompts broad, unique, and tiered", () => {
-    expect(deepDivePrompts.length).toBeGreaterThanOrEqual(70);
+    expect(deepDivePrompts).toHaveLength(73);
     expect(new Set(deepDivePrompts.map((prompt) => prompt.id)).size).toBe(deepDivePrompts.length);
     for (const prompt of deepDivePrompts) {
       expect(prompt.prompt.length, prompt.id).toBeGreaterThan(12);
