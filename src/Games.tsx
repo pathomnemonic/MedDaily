@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank, triageCases } from "./data";
-import { deductionCases, glyphPatterns, higherLowerPairs, medicalHiveTitles, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
+import { deductionCases, glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { extendStrandsPath, makeStrandsBoard, readStrandsPath } from "./strandsLogic";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
@@ -234,6 +234,8 @@ function TriviaRumble({ seed, onDone }: Props) {
   const [winner, setWinner] = useState<string | null>(null);
   const [used, setUsed] = useState<Partial<Record<TriviaCategoryId, string[]>>>({});
   const done = useRef(false);
+  const spinTimer = useRef<number | null>(null);
+  useEffect(() => () => { if (spinTimer.current !== null) window.clearTimeout(spinTimer.current); }, []);
   const currentPlayer = players[turn];
   const limit = mode === "solo" ? 24 : 36;
 
@@ -264,7 +266,8 @@ function TriviaRumble({ seed, onDone }: Props) {
     const segment = 360 / 7;
     setRotation((value) => value + 1440 + 360 - (index + 0.5) * segment);
     setStage("spinning");
-    window.setTimeout(() => {
+    spinTimer.current = window.setTimeout(() => {
+      spinTimer.current = null;
       if (index === 6) setStage("wild");
       else deal(triviaCategories[index]);
     }, 1500);
@@ -1090,6 +1093,8 @@ function HigherLower({ seed, onDone }: Props) {
   const [picked, setPicked] = useState<"a" | "b" | "tie" | null>(null);
   const [reveal, setReveal] = useState(false);
   const [finished, setFinished] = useState(false);
+  const advanceTimer = useRef<number | null>(null);
+  useEffect(() => () => { if (advanceTimer.current !== null) window.clearTimeout(advanceTimer.current); }, []);
   const item = list[round];
   const correct = item.av === item.bv ? "tie" : item.av > item.bv ? "a" : "b";
   const choose = (v: "a"|"b"|"tie") => {
@@ -1099,7 +1104,8 @@ function HigherLower({ seed, onDone }: Props) {
     const nextResults = [...results, ok];
     setResults(nextResults);
     setPicked(v); setScore(next); setReveal(true);
-    window.setTimeout(() => {
+    advanceTimer.current = window.setTimeout(() => {
+      advanceTimer.current = null;
       if (round + 1 === list.length) { setFinished(true); onDone(Math.round(next / list.length * 100), 100, next === list.length, "What Has More? · " + next + "/5 correct\n" + nextResults.map((result) => result ? "🟩" : "⬛").join("")); }
       else { setRound((r) => r + 1); setPicked(null); setReveal(false); }
     }, 900);
@@ -1112,9 +1118,9 @@ function HigherLower({ seed, onDone }: Props) {
   </div>;
 }
 
-const LADDER_WORDS = new Set(["COLD","CORD","CARD","WARD","WARM","HEAL","HEAR","SEAR","SEER","SEEK","PAIN","GAIN","CARE","CURE","VEIN","VEIL","VAIL","PAIL","MIND","MILD","BOLD","BOND","BEND","SEND","SAND","SANE","CANE","CONE","BONE","TONE","TUNE","MULE","MILE","TILE","TIDE","SIDE","SINE","LINE","LION","IRON","ICON","RING","SING","SONG","LONG","LUNG","FINE","FIVE","DIVE","LIVE","LOVE","MOVE","MORE","CARE","CASE","CASH","WASH","WISH","FISH","FIST","LIST","LAST","LOST","COST","CAST","EAST","EASE","EARS","EARN","BARN","BARK","DARK","DART","PART","PARK","MARK","MARS","MASS","PASS","PAST","FAST","FATE","LATE","MATE","MATH","PATH","BATH","BETA","DATA","DATE","GATE","GAME","NAME","SAME","SAVE","SAFE","SAGE","PAGE","PACE","RACE","RARE","CARE","CORE","CURE","PURE","PURL","PEAR","HEAR","BEAR","BEAD","HEAD","HEAT","SEAT","MEAT","MELT","BELT","BELL","CELL","SELL","SELF","SHELF"]);
+
 function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
-  const item = useMemo(() => practice ? (generateWordLadder(seed, [...LADDER_WORDS]) ?? wordLadders[seed % wordLadders.length]) : wordLadders[seed % wordLadders.length], [seed, practice]);
+  const item = useMemo(() => practice ? (generateWordLadder(seed, [...ladderDictionary]) ?? wordLadders[seed % wordLadders.length]) : wordLadders[seed % wordLadders.length], [seed, practice]);
   const [entered, setEntered] = useState<string[]>([item.start]);
   const [text, setText] = useState("");
   const [note, setNote] = useState("Change one letter at a time. Every step must be a real word.");
@@ -1126,7 +1132,7 @@ function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boo
     const word = text.trim().toUpperCase();
     if (ended || !word) return;
     if (!diffOne(entered[entered.length - 1], word)) { setNote("Change exactly one letter."); return; }
-    if (!LADDER_WORDS.has(word)) { setNote("That word is not in the ladder dictionary. Try another one-letter neighbor."); return; }
+    if (!ladderDictionary.has(word)) { setNote("That word is not in the ladder dictionary. Try another one-letter neighbor."); return; }
     if (entered.includes(word)) { setNote("You've already used that word."); return; }
     const next = [...entered, word]; setEntered(next); setText("");
     if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (showPath ? 20 : 0))), 100, next.length === item.path.length && !showPath, "Word Ladder · solved\n" + next.join(" → ") + (showPath ? "\nHint used" : "")); }
