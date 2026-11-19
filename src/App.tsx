@@ -118,11 +118,9 @@ export default function App() {
     setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??(isPractice?hashSeed(id+"-free-"+Date.now()):seedFor(id)));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
     window.scrollTo({top:0,behavior:player.reducedMotion?"auto":"smooth"});
   };
-  const finishGame=(score:number,maxScore:number,perfect:boolean)=>{
+  const finishGame=(score:number,maxScore:number,perfect:boolean,shareText?:string)=>{
     const gameTitle=GAMES.find(g=>g.id===activeGame)?.title??"MedDaily game";
-    const filled=Math.max(0,Math.min(9,Math.round(score/Math.max(1,maxScore)*9)));
-    const shareGrid=Array.from({length:3},(_,row)=>Array.from({length:3},(_,col)=>(row*3+col)<filled?"🟩":"⬜").join("")).join("\n");
-    setLastShare("MedDaily · "+gameTitle+"\n"+shareGrid+"\n"+(perfect?"Perfect run":score+" / "+maxScore+" points")+"\nPlay: https://pathomnemonic.github.io/MedDaily/");
+    setLastShare(shareText??("MedDaily · "+gameTitle+"\n"+(perfect?"Perfect run":"Round complete")+"\nPlay: https://pathomnemonic.github.io/MedDaily/"));
     if(practice){setNotice("Free-play round complete. It did not affect your daily record.");return;}
     const result={date,game:activeGame!,scope,score,maxScore,perfect,durationSeconds:Math.max(0,Math.round((Date.now()-gameStartedAt)/1000))};
     const nextPlayer = recordResult(player,result);
