@@ -1,3 +1,5 @@
+import { higherLowerPairsExpansion } from "./dataExpansion";
+
 export const glyphPatterns: { name: string; pattern: number[][]; hint: string }[] = [
   { name:"Neuron", hint:"A cell that carries signals", pattern:[[0,0,1,0,0],[0,1,1,1,0],[1,1,1,1,1],[0,0,1,0,0],[0,1,0,1,0]] },
   { name:"Heart", hint:"A very hardworking muscle", pattern:[[0,1,0,1,0],[1,1,1,1,1],[1,1,1,1,1],[0,1,1,1,0],[0,0,1,0,0]] },
@@ -246,3 +248,6 @@ clues:["Ari used neither the East Desk nor the West Desk.","The Atlas was at the
 solution:[{suspect:"Ari",location:"Reference Desk",object:"Atlas"},{suspect:"Mina",location:"East Desk",object:"Textbook"},{suspect:"Jon",location:"West Desk",object:"Flashcards"}]
 }
 );
+
+
+higherLowerPairs.push(...higherLowerPairsExpansion);
