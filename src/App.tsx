@@ -218,22 +218,10 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
   player:PlayerData;scope:string;mode:Mode;specialty:Specialty;setMode:(m:Mode)=>void;setSpecialty:(s:Specialty)=>void;today:string;doneToday:number;streak:number;openGame:(id:GameId,practice?:boolean)=>void;firstTodo:GameId;
 }){
   const done=doneToday;
-  const perfect=player.results.filter(r=>r.scope===scope&&r.perfect).length;
   
   return <div className="home-page">
-    <section className="hero"><div className="hero-copy">
-      <div className="hero-kicker"><span className="pulse-dot"/> WELCOME TO THE PLAYGROUND</div>
-      <h1>Level up your curiosity.<br/><em>Enter the medical arcade.</em></h1>
-      <p>Spin, dive, decode, and collect badges across a growing lineup of medical mini-games. Quick rounds, daily challenges, and plenty of reasons to hit Play again.</p>
-      <div className="hero-buttons"><button className="button button-primary hero-cta" onClick={()=>openGame(firstTodo)}>PLAY TODAY'S SET <span>↗</span></button><span className="no-account-note">No account needed</span></div>
-      <div className="hero-stats"><span><b>{GAMES.length}</b> games</span><i/><span><b>{done}</b> played today</span><i/><span><b>{player.hideStreaks?"—":streak}</b> day streak</span></div>
-    </div>
-    <div className="hero-art" aria-hidden="true"><div className="hero-orbit hero-orbit-a"/><div className="hero-orbit hero-orbit-b"/><div className="hero-cross">+</div>
-      <div className="float-card float-card-one"><span>ECG</span><svg viewBox="0 0 120 42"><path d="M2 23h20l9-15 12 29 13-23 8 9h54"/></svg></div>
-      <div className="float-card float-card-two"><span className="cell-dot">●</span><b>98.6°</b><small>LOOKING GOOD</small></div>
-      <div className="hero-organ">✺</div><div className="hero-spark spark-a">✦</div><div className="hero-spark spark-b">✳</div><div className="hero-spark spark-c">·</div><div className="hero-tag">THINK<br/>LIKE A<br/>DETECTIVE</div>
-    </div></section>
-
+    <section className="arcade-intro"><div><span className="eyebrow">MEDDAILY ARCADE</span><h1>Pick a game. Play another.</h1><p>Medical puzzles, word hunts, wild comparisons, and quick logic challenges. Daily rounds are optional; practice is unlimited.</p></div><span className="arcade-game-count">{GAMES.length} GAMES</span></section>
+    <section className="dx-dash-feature"><div className="feature-copy"><span className="eyebrow">PERMANENT FEATURE</span><h2>Dx Dash</h2><p>Run the list. Learn the diagnosis. The companion game stays featured here.</p><a className="button button-primary" href="https://pathomnemonic.github.io/buzzword-dash-v2/" target="_blank" rel="noreferrer">PLAY DX DASH ↗</a></div><div className="dx-dash-mark" aria-hidden="true">DX<span>↗</span></div></section>
     <section className="mode-panel"><div className="mode-panel-head"><div><span className="eyebrow">CHOOSE YOUR PLAYGROUND</span><h2>One arcade. Your kind of daily.</h2></div><div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialty Dailies <span>NEW</span></button></div></div>
       {mode==="specialty"?<div className="specialty-picker"><div className="specialty-intro"><b>Play with your people.</b><p>Choose a specialty or subject. Everyone in the same track gets the same daily set. Subspecialty topics live inside their parent specialty, so the arcade stays balanced across fields.</p></div><div className="specialty-chips">{SPECIALTIES.map(s=><button key={s.id} onClick={()=>setSpecialty(s.id)} className={specialty===s.id?"selected":""}><span>{s.icon}</span>{s.short}</button>)}</div><div className="specialty-selected"><b>{SPECIALTIES.find(s=>s.id===specialty)?.name}</b><span>{SPECIALTIES.find(s=>s.id===specialty)?.blurb}</span></div></div>:<p className="mode-description">The same broad daily set for everyone: medicine, wordplay, estimation, and pure puzzle fun.</p>}
     </section>
@@ -251,26 +239,28 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
         <div className="game-card-footer"><span>{game.time} <i>·</i> {game.level}</span><span className="card-arrow">↗</span></div>
       </button>;
     })}</div>
-    <section className="bottom-feature dx-dash-feature"><div className="feature-copy"><span className="eyebrow">PERMANENT FEATURE · FROM THE SAME ARCADE</span><h2>Dx Dash</h2><p>Run the list. Learn the diagnosis. A separate featured game, always one tap away.</p><a className="button button-primary" href="https://pathomnemonic.github.io/buzzword-dash-v2/" target="_blank" rel="noreferrer">PLAY DX DASH ↗</a></div><div className="dx-dash-mark" aria-hidden="true">DX<span>↗</span></div></section>
+
   </div>;
 }
 
+const PARTY_GAME_IDS = new Set<GameId>(["connections","microbe","triage","casefile","dive","trivia","lettergrid"]);
 function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,configured,game,games,onCreate,onJoin,onPlay,onLeave}:{
   room:RoomState|null;roomName:string;setRoomName:(s:string)=>void;joinCode:string;setJoinCode:(s:string)=>void;busy:boolean;configured:boolean;game:GameId;games:GameMeta[];
   onCreate:(g:GameId)=>void;onJoin:()=>void;onPlay:(r:RoomState)=>void;onLeave:()=>void;
 }){
-  const [selected,setSelected]=useState<GameId>(game);
+  const partyGames=games.filter(g=>PARTY_GAME_IDS.has(g.id));
+  const [selected,setSelected]=useState<GameId>(PARTY_GAME_IDS.has(game)?game:"connections");
   return <div className="friends-page"><div className="friends-hero"><span className="eyebrow">THE PARTY LOBBY</span><h1>Bring your crew.</h1><p>Set up a room, share the code, and challenge your crew to the same daily puzzle. Everyone keeps their own progress while the lobby tracks the round.</p></div>
     {!configured&&<div className="setup-warning"><b>Room play needs a one-time connection.</b><p>Solo and practice games work without setup or sign-in. To enable real-time rooms, configure Firebase using the included <code>.env.example</code> and <code>firestore.rules</code>. Multiplayer uses anonymous guest sessions; no Google account is required.</p></div>}
-    {room?<div className="room-card"><div className="room-code-head"><div><span className="eyebrow">YOUR ROOM CODE</span><strong>{room.code}</strong></div><button className="button button-soft" onClick={()=>void navigator.clipboard?.writeText(location.href+"?room="+room.code)}>Copy page link</button></div>
+    {room?<div className="room-card"><div className="room-code-head"><div><span className="eyebrow">YOUR ROOM CODE</span><strong>{room.code}</strong></div><div className="share-actions"><button className="button button-soft" onClick={()=>void navigator.clipboard?.writeText(room.code)}>Copy code</button><button className="button button-primary" onClick={()=>{const url=location.origin+location.pathname+"?room="+room.code;const text="Join my MedDaily "+(games.find(g=>g.id===room.gameId)?.title??"game")+" room: "+room.code;if(navigator.share)void navigator.share({title:"MedDaily room",text,url}).catch(()=>{});else void navigator.clipboard?.writeText(text+" "+url);}}>Share invite ↗</button></div></div>
       <p className="room-message">{room.specialty==="general"?"Open Arcade":"Specialty daily"} · {games.find(g=>g.id===room.gameId)?.title} · {room.date}</p>
       <div className="room-players">{room.players.map((p,i)=><div key={p.uid} className="room-player"><span className="player-number">{i+1}</span><b>{p.name}</b><span>{p.finished?(p.score??0)+" pts":"Ready to play"}</span>{p.perfect&&<i>✦</i>}</div>)}</div>
       <div className="room-actions"><button className="button button-primary" onClick={()=>onPlay(room)}>Play this daily <span>↗</span></button><button className="button button-quiet" onClick={onLeave}>Leave room</button></div>
       <small>Rooms allow up to eight players. Players can start the same puzzle independently; scores appear here when submitted.</small>
     </div>:<div className="friends-grid">
-      <section className="friends-card"><div className="friends-card-icon">✳</div><span className="eyebrow">START A TABLE</span><h2>Create a room</h2><p>Choose a game. A six-character code will be created for your group.</p>
+      <section className="friends-card"><div className="friends-card-icon">✳</div><span className="eyebrow">START A TABLE</span><h2>Create a room</h2><p>Choose a game that works as a shared challenge. A six-character code will be created for your group.</p>
         <label>Your nickname<input maxLength={20} value={roomName} onChange={e=>setRoomName(e.target.value)} placeholder="What should we call you?"/></label>
-        <label>Game<select value={selected} onChange={e=>setSelected(e.target.value as GameId)}>{games.map(g=><option value={g.id} key={g.id}>{g.title}</option>)}</select></label>
+        <label>Game<select value={selected} onChange={e=>setSelected(e.target.value as GameId)}>{partyGames.map(g=><option value={g.id} key={g.id}>{g.title}</option>)}</select></label>
         <button className="button button-primary full-button" onClick={()=>onCreate(selected)} disabled={busy||!configured}>{busy?"Opening room…":"Create room"}</button>
       </section>
       <section className="friends-card"><div className="friends-card-icon">⌁</div><span className="eyebrow">JOIN YOUR CREW</span><h2>Have a code?</h2><p>Enter the code shared by your friend. You'll join their exact daily and specialty.</p>
