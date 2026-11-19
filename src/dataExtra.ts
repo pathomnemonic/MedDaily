@@ -242,7 +242,7 @@ solution:[{suspect:"Resident A",location:"Control Room",object:"Timer"},{suspect
 },
 {
 title:"The Library Return",briefing:"Three students returned different study materials to separate library desks. Match each student with the desk and item.",suspects:["Ari","Mina","Jon"],locations:["Reference Desk","East Desk","West Desk"],objects:["Atlas","Flashcards","Textbook"],
-clues:["Ari used neither the East Desk nor the West Desk.","The Atlas was at the Reference Desk.","Mina did not use the Reference Desk.","Mina did not return the Flashcards.","Jon did not return the Textbook."],
+clues:["Ari used neither the East Desk nor the West Desk.","The Atlas was at the Reference Desk.","Mina did not use the West Desk.","Mina did not return the Flashcards.","Jon did not return the Textbook."],
 solution:[{suspect:"Ari",location:"Reference Desk",object:"Atlas"},{suspect:"Mina",location:"East Desk",object:"Textbook"},{suspect:"Jon",location:"West Desk",object:"Flashcards"}]
 }
 );
