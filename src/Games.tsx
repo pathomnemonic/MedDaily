@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, nextStepCases, pairsBank, triageCases } from "./data";
-import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
+import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle, type GameId } from "./lib";
 
 type Done = (score: number, maxScore: number, perfect: boolean) => void;
