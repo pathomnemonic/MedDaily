@@ -1064,3 +1064,17 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .medle-key-row button.absent{background:#303953;border-color:#414d68;color:#c0c9df}
 .medle-key-row button.wide-key{flex:1.5;font-size:8px}
 @media(max-width:430px){.medle-key-row{gap:3px}.medle-key-row button{height:38px;border-radius:6px;font-size:9px}.medle-key-row button.wide-key{flex:1.7}}
+
+.labline-hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.labline-hud>div{display:grid;justify-items:center;gap:3px;padding:10px;border:1px solid rgba(115,234,214,.14);border-radius:11px;background:rgba(6,12,28,.4)}
+.labline-hud b{font:700 19px "Space Grotesk";color:var(--mint);font-variant-numeric:tabular-nums}
+.labline-hud b small{font-size:10px;color:#92a3c8}
+.labline-hud span{font:500 8px "DM Mono";letter-spacing:1px;color:#8e9fbe}
+.labline-progress{height:5px;border-radius:99px;background:rgba(155,175,214,.13);overflow:hidden}
+.labline-progress i{display:block;height:100%;background:linear-gradient(90deg,#65dcb8,#b3e7a4);transition:width .25s}
+.labline-reveal{max-width:560px;margin:12px auto;padding:19px;border:1px solid rgba(114,240,197,.22);border-radius:15px;background:rgba(44,115,99,.13);text-align:center}
+.labline-reveal>strong{display:block;margin:8px 0;color:var(--mint);font:700 27px "Space Grotesk"}
+.labline-reveal>b{display:inline-block;padding:5px 11px;border-radius:8px;background:rgba(114,240,197,.12);color:#baffdf;font:600 13px "DM Mono"}
+.labline-reveal p{color:#b5c4dc;font-size:11px;line-height:1.65}
+.labline-reveal small{display:block;color:#8295b8;font-size:8px;line-height:1.5}
+.labline-finale .finish-panel{margin-top:12px}
