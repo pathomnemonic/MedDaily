@@ -1757,3 +1757,16 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .profile-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.profile-chips>span{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;background:rgba(0,0,0,.3);color:#fff;font:700 12px var(--font-game)}
 .profile-goal i{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.4)}.profile-goal i.on{background:#ffd54a;border-color:#fff}
 @media(max-width:520px){.profile-card{flex-direction:column;text-align:center}.profile-chips{justify-content:center}}
+
+/* Difficulty badge */
+.diff{display:inline-flex;align-items:center;gap:5px;font:700 9px var(--font-game,"DM Mono");letter-spacing:.8px;text-transform:uppercase}
+.diff-pips{display:inline-flex;gap:2px}
+.diff-pips b{width:6px;height:10px;border-radius:2px;background:currentColor;opacity:.22}
+.diff-1 .diff-pips b:nth-child(-n+1),.diff-2 .diff-pips b:nth-child(-n+2),.diff-3 .diff-pips b{opacity:1}
+.diff-1{color:#1f9d63}.diff-2{color:#c98a00}.diff-3{color:#d6454f}
+.play-heading-text .diff{margin-top:8px}
+.room-game .diff{margin-top:6px}
+.game-card-footer .diff{color:var(--dc)}.game-card-footer .diff-pips{color:var(--dc);margin:0}
+.diff-1{--dc:#3ddc97}.diff-2{--dc:#ffc247}.diff-3{--dc:#ff6b73}
+.diff{color:var(--dc)}.diff-pips b{background:var(--dc)}
+.diff-pips b{opacity:.28}
