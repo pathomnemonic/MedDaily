@@ -381,7 +381,7 @@ function LetterGridGame({ seed, onDone }: Props) {
   }, [seconds, ended, found]);
 
   const chooseCell = (index: number) => {
-    if (ended || foundPaths.some((cells) => cells.includes(index))) return;
+    if (ended) return;
     if (path.includes(index)) {
       if (path[path.length - 1] === index) setPath((current) => current.slice(0, -1));
       else setNote("A letter cannot be reused in the same word. Remove the last tile to backtrack.");
@@ -421,7 +421,7 @@ function LetterGridGame({ seed, onDone }: Props) {
     <p className="game-instructions"><span className="instruction-dot mint" /> Connect neighboring letters horizontally, vertically, or diagonally. Longer words earn more points.</p>
     <div className="letter-grid-board" aria-label="Boggle-style letter board">{board.grid.map((letter, i) => {
       const isFound = foundPaths.some((cells) => cells.includes(i));
-      return <button key={i} type="button" className={"letter-grid-tile" + (path.includes(i) ? " selected" : "") + (isFound ? " found" : "")} onClick={() => chooseCell(i)} disabled={ended || isFound} aria-label={"Tile " + letter + ", row " + (Math.floor(i / 4) + 1) + ", column " + (i % 4 + 1)}>{letter}</button>;
+      return <button key={i} type="button" className={"letter-grid-tile" + (path.includes(i) ? " selected" : "") + (isFound ? " found" : "")} onClick={() => chooseCell(i)} disabled={ended} aria-label={"Tile " + letter + ", row " + (Math.floor(i / 4) + 1) + ", column " + (i % 4 + 1)}>{letter}</button>;
     })}</div>
     <div className="letter-grid-current"><span>YOUR WORD</span><strong>{currentWord || "—"}</strong><small>{path.length} tiles</small></div>
     <div className="letter-grid-controls"><button className="button button-soft" onClick={() => setPath((current) => current.slice(0, -1))} disabled={ended || !path.length}>Undo</button><button className="button button-quiet" onClick={() => setPath([])} disabled={ended || !path.length}>Clear</button><button className="button button-primary" onClick={submit} disabled={ended || path.length < 3}>Submit word</button></div>
