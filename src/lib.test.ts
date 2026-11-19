@@ -123,11 +123,13 @@ describe("Strands-style Word Hunt boards", () => {
       const span = board.paths[board.spangram];
       expect(Math.floor(span[0] / board.columns)).toBe(0);
       expect(Math.floor(span[span.length - 1] / board.columns)).toBe(board.rows - 1);
+      const allOccupied = new Set<number>();
       for (const word of board.words) {
         const path = board.paths[word];
         expect(path, pack.name + ": " + word).toHaveLength(word.length);
         expect(readStrandsPath(board.grid, path, board.columns)).toBe(word);
         expect(new Set(path).size).toBe(path.length);
+        for (const cell of path) { expect(allOccupied.has(cell), pack.name + ": overlap at " + cell).toBe(false); allOccupied.add(cell); }
         for (let i = 1; i < path.length; i++) {
           const previous = path[i - 1], current = path[i];
           const rowGap = Math.abs(Math.floor(previous / board.columns) - Math.floor(current / board.columns));
