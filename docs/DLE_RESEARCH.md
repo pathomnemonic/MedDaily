@@ -27,12 +27,12 @@ A particularly useful design principle from the current daily-puzzle guides is t
 | Wordle / Quordle | Medical term, drug, anatomy, pathogen, or diagnosis guessing | **Live: Medle** |
 | Connections | Group medications, findings, organisms, anatomy, and mechanisms | **Live: Connections** |
 | Progressive clue guessing | Reveal clinical or scientific clues one at a time | **Live: DoctorDle** (typed diagnosis guesses with progressive clues; clinical MCQs are not listed as standalone games) |
-| Themed word search / Strands | Find terms hidden through a grid; add a theme-spanning word in a future version | **Live: Word Hunt** |
+| Themed word search / Strands | Find theme words through adjacent letter paths; the spangram must span opposite board edges | **Live: Word Hunt** (Strands-style paths, spangram, and earned hints) |
 | Spelling Bee / 18 Words / 23 Words | Unscramble medical terms or build many valid words from a letter set | **Live: Anagram Sprint** |
 | Nonogram / Picross | Reveal a cell, organ, neuron, or instrument silhouette from row/column clues | **Live: Cell Sketch** |
 | More/Less / Fermi | Compare anatomy, physiology, quantities, or harmless everyday estimates | **Live: What Has More?** and **Labline** |
 | Word ladders | Change one letter at a time to reach a target | **Live: Word Ladder** |
-| Memory / matching | Match drugs to mechanisms, signs to diagnoses, or just-for-fun pairs | **Live: Association Blitz** |
+| Memory / matching | Match drugs to mechanisms, signs to diagnoses, or just-for-fun pairs | **Live: Association Blitz** (12-pair Standard and 15-pair Expert modes) |
 | Ordering / sequence puzzles | Put resuscitation, labor, or procedural steps in order | **Live: Triage Order** |
 | Waffle / crossing words | Swap letters in a small crossing-word board | Strong next addition; needs a verified word bank and carefully tested board generation |
 | Murdle / logic grids | Solve a fictional mystery using people, places, objects, and constraints | Strong next addition; keep it clearly fictional, not a clinical decision tool |
@@ -50,7 +50,7 @@ The tracks are intentionally broad and balanced. Neurology is represented as one
 Sixteen playable formats are currently exposed in the arcade:
 
 1. Medle — five-letter guessing.
-2. Connections — four hidden groups of four.
+2. Connections — four hidden groups of four; Free Play assembles fresh combinations from the curated category bank.
 3. DoctorDle — six typed diagnosis guesses with progressive clues.
 4. Word Hunt — themed word-search grid.
 5. Labline — numeric estimation.
@@ -60,9 +60,9 @@ Sixteen playable formats are currently exposed in the arcade:
 9. Cell Sketch — nonogram.
 10. What Has More? — surprising clinical, food, drug, and everyday comparisons.
 11. Word Ladder — one-letter transformations.
-12. Medical Spelling Hive — medical-themed seven-letter word puzzle with a center-letter rule and pangram bonus.
-13. Casefile Logic — fictional deduction grid with in-game pencil marks.
-14. Deep Dive — long-tail open-answer recall.
+12. Medical Spelling Hive — 46 curated medical-themed seven-letter boards with a center-letter rule and pangram bonus.
+13. Casefile Logic — fictional deduction grid with pencil marks, automatic one-to-one elimination, and forced-assignment propagation.
+14. Deep Dive — timed multi-answer long-tail recall with curated rarity tiers.
 15. Trivia Rumble — category-wheel party trivia.
 16. Letter Lab — timed adjacent-letter word hunt.
 
