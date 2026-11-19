@@ -91,6 +91,8 @@ function SectionLabel({ children }: { children: ReactNode }) { return <div class
 const DIVE_POINTS = deepDivePointsByTier;
 const DIVE_TIERS = ["Skin deep", "Subcutaneous", "Fascia", "Muscle", "Bone", "Marrow"];
 const DIVE_SECONDS = 25;
+/** One landmark caption per tissue layer; shown in the descent scene like the scenic captions of a climbing game. */
+const DIVE_LANDMARKS = ["Epidermis · renewed roughly every month", "Subcutaneous fat · insulation and an energy store", "Deep fascia · the wrapping that organizes muscle", "Skeletal muscle · hundreds of named muscles", "Cortical bone · the dense outer shell", "Bone marrow · makes hundreds of billions of blood cells a day"];
 interface DiveResult { answer: string | null; tier: number | null; points: number; gamble?: "won" | "lost" }
 const DIVE_GAMBLE_SECONDS = 10;
 
@@ -198,7 +200,6 @@ function DeepDive({ seed, onDone }: Props) {
     setLocked(false);
     setMessage("Next scan. Think past the first obvious answer.");
   };
-  const depthPct = (tier: number | null) => tier ? [6, 21, 34, 51, 70, 89][tier - 1] : 3;
 
   return <div className="game-layout dive-game" data-own-sfx="true">
     <div className="dive-hud">
@@ -208,10 +209,15 @@ function DeepDive({ seed, onDone }: Props) {
     </div>
     {!finished ? <>
       <div className={"dive-stage" + (current?.tier ? " tier-hit-" + current.tier : "")} style={{ "--depth": Math.min(1, total / 700) } as React.CSSProperties}>
-        <div className="dive-sea" aria-hidden="true">
+        <div className="dive-scene" aria-hidden="true" style={{ "--cam": locked && current?.tier ? current.tier - 1 : 0 } as React.CSSProperties}>
+          <div className="dive-world">
+            {DIVE_TIERS.map((name, i) => <div key={name} className={"dive-layer layer-" + (i + 1) + (current?.tier === i + 1 ? " hit" : "")}><span className="dive-layer-name">{name}</span><b>{DIVE_POINTS[i]}</b></div>)}
+            <div className="dive-layer layer-7" />
+          </div>
           {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => <i key={n} className="dive-cell" style={{ left: (8 + n * 11) + "%", animationDelay: (-n * 1.7) + "s", animationDuration: (9 + (n % 4) * 2) + "s" }} />)}
-          {[1, 2, 3, 4, 5, 6].map((t) => <i key={t} className={"dive-line" + (current?.tier === t ? " hit" : "")} style={{ top: depthPct(t) + "%" }}><span>{DIVE_POINTS[t - 1]}</span></i>)}
-          <b className="dive-diver" style={{ top: depthPct(locked ? current?.tier ?? null : null) + "%" }}>💊</b>
+          <b className="dive-diver">💊</b>
+          <span className="dive-landmark" key={String(locked) + (current?.tier ?? 0)}>{locked && current?.tier ? DIVE_LANDMARKS[current.tier - 1] : "The surface · dive in"}</span>
+          <span className="dive-scan" />
         </div>
         <div className="dive-prompt-card" key={round}>
           <span className="eyebrow">{item.scope.toUpperCase()}</span>
