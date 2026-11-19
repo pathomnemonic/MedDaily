@@ -11,7 +11,7 @@ describe("Letter Lab grid rules", () => {
 
   it("traces adjacent letters without reusing a tile", () => {
     expect(traceGridWord(grid, "AFK")).toEqual([0, 5, 10]);
-    expect(traceGridWord(grid, "AGM")).toEqual([0, 6, 12]);
+    expect(traceGridWord(grid, "AEJ")).toEqual([0, 4, 9]);
     expect(traceGridWord(grid, "AHO")).toBeNull();
     expect(traceGridWord(["A","A","B","C", ...grid.slice(4)], "AAA")).toBeNull();
   });
