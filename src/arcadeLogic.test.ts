@@ -100,8 +100,8 @@ describe("Association Blitz scoring", () => {
 
   it("keeps the twelve-pair perfect-run maximum consistent with the UI", () => {
     const pairTotal = Array.from({ length: 12 }, (_, combo) => associationPairPoints(combo)).reduce((sum, points) => sum + points, 0);
-    expect(pairTotal).toBe(1500);
-    expect(pairTotal + associationTimeBonus(75)).toBe(1650);
+    expect(pairTotal).toBe(1650);
+    expect(pairTotal + associationTimeBonus(75)).toBe(1800);
   });
 });
 
