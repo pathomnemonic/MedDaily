@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, nextStepCases, pairsBank, triageCases } from "./data";
+import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank, triageCases } from "./data";
 import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
@@ -14,7 +14,6 @@ export function GameBoard({ game, seed, onDone, specialty = "general" }: Props &
     case "medle": return <Medle seed={seed} onDone={onDone} specialty={specialty} />;
     case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} />;
     case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} specialty={specialty} />;
-    case "nextstep": return <NextStep seed={seed} onDone={onDone} specialty={specialty} />;
     case "microbe": return <MicrobeHunt seed={seed} onDone={onDone} specialty={specialty} />;
     case "labline": return <Labline seed={seed} onDone={onDone} specialty={specialty} />;
     case "pairs": return <MemoryMatch seed={seed} onDone={onDone} specialty={specialty} />;
@@ -523,27 +522,6 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
   </div>;
 }
 
-function NextStep({ seed, onDone, specialty = "general" }: Props) {
-  const raw = pick(nextStepCases, seed, specialty, "nextstep");
-  const item = raw.id === "n01" ? { ...raw, explanation: raw.explanation.replace("below 3.3 mEq/L", "below 3.5 mEq/L") } : raw;
-  const [choice, setChoice] = useState<number | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [revealed, setRevealed] = useState(false);
-  const done = useRef(false);
-  const submit = () => {
-    if (choice === null || submitted) return;
-    setSubmitted(true);
-    const ok = choice === item.answer;
-    if (!done.current) { done.current = true; onDone(ok ? 100 : 0, 100, ok); }
-  };
-  return <div className="game-layout">
-    <div className="specialty-pill">{item.specialty} · CLINICAL REASONING</div>
-    <div className="vignette-card"><SectionLabel>THE PRESENTATION</SectionLabel><p>{item.vignette}</p></div>
-    <h3 className="game-question">{item.question}</h3>
-    <div className="answer-options">{item.options.map((option, i) => <button key={option} disabled={submitted} onClick={() => setChoice(i)} className={"answer-option" + (choice === i ? " chosen" : "") + (submitted && i === item.answer ? " answer-correct" : "") + (submitted && choice === i && i !== item.answer ? " answer-wrong" : "")}><span className="option-letter">{String.fromCharCode(65 + i)}</span>{option}</button>)}</div>
-    {!submitted ? <button className="button button-primary full-button" disabled={choice === null} onClick={submit}>Lock in answer <span>↗</span></button> : <Finish title={choice === item.answer ? "Good clinical call" : "Review the next step"} detail={item.explanation} score={choice === item.answer ? "100 / 100" : "0 / 100"}><button className="text-button" onClick={() => setRevealed((v) => !v)}>{revealed ? "Hide" : "Show"} source note</button>{revealed && <p className="source-note">{item.source}</p>}</Finish>}
-  </div>;
-}
 
 function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
   const pack = pick(microbePacks, seed, specialty, "microbe");
