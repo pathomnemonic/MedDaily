@@ -4,7 +4,7 @@ import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks
 import { deductionCases, glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
+import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
 import { generateDeductionCase } from "./logicGenerator";
 
 type Done = (score: number, maxScore: number, perfect: boolean) => void;
@@ -286,11 +286,11 @@ function TriviaRumble({ seed, onDone }: Props) {
   };
 
   const finish = () => {
-    const best = Math.max(0, ...players.map((player) => player.correct));
+    const result = triviaRumbleResult(players.map((player) => player.correct), mode, limit);
     setStage("done");
     if (!done.current) {
       done.current = true;
-      onDone(best * 100, limit * 100, best === limit);
+      onDone(result.score, result.maxScore, result.perfect);
     }
   };
 
