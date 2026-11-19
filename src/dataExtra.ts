@@ -299,11 +299,11 @@ wordLadders.push(
 {start:"SAME",end:"SAFE",path:["SAME","SAVE","SAFE"],note:"A compact three-word ladder."},
 {start:"MIND",end:"LINE",path:["MIND","MILD","MILE","TILE","TIDE","SIDE","SINE","LINE"],note:"A longer route through familiar words."},
 {start:"MULE",end:"MIND",path:["MULE","MILE","MILD","MIND"],note:"A compact ladder with two vowel changes."},
-{start:"LION",end:"RING",path:["LION","LINE","SINE","SING","RING"],note:"Move from an animal to a circular object."},
-{start:"FAST",end:"BATH",path:["FAST","FATE","LATE","MATE","MATH","PATH","BATH"],note:"A sequence of common words with one-letter steps."},
+{start:"SING",end:"LUNG",path:["SING","SONG","LONG","LUNG"],note:"A short ladder with a changing vowel."},
+{start:"FAST",end:"BATH",path:["FAST","CAST","CASE","CANE","SANE","SAME","GAME","GATE","MATE","MATH","BATH"],note:"A longer route through common words."},
 {start:"HEAD",end:"SELF",path:["HEAD","HEAT","SEAT","MEAT","MELT","BELT","BELL","CELL","SELL","SELF"],note:"A longer ladder that rewards careful tracking."},
 {start:"MORE",end:"FINE",path:["MORE","MOVE","LOVE","LIVE","FIVE","FINE"],note:"Change one letter at every rung."},
-{start:"BATH",end:"GAME",path:["BATH","MATH","MATE","LATE","DATE","DATA","GATE","GAME"],note:"A route from a familiar noun to an activity."},
+{start:"BATH",end:"GAME",path:["BATH","MATH","MATE","GATE","GAME"],note:"A route from a familiar noun to an activity."},
 {start:"VEIN",end:"PAIL",path:["VEIN","VEIL","VAIL","PAIL"],note:"A short path beginning with an anatomical term."},
 {start:"CARE",end:"PURL",path:["CARE","CORE","CURE","PURE","PURL"],note:"A clinical starting point leads to a textile term."}
 );
