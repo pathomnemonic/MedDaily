@@ -1137,6 +1137,7 @@ function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: 
   const pencilState = (suspect: string, field: "location" | "object", value: string): "" | "possible" | "excluded" => {
     const key = suspect + "|" + field + "|" + value;
     const assigned = assignments[suspect][field];
+    if (assigned === value) return "possible";
     if (assigned && assigned !== value) return "excluded";
     if (item.suspects.some((other) => other !== suspect && assignments[other][field] === value)) return "excluded";
     if (pencilMarks[key]) return pencilMarks[key];
