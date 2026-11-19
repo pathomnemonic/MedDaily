@@ -201,7 +201,7 @@ export default function App() {
         <div className="play-heading"><div><span className="eyebrow">{practice?"FREE PLAY":selectedTitle.toUpperCase()+" · "+date}</span><h1>{title}</h1><p>{GAMES.find(g=>g.id===activeGame)?.description}</p></div>
           <div className="mode-switch" role="group" aria-label="Game mode"><button className={!practice?"selected":""} onClick={()=>{if(practice)openGame(activeGame,false,room?.seed);}}>Daily</button><button className={practice?"selected":""} onClick={()=>{if(!practice)openGame(activeGame,true,hashSeed(activeGame+"-practice-"+Date.now()));}}>Free Play</button></div></div>
         <section className="game-stage"><div className="stage-orbit orbit-one"/><div className="stage-orbit orbit-two"/>
-          <GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(mode==="general"?"general":specialty) as never} onDone={finishGame}/>
+          <GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(mode==="general"?"general":specialty) as never} practice={practice} onDone={finishGame}/>
         </section>
         {room&&<RoomScores room={room}/>}
         {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"MedDaily result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
