@@ -216,6 +216,8 @@ describe("expanded content integrity", () => {
     for (const ladder of wordLadders) {
       expect(ladder.path[0]).toBe(ladder.start);
       expect(ladder.path[ladder.path.length - 1]).toBe(ladder.end);
+      expect(new Set(ladder.path).size).toBe(ladder.path.length);
+      expect(ladder.path.every((word) => /^[A-Z]{4,6}$/.test(word))).toBe(true);
       for (let i = 1; i < ladder.path.length; i++) {
         expect([...ladder.path[i - 1]].filter((letter, index) => letter !== ladder.path[i][index]), ladder.path.join(" → ")).toHaveLength(1);
       }
