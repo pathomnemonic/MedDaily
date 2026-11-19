@@ -185,6 +185,12 @@ export default function App() {
       <div className="top-actions">{installPrompt&&<button className="install-button" onClick={install}>＋ Install</button>}<div className="avatar-chip">MD</div></div>
     </header>
 
+    <nav className="mobile-nav" aria-label="Mobile navigation">
+      <button className={!activeGame&&screen==="home"?"active":""} onClick={()=>{setActiveGame(null);setScreen("home");}}><span>⌂</span>Arcade</button>
+      <button className={screen==="friends"?"active":""} onClick={()=>{setActiveGame(null);setScreen("friends");}}><span>✳</span>Friends</button>
+      <button className={screen==="stats"?"active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}><span>▤</span>Progress</button>
+      <button className={screen==="settings"?"active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}><span>⚙</span>Settings</button>
+    </nav>
     {notice&&<button className="notice" onClick={()=>setNotice("")} aria-label="Dismiss message">{notice}<span>×</span></button>}
     {room&&<div className="room-strip"><span className="room-dot" /> <b>ROOM {room.code}</b><span>{room.players.length} players · {room.players.filter(p=>p.finished).length} finished</span><button onClick={()=>setScreen("friends")}>Room details</button><button onClick={closeRoom}>Leave</button></div>}
 
