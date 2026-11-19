@@ -279,7 +279,7 @@ function RoomScores({room}:{room:RoomState}){
 function StatsPage({player,scope,streak}:{player:PlayerData;scope:string;streak:number}){
   const results=player.results.filter(r=>r.scope===scope);
   const perfect=results.filter(r=>r.perfect).length;
-  const achievements=achievementsFor(player,scope,streak,GAMES.length);
+  const achievements=achievementsFor(player,scope,player.hideStreaks?0:streak,GAMES.length);
   const unlocked=achievements.filter(item=>item.earned).length;
   return <div className="stats-page"><span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div></div>
     <section className="achievement-shelf"><div className="achievement-heading"><div><span className="eyebrow">UNLOCKED BY PLAYING</span><h2>Achievements</h2></div><b>{unlocked} / {achievements.length}</b></div><div className="achievement-grid">{achievements.map(item=><article key={item.name} className={"achievement-tile"+(item.earned?" earned":" locked")}><span className="achievement-mark">{item.earned?"✦":"◇"}</span><div><b>{item.name}</b><p>{item.detail}</p><small>{item.earned?"UNLOCKED":"IN PROGRESS"} · {item.progress}</small></div></article>)}</div></section>
