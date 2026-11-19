@@ -1171,7 +1171,7 @@ function SpellingHive({ seed, onDone }: Props) {
     setNote(word === puzzle.pangram ? "Pangram! You used all seven letters." : "+" + points(word) + " points. Keep exploring.");
     if (next.length === puzzle.words.length) {
       setEnded(true);
-      onDone(maximum, maximum, true, "Medical Spelling Hive · " + puzzle.words.length + "/" + puzzle.words.length + " words\n" + "🟩".repeat(Math.min(7, puzzle.words.length)) + (found.includes(puzzle.pangram) ? " ⭐" : ""));
+      onDone(maximum, maximum, true, "Medical Spelling Hive · " + puzzle.words.length + "/" + puzzle.words.length + " words\n" + "🟩".repeat(Math.min(7, puzzle.words.length)) + (next.includes(puzzle.pangram) ? " ⭐" : ""));
     }
   };
   const finish = () => {
