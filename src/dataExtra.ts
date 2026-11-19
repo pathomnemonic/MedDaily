@@ -293,6 +293,20 @@ wordLadders.push(
 {start:"DATA",end:"GAME",path:["DATA","DATE","GATE","GAME"],note:"A compact ladder using familiar words."}
 );
 
+
+wordLadders.push(
+{start:"HEAL",end:"SEEK",path:["HEAL","HEAR","SEAR","SEER","SEEK"],note:"Follow a short chain of one-letter changes."},
+{start:"MIND",end:"LINE",path:["MIND","MILD","MILE","TILE","TIDE","SIDE","SINE","LINE"],note:"A longer route through familiar words."},
+{start:"MULE",end:"MIND",path:["MULE","MILE","MILD","MIND"],note:"A compact ladder with two vowel changes."},
+{start:"LION",end:"RING",path:["LION","LINE","SINE","SING","RING"],note:"Move from an animal to a circular object."},
+{start:"FAST",end:"BATH",path:["FAST","FATE","LATE","MATE","MATH","PATH","BATH"],note:"A sequence of common words with one-letter steps."},
+{start:"HEAD",end:"SELF",path:["HEAD","HEAT","SEAT","MEAT","MELT","BELT","BELL","CELL","SELL","SELF"],note:"A longer ladder that rewards careful tracking."},
+{start:"MORE",end:"FINE",path:["MORE","MOVE","LOVE","LIVE","FIVE","FINE"],note:"Change one letter at every rung."},
+{start:"BATH",end:"GAME",path:["BATH","MATH","MATE","LATE","DATE","DATA","GATE","GAME"],note:"A route from a familiar noun to an activity."},
+{start:"VEIN",end:"PAIL",path:["VEIN","VEIL","VAIL","PAIL"],note:"A short path beginning with an anatomical term."},
+{start:"CARE",end:"PURL",path:["CARE","CORE","CURE","PURE","PURL"],note:"A clinical starting point leads to a textile term."}
+);
+
 // Rotations and reflections preserve each original nonogram's unique row/column solution.
 const rotateGlyph = (pattern: number[][]) => pattern[0].map((_, c) => pattern.map((row) => row[c]).reverse());
 const mirrorGlyph = (pattern: number[][]) => pattern.map((row) => [...row].reverse());
