@@ -472,6 +472,7 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [solved, setSolved] = useState<number[]>([]);
   const [mistakes, setMistakes] = useState(0);
+  const [shuffleCount, setShuffleCount] = useState(0);
   const [note, setNote] = useState("Find four groups of four related medical terms.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
@@ -486,11 +487,16 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
       const next = [...solved, group]; setSolved(next); setSelected([]); setNote(board[group].category + " — " + board[group].hint);
       if (next.length === 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 100 - mistakes * 15), 100, mistakes === 0); } }
     } else {
-      const next = mistakes + 1; setMistakes(next); setNote(next >= 4 ? "No mistakes left. The remaining groups are shown below." : "Not a set. Look for a different connection."); setSelected([]);
+      const nearMiss = group !== undefined && selected.filter((word) => board[group].words.includes(word)).length === 3;
+      const next = mistakes + 1; setMistakes(next); setNote(next >= 4 ? "No mistakes left. The remaining groups are shown below." : nearMiss ? "One away… Three of those terms belong together, but one is from another group." : "Not a set. Look for a different connection."); setSelected([]);
       if (next >= 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 40 - next * 5), 100, false); } }
     }
   };
-  const shuffleTiles = () => setTiles((t) => shuffle(t, seeded(hashSeed(String(seed) + String(solved.length) + String(mistakes)))));
+  const shuffleTiles = () => {
+    const next = shuffleCount + 1;
+    setShuffleCount(next);
+    setTiles((current) => shuffle(current, seeded(hashSeed(String(seed) + String(solved.length) + String(mistakes) + String(next)))));
+  };
   return <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot lilac" /> Select four terms that share a medical connection. Four groups complete the board; you have four mistakes available.</div>
     <div className="connection-found">{solved.map((n) => <div className="connection-solved" key={n}><strong>{board[n].category}</strong><span>{board[n].words.join(" · ")}</span></div>)}</div>
