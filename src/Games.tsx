@@ -459,6 +459,11 @@ function CasefileLogic({ seed, onDone }: Props) {
   const [note, setNote] = useState("Use the clues to assign one unique room and one unique item to each person.");
   const update = (suspect: string, field: "location"|"object", value: string) => {
     if (submitted) return;
+    const duplicate = item.suspects.some((other) => other !== suspect && assignments[other][field] === value);
+    if (value && duplicate) {
+      setNote("Each " + field + " can only be assigned once. Choose a different one.");
+      return;
+    }
     setAssignments((current) => ({ ...current, [suspect]: { ...current[suspect], [field]: value } }));
   };
   const check = () => {
