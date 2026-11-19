@@ -1055,3 +1055,12 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .letter-grid-current strong{font:700 18px "DM Mono";letter-spacing:2px;color:var(--gold)}
 .letter-grid-controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 .letter-grid-controls .button{min-width:105px}
+
+.medle-keyboard{display:grid;gap:7px;max-width:470px;margin:16px auto 8px}
+.medle-key-row{display:flex;justify-content:center;gap:5px}
+.medle-key-row button{min-width:0;flex:1;height:42px;border:1px solid rgba(193,205,255,.16);border-radius:8px;background:#465373;color:#f1f4ff;font:700 11px "DM Mono";cursor:pointer}
+.medle-key-row button.correct{background:#247f70;border-color:#5be0c0;color:#fff}
+.medle-key-row button.present{background:#a16a35;border-color:#e9b66c;color:#fff}
+.medle-key-row button.absent{background:#303953;border-color:#414d68;color:#c0c9df}
+.medle-key-row button.wide-key{flex:1.5;font-size:8px}
+@media(max-width:430px){.medle-key-row{gap:3px}.medle-key-row button{height:38px;border-radius:6px;font-size:9px}.medle-key-row button.wide-key{flex:1.7}}
