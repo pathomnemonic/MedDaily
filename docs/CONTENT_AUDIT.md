@@ -8,30 +8,27 @@ MedDaily exposes twenty playable game formats. The retired Next Best Step bank r
 
 | Game | Current bank | Notes |
 |---|---:|---|
-| Medle | 142 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
+| Stat Word | 365 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
 | Quad Squad | 122 boards | Four groups of four per board; 20 new cross-specialty boards |
-| DoctorDle | 220 cases | Six-guess typed diagnosis puzzle with progressive clues, common clinical aliases, explanations, and source notes |
+| Differential | 220 cases | Six-guess typed diagnosis puzzle with progressive clues, common clinical aliases, explanations, and source notes |
 | Specimen Search | 71 unique medical theme packs | 14×14 drag-to-select word-search grids; themes span organisms, anatomy, organ systems, and pharmacology |
 | Labline | 100 prompts | Five-round estimation challenge with cumulative scoring and reference explanations |
-| Association Blitz | 208 unique pairs | 20-card, ten-pair timed memory board with combo streaks and a time bonus |
+| Association Blitz | 208 unique pairs | 24-card, twelve-pair timed memory board with combo streaks, a 75-second clock, and a time bonus |
 | Triage Order | 42 sequences | Clinical sequence reconstruction with optional scored position hints |
 | Anagram Sprint | 111 terms | Five-word, 75-second timed scramble with hints and attempt-based scoring |
-| Cell Sketch | 31 unique-named 5×5 nonograms (19 original patterns plus 12 rotations/reflections) | Row and column run clues; CI verifies one valid solution per board |
-| What Has More? | 90 comparisons (24 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
-| Letter Rungs | 26 ladders | Each intended solution path uses real words and one-letter changes |
-| Hexicon | 42 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
-| Casefile Logic | 15 cases | Fictional deduction puzzles with tri-state pencil marks, one-to-one assignments, and scored progressive hints |
-| Deep Dive | 70 prompts | Timed open-answer prompts with curated long-tail rarity tiers; typo-tolerant matching (a typo is forgiven only when it identifies exactly one accepted answer). Accepted answers per prompt were roughly doubled (every prompt has 12+ answers) with synonyms and abbreviations (`src/dataDeepDiveExtra.ts`); the set is still curated and closed, and rarity tiers are editorial, not measured |
-| Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes; 20-second question timer; in pass-and-play a correct answer keeps the wheel and a miss or timeout passes it |
-| Mime Time | 135 act-it-out prompts (procedures, symptoms, ward life, instruments, specialties, patients) | Pass-the-phone charades for 1–6 players; 45-second turns, skip/got-it scoring; every prompt can be acted without props or speech |
-| Riddle Lab | 52 first-person riddles (12 microbes, 12 drugs, 10 organs, 8 molecules, 10 syndromes) | Four clues from cryptic to obvious; four options with same-kind distractors; 4/3/2/1 points by clues used |
-| Body Map Blitz | 14 organs on an original SVG body diagram | Ten timed targets per round, speed-scored, with a short fact after each; patient's right is on the viewer's left |
-| Crossword Clinic | 100+ clue/answer pairs; a fresh 6–7 word grid per seed | Generated crossing grids verified so every letter run is exactly one clued word (120 seeds tested); check, reveal, and direction toggle |
+| Cell Sketch | 36 curated 5×5 patterns + 8 seeded transformations each in Free Play | Row and column run clues; CI verifies one valid solution per board |
+| What Has More? | 116 comparisons (50 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
+| Letter Rungs | 36 curated ladders + procedural Free Play | Each intended solution path uses real words and one-letter changes |
+| Seven Cells | 50 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
+| Casefile Logic | 30 curated cases + seeded procedural daily rotation and Free Play | Alternates curated cases with generated, uniquely solvable 3×3 deduction grids; both modes include pencil marks and scored hints |
+| Deep Dive | 73 prompts, including 3 long-tail prompts with 60 accepted answers each | Timed multi-answer recall with capped round scoring and editorial rarity tiers; typo-tolerant, space/hyphen-insensitive matching; synonym and abbreviation aliases (`src/dataDeepDiveExtra.ts`) |
+| Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes; 20-second timer; a correct answer keeps the wheel in pass-and-play |
+
 | Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |
 
 ## What this means for daily longevity
 
-Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. The current counts above describe the curated source banks, not the number of unique calendar days supported. Daily and unlimited Free Play are both available; Free Play re-seeds or reshuffles existing content and does not manufacture new questions. Several smaller banks will need further expansion before the arcade can claim a full year of unique daily content.
+Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. The current counts above describe the curated source banks, not the number of unique calendar days supported. Daily and unlimited Free Play are both available. Most clinical knowledge games re-seed or reshuffle curated banks; Word Hunt, Letter Lab, Casefile Logic, Word Ladder, and Cell Sketch also use procedural generation or seeded transformations. Procedural variety does not replace the need to keep expanding curated clinical content. Several smaller banks will need further expansion before the arcade can claim a full year of unique daily content.
 
 The architecture deliberately separates game engines from content datasets so banks can grow without rewriting the UI or scoring systems. However, **do not describe the current release as having 365 unique daily puzzles**.
 
@@ -43,12 +40,12 @@ Clinical cases are filtered toward specialties where curated mappings exist, inc
 
 ## Recommended next content work
 
-Prioritize the smallest banks first:
-1. Expand Casefile Logic and Hexicon to at least 50 distinct daily sets each; continue replacing generic word boards with medically meaningful sets.
-2. Expand Cell Sketch and Letter Rungs while preserving one-solution and valid-path checks (Cell Sketch now has 19 original patterns; Letter Rungs has 26 paths).
+Remaining content priorities:
+1. Continue replacing generic Seven Cells entries with clinically meaningful, dictionary-verified words; the playable bank now has 50 boards.
+2. Expand Cell Sketch and Letter Rungs while preserving one-solution and valid-path checks (Cell Sketch now has 24 original patterns plus 12 transformed variants; Letter Rungs now has 36 curated paths).
 3. Add specialty-reviewed Quad Squad boards and clinical cases for tracks whose current content falls back to general banks.
-4. Add original/licensed visual material for Framed-style ECG, imaging, histology, gross pathology, and anatomy recognition.
-5. Add a long-tail, open-answer party game where scoring rarity is based on an explicit curated weighting system—not a fabricated player-population statistic.
+4. Add original/licensed visual material for ECG, imaging, histology, gross pathology, and anatomy recognition.
+5. Continue expanding Deep Dive's long-tail answer sets with clinically defensible aliases and explicit editorial rarity weights—not fabricated player-population statistics.
 
 ## Accuracy and review standard
 

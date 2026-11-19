@@ -101,3 +101,96 @@ export interface RumbleTurnState { turn: number; playerCount: number; correct: b
 export function rumbleNextTurn({ turn, playerCount, correct }: RumbleTurnState): number {
   return correct || playerCount <= 1 ? turn : (turn + 1) % playerCount;
 }
+
+export interface GeneratedWordLadder {
+  start: string;
+  end: string;
+  path: string[];
+  note: string;
+}
+
+/** Build a fresh ladder by searching the one-letter-neighbor graph of the supplied dictionary. */
+export function generateWordLadder(seed: number, dictionary: readonly string[]): GeneratedWordLadder | null {
+  const words = [...new Set(dictionary.map((word) => word.toUpperCase()))].filter((word) => /^[A-Z]{4,6}$/.test(word));
+  const buckets = new Map<string, string[]>();
+  for (const word of words) {
+    for (let index = 0; index < word.length; index++) {
+      const pattern = word.slice(0, index) + "_" + word.slice(index + 1);
+      const group = buckets.get(pattern) ?? [];
+      group.push(word);
+      buckets.set(pattern, group);
+    }
+  }
+  const neighbors = new Map<string, Set<string>>();
+  for (const group of buckets.values()) {
+    for (const word of group) {
+      const set = neighbors.get(word) ?? new Set<string>();
+      for (const other of group) if (other !== word) set.add(other);
+      neighbors.set(word, set);
+    }
+  }
+
+  const random = seeded((seed + 0x1f123bb5) >>> 0);
+  const starts = shuffle(words, random);
+  const candidates: string[][] = [];
+  for (const start of starts) {
+    const previous = new Map<string, string | null>([[start, null]]);
+    const distance = new Map<string, number>([[start, 0]]);
+    const queue = [start];
+    for (let cursor = 0; cursor < queue.length; cursor++) {
+      const current = queue[cursor];
+      const depth = distance.get(current) ?? 0;
+      if (depth >= 3 && depth <= 5) {
+        const path: string[] = [];
+        let at: string | null = current;
+        while (at !== null) {
+          path.push(at);
+          at = previous.get(at) ?? null;
+        }
+        candidates.push(path.reverse());
+      }
+      if (depth >= 5 || candidates.length >= 160) continue;
+      for (const next of neighbors.get(current) ?? []) {
+        if (previous.has(next)) continue;
+        previous.set(next, current);
+        distance.set(next, depth + 1);
+        queue.push(next);
+      }
+    }
+    if (candidates.length >= 40) break;
+  }
+  if (!candidates.length) return null;
+  const path = shuffle(candidates, random)[0];
+  return { start: path[0], end: path[path.length - 1], path, note: "Generated from the medical word bank." };
+}
+
+/** Apply one of the eight rotations/reflections of a square nonogram pattern. */
+export function transformNonogram(pattern: readonly (readonly number[])[], seed: number): number[][] {
+  let result = pattern.map((row) => [...row]);
+  const turns = Math.abs(seed) % 4;
+  const flip = Math.floor(Math.abs(seed) / 4) % 2 === 1;
+  for (let turn = 0; turn < turns; turn++) {
+    result = result[0].map((_, column) => result.map((row) => row[column]).reverse());
+  }
+  if (flip) result = result.map((row) => [...row].reverse());
+  return result;
+}
+
+/** Score a correct Association Blitz pair; combo is the streak before this match. */
+export function associationPairPoints(combo: number): number {
+  return 100 + Math.min(Math.max(0, Math.floor(combo)) * 10, 50);
+}
+
+/** Association Blitz time bonus, capped at the 75-second round maximum. */
+export function associationTimeBonus(secondsRemaining: number): number {
+  return Math.max(0, Math.min(75, Math.floor(secondsRemaining))) * 2;
+}
+
+
+export const deepDivePointsByTier = [10, 15, 30, 60, 85, 100] as const;
+
+/** Award editorial rarity points without allowing a prompt to exceed 100 points. */
+export function deepDiveAnswerAward(tier: number, currentRoundScore: number): number {
+  const base = Number.isInteger(tier) && tier >= 1 && tier <= 6 ? deepDivePointsByTier[tier - 1] : 0;
+  return Math.max(0, Math.min(base, 100 - Math.max(0, currentRoundScore)));
+}

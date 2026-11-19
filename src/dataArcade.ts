@@ -1,8 +1,9 @@
 import { diagnosisCases, nextStepCases, pairsBank } from "./data";
+import { deepDiveLongTailExpansion } from "./dataDeepDiveExpansion";
 import { hashSeed, seeded, shuffle } from "./lib";
 export type DeepTier = 1 | 2 | 3 | 4 | 5 | 6;
 export interface DeepAnswer { answer: string; tier: DeepTier; aliases?: string[] }
-export interface DeepPrompt { id: string; prompt: string; scope: string; explanation: string; answers: DeepAnswer[] }
+export interface DeepPrompt { id: string; prompt: string; scope: string; explanation: string; answers: DeepAnswer[]; longTail?: boolean }
 type Buckets = [string[], string[], string[], string[], string[], string[]];
 const dive = (id: string, prompt: string, scope: string, explanation: string, buckets: Buckets): DeepPrompt => ({
   id, prompt, scope, explanation,
@@ -226,6 +227,8 @@ export const deepDivePrompts: DeepPrompt[] = [
 export type TriviaCategoryId = "anatomy" | "physiology" | "pathology" | "pharmacology" | "microbiology" | "clinical";
 export interface TriviaCategory { id: TriviaCategoryId; name: string; short: string; icon: string; color: string }
 export interface TriviaQuestion { id: string; category: TriviaCategoryId; question: string; options: [string,string,string,string]; answer: number; explanation: string; difficulty: 1 | 2 | 3 }
+deepDivePrompts.push(...deepDiveLongTailExpansion);
+
 export const triviaCategories: TriviaCategory[] = [
   { id:"anatomy", name:"Anatomy", short:"ANATOMY", icon:"🦴", color:"#29b6f6" },
   { id:"physiology", name:"Physiology", short:"PHYSIOLOGY", icon:"⚡", color:"#8d70ff" },

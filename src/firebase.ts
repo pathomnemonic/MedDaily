@@ -35,6 +35,15 @@ interface RoomDocument extends RoomInfo {
   status: "waiting" | "playing";
 }
 
+export function rankRoomPlayers(players: readonly RoomPlayer[]): RoomPlayer[] {
+  return [...players].sort((a, b) => {
+    if (a.finished !== b.finished) return Number(b.finished) - Number(a.finished);
+    const scoreDifference = (b.score ?? -1) - (a.score ?? -1);
+    if (scoreDifference !== 0) return scoreDifference;
+    return Number(b.perfect) - Number(a.perfect);
+  });
+}
+
 let app: ReturnType<typeof initializeApp> | null = null;
 function services() {
   if (!configured) throw new Error("Multiplayer is not configured yet. See the Firebase setup guide.");
@@ -75,6 +84,14 @@ export async function joinOrCreateRoom(codeInput: string, input: Omit<RoomInfo, 
       return;
     }
     const room = snap.data() as RoomDocument;
+    const compatible = room.gameId === roomInput.gameId &&
+      room.scope === roomInput.scope &&
+      room.specialty === roomInput.specialty &&
+      room.date === roomInput.date &&
+      room.seed === roomInput.seed;
+    if (!compatible) {
+      throw new Error("That room belongs to a different game, date, or study track. Check the game and mode before joining.");
+    }
     const members = room.memberUids ?? [];
     if (!members.includes(uid) && members.length >= 8) throw new Error("This room is full (maximum eight players).");
     if (!members.includes(uid)) {

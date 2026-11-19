@@ -11,5 +11,11 @@ export const glyphPatternsExpansion = [
 {name:"Toothbrush",hint:"An everyday tool for oral hygiene",pattern:[[1,1,1,1,1],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]]},
 {name:"Spine",hint:"The bony column that protects the spinal cord",pattern:[[0,1,0,1,0],[1,1,1,1,1],[0,1,0,1,0],[1,1,1,1,1],[0,1,0,1,0]]},
 {name:"IV bag",hint:"A container used for intravenous fluids",pattern:[[1,1,1,1,1],[1,0,0,0,1],[1,0,1,0,1],[1,0,0,0,1],[1,1,1,1,1]]},
-{name:"Pulse",hint:"A palpable wave produced by each heartbeat",pattern:[[0,0,1,0,0],[1,0,1,0,1],[1,1,1,1,1],[0,1,0,1,0],[0,0,1,0,0]]}
+{name:"Pulse",hint:"A palpable wave produced by each heartbeat",pattern:[[0,0,1,0,0],[1,0,1,0,1],[1,1,1,1,1],[0,1,0,1,0],[0,0,1,0,0]]},
+{name:"Stethoscope",hint:"An instrument used to listen to internal body sounds",pattern:[[1,1,0,1,1],[1,0,0,0,1],[0,1,0,1,0],[0,0,1,0,0],[0,0,1,0,0]]},
+{name:"Capsule",hint:"A common oral medication dosage form",pattern:[[0,1,1,1,0],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[0,1,1,1,0]]},
+{name:"ECG monitor",hint:"A device that displays cardiac electrical activity",pattern:[[1,0,0,0,1],[1,1,0,1,1],[1,0,1,0,1],[1,0,1,0,1],[1,1,1,1,1]]},
+{name:"Eye",hint:"The organ of vision",pattern:[[0,0,1,0,0],[0,1,0,1,0],[1,0,1,0,1],[0,1,0,1,0],[0,0,1,0,0]]},
+{name:"Glove",hint:"Protective equipment used during patient care",pattern:[[0,1,0,1,0],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[0,1,0,1,0]]}
+
 ];

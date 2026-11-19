@@ -24,8 +24,8 @@ const Hex = ({ cx, cy, r = 17, fill, children }: { cx: number; cy: number; r?: n
 
 const ART: Record<GameId, () => ReactNode> = {
   medle: () => <g>
-    {["M", "E", "D", "L", "E"].map((l, i) => <Tile key={i} x={13 + i * 36} y={14} fill={["#3ec28f", "#ffc83d", "#7b76a6", "#3ec28f", "#7b76a6"][i]} letter={l} w={31} rot={[-4, 3, -2, 4, -3][i]} />)}
-    {[0, 1, 2, 3, 4].map((i) => <Tile key={i} x={13 + i * 36} y={62} fill={i < 3 ? "#3ec28f" : "#fff4"} w={31} letter={i < 3 ? "MED"[i] : undefined} rot={[2, -3, 3, 0, 0][i]} />)}
+    {["P", "U", "L", "S", "E"].map((l, i) => <Tile key={i} x={13 + i * 36} y={14} fill={["#3ec28f", "#ffc83d", "#7b76a6", "#3ec28f", "#7b76a6"][i]} letter={l} w={31} rot={[-4, 3, -2, 4, -3][i]} />)}
+    {[0, 1, 2, 3, 4].map((i) => <Tile key={i} x={13 + i * 36} y={62} fill={i < 3 ? "#3ec28f" : "#fff4"} w={31} letter={i < 3 ? "PUL"[i] : undefined} rot={[2, -3, 3, 0, 0][i]} />)}
   </g>,
   connections: () => <g>
     {Array.from({ length: 16 }, (_, i) => {

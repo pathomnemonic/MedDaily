@@ -9,6 +9,7 @@ import { diagnosisCasesExpansion3, nextStepCasesExpansion3, connectionPuzzlesExp
 import { diagnosisCasesExpansion2, nextStepCasesExpansion2, connectionPuzzlesExpansion2, labPromptsExpansion2, pairsBankExpansion2 } from "./dataClinical2";
 import { connectionPuzzlesExpansion, diagnosisCasesExpansion, nextStepCasesExpansion, labPromptsExpansion, pairsBankExpansion, microbePacksExpansion, medleWordsExpansion, triageCasesExpansion, microbePacksExpansion2 } from "./dataExpansion";
 import { labPromptsExpansion3, pairsBankExpansion3, microbePacksExpansion3, triageCasesExpansion2, medleWordsExpansion3 } from "./dataUtilityExpansion";
+import { medleWordsExpansionYear } from "./dataMedleYear";
 
 export interface ConnectionGroup {
   category: string;
@@ -250,6 +251,7 @@ export const triageCases = [
 
 medleWords.push(...medleWordsExpansion.filter((word) => !medleWords.includes(word)));
 medleWords.push(...medleWordsExpansion3.filter((word) => !medleWords.includes(word)));
+medleWords.push(...medleWordsExpansionYear.filter((word) => !medleWords.includes(word)));
 const uniqueMedleWords = [...new Set(medleWords)];
 medleWords.splice(0, medleWords.length, ...uniqueMedleWords);
 for (const word of ["ASCUS", "RAPHE", "NARES", "ACRAL"]) {

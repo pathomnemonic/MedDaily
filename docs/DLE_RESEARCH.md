@@ -54,7 +54,7 @@ Sixteen playable formats are currently exposed in the arcade:
 3. DoctorDle — six typed diagnosis guesses with progressive clues.
 4. Word Hunt — themed word-search grid.
 5. Labline — numeric estimation.
-6. Association Blitz — an expanded eight-pair association board.
+6. Association Blitz — a timed twelve-pair association board.
 7. Triage Order — sequence reconstruction.
 8. Anagram Sprint — letter unscrambling.
 9. Cell Sketch — nonogram.
@@ -62,7 +62,7 @@ Sixteen playable formats are currently exposed in the arcade:
 11. Word Ladder — one-letter transformations.
 12. Medical Spelling Hive — medical-themed seven-letter word puzzle with a center-letter rule and pangram bonus.
 13. Casefile Logic — fictional deduction grid with in-game pencil marks.
-14. Deep Dive — long-tail open-answer recall.
+14. Deep Dive — timed multi-answer long-tail recall.
 15. Trivia Rumble — category-wheel party trivia.
 16. Letter Lab — timed adjacent-letter word hunt.
 

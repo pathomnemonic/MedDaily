@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank, triageCases } from "./data";
-import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
+import { deductionCases, glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord } from "./arcadeLogic";
+import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateWordLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
 import { mimeDeck } from "./dataMime";
 import { riddles, riddleOptions } from "./dataRiddles";
@@ -26,9 +26,9 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "pairs": return <MemoryMatch seed={seed} onDone={onDone} specialty={specialty} />;
     case "triage": return <TriageOrder seed={seed} onDone={onDone} specialty={specialty} />;
     case "splice": return <AnagramSprint seed={seed} onDone={onDone} specialty={specialty} />;
-    case "glyph": return <CellSketch seed={seed} onDone={onDone} />;
+    case "glyph": return <CellSketch seed={seed} onDone={onDone} practice={practice} />;
     case "higher": return <HigherLower seed={seed} onDone={onDone} specialty={specialty} />;
-    case "ladder": return <WordLadder seed={seed} onDone={onDone} />;
+    case "ladder": return <WordLadder seed={seed} onDone={onDone} practice={practice} />;
     case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
     case "casefile": return <CasefileLogic seed={seed} onDone={onDone} practice={practice} />;
     case "dive": return <DeepDive seed={seed} onDone={onDone} />;
@@ -83,22 +83,30 @@ function Finish({ title, detail, score, children }: { title: string; detail: str
 }
 function SectionLabel({ children }: { children: ReactNode }) { return <div className="section-label">{children}</div>; }
 
-const DIVE_POINTS = [10, 15, 30, 60, 85, 100];
+const DIVE_POINTS = deepDivePointsByTier;
 const DIVE_TIERS = ["Surface find", "Familiar current", "Reef discovery", "Rare specimen", "Abyssal find", "Hidden gem"];
+type ScoredDeepAnswer = DeepAnswer & { earned: number };
+const diveRoundScore = (answers: ScoredDeepAnswer[]) => answers.reduce((sum, answer) => sum + answer.earned, 0);
 
 function DeepDive({ seed, onDone }: Props) {
-  const prompts = useMemo(() => shuffle(deepDivePrompts, seeded(seed + 811)).slice(0, 7), [seed]);
+  const prompts = useMemo(() => {
+    const random = seeded(seed + 811);
+    const longTail = shuffle(deepDivePrompts.filter((prompt) => prompt.longTail), random).slice(0, 3);
+    const standard = shuffle(deepDivePrompts.filter((prompt) => !prompt.longTail), random).slice(0, 4);
+    return shuffle([...longTail, ...standard], random);
+  }, [seed]);
   const [round, setRound] = useState(0);
   const [seconds, setSeconds] = useState(25);
   const [entry, setEntry] = useState("");
   const [revealed, setRevealed] = useState(false);
-  const [results, setResults] = useState<{ answer: string | null; points: number; tier: number | null }[]>([]);
-  const [last, setLast] = useState<DeepAnswer | null>(null);
-  const [message, setMessage] = useState("One answer per round. A valid, less-obvious answer dives deeper.");
+  const [results, setResults] = useState<ScoredDeepAnswer[][]>([]);
+  const [accepted, setAccepted] = useState<ScoredDeepAnswer[]>([]);
+  const [message, setMessage] = useState("List as many valid answers as you can. Less-obvious answers score more.");
   const [finished, setFinished] = useState(false);
   const done = useRef(false);
   const item = prompts[round];
-  const total = results.reduce((n, r) => n + r.points, 0);
+  const roundScore = diveRoundScore(accepted);
+  const total = results.reduce((sum, answers) => sum + diveRoundScore(answers), 0) + roundScore;
 
   useEffect(() => {
     if (revealed || finished) return;
@@ -109,10 +117,8 @@ function DeepDive({ seed, onDone }: Props) {
   useEffect(() => {
     if (seconds !== 0 || revealed || finished) return;
     setRevealed(true);
-    setLast(null);
-    setResults((current) => current.length > round ? current : [...current, { answer: null, points: 0, tier: null }]);
-    setMessage("Signal lost. No accepted answer this round.");
-  }, [seconds, revealed, finished, round]);
+    setMessage("Time. Review the accepted answers and their editorial rarity tiers.");
+  }, [seconds, revealed, finished]);
 
   const submit = () => {
     if (revealed || finished || !entry.trim()) return;
@@ -120,50 +126,59 @@ function DeepDive({ seed, onDone }: Props) {
     const match = found?.match;
     if (!match) {
       reward(false);
-      setMessage("Not in the accepted-answer set. Check the category wording and try another answer.");
+      setMessage("Not in this prompt's accepted set. Try a different answer.");
       return;
     }
-    const points = DIVE_POINTS[match.tier - 1];
-    reward(true, null, "+" + points);
-    setLast(match);
-    setResults((current) => [...current.slice(0, round), { answer: match.answer, points, tier: match.tier }]);
-    setRevealed(true);
-    setMessage((found?.fuzzy ? "Counted as “" + match.answer + "” (typo forgiven). " : "Accepted. ") + "Your answer earned " + points + " points.");
+    if (accepted.some((answer) => answer.answer === match.answer)) {
+      setMessage("Already accepted. Find another answer.");
+      setEntry("");
+      return;
+    }
+    const earned = deepDiveAnswerAward(match.tier, roundScore);
+    reward(true, null, "+" + earned);
+    const next = [...accepted, { ...match, earned }];
+    setAccepted(next);
+    setEntry("");
+    if (diveRoundScore(next) >= 100) {
+      setRevealed(true);
+      setMessage("Round maximum reached. You found " + next.length + " accepted answers.");
+    } else {
+      setMessage((found?.fuzzy ? "Counted as “" + match.answer + "” (typo forgiven). " : "") + "+" + earned + " points · " + DIVE_TIERS[match.tier - 1] + ". Keep going.");
+    }
   };
 
   const pass = () => {
     if (revealed || finished) return;
-    setLast(null);
-    setResults((current) => [...current.slice(0, round), { answer: null, points: 0, tier: null }]);
     setRevealed(true);
-    setMessage("Round passed. No depth gained.");
+    setMessage(accepted.length ? "Round locked. Your accepted answers are scored." : "Round passed. No depth gained.");
   };
 
   const next = () => {
-    const currentResults = results.length > round ? results.slice(0, round + 1) : [...results, { answer: null, points: 0, tier: null }];
+    const completed = [...results.slice(0, round), accepted];
     if (round === prompts.length - 1) {
-      const score = currentResults.reduce((n, r) => n + r.points, 0);
+      const score = completed.reduce((sum, answers) => sum + diveRoundScore(answers), 0);
+      setResults(completed);
       setFinished(true);
       if (!done.current) {
         done.current = true;
         const tierSquare = ["⬛", "🟦", "🟦", "🟩", "🟨", "🟧", "🟥"];
-        onDone(score, 700, score === 700, "Deep Dive · " + score * 10 + " m deep\n" + currentResults.map((r) => tierSquare[r.tier ?? 0]).join("") + "\n🟦 surface → 🟥 hidden gem");
+        onDone(score, 700, score === 700, "Deep Dive · " + score * 10 + " m deep\n" + completed.map((answers) => { const v = diveRoundScore(answers); return v === 0 ? tierSquare[0] : v < 30 ? tierSquare[1] : v < 60 ? tierSquare[3] : v < 90 ? tierSquare[4] : v < 100 ? tierSquare[5] : tierSquare[6]; }).join("") + "\n🟦 surface → 🟥 hidden gem");
       }
       return;
     }
-    setResults(currentResults);
+    setResults(completed);
     setRound((value) => value + 1);
     setSeconds(25);
     setEntry("");
-    setLast(null);
+    setAccepted([]);
     setRevealed(false);
-    setMessage("New category. Think past the first obvious answer.");
+    setMessage("New category. Keep the answers coming.");
   };
 
   return <div className="game-layout dive-game" data-own-sfx="true">
     <div className="dive-hud">
       <div><span className="eyebrow">DAILY DEEP DIVE</span><strong>{total * 10}<small> m</small></strong><span>depth reached</span></div>
-      <div className={"dive-timer" + (seconds <= 5 ? " urgent" : "")}><b>{revealed ? "✓" : seconds}</b><span>{revealed ? "LOCKED" : "SECONDS"}</span></div>
+      <div className={"dive-timer" + (seconds <= 5 && !revealed ? " urgent" : "")}><b>{revealed ? "✓" : seconds}</b><span>{revealed ? "LOCKED" : "SECONDS"}</span></div>
       <div><span className="eyebrow">EXPEDITION</span><strong>{round + 1}<small> / 7</small></strong><span>prompts</span></div>
     </div>
     <div className="dive-depth-track"><i style={{ width: Math.min(100, total / 7) + "%" }} /></div>
@@ -172,31 +187,27 @@ function DeepDive({ seed, onDone }: Props) {
         <div className="dive-surface-art" aria-hidden="true"><span>◉</span><i>✦</i><b>≈</b></div>
         <span className="eyebrow">{item.scope.toUpperCase()} · PROMPT {round + 1}</span>
         <h2>{item.prompt}</h2>
-        <p>Type one answer. The accepted set is curated for this game; rarity tiers are editorial, not live population statistics.</p>
+        <p>25 seconds. Submit as many distinct accepted answers as you can. Each answer has an editorial rarity tier; this is not live population data.</p>
       </div>
       {!revealed ? <form className="dive-answer-row" onSubmit={(event) => { event.preventDefault(); submit(); }}>
-        <input value={entry} onChange={(event) => setEntry(event.target.value)} autoComplete="off" placeholder="Your answer…" aria-label="Your answer" />
-        <button className="button button-primary" type="submit" disabled={!entry.trim()}>Dive in ↗</button>
-        <button className="button button-quiet" type="button" onClick={pass}>Pass</button>
+        <input value={entry} onChange={(event) => setEntry(event.target.value)} autoComplete="off" placeholder="Enter another answer…" aria-label="Your answer" />
+        <button className="button button-primary" type="submit" disabled={!entry.trim()}>Submit ↗</button>
+        <button className="button button-quiet" type="button" onClick={pass}>Lock round</button>
       </form> : <div className="dive-result-card">
-        {last ? <>
-          <span className={"dive-tier tier-" + last.tier}>{DIVE_TIERS[last.tier - 1]} · {DIVE_POINTS[last.tier - 1]} pts</span>
-          <h3>{last.answer}</h3>
-          <p>{item.explanation}</p>
-          <div className="dive-answer-examples">{item.answers.slice().sort((a, b) => b.tier - a.tier).slice(0, 5).map((answer) => <span key={answer.answer}>{answer.answer}<b>{DIVE_POINTS[answer.tier - 1]}</b></span>)}</div>
-        </> : <>
-          <span className="dive-tier tier-0">No score this round</span>
-          <h3>Keep moving.</h3>
-          <p>{item.explanation}</p>
-        </>}
+        <span className="dive-tier tier-0">{roundScore} / 100 points · {accepted.length} accepted</span>
+        <h3>{accepted.length ? "Your discoveries" : "Keep moving."}</h3>
+        <div className="dive-answer-examples">{accepted.map((answer) => <span key={answer.answer}>{answer.answer}<b>+{answer.earned}</b></span>)}</div>
+        <p>{item.explanation}</p>
+        <div className="dive-answer-examples">{item.answers.filter((answer) => !accepted.some((found) => found.answer === answer.answer)).slice().sort((a, b) => b.tier - a.tier).slice(0, 12).map((answer) => <span key={answer.answer}>{answer.answer}<b>{DIVE_POINTS[answer.tier - 1]}</b></span>)}</div>
         <button className="button button-primary full-button" onClick={next}>{round === 6 ? "Surface & see score" : "Next prompt ↓"}</button>
       </div>}
+      <div className="dive-live-score"><span>{accepted.length} answers found</span><b>{roundScore} / 100 points this round</b></div>
       <p className="game-feedback" aria-live="polite">{message}</p>
       <div className="dive-progress-dots">{prompts.map((_, i) => <i key={i} className={i < results.length ? "complete" : i === round ? "current" : ""} />)}</div>
     </> : <div className="dive-finale">
       <div className="dive-medal">✦</div><span className="eyebrow">EXPEDITION COMPLETE</span>
       <h2>{total} / 700</h2><p>{total * 10} metres below the surface. {total >= 500 ? "A deep and impressive run." : "Every dive teaches you a new part of the map."}</p>
-      <div className="dive-log">{prompts.map((prompt, i) => <div key={prompt.id}><span>{i + 1}</span><b>{results[i]?.answer ?? "—"}</b><strong>+{results[i]?.points ?? 0}</strong></div>)}</div>
+      <div className="dive-log">{prompts.map((prompt, i) => <div key={prompt.id}><span>{i + 1}</span><b>{results[i]?.length ? results[i].map((answer) => answer.answer).join(", ") : "—"}</b><strong>+{diveRoundScore(results[i] ?? [])}</strong></div>)}</div>
     </div>}
   </div>;
 }
@@ -233,6 +244,8 @@ function TriviaRumble({ seed, onDone }: Props) {
   const [used, setUsed] = useState<Partial<Record<TriviaCategoryId, string[]>>>({});
   const [seconds, setSeconds] = useState(RUMBLE_SECONDS);
   const done = useRef(false);
+  const spinTimer = useRef<number | null>(null);
+  useEffect(() => () => { if (spinTimer.current !== null) window.clearTimeout(spinTimer.current); }, []);
   const currentPlayer = players[turn];
   const limit = mode === "solo" ? 24 : 36;
 
@@ -276,7 +289,8 @@ function TriviaRumble({ seed, onDone }: Props) {
     setRotation((value) => value + 1440 + 360 - (index + 0.5) * segment);
     sfx("spin");
     setStage("spinning");
-    window.setTimeout(() => {
+    spinTimer.current = window.setTimeout(() => {
+      spinTimer.current = null;
       if (index === 6) setStage("wild");
       else deal(triviaCategories[index]);
     }, 1500);
@@ -386,7 +400,7 @@ function LetterGridGame({ seed, onDone }: Props) {
   const [path, setPath] = useState<number[]>([]);
   const [found, setFound] = useState<string[]>([]);
   const [foundPaths, setFoundPaths] = useState<number[][]>([]);
-  const [seconds, setSeconds] = useState(90);
+  const [seconds, setSeconds] = useState(75);
   const [note, setNote] = useState("Connect adjacent letters in any direction. Each cell can be used once per word.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
@@ -485,7 +499,7 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
     const correct = word === answer, finished = correct || next.length >= 6;
     if (correct) reward(true, null, "Solved!"); else if (finished) reward(false); else sfx("pop");
     setMessage(correct ? "Exactly right. Nice diagnosis of a word." : finished ? "The word was " + answer + "." : "Not quite. Use the tile clues to narrow it down.");
-    if (finished) { setEnded(true); setWon(correct); if (!done.current) { done.current = true; onDone(correct ? 100 - (next.length - 1) * 12 : 0, 100, correct && next.length === 1, "Medle " + (correct ? next.length : "X") + "/6\n" + next.map((row) => scoreWord(row, answer).map((mark) => mark === "correct" ? "🟩" : mark === "present" ? "🟨" : "⬛").join("")).join("\n")); } }
+    if (finished) { setEnded(true); setWon(correct); if (!done.current) { done.current = true; onDone(correct ? 100 - (next.length - 1) * 12 : 0, 100, correct && next.length === 1, "Stat Word " + (correct ? next.length : "X") + "/6\n" + next.map((row) => scoreWord(row, answer).map((mark) => mark === "correct" ? "🟩" : mark === "present" ? "🟨" : "⬛").join("")).join("\n")); } }
   };
   const keyboardRows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
   const keyboardMarks: Record<string, "correct" | "present" | "absent"> = {};
@@ -604,7 +618,7 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
     if (correct || next.length >= 6) {
       setEnded(true); setWon(correct);
       setNote(correct ? "Diagnosis confirmed." : "No guesses remaining. Review the case.");
-      if (!done.current) { done.current = true; onDone(correct ? Math.max(0, 100 - (next.length - 1) * 15 - manualHints * 5) : 0, 100, correct && next.length === 1 && manualHints === 0, "DoctorDle " + (correct ? next.length : "X") + "/6\n" + "🟥".repeat(correct ? next.length - 1 : 6) + (correct ? "🟩" : "") + (manualHints ? "\n💡 " + manualHints + (manualHints === 1 ? " hint" : " hints") : "")); }
+      if (!done.current) { done.current = true; onDone(correct ? Math.max(0, 100 - (next.length - 1) * 15 - manualHints * 5) : 0, 100, correct && next.length === 1 && manualHints === 0, "Differential " + (correct ? next.length : "X") + "/6\n" + "🟥".repeat(correct ? next.length - 1 : 6) + (correct ? "🟩" : "") + (manualHints ? "\n💡 " + manualHints + (manualHints === 1 ? " hint" : " hints") : "")); }
     } else {
       setClueCount((n) => Math.min(item.clues.length, n + 1));
       setNote("Not quite. A new clue has been added.");
@@ -765,7 +779,14 @@ function Labline({ seed, onDone, specialty = "general" }: Props) {
 
 function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   const pool = useMemo(() => specialty === "neurology" ? pairsBank.slice(12, 24) : specialty === "infectious" ? pairsBank.slice(36, 46) : specialty === "cardiology" ? pairsBank.slice(0, 12) : pairsBank, [specialty]);
-  const pairSet = useMemo(() => shuffle(pool, seeded(seed + 11)).slice(0, 10), [seed, pool]);
+  const pairSet = useMemo(() => {
+    // Preserve the selected specialty first; pad small specialty subsets without silently
+    // replacing the entire specialty pool (the infectious set currently has ten pairs).
+    const expanded = pool.length >= 12
+      ? pool
+      : [...pool, ...pairsBank.filter(([term]) => !pool.some(([selected]) => selected === term))].slice(0, 12);
+    return shuffle(expanded, seeded(seed + 11)).slice(0, 12);
+  }, [seed, pool]);
   const cards = useMemo(() => shuffle(pairSet.flatMap(([term, meaning], pairId) => [
     { id: pairId * 2, pairId, label: term, side: "TERM" },
     { id: pairId * 2 + 1, pairId, label: meaning, side: "ASSOCIATION" }
@@ -779,7 +800,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   const [seconds, setSeconds] = useState(75);
   const [locked, setLocked] = useState(false);
   const [ended, setEnded] = useState(false);
-  const [note, setNote] = useState("Memorize the cards. Find all ten term–association pairs before time runs out.");
+  const [note, setNote] = useState("Memorize the cards. Find all twelve term–association pairs before time runs out.");
   const done = useRef(false);
   const flipTimer = useRef<number | null>(null);
 
@@ -795,7 +816,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     done.current = true;
     setEnded(true);
     setNote("Time. Review the pairs you uncovered and try to build a longer streak next run.");
-    onDone(score, 1500, false);
+    onDone(score, 1800, false);
   }, [seconds, ended, score, onDone]);
 
   const flip = (id: number) => {
@@ -811,7 +832,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     if (first?.pairId === card.pairId) {
       const nextMatched = [...matched, card.pairId];
       const nextCombo = combo + 1;
-      const earned = 100 + Math.min(combo * 10, 50);
+      const earned = associationPairPoints(combo);
       const nextScore = score + earned;
       setMatched(nextMatched);
       setCombo(nextCombo);
@@ -819,11 +840,11 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
       setRevealed([]);
       setNote(nextCombo > 1 ? "Pair found. " + nextCombo + " in a row — +" + earned + " points." : "Pair found. +" + earned + " points.");
       if (nextMatched.length === pairSet.length) {
-        const finalScore = nextScore + seconds * 2;
+        const finalScore = nextScore + associationTimeBonus(seconds);
         done.current = true;
         setEnded(true);
-        setNote("All ten pairs found. Time bonus: " + seconds * 2 + " points.");
-        onDone(finalScore, 1500, mismatches === 0);
+        setNote("All twelve pairs found. Time bonus: " + associationTimeBonus(seconds) + " points.");
+        onDone(finalScore, 1800, mismatches === 0);
       }
     } else {
       setLocked(true);
@@ -839,7 +860,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   };
 
   return <div className="game-layout association-game">
-    <div className="game-instructions"><span className="instruction-dot peach" /> Ten pairs are hidden in a 4 × 5 memory board. Match terms to their clinical associations, build a streak, and beat the 75-second clock.</div>
+    <div className="game-instructions"><span className="instruction-dot peach" /> Twelve pairs are hidden in a 4 × 6 memory board. Match terms to their clinical associations, build a streak, and beat the 75-second clock.</div>
     <div className="association-hud">
       <div><b>{seconds}</b><span>SECONDS</span></div>
       <div><b>{matched.length}/{pairSet.length}</b><span>PAIRS</span></div>
@@ -857,7 +878,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     </div>
     <div className="association-footer"><span>{moves} turns · {mismatches} mismatches</span><span>Match streaks earn bonus points</span></div>
     <p className="game-feedback" aria-live="polite">{note}</p>
-    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All ten associations found in " + moves + " turns." : matched.length + " of ten pairs found. " + mismatches + " mismatches."} score={score + " / 1500"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
+    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All twelve associations found in " + moves + " turns." : matched.length + " of twelve pairs found. " + mismatches + " mismatches."} score={score + " / 1650"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
   </div>;
 }
 
@@ -979,8 +1000,9 @@ function AnagramSprint({ seed, onDone }: Props) {
   </div>;
 }
 
-function CellSketch({ seed, onDone }: Props) {
-  const item = glyphPatterns[seed % glyphPatterns.length];
+function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
+  const base = glyphPatterns[seed % glyphPatterns.length];
+  const item = useMemo(() => practice ? { ...base, name: base.name + " · Variant", pattern: transformNonogram(base.pattern, seed) } : base, [base, seed, practice]);
   const [cells, setCells] = useState<number[][]>(() => item.pattern.map((row) => row.map(() => 0)));
   const [checked, setChecked] = useState(false);
   const [history, setHistory] = useState<number[][][]>([]);
@@ -1016,6 +1038,7 @@ function CellSketch({ seed, onDone }: Props) {
     onDone(Math.max(0, Math.round(correct / 25 * 100) - hints * 8), 100, correct === 25 && hints === 0);
   };
   return <div className="game-layout">
+    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY PATTERN" : "CURATED DAILY PATTERN"}</div>
     <div className="game-instructions"><span className="instruction-dot lilac" /> Solve the 5×5 nonogram. Each clue gives the length of consecutive filled runs. Cycle each cell through unknown, filled, and marked empty to keep track without paper.</div>
     <div className="nonogram-legend"><span><b>●</b> Filled</span><span><b>×</b> Empty</span><span><b>·</b> Unknown</span></div>
     <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue)?"clue-complete":""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue"+(lineSolved(row,rowClues[r])?" clue-complete":"")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1) + ": " + (value===1?"filled":value===2?"marked empty":"unknown")} className={"nonogram-cell" + (value===1 ? " filled-cell" : "") + (value===2 ? " empty-marked" : "") + (checked && (item.pattern[r][c] ? value!==1 : value!==2) ? " error-cell" : "")} onPointerDown={(e) => { e.preventDefault(); painting.current = (value + 1) % 3; setCell(r, c, painting.current); }} onPointerEnter={(e) => { if (painting.current !== null && e.buttons === 1 && value !== painting.current) setCell(r, c, painting.current); }} onPointerUp={() => { painting.current = null; }} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setCell(r, c, (value + 1) % 3); } }}>{value===1?"●":value===2?"×":""}</button>)}</div>)}</div></div>
@@ -1032,6 +1055,8 @@ function HigherLower({ seed, onDone }: Props) {
   const [picked, setPicked] = useState<"a" | "b" | "tie" | null>(null);
   const [reveal, setReveal] = useState(false);
   const [finished, setFinished] = useState(false);
+  const advanceTimer = useRef<number | null>(null);
+  useEffect(() => () => { if (advanceTimer.current !== null) window.clearTimeout(advanceTimer.current); }, []);
   const item = list[round];
   const correct = item.av === item.bv ? "tie" : item.av > item.bv ? "a" : "b";
   const choose = (v: "a"|"b"|"tie") => {
@@ -1039,7 +1064,8 @@ function HigherLower({ seed, onDone }: Props) {
     const ok = v === correct;
     const next = score + (ok ? 1 : 0);
     setPicked(v); setScore(next); setReveal(true);
-    window.setTimeout(() => {
+    advanceTimer.current = window.setTimeout(() => {
+      advanceTimer.current = null;
       if (round + 1 === list.length) { setFinished(true); onDone(Math.round(next / list.length * 100), 100, next === list.length); }
       else { setRound((r) => r + 1); setPicked(null); setReveal(false); }
     }, 900);
@@ -1052,9 +1078,9 @@ function HigherLower({ seed, onDone }: Props) {
   </div>;
 }
 
-const LADDER_WORDS = new Set(["COLD","CORD","CARD","WARD","WARM","HEAL","HEAR","SEAR","SEER","SEEK","PAIN","GAIN","CARE","CURE","VEIN","VEIL","VAIL","PAIL","MIND","MILD","BOLD","BOND","BEND","SEND","SAND","SANE","CANE","CONE","BONE","TONE","TUNE","MULE","MILE","TILE","TIDE","SIDE","SINE","LINE","LION","IRON","ICON","RING","SING","SONG","LONG","LUNG","FINE","FIVE","DIVE","LIVE","LOVE","MOVE","MORE","CARE","CASE","CASH","WASH","WISH","FISH","FIST","LIST","LAST","LOST","COST","CAST","EAST","EASE","EARS","EARN","BARN","BARK","DARK","DART","PART","PARK","MARK","MARS","MASS","PASS","PAST","FAST","FATE","LATE","MATE","MATH","PATH","BATH","BETA","DATA","DATE","GATE","GAME","NAME","SAME","SAVE","SAFE","SAGE","PAGE","PACE","RACE","RARE","CARE","CORE","CURE","PURE","PURL","PEAR","HEAR","BEAR","BEAD","HEAD","HEAT","SEAT","MEAT","MELT","BELT","BELL","CELL","SELL","SELF","SHELF"]);
-function WordLadder({ seed, onDone }: Props) {
-  const item = wordLadders[seed % wordLadders.length];
+
+function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
+  const item = useMemo(() => practice ? (generateWordLadder(seed, [...ladderDictionary]) ?? wordLadders[seed % wordLadders.length]) : wordLadders[seed % wordLadders.length], [seed, practice]);
   const [entered, setEntered] = useState<string[]>([item.start]);
   const [text, setText] = useState("");
   const [note, setNote] = useState("Change one letter at a time. Every step must be a real word.");
@@ -1067,7 +1093,7 @@ function WordLadder({ seed, onDone }: Props) {
     const word = text.trim().toUpperCase();
     if (ended || !word) return;
     if (!diffOne(entered[entered.length - 1], word)) { setNote("Change exactly one letter."); return; }
-    if (!LADDER_WORDS.has(word)) { setNote("That one-letter combination isn't in this round's word list. Try a listed word."); return; }
+    if (!ladderDictionary.has(word)) { setNote("That word is not in the ladder dictionary. Try another one-letter neighbor."); return; }
     if (entered.includes(word)) { setNote("You've already used that word."); return; }
     const next = [...entered, word]; setEntered(next); setText("");
     if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (showPath ? 20 : 0) - nudges * 8)), 100, next.length === item.path.length && !showPath && nudges === 0); }
@@ -1075,12 +1101,13 @@ function WordLadder({ seed, onDone }: Props) {
     else setNote("Good step. Keep going.");
   };
   return <div className="game-layout">
+    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY LADDER" : "CURATED DAILY LADDER"}</div>
     <div className="game-instructions"><span className="instruction-dot peach" /> Build a word ladder from the start word to the end word. Change one letter at a time; all intermediate steps must be words.</div>
     <div className="ladder-ends"><span>START <b>{item.start}</b></span><span>FINISH <b>{item.end}</b></span></div>
     <div className="ladder-rungs">{entered.map((w, i) => <span key={i}>{[...w].map((ch, k) => <em key={k} className={i > 0 && ch !== entered[i - 1][k] ? "changed" : ""}>{ch}</em>)}</span>)}{!ended && <i>?</i>}</div>
     {!ended ? <>
       <form className="word-entry" onSubmit={(e) => { e.preventDefault(); add(); }}><input value={text} maxLength={item.start.length} onChange={(e) => setText(e.target.value.replace(/[^a-z]/gi,"").toUpperCase())} placeholder="Next word" /><button className="button button-primary">Add step</button></form>
-      <p className={"ladder-live" + (text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (LADDER_WORDS.has(text) ? " ok" : " maybe") : " bad") : "")} aria-live="polite">{text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (LADDER_WORDS.has(text) ? "✓ Valid step" : "One letter changed, but not a word in this round") : "✗ Change exactly one letter from " + entered[entered.length - 1]) : "Type the next " + item.start.length + "-letter word"}</p>
+      <p className={"ladder-live" + (text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (ladderDictionary.has(text) ? " ok" : " maybe") : " bad") : "")} aria-live="polite">{text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (ladderDictionary.has(text) ? "✓ Valid step" : "One letter changed, but not a word in this round") : "✗ Change exactly one letter from " + entered[entered.length - 1]) : "Type the next " + item.start.length + "-letter word"}</p>
       <button className="text-button" onClick={() => { const i = entered.length; const nxt = item.path[i]; if (!nxt) return; setNudges((n) => n + 1); const prev = entered[entered.length - 1]; const pos = [...nxt].findIndex((ch, k) => ch !== prev[k]); setNote("Nudge: change letter " + (pos + 1) + " to " + nxt[pos] + "."); }}>Nudge me one letter (−8)</button>
       <button className="text-button" onClick={() => setShowPath((value) => !value)}>{showPath ? "Hide suggested path" : "Need a nudge? Reveal one possible path"}</button>
       {showPath && <p className="ladder-hint">One valid route: {item.path.join(" → ")}</p>}
@@ -1163,7 +1190,7 @@ function wordPoints(word: string, puzzle: { pangram:string }): number {
 }
 
 function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
-  const item = useMemo(() => practice ? generateDeductionCase(seed) : deductionCases[seed % deductionCases.length], [seed, practice]);
+  const item = useMemo(() => practice || seed % 2 === 1 ? generateDeductionCase(seed) : deductionCases[seed % deductionCases.length], [seed, practice]);
   const blank = () => Object.fromEntries(item.suspects.map((suspect) => [suspect, { location:"", object:"" }]));
   const [assignments, setAssignments] = useState(blank);
   const [pencilMarks, setPencilMarks] = useState<Record<string, "possible" | "excluded">>({});
@@ -1216,7 +1243,7 @@ function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: 
     onDone(points, 100, matches === 6 && hintsUsed === 0);
   };
   return <div className="game-layout">
-    <div className="case-banner logic-banner"><span>{practice?"GENERATED FREE-PLAY CASE":"CURATED DAILY CASE"}</span><strong>{item.title}</strong><small>Deduction, not diagnosis · 3×3 logic grid</small></div>
+    <div className="case-banner logic-banner"><span>{practice?"GENERATED FREE-PLAY CASE":seed % 2 === 1 ? "GENERATED DAILY CASE" : "CURATED DAILY CASE"}</span><strong>{item.title}</strong><small>Deduction, not diagnosis · 3×3 logic grid</small></div>
     <p className="logic-briefing">{item.briefing}</p>
     <div className="logic-clues"><SectionLabel>CLUE BOARD</SectionLabel>{item.clues.map((clue,i)=><div key={i}><span>{String(i+1).padStart(2,"0")}</span>{clue}</div>)}</div>
     <div className="logic-hint-tools"><button className="text-button" onClick={revealHint} disabled={submitted || hintsUsed >= 3}>Reveal a confirmed relationship · −10 pts</button><span>{hintsUsed} / 3 hints used</span></div>

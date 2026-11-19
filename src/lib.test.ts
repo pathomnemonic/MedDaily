@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { connectionPuzzles, medleWords, diagnosisCases, nextStepCases, labPrompts, triageCases, pairsBank, microbePacks } from "./data";
-import { deductionCases, glyphPatterns, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
+import { deductionCases, glyphPatterns, ladderDictionary, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
 import { PARTY_GAMES, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
 import { deepDiveExtras, deepDivePromptsExpanded } from "./dataDeepDiveExtra";
 import { deepDivePrompts, triviaCategories, triviaQuestions } from "./dataArcade";
@@ -58,7 +58,8 @@ describe("daily puzzle primitives", () => {
 
 describe("content bank sanity", () => {
   it("keeps Medle answers five letters long and unique", () => {
-    expect(new Set(medleWords).size).toBe(medleWords.length);
+    expect(medleWords).toHaveLength(365);
+    expect(new Set(medleWords).size).toBe(365);
     expect(medleWords.every((word) => /^[A-Z]{5}$/.test(word))).toBe(true);
   });
 
@@ -73,7 +74,12 @@ describe("content bank sanity", () => {
 });
 
 describe("additional daily puzzle packs", () => {
-  it("keeps every Hexicon bank internally valid", () => {
+  it("keeps the playable Spelling Hive pool medical-focused and title-unique", () => {
+    const playable = spellingHivePuzzles.filter((puzzle) => !["Practice Round", "Capture the Clue", "Tricone Terms"].includes(puzzle.title));
+    expect(playable.length).toBeGreaterThanOrEqual(50);
+    expect(new Set(playable.map((puzzle) => puzzle.title)).size).toBe(playable.length);
+  });
+  it("keeps every Seven Cells bank internally valid", () => {
     for (const puzzle of spellingHivePuzzles) {
       expect(puzzle.letters).toHaveLength(7);
       expect(new Set(puzzle.letters).size).toBe(7);
@@ -120,7 +126,8 @@ describe("Cell Sketch nonogram clues", () => {
   };
 
   it("gives each hidden 5x5 shape a unique solution from row and column runs", () => {
-    expect(glyphPatterns.length).toBeGreaterThanOrEqual(31);
+    expect(glyphPatterns.length).toBeGreaterThanOrEqual(36);
+    expect(new Set(glyphPatterns.map((puzzle) => puzzle.name)).size).toBe(glyphPatterns.length);
     for (const puzzle of glyphPatterns) {
       const pattern = puzzle.pattern;
       const rowClues = pattern.map(runs);
@@ -153,15 +160,17 @@ describe("expanded content integrity", () => {
   it("keeps the expanded daily banks large and distributes answer positions", () => {
     expect(connectionPuzzles.length).toBeGreaterThanOrEqual(120);
     expect(spellingHivePuzzles.length).toBeGreaterThanOrEqual(24);
-    expect(wordLadders.length).toBeGreaterThanOrEqual(26);
+    expect(wordLadders.length).toBeGreaterThanOrEqual(36);
+    expect(new Set(wordLadders.map((item) => item.start + "→" + item.end)).size).toBe(wordLadders.length);
     expect(deductionCases.length).toBeGreaterThanOrEqual(15);
     expect(labPrompts.length).toBeGreaterThanOrEqual(100);
     expect(pairsBank.length).toBeGreaterThanOrEqual(200);
     expect(microbePacks.length).toBeGreaterThanOrEqual(68);
     expect(triageCases.length).toBeGreaterThanOrEqual(42);
-    expect(medleWords.length).toBeGreaterThanOrEqual(140);
+    expect(medleWords.length).toBeGreaterThanOrEqual(365);
     expect(scrambleWordsExtended.length).toBeGreaterThanOrEqual(110);
-    expect(higherLowerPairs.length).toBeGreaterThanOrEqual(66);
+    expect(higherLowerPairs.length).toBeGreaterThanOrEqual(110);
+    expect(higherLowerPairs.filter((item) => "fun" in item)).toHaveLength(50);
     expect(new Set(labPrompts.map((item) => item.id)).size).toBe(labPrompts.length);
     expect(new Set(pairsBank.map(([term]) => term)).size).toBe(pairsBank.length);
     expect(new Set(microbePacks.map((pack) => pack.name)).size).toBe(microbePacks.length);
@@ -207,8 +216,11 @@ describe("expanded content integrity", () => {
     expect(scrambleWordsExtended.every((item) => item[0].length >= 4 && item[1].length > 0)).toBe(true);
     expect(higherLowerPairs.every((item) => Number.isFinite(item.av) && Number.isFinite(item.bv))).toBe(true);
     for (const ladder of wordLadders) {
+      expect(ladder.path.every((word) => ladderDictionary.has(word)), ladder.path.join(" → ")).toBe(true);
       expect(ladder.path[0]).toBe(ladder.start);
       expect(ladder.path[ladder.path.length - 1]).toBe(ladder.end);
+      expect(new Set(ladder.path).size).toBe(ladder.path.length);
+      expect(ladder.path.every((word) => /^[A-Z]{4,6}$/.test(word))).toBe(true);
       for (let i = 1; i < ladder.path.length; i++) {
         expect([...ladder.path[i - 1]].filter((letter, index) => letter !== ladder.path[i][index]), ladder.path.join(" → ")).toHaveLength(1);
       }
@@ -227,6 +239,17 @@ describe("new arcade content banks", () => {
       const normalized = prompt.answers.map((item) => item.answer.toLowerCase().trim());
       expect(new Set(normalized).size, prompt.id).toBe(normalized.length);
       expect(prompt.answers.every((item) => item.answer.length > 1 && item.tier >= 1 && item.tier <= 6), prompt.id).toBe(true);
+    }
+  });
+
+  it("keeps dedicated Deep Dive long-tail prompts genuinely open-ended", () => {
+    const longTail = deepDivePrompts.filter((prompt) => prompt.longTail);
+    expect(longTail.length).toBeGreaterThanOrEqual(3);
+    for (const prompt of longTail) {
+      expect(prompt.answers.length, prompt.id).toBeGreaterThanOrEqual(60);
+      const normalized = prompt.answers.map((item) => item.answer.toLowerCase().trim());
+      expect(new Set(normalized).size, prompt.id).toBe(normalized.length);
+      expect(prompt.answers.every((item) => item.tier >= 1 && item.tier <= 6), prompt.id).toBe(true);
     }
   });
 
