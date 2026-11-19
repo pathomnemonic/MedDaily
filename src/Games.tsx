@@ -1083,6 +1083,7 @@ function HigherLower({ seed, onDone }: Props) {
   const list = useMemo(() => shuffle(higherLowerPairs.filter((item) => "fun" in item), seeded(seed + 29)).slice(0, 5), [seed]);
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
+  const [results, setResults] = useState<boolean[]>([]);
   const [picked, setPicked] = useState<"a" | "b" | "tie" | null>(null);
   const [reveal, setReveal] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -1092,9 +1093,11 @@ function HigherLower({ seed, onDone }: Props) {
     if (reveal || finished) return;
     const ok = v === correct;
     const next = score + (ok ? 1 : 0);
+    const nextResults = [...results, ok];
+    setResults(nextResults);
     setPicked(v); setScore(next); setReveal(true);
     window.setTimeout(() => {
-      if (round + 1 === list.length) { setFinished(true); onDone(Math.round(next / list.length * 100), 100, next === list.length); }
+      if (round + 1 === list.length) { setFinished(true); onDone(Math.round(next / list.length * 100), 100, next === list.length, "What Has More? · " + next + "/5 correct\\n" + nextResults.map((result) => result ? "🟩" : "⬛").join("")); }
       else { setRound((r) => r + 1); setPicked(null); setReveal(false); }
     }, 900);
   };
