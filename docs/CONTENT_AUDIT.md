@@ -2,7 +2,7 @@
 
 **Snapshot:** November 19, 2026 (gameplay parity iteration)
 
-MedDaily exposes seventeen playable game formats. The retired Next Best Step bank remains in the repository for reference but is not presented as a standalone game. The current banks are not yet a 365-day set of unique puzzles for every game.
+MedDaily exposes nineteen playable game formats. The retired Next Best Step bank remains in the repository for reference but is not presented as a standalone game. The current banks are not yet a 365-day set of unique puzzles for every game.
 
 ## Curated content currently included
 
@@ -24,6 +24,8 @@ MedDaily exposes seventeen playable game formats. The retired Next Best Step ban
 | Deep Dive | 70 prompts | Timed open-answer prompts with curated long-tail rarity tiers; typo-tolerant matching (a typo is forgiven only when it identifies exactly one accepted answer). Accepted answers per prompt were roughly doubled (every prompt has 12+ answers) with synonyms and abbreviations (`src/dataDeepDiveExtra.ts`); the set is still curated and closed, and rarity tiers are editorial, not measured |
 | Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes; 20-second question timer; in pass-and-play a correct answer keeps the wheel and a miss or timeout passes it |
 | Mime Time | 135 act-it-out prompts (procedures, symptoms, ward life, instruments, specialties, patients) | Pass-the-phone charades for 1–6 players; 45-second turns, skip/got-it scoring; every prompt can be acted without props or speech |
+| Riddle Lab | 52 first-person riddles (12 microbes, 12 drugs, 10 organs, 8 molecules, 10 syndromes) | Four clues from cryptic to obvious; four options with same-kind distractors; 4/3/2/1 points by clues used |
+| Body Map Blitz | 14 organs on an original SVG body diagram | Ten timed targets per round, speed-scored, with a short fact after each; patient's right is on the viewer's left |
 | Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |
 
 ## What this means for daily longevity
@@ -58,3 +60,7 @@ The research notes in [DLE_RESEARCH.md](./DLE_RESEARCH.md) record the daily-game
 ## Visual system (November 19, 2026)
 
 The arcade home is now games-first: a compact HUD (streak, cleared count, Daily/Free Play and Open Arcade/Specialties toggles), an "Up next" featured game, then the 16-game grid, with Dx Dash below. Every game has original SVG cover art (`src/components/GameArt.tsx`) used on its card, the featured slot, and its play-page header, and each play page takes on its game's accent colour. Still open: bespoke in-game art (boards, completion animations, sound/haptics) and Dx Dash-style atmospheric backgrounds, which need that repository to be accessible.
+
+## Sound and music
+
+All audio is synthesized in the browser (`src/audio.ts`); there are no audio files. Sound effects and music are on by default (the top bar has mute buttons and Options has toggles), and the engine only starts after the first tap or key press because browsers require it. Each game seeds its own key, scale, tempo, and melody. A stage observer (`src/juice.ts`) plays right/wrong sounds and particle bursts from state classes, and games with their own timing opt out with `data-own-sfx`.

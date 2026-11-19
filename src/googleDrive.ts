@@ -80,6 +80,7 @@ export function mergePlayerData(local: PlayerData, remote: PlayerData): PlayerDa
     results: [...combined.values()].sort((a, b) => a.date.localeCompare(b.date)).slice(-1200),
     bests,
     sound: local.sound,
+    music: local.music,
     reducedMotion: local.reducedMotion,
     hideStreaks: local.hideStreaks
   };
@@ -94,7 +95,8 @@ async function syncData(local: PlayerData): Promise<PlayerData> {
   let remote = {
     results: [],
     bests: {},
-    sound: false,
+    sound: true,
+    music: true,
     reducedMotion: false,
     hideStreaks: false
   } as PlayerData;

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { computeTrophies, longestStreak } from "./achievements";
 import type { PlayerData } from "./storage";
 
-const base = (results: PlayerData["results"]): PlayerData => ({ results, bests: {}, sound: false, reducedMotion: false, hideStreaks: false });
+const base = (results: PlayerData["results"]): PlayerData => ({ results, bests: {}, sound: true, music: true, reducedMotion: false, hideStreaks: false });
 const r = (date: string, game: string, extra: object = {}) => ({ date, game: game as never, scope: "general", score: 50, maxScore: 100, perfect: false, durationSeconds: 30, ...extra });
 
 describe("trophies", () => {

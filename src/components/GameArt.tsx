@@ -127,6 +127,26 @@ const ART: Record<GameId, () => ReactNode> = {
     <text x={32} y={100} fontSize={22} fontFamily="Lilita One, sans-serif" fill="#ffd54a" stroke={INK} strokeWidth={2.5} paintOrder="stroke" transform="rotate(-12 32 100)">?</text>
     <text x={172} y={38} fontSize={22} fontFamily="Lilita One, sans-serif" fill="#7dffd0" stroke={INK} strokeWidth={2.5} paintOrder="stroke" transform="rotate(12 172 38)">!</text>
   </g>,
+  riddle: () => <g>
+    <circle cx={100} cy={52} r={38} fill="#fff7ea" {...S} />
+    <path d="M64 40q36-34 72 0" fill="#2a1658" {...S} />
+    <circle cx={86} cy={52} r={6} fill="#fff" {...S} strokeWidth={2.5} /><circle cx={114} cy={52} r={6} fill="#fff" {...S} strokeWidth={2.5} />
+    <circle cx={87} cy={53} r={2.5} fill={INK} /><circle cx={115} cy={53} r={2.5} fill={INK} />
+    <path d="M90 70q10 6 20 0" fill="none" stroke={INK} strokeWidth={3} strokeLinecap="round" />
+    <path d="M28 84a30 30 0 0 1 50-14" fill="none" stroke="#fff" strokeWidth={0} />
+    <text x={160} y={44} fontSize={40} fontFamily="Lilita One, sans-serif" fill="#ffd54a" stroke={INK} strokeWidth={3} paintOrder="stroke" transform="rotate(14 160 44)">?</text>
+    <text x={36} y={70} fontSize={28} fontFamily="Lilita One, sans-serif" fill="#7dffd0" stroke={INK} strokeWidth={3} paintOrder="stroke" transform="rotate(-14 36 70)">?</text>
+    <rect x={52} y={86} width={96} height={18} rx={9} fill="#ff6aa2" {...S} /><text x={100} y={100} textAnchor="middle" fontFamily="Lilita One, sans-serif" fontSize={13} fill="#fff" stroke={INK} strokeWidth={2} paintOrder="stroke">WHO AM I?</text>
+  </g>,
+  bodymap: () => <g>
+    <circle cx={100} cy={20} r={14} fill="#ffd9b8" {...S} />
+    <path d="M70 38q30-8 60 0 8 4 8 20l-2 38q-2 14-36 14t-36-14l-2-38q0-16 8-20z" fill="#ffd9b8" {...S} />
+    <path d="M100 54c-10-8-16-2-14 6 2 8 14 16 14 16s12-8 14-16c2-8-4-14-14-6z" fill="#ff4f6e" {...S} />
+    <ellipse cx={82} cy={58} rx={9} ry={17} fill="#8fd7ff" {...S} strokeWidth={2.5} /><ellipse cx={118} cy={58} rx={9} ry={17} fill="#8fd7ff" {...S} strokeWidth={2.5} />
+    <path d="M70 80q16-8 34-2 6 10-4 14-20 3-30-4z" fill="#b5602f" {...S} strokeWidth={2.5} />
+    <circle cx={150} cy={30} r={13} fill="none" stroke="#fff" strokeWidth={4} /><path d="M160 40l14 14" stroke="#fff" strokeWidth={5} strokeLinecap="round" />
+    <path d="M142 30h16M150 22v16" stroke="#ffd54a" strokeWidth={0} />
+  </g>,
   mime: () => <g>
     <ellipse cx={100} cy={96} rx={52} ry={7} fill="#2a165855" />
     <path d="M62 30c0-18 20-24 38-24s38 6 38 24c0 26-14 52-38 52S62 56 62 30z" fill="#fff7ea" {...S} />

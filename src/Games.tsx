@@ -7,6 +7,9 @@ import { triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory
 import { letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
 import { mimeDeck } from "./dataMime";
+import { riddles, riddleOptions } from "./dataRiddles";
+import { reward } from "./juice";
+import { sfx } from "./audio";
 import { generateDeductionCase } from "./logicGenerator";
 
 type Done = (score: number, maxScore: number, perfect: boolean, share?: string) => void;
@@ -29,6 +32,8 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "casefile": return <CasefileLogic seed={seed} onDone={onDone} practice={practice} />;
     case "dive": return <DeepDive seed={seed} onDone={onDone} />;
     case "trivia": return <TriviaRumble seed={seed} onDone={onDone} />;
+    case "riddle": return <RiddleLab seed={seed} onDone={onDone} />;
+    case "bodymap": return <BodyMapBlitz seed={seed} onDone={onDone} />;
     case "mime": return <MimeTime seed={seed} onDone={onDone} />;
     case "lettergrid": return <LetterGridGame seed={seed} onDone={onDone} />;
   }
@@ -112,10 +117,12 @@ function DeepDive({ seed, onDone }: Props) {
     const found = matchAnswer(entry, item.answers);
     const match = found?.match;
     if (!match) {
+      reward(false);
       setMessage("Not in the accepted-answer set. Check the category wording and try another answer.");
       return;
     }
     const points = DIVE_POINTS[match.tier - 1];
+    reward(true, null, "+" + points);
     setLast(match);
     setResults((current) => [...current.slice(0, round), { answer: match.answer, points, tier: match.tier }]);
     setRevealed(true);
@@ -151,7 +158,7 @@ function DeepDive({ seed, onDone }: Props) {
     setMessage("New category. Think past the first obvious answer.");
   };
 
-  return <div className="game-layout dive-game">
+  return <div className="game-layout dive-game" data-own-sfx="true">
     <div className="dive-hud">
       <div><span className="eyebrow">DAILY DEEP DIVE</span><strong>{total * 10}<small> m</small></strong><span>depth reached</span></div>
       <div className={"dive-timer" + (seconds <= 5 ? " urgent" : "")}><b>{revealed ? "✓" : seconds}</b><span>{revealed ? "LOCKED" : "SECONDS"}</span></div>
@@ -233,6 +240,7 @@ function TriviaRumble({ seed, onDone }: Props) {
     return () => window.clearInterval(interval);
   }, [stage, round]);
   useEffect(() => {
+    if (stage === "question" && seconds > 0 && seconds <= 5) sfx("tick");
     if (stage === "question" && seconds === 0) answer(-1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seconds, stage]);
@@ -264,6 +272,7 @@ function TriviaRumble({ seed, onDone }: Props) {
     const index = Math.floor(random() * 7);
     const segment = 360 / 7;
     setRotation((value) => value + 1440 + 360 - (index + 0.5) * segment);
+    sfx("spin");
     setStage("spinning");
     window.setTimeout(() => {
       if (index === 6) setStage("wild");
@@ -276,6 +285,7 @@ function TriviaRumble({ seed, onDone }: Props) {
     setPicked(index);
     setLastCorrect(index === question.answer);
     const correct = index === question.answer;
+    reward(correct, null, correct ? "+1" : undefined);
     const nextPlayers = players.map((player, playerIndex) => {
       if (playerIndex !== turn || !correct) return player;
       const progress = { ...player.progress, [category.id]: Math.min(3, player.progress[category.id] + 1) };
@@ -283,6 +293,7 @@ function TriviaRumble({ seed, onDone }: Props) {
       return { ...player, progress, crowns, correct: player.correct + 1 };
     });
     setPlayers(nextPlayers);
+    if (nextPlayers[turn].crowns.length > players[turn].crowns.length) window.setTimeout(() => sfx("badge"), 350);
     const newWinner = nextPlayers.find((player) => player.crowns.length === triviaCategories.length);
     if (newWinner) setWinner(newWinner.name);
     setStage("reveal");
@@ -306,7 +317,7 @@ function TriviaRumble({ seed, onDone }: Props) {
     setStage("spin");
   };
 
-  return <div className="game-layout trivia-rumble">
+  return <div className="game-layout trivia-rumble" data-own-sfx="true">
     {stage === "setup" ? <div className="rumble-setup">
       <div className="rumble-logo">TRIVIA <b>RUMBLE</b><span>⚡</span></div>
       <p>Spin into six worlds of medical knowledge. Collect three correct answers in a category to win its badge. {mode === "pass" ? "Get one right and you keep the wheel; miss, or run out of the 20 seconds, and it passes." : "Beat the 20-second clock on every question."}</p>
@@ -470,6 +481,7 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
     if (rows.includes(word)) { setMessage("You've already tried that word."); return; }
     const next = [...rows, word]; setRows(next); setGuess("");
     const correct = word === answer, finished = correct || next.length >= 6;
+    if (correct) reward(true, null, "Solved!"); else if (finished) reward(false); else sfx("pop");
     setMessage(correct ? "Exactly right. Nice diagnosis of a word." : finished ? "The word was " + answer + "." : "Not quite. Use the tile clues to narrow it down.");
     if (finished) { setEnded(true); setWon(correct); if (!done.current) { done.current = true; onDone(correct ? 100 - (next.length - 1) * 12 : 0, 100, correct && next.length === 1, "Medle " + (correct ? next.length : "X") + "/6\n" + next.map((row) => scoreWord(row, answer).map((mark) => mark === "correct" ? "🟩" : mark === "present" ? "🟨" : "⬛").join("")).join("\n")); } }
   };
@@ -522,11 +534,11 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
     const group = tiles.find((t) => selected.includes(t.word))?.group;
     guessLog.current.push(selected.map((word) => ["🟨", "🟩", "🟦", "🟪"][tiles.find((t) => t.word === word)?.group ?? 0]).join(""));
     if (group !== undefined && selected.every((word) => board[group].words.includes(word))) {
-      const next = [...solved, group]; setSolved(next); setSelected([]); setNote(board[group].category + " — " + board[group].hint);
+      reward(true); const next = [...solved, group]; setSolved(next); setSelected([]); setNote(board[group].category + " — " + board[group].hint);
       if (next.length === 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 100 - mistakes * 15), 100, mistakes === 0, shareText()); } }
     } else {
       const nearMiss = group !== undefined && selected.filter((word) => board[group].words.includes(word)).length === 3;
-      const next = mistakes + 1; setMistakes(next); setNote(next >= 4 ? "No mistakes left. The remaining groups are shown below." : nearMiss ? "One away… Three of those terms belong together, but one is from another group." : "Not a set. Look for a different connection."); setSelected([]);
+      reward(false); const next = mistakes + 1; setMistakes(next); setNote(next >= 4 ? "No mistakes left. The remaining groups are shown below." : nearMiss ? "One away… Three of those terms belong together, but one is from another group." : "Not a set. Look for a different connection."); setSelected([]);
       if (next >= 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 40 - next * 5), 100, false, shareText()); } }
     }
   };
@@ -584,6 +596,7 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
     const next = [...guesses, guess.trim()];
     const answerKey = normalize(item.answer);
     const correct = value === answerKey || (DOCTORDLE_ALIASES[answerKey] ?? []).some((alias) => normalize(alias) === value);
+    if (correct) reward(true, null, "Diagnosis!"); else reward(false);
     setGuesses(next);
     setGuess("");
     if (correct || next.length >= 6) {
@@ -1093,12 +1106,13 @@ function SpellingHive({ seed, onDone }: Props) {
   const submit = () => {
     const word = entry.toUpperCase().trim();
     if (ended || !word) return;
-    if (word.length < 4) { setNote("Use at least four letters."); return; }
-    if (!word.includes(puzzle.center)) { setNote("Every word needs the center letter."); return; }
-    if ([...word].some((letter) => !puzzle.letters.includes(letter))) { setNote("That word uses a letter outside the hive."); return; }
-    if (!puzzle.words.includes(word)) { setNote("Not in today's word list. Try another combination."); return; }
-    if (found.includes(word)) { setNote("Already found. Find a new word."); return; }
+    if (word.length < 4) { sfx("wrong"); setNote("Use at least four letters."); return; }
+    if (!word.includes(puzzle.center)) { sfx("wrong"); setNote("Every word needs the center letter."); return; }
+    if ([...word].some((letter) => !puzzle.letters.includes(letter))) { sfx("wrong"); setNote("That word uses a letter outside the hive."); return; }
+    if (!puzzle.words.includes(word)) { sfx("wrong"); setNote("Not in today's word list. Try another combination."); return; }
+    if (found.includes(word)) { sfx("wrong"); setNote("Already found. Find a new word."); return; }
     const next = [...found, word];
+    reward(true, null, word === puzzle.pangram ? "PANGRAM!" : "+" + points(word));
     setFound(next);
     setEntry("");
     setNote(word === puzzle.pangram ? "Pangram! You used all seven letters." : "+" + points(word) + " points. Keep exploring.");
@@ -1249,12 +1263,12 @@ function MimeTime({ seed, onDone }: Props) {
     const id = window.setInterval(() => setSeconds((v) => Math.max(0, v - 1)), 1000);
     return () => window.clearInterval(id);
   }, [stage]);
-  useEffect(() => { if (stage === "play" && seconds === 0) endTurn(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [seconds, stage]);
+  useEffect(() => { if (stage === "play" && seconds > 0 && seconds <= 5) sfx("tick"); if (stage === "play" && seconds === 0) { sfx("whoosh"); endTurn(); } /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [seconds, stage]);
   const endTurn = () => {
     setScores((all) => all.map((v, i) => i === player ? v + gotThisTurn : v));
     setStage("between");
   };
-  const got = () => { setGotThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
+  const got = () => { reward(true, null, "+1"); setGotThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
   const skip = () => { setSkipsThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
   const nextTurn = () => {
     if (turn + 1 >= totalTurns) {
@@ -1273,7 +1287,7 @@ function MimeTime({ seed, onDone }: Props) {
   };
   const ranked = names.slice(0, count).map((name, i) => ({ name: name.trim() || "Player " + (i + 1), score: scores[i] ?? 0 })).sort((a, b) => b.score - a.score);
 
-  return <div className="game-layout mime-game">
+  return <div className="game-layout mime-game" data-own-sfx="true">
     {stage === "setup" && <div className="mime-setup">
       <div className="mime-mask" aria-hidden="true">🎭</div>
       <h2>Act it out. No talking!</h2>
@@ -1301,5 +1315,148 @@ function MimeTime({ seed, onDone }: Props) {
       <button className="button button-primary full-button" onClick={nextTurn}>{turn + 1 >= totalTurns ? "See final scores" : "Pass the phone ▶"}</button>
     </div>}
     {stage === "done" && <Finish title={count === 1 ? "Show's over!" : ranked[0].name + " steals the show!"} detail={ranked.map((r, i) => (["🥇", "🥈", "🥉"][i] ?? "▫️") + " " + r.name + ": " + r.score).join("  ·  ")} />}
+  </div>;
+}
+
+
+function RiddleLab({ seed, onDone }: Props) {
+  const picks = useMemo(() => shuffle(riddles, seeded(seed + 991)).slice(0, 5), [seed]);
+  const [round, setRound] = useState(0);
+  const [shown, setShown] = useState(1);
+  const [gone, setGone] = useState<string[]>([]);
+  const [results, setResults] = useState<number[]>([]);
+  const [solved, setSolved] = useState<string | null>(null);
+  const [finished, setFinished] = useState(false);
+  const done = useRef(false);
+  const item = picks[round];
+  const options = useMemo(() => riddleOptions(item, seeded(seed + round * 17 + 5)), [item, seed, round]);
+  const points = (clues: number) => 5 - clues;
+  const guess = (option: string) => {
+    if (solved !== null || gone.includes(option)) return;
+    if (option === item.answer) { setSolved(option); setResults((all) => [...all.slice(0, round), points(shown)]); return; }
+    sfx("wrong");
+    setGone((g) => [...g, option]);
+    if (shown >= 4) { setSolved("__missed"); setResults((all) => [...all.slice(0, round), 0]); }
+    else setShown((n) => n + 1);
+  };
+  const next = () => {
+    if (round === picks.length - 1) {
+      const total = results.reduce((n, v) => n + v, 0);
+      setFinished(true);
+      if (!done.current) {
+        done.current = true;
+        const square = ["⬛", "🟥", "🟧", "🟨", "🟩"];
+        onDone(total, 20, total === 20, "Riddle Lab " + total + "/20\n" + results.map((v) => square[v]).join(""));
+      }
+      return;
+    }
+    setRound((v) => v + 1); setShown(1); setGone([]); setSolved(null);
+  };
+  const total = results.reduce((n, v) => n + v, 0);
+  return <div className="game-layout riddle-game" data-own-sfx="true">
+    <div className="riddle-hud"><span>RIDDLE {Math.min(round + 1, picks.length)} / {picks.length}</span><b>{total} pts</b></div>
+    {!finished ? <>
+      <div className="riddle-kind">I am a <b>{item.kind.toLowerCase()}</b>…</div>
+      <div className="riddle-clues">{item.clues.slice(0, shown).map((clue, i) => <p key={i} className={"riddle-clue clue-" + i}><span>{i + 1}</span>{clue}</p>)}</div>
+      <p className="riddle-worth">{solved === null ? "Worth " + points(shown) + " point" + (points(shown) === 1 ? "" : "s") + " right now" : solved === "__missed" ? "Missed it. The answer was " + item.answer + "." : "+" + points(shown) + " · it was " + item.answer + "!"}</p>
+      <div className="riddle-options">{options.map((opt) => <button key={opt} disabled={solved !== null || gone.includes(opt)} className={(gone.includes(opt) ? "gone" : "") + (solved !== null && opt === item.answer ? " right" : "")} onClick={(e) => { guess(opt); if (opt === item.answer) reward(true, e.currentTarget as Element, "+" + points(shown)); }}>{opt}</button>)}</div>
+      {solved !== null && <button className="button button-primary full-button" onClick={next}>{round === picks.length - 1 ? "See my score" : "Next riddle ▶"}</button>}
+    </> : <Finish title="Case closed" detail={results.map((v, i) => picks[i].answer + " (" + v + ")").join(" · ")} score={total + " / 20"} />}
+  </div>;
+}
+
+interface Organ { id: string; name: string; fact: string; node: (hot: boolean) => ReactNode }
+const BODY_INK = "#2a1658";
+const organStyle = (fill: string, hot: boolean) => ({ fill, stroke: BODY_INK, strokeWidth: hot ? 3.5 : 2, strokeLinejoin: "round" as const });
+const ORGANS: Organ[] = [
+  { id: "colon", name: "Colon", fact: "It frames the small intestine: ascending, transverse, descending, then sigmoid.", node: (h) => <path d="M66 216V186Q66 172 80 172H120Q134 172 134 186V216" fill="none" stroke={h ? "#ffd54a" : "#e08f5a"} strokeWidth={9} strokeLinecap="round" strokeLinejoin="round" /> },
+  { id: "kidney", name: "Kidney", fact: "They sit behind the abdominal cavity beside the spine; the right usually sits a little lower.", node: (h) => <g><ellipse cx={77} cy={168} rx={6} ry={11} {...organStyle("#c0392b", h)} /><ellipse cx={123} cy={168} rx={6} ry={11} {...organStyle("#c0392b", h)} /></g> },
+  { id: "smallint", name: "Small intestine", fact: "About 6 meters long: duodenum, jejunum, ileum.", node: (h) => <g><rect x={82} y={186} width={36} height={24} rx={10} {...organStyle("#ffc1d4", h)} /><path d="M88 194q6-6 12 0t12 0M88 202q6-6 12 0t12 0" fill="none" stroke={BODY_INK} strokeWidth={2} strokeLinecap="round" /></g> },
+  { id: "pancreas", name: "Pancreas", fact: "It lies behind the stomach and is both a digestive and an endocrine gland.", node: (h) => <ellipse cx={108} cy={164} rx={24} ry={5.5} transform="rotate(-8 108 164)" {...organStyle("#ffd966", h)} /> },
+  { id: "liver", name: "Liver", fact: "The largest solid organ, mostly in the right upper quadrant (your left on this diagram).", node: (h) => <path d="M52 140Q70 128 106 136Q114 150 100 162Q70 168 54 156Z" {...organStyle("#b5602f", h)} /> },
+  { id: "stomach", name: "Stomach", fact: "It sits in the left upper abdomen; gastric acid is around pH 1.5–2.", node: (h) => <ellipse cx={124} cy={148} rx={16} ry={12} transform="rotate(25 124 148)" {...organStyle("#ffb36b", h)} /> },
+  { id: "spleen", name: "Spleen", fact: "Tucked behind the stomach under the left ribs.", node: (h) => <ellipse cx={144} cy={142} rx={6} ry={11} {...organStyle("#9a4fd1", h)} /> },
+  { id: "gallbladder", name: "Gallbladder", fact: "A small pouch under the liver that stores bile.", node: (h) => <ellipse cx={95} cy={162} rx={4.5} ry={7} {...organStyle("#3ec28f", h)} /> },
+  { id: "bladder", name: "Bladder", fact: "A pelvic organ that stores urine.", node: (h) => <ellipse cx={100} cy={224} rx={10} ry={7} {...organStyle("#ffe27a", h)} /> },
+  { id: "rlung", name: "Right lung", fact: "Three lobes, and the patient's right is on your left. It is shorter than the left because the liver sits beneath it.", node: (h) => <ellipse cx={78} cy={104} rx={19} ry={32} {...organStyle("#8fd7ff", h)} /> },
+  { id: "llung", name: "Left lung", fact: "Two lobes, with a notch for the heart.", node: (h) => <ellipse cx={122} cy={106} rx={17} ry={30} {...organStyle("#8fd7ff", h)} /> },
+  { id: "heart", name: "Heart", fact: "About the size of your fist, tilted slightly left of the midline.", node: (h) => <path d="M104 126C88 114 90 98 102 100c5 1 7 5 8 8 1-3 3-7 8-8 12-2 14 14-2 26z" transform="translate(2 2)" {...organStyle("#ff4f6e", h)} /> },
+  { id: "thyroid", name: "Thyroid", fact: "Butterfly-shaped, wrapped around the front of the windpipe.", node: (h) => <g><ellipse cx={93} cy={62} rx={7} ry={5} {...organStyle("#ff8a5c", h)} /><ellipse cx={107} cy={62} rx={7} ry={5} {...organStyle("#ff8a5c", h)} /><rect x={96} y={60} width={8} height={4} fill="#ff8a5c" /></g> },
+  { id: "brain", name: "Brain", fact: "About 2% of body weight but around 20% of the body's energy use.", node: (h) => <g><ellipse cx={100} cy={26} rx={17} ry={13} {...organStyle("#ff9fc2", h)} /><path d="M92 22q4 4 0 8M104 20q-4 4 0 9M99 16v6" fill="none" stroke={BODY_INK} strokeWidth={1.5} strokeLinecap="round" /></g> }
+];
+const BODY_SECONDS = 15;
+function BodyMapBlitz({ seed, onDone }: Props) {
+  const targets = useMemo(() => shuffle(ORGANS, seeded(seed + 313)).slice(0, 10), [seed]);
+  const [round, setRound] = useState(0);
+  const [tries, setTries] = useState(0);
+  const [started, setStarted] = useState(Date.now());
+  const [seconds, setSeconds] = useState(BODY_SECONDS);
+  const [state, setState] = useState<"ask" | "reveal">("ask");
+  const [message, setMessage] = useState("");
+  const [pts, setPts] = useState<number[]>([]);
+  const [marks, setMarks] = useState<string[]>([]);
+  const [finished, setFinished] = useState(false);
+  const done = useRef(false);
+  const target = targets[round];
+  const total = pts.reduce((n, v) => n + v, 0);
+
+  useEffect(() => {
+    if (state !== "ask" || finished) return;
+    const id = window.setInterval(() => setSeconds((v) => Math.max(0, v - 1)), 1000);
+    return () => window.clearInterval(id);
+  }, [state, round, finished]);
+  useEffect(() => { if (state === "ask" && seconds === 0 && !finished) resolve(0, "⬛", "Time's up. "); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [seconds, state]);
+
+  const resolve = (points: number, mark: string, lead: string) => {
+    setPts((p) => [...p, points]); setMarks((m) => [...m, mark]);
+    setMessage(lead + target.name + ": " + target.fact);
+    setState("reveal");
+  };
+  const tap = (organ: Organ, el: Element) => {
+    if (state !== "ask") return;
+    const kidney = organ.id === "kidney" && target.id === "kidney";
+    if (organ.id === target.id || kidney) {
+      const elapsed = (Date.now() - started) / 1000;
+      const first = tries === 0;
+      const points = first ? (elapsed <= 4 ? 10 : elapsed <= 8 ? 8 : 6) : tries === 1 ? 3 : 1;
+      reward(true, el, "+" + points);
+      resolve(points, first ? (elapsed <= 4 ? "🟩" : "🟨") : tries === 1 ? "🟧" : "🟥", "Yes! ");
+    } else {
+      reward(false, el);
+      setTries((t) => t + 1);
+      setMessage("That's the " + organ.name.toLowerCase() + ". Try again!");
+      if (tries >= 2) resolve(0, "⬛", "Out of tries. ");
+    }
+  };
+  const next = () => {
+    if (round === targets.length - 1) {
+      setFinished(true);
+      if (!done.current) {
+        done.current = true;
+        onDone(total, 100, total === 100, "Body Map Blitz " + total + "/100\n" + marks.join(""));
+      }
+      return;
+    }
+    setRound((v) => v + 1); setTries(0); setMessage(""); setSeconds(BODY_SECONDS); setStarted(Date.now()); setState("ask");
+  };
+  return <div className="game-layout bodymap-game" data-own-sfx="true">
+    <div className="bodymap-hud"><span>{Math.min(round + 1, targets.length)} / {targets.length}</span><b>{total} pts</b><div className={"bodymap-clock" + (seconds <= 5 ? " urgent" : "")}><i style={{ width: (state === "ask" ? seconds / BODY_SECONDS * 100 : 0) + "%" }} /></div></div>
+    {!finished ? <>
+      <div className="bodymap-prompt">Tap the <b>{target.name}</b></div>
+      <svg className="bodymap-svg" viewBox="20 0 160 240" role="group" aria-label="Body diagram. The patient's right side is on your left.">
+        <path d="M52 74Q30 84 26 132" fill="none" stroke={BODY_INK} strokeWidth={16} strokeLinecap="round" /><path d="M52 74Q30 84 26 132" fill="none" stroke="#ffd9b8" strokeWidth={11} strokeLinecap="round" />
+        <path d="M148 74Q170 84 174 132" fill="none" stroke={BODY_INK} strokeWidth={16} strokeLinecap="round" /><path d="M148 74Q170 84 174 132" fill="none" stroke="#ffd9b8" strokeWidth={11} strokeLinecap="round" />
+        <circle cx={100} cy={28} r={23} fill="#ffd9b8" stroke={BODY_INK} strokeWidth={2.5} />
+        <rect x={91} y={48} width={18} height={16} fill="#ffd9b8" stroke={BODY_INK} strokeWidth={2.5} />
+        <path d="M58 66Q100 58 142 66Q154 70 154 92L152 192Q150 236 100 238Q50 236 48 192L46 92Q46 70 58 66Z" fill="#ffd9b8" stroke={BODY_INK} strokeWidth={2.5} />
+        {ORGANS.map((organ) => {
+          const hot = state === "reveal" && organ.id === target.id;
+          return <g key={organ.id} className={"organ" + (hot ? " organ-hot" : "")} role="button" tabIndex={0} aria-label={organ.name} onClick={(e) => tap(organ, e.currentTarget as Element)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tap(organ, e.currentTarget as Element); } }}>{organ.node(hot)}</g>;
+        })}
+      </svg>
+      <p className="bodymap-note">The patient's right is on your left.</p>
+      <p className="game-feedback" aria-live="polite">{message}</p>
+      {state === "reveal" && <button className="button button-primary full-button" onClick={next}>{round === targets.length - 1 ? "See my score" : "Next organ ▶"}</button>}
+    </> : <Finish title="Map complete" detail={marks.join("")} score={total + " / 100"} />}
   </div>;
 }

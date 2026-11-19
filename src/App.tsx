@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { GameBoard } from "./Games";
 import GameArt, { DxArt } from "./components/GameArt";
 import { computeTrophies } from "./achievements";
+import { watchStage } from "./juice";
+import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } from "./audio";
 import type { GameId } from "./lib";
 import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, PARTY_GAMES } from "./lib";
 import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
@@ -29,6 +31,8 @@ const GAMES: GameMeta[] = [
   {id:"dive",title:"Deep Dive",subtitle:"Rare finds go deeper",description:"Seven timed open-answer prompts. Less obvious accepted answers earn more points.",icon:"🌊",wash:"blue",time:"4 min",category:"Open-answer trivia",level:"Think sideways"},
   {id:"trivia",title:"Trivia Rumble",subtitle:"Spin. Answer. Collect badges.",description:"A six-category trivia wheel with solo and pass-and-play modes.",icon:"🎡",wash:"orange",time:"8–12 min",category:"Party quiz",level:"All levels"},
   {id:"mime",title:"Mime Time",subtitle:"Act it out. No talking.",description:"Pass the phone and act out medical scenes, symptoms, and instruments while your friends guess. Beat the clock.",icon:"🎭",wash:"pink",time:"5–10 min",category:"Party charades",level:"Silly"},
+  {id:"riddle",title:"Riddle Lab",subtitle:"Who am I?",description:"A germ, a drug, an organ, or a syndrome speaks in riddles. Guess early for more points.",icon:"🕵️",wash:"lilac",time:"3 min",category:"Guess who",level:"Easy → tricky"},
+  {id:"bodymap",title:"Body Map Blitz",subtitle:"Tap the organ. Fast.",description:"Race to tap the right organ on the body diagram. Faster taps score more.",icon:"🫀",wash:"peach",time:"2 min",category:"Anatomy arcade",level:"Quick-fire"},
   {id:"lettergrid",title:"Letter Lab",subtitle:"Find words in the grid",description:"Connect neighboring letters to uncover as many hidden words as possible before time runs out.",icon:"🔤",wash:"mint",time:"2 min",category:"Word hunt",level:"Fast & fun"},
 ];
 type Shelf = "all" | "quick" | "brain" | "word" | "clinical" | "party";
@@ -37,10 +41,10 @@ const SHELVES: { id: Shelf; label: string; icon: string }[] = [
 ];
 const SHELF_OF: Record<Shelf, GameId[]> = {
   all:[],
-  quick:["splice","labline","higher","medle","dive","glyph","mime"],
-  brain:["connections","glyph","casefile","ladder","pairs","hive"],
+  quick:["splice","labline","higher","medle","dive","glyph","mime","bodymap","riddle"],
+  brain:["connections","glyph","casefile","ladder","pairs","hive","riddle"],
   word:["medle","microbe","splice","ladder","hive","lettergrid","diagnosis"],
-  clinical:["diagnosis","triage","labline","dive"],
+  clinical:["diagnosis","triage","labline","dive","riddle","bodymap"],
   party:[...PARTY_GAMES,"trivia","mime"]
 };
 /** Rotating spotlight: the open-answer and trivia games trade the featured slot each UTC day. */
@@ -119,6 +123,20 @@ export default function App() {
   useEffect(()=>{
     if("serviceWorker" in navigator) navigator.serviceWorker.register(import.meta.env.BASE_URL+"sw.js").catch(()=>setNotice("Offline caching could not be enabled in this browser."));
   },[]);
+  useEffect(()=>{
+    installAudioUnlock();
+    const onDown=(e:PointerEvent)=>{ if((e.target as HTMLElement)?.closest?.("button,a,[role=tab]")) sfx("tap"); };
+    document.addEventListener("pointerdown",onDown,{passive:true});
+    return ()=>document.removeEventListener("pointerdown",onDown);
+  },[]);
+  useEffect(()=>{setSfxEnabled(player.sound);},[player.sound]);
+  useEffect(()=>{setMusicEnabled(player.music);},[player.music]);
+  useEffect(()=>{setScene(activeGame??"menu");},[activeGame]);
+  useEffect(()=>{
+    if(!activeGame)return;
+    const stage=document.querySelector<HTMLElement>(".game-stage");
+    return stage?watchStage(stage):undefined;
+  },[activeGame,practice,startAt]);
   useEffect(()=>{document.documentElement.dataset.motion=player.reducedMotion?"reduced":"full";},[player.reducedMotion]);
   useEffect(()=>{
     if(!roomCode||!multiplayerConfigured())return;
@@ -132,6 +150,7 @@ export default function App() {
   const seedFor=(game:GameId)=>hashSeed(date+"|"+scope+"|"+game);
 
   const openGame=(id:GameId,isPractice=false,forcedSeed?:number,party=false)=>{
+    sfx("start");
     setPartyRun(party);setCompletion(null);setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??(isPractice?hashSeed(id+"-free-"+Date.now()):seedFor(id)));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
     window.scrollTo({top:0,behavior:player.reducedMotion?"auto":"smooth"});
   };
@@ -143,7 +162,7 @@ export default function App() {
     const text=share?"MedDaily"+where+"\n"+share:"MedDaily · "+gameTitle+where+"\n"+fallback+"\nhttps://pathomnemonic.github.io/MedDaily/"+(partyRun?"?room="+roomCode:"");
     setLastShare(text);setCopied(false);
     setCompletion({title:gameTitle,score,maxScore,perfect,text,party:partyRun});
-    if(player.sound)playChime();
+    sfx(perfect?"perfect":"win");
     if(partyRun){
       setRoom(current=>current?{...current,players:current.players.map(p=>p.uid==="me"?{...p,score,maxScore,perfect,finished:true}:p)}:current);
       if(multiplayerConfigured()&&roomCode) void submitRoomScore(roomCode,score,maxScore,perfect).catch(()=>{/* local result still shown */});
@@ -163,7 +182,7 @@ export default function App() {
     if(navigator.share){try{await navigator.share({text:completion.text});return;}catch{/* fall through to copy */}}
     try{await navigator.clipboard?.writeText(completion.text);setCopied(true);}catch{setNotice("Copy was blocked by the browser. Select the preview text instead.");}
   };
-  const updateSetting=(key:"sound"|"reducedMotion"|"hideStreaks",value:boolean)=>{
+  const updateSetting=(key:"sound"|"music"|"reducedMotion"|"hideStreaks",value:boolean)=>{
     setPlayer(current=>{const next={...current,[key]:value};savePlayer(next);return next;});
   };
   const install=async()=>{
@@ -181,7 +200,7 @@ export default function App() {
       try{
         const parsed=JSON.parse(String(reader.result)) as Partial<PlayerData>;
         if(!Array.isArray(parsed.results)||typeof parsed.bests!=="object")throw new Error("Invalid file");
-        const next:PlayerData={results:parsed.results.filter(r=>r&&typeof r.date==="string"&&GAMES.some(g=>g.id===r.game)).map(r=>({...r,scope:r.scope??"general"})),bests:parsed.bests??{},sound:Boolean(parsed.sound),reducedMotion:Boolean(parsed.reducedMotion),hideStreaks:Boolean(parsed.hideStreaks)};
+        const next:PlayerData={results:parsed.results.filter(r=>r&&typeof r.date==="string"&&GAMES.some(g=>g.id===r.game)).map(r=>({...r,scope:r.scope??"general"})),bests:parsed.bests??{},sound:parsed.sound!==false,music:parsed.music!==false,reducedMotion:Boolean(parsed.reducedMotion),hideStreaks:Boolean(parsed.hideStreaks)};
         savePlayer(next);setPlayer(next);setNotice("Progress imported.");
       }catch{setNotice("That file does not look like a MedDaily progress export.");}
     };reader.readAsText(file);
@@ -216,7 +235,7 @@ export default function App() {
         <button className={screen==="stats"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}>Trophies</button>
         <button className={screen==="settings"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}>Options</button>
       </nav>
-      <div className="top-actions">{installPrompt&&<button className="install-button" onClick={install}>＋ Install</button>}<div className="avatar-chip">MD</div></div>
+      <div className="top-actions"><button className={"sound-toggle"+(player.music?" on":"")} aria-pressed={player.music} aria-label={player.music?"Mute music":"Turn music on"} onClick={()=>updateSetting("music",!player.music)}>{player.music?"🎵":"🔇"}</button><button className={"sound-toggle"+(player.sound?" on":"")} aria-pressed={player.sound} aria-label={player.sound?"Mute sound effects":"Turn sound effects on"} onClick={()=>updateSetting("sound",!player.sound)}>{player.sound?"🔊":"🔈"}</button>{installPrompt&&<button className="install-button" onClick={install}>＋ Install</button>}<div className="avatar-chip">MD</div></div>
     </header>
 
     <nav className="mobile-nav" aria-label="Mobile navigation">
@@ -344,12 +363,12 @@ function StatsPage({player,scope,streak}:{player:PlayerData;scope:string;streak:
 }
 
 function SettingsPage({player,driveConnected,updateSetting,exportData,importData,onDriveSync}:{
-  player:PlayerData;driveConnected:boolean;updateSetting:(k:"sound"|"reducedMotion"|"hideStreaks",v:boolean)=>void;exportData:()=>void;importData:(file:File|undefined)=>void;onDriveSync:()=>Promise<void>;
+  player:PlayerData;driveConnected:boolean;updateSetting:(k:"sound"|"music"|"reducedMotion"|"hideStreaks",v:boolean)=>void;exportData:()=>void;importData:(file:File|undefined)=>void;onDriveSync:()=>Promise<void>;
 }){
   const [syncing,setSyncing]=useState(false);
   const sync=async()=>{setSyncing(true);try{await onDriveSync();}finally{setSyncing(false);}};
   return <div className="settings-page"><span className="eyebrow">MAKE IT YOURS</span><h1>Preferences & backup</h1>
-    <section className="settings-card"><h2>Arcade feel</h2><Setting label="Sound effects" detail="Soft sounds when you finish a round." checked={player.sound} onChange={v=>updateSetting("sound",v)}/><Setting label="Reduced motion" detail="Use quieter transitions and fewer animations." checked={player.reducedMotion} onChange={v=>updateSetting("reducedMotion",v)}/><Setting label="Hide streaks" detail="Keep the focus on playing, not maintaining a streak." checked={player.hideStreaks} onChange={v=>updateSetting("hideStreaks",v)}/></section>
+    <section className="settings-card"><h2>Arcade feel</h2><Setting label="Sound effects" detail="Taps, rights and wrongs, fanfares, and wheel spins." checked={player.sound} onChange={v=>updateSetting("sound",v)}/><Setting label="Music" detail="A different looping tune for the arcade and every game." checked={player.music} onChange={v=>updateSetting("music",v)}/><Setting label="Reduced motion" detail="Use quieter transitions and fewer animations." checked={player.reducedMotion} onChange={v=>updateSetting("reducedMotion",v)}/><Setting label="Hide streaks" detail="Keep the focus on playing, not maintaining a streak." checked={player.hideStreaks} onChange={v=>updateSetting("hideStreaks",v)}/></section>
     <section className="settings-card"><h2>Google Drive backup</h2><p>Sign in only when you want your progress backed up to your private Google Drive app-data folder. MedDaily cannot read your other Drive files. You can keep playing without Google login.</p>
       <button className="button button-primary" onClick={sync} disabled={syncing||!googleDriveConfigured()}>{syncing?"Syncing…":driveConnected?"Reconnect & sync Google Drive":"Sign in with Google & sync"}</button>
       {driveConnected&&<p className="setup-hint">Drive is connected for this browser session. New game results sync automatically while the access token remains valid.</p>}
@@ -362,4 +381,3 @@ function SettingsPage({player,driveConnected,updateSetting,exportData,importData
 function Setting({label,detail,checked,onChange}:{label:string;detail:string;checked:boolean;onChange:(v:boolean)=>void}){
   return <label className="setting-row"><span><b>{label}</b><small>{detail}</small></span><input type="checkbox" checked={checked} onChange={e=>onChange(e.target.checked)}/></label>;
 }
-function playChime(){try{const ctx=new AudioContext(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.value=660;gain.gain.setValueAtTime(0.035,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.22);osc.start();osc.stop(ctx.currentTime+0.22);}catch{/* Audio may be unavailable. */}}
