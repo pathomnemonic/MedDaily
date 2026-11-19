@@ -1,4 +1,5 @@
 import { higherLowerPairsExpansion } from "./dataExpansion";
+import { scrambleWordsExpansion2, higherLowerPairsExpansion2 } from "./dataUtilityExpansion";
 import { spellingHiveExpansion, wordLaddersExpansion, deductionCasesExpansion } from "./dataExtraExpansion";
 import { glyphPatternsExpansion } from "./dataGlyphExpansion";
 
@@ -68,7 +69,7 @@ export const scrambleWordsExpansion = [
 ["VENTILATION","Movement of air into and out of the lungs"],
 ["VERTIGO","Illusion of movement, often spinning"]
 ] as const;
-export const scrambleWordsExtended = [...scrambleWords, ...scrambleWordsExpansion] as const;
+export const scrambleWordsExtended = [...scrambleWords, ...scrambleWordsExpansion, ...scrambleWordsExpansion2] as const;
 
 export const higherLowerPairs = [
   {a:"Red blood cells per µL (approximate)",av:4500,b:"Platelets per µL (approximate)",bv:250,unit:"thousands/µL",explanation:"RBCs are generally present in the millions per microliter; platelets in the hundreds of thousands.",source:"Standard CBC reference intervals."},
@@ -311,4 +312,4 @@ solution:[{suspect:"Ari",location:"Reference Desk",object:"Atlas"},{suspect:"Min
 spellingHivePuzzles.push(...spellingHiveExpansion);
 wordLadders.push(...wordLaddersExpansion);
 deductionCases.push(...deductionCasesExpansion);
-higherLowerPairs.push(...higherLowerPairsExpansion);
+higherLowerPairs.push(...higherLowerPairsExpansion, ...higherLowerPairsExpansion2);
