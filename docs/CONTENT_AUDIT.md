@@ -1,6 +1,6 @@
 # Content inventory and expansion priorities
 
-**Snapshot:** November 19, 2026 (content expansion batch 7)
+**Snapshot:** November 19, 2026 (content expansion batch 8)
 
 MedDaily has fourteen playable game formats. This is a functioning first release with a broad specialty structure, not yet a 365-day set of unique content for every game.
 
