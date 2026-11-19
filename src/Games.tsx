@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank, triageCases } from "./data";
-import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
+import { deductionCases, glyphPatterns, higherLowerPairs, medicalHiveTitles, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { extendStrandsPath, makeStrandsBoard, readStrandsPath } from "./strandsLogic";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
@@ -1081,7 +1081,7 @@ function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boo
 }
 
 
-const MEDICAL_HIVE_PUZZLES = spellingHivePuzzles.filter((puzzle) => !["Practice Round","Capture the Clue","Tricone Terms"].includes(puzzle.title));
+const MEDICAL_HIVE_PUZZLES = spellingHivePuzzles.filter((puzzle) => medicalHiveTitles.has(puzzle.title));
 function SpellingHive({ seed, onDone }: Props) {
   const puzzle = MEDICAL_HIVE_PUZZLES[seed % MEDICAL_HIVE_PUZZLES.length];
   const letters = useMemo(() => shuffle(puzzle.letters, seeded(seed + 83)), [puzzle, seed]);
