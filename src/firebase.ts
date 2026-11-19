@@ -80,7 +80,7 @@ export async function createRoom(input: Omit<RoomInfo, "code"> & { name: string 
         tx.set(ref, { ...room, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
         tx.set(member, {
           uid,
-          name: input.name.trim().slice(0, 20) || "Guest",
+          name: name.trim().slice(0, 20) || "Guest",
           score: null,
           maxScore: null,
           finished: false,
@@ -100,12 +100,13 @@ export async function joinOrCreateRoom(codeInput: string, input: Omit<RoomInfo, 
   if (code.length !== 6) throw new Error("Enter a six-character room code.");
   const { db } = services();
   const uid = await identity();
+  const { name, ...roomInput } = input;
   const ref = roomRef(code);
   const member = playerRef(code, uid);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists()) {
-      const room: RoomDocument = { ...input, code, hostUid: uid, memberUids: [uid], status: "waiting" };
+      const room: RoomDocument = { ...roomInput, code, hostUid: uid, memberUids: [uid], status: "waiting" };
       tx.set(ref, { ...room, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
       tx.set(member, { uid, name: input.name.trim().slice(0, 20) || "Guest", score: null, maxScore: null, finished: false, perfect: false });
       return;
