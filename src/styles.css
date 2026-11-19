@@ -1646,3 +1646,5 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .burst-dot{background:none!important;width:auto!important;height:auto!important;font:400 18px/1 var(--font-display);text-shadow:0 2px 0 rgba(0,0,0,.35)}
 .game-card{transform-style:preserve-3d}
 .game-card:hover{transform:perspective(800px) translateY(-8px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))!important}
+.stage-scene *{vector-effect:non-scaling-stroke}
+.stage-scene{opacity:.2}
