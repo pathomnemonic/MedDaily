@@ -1,8 +1,8 @@
 # Content inventory and expansion priorities
 
-**Snapshot:** November 19, 2026 (content expansion batch 15)
+**Snapshot:** November 19, 2026 (gameplay parity iteration)
 
-MedDaily has fourteen playable game formats. This is a functioning first release with a broad specialty structure, not yet a 365-day set of unique content for every game.
+MedDaily exposes sixteen playable game formats. The retired Next Best Step bank remains in the repository for reference but is not presented as a standalone game. The current banks are not yet a 365-day set of unique puzzles for every game.
 
 ## Curated content currently included
 
@@ -21,10 +21,13 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 | Word Ladder | 26 ladders | Each intended solution path uses real words and one-letter changes |
 | Medical Spelling Hive | 42 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
 | Casefile Logic | 15 cases | Fictional deduction puzzles with tri-state pencil marks and one-to-one assignment rules |
+| Deep Dive | 70 prompts | Timed open-answer prompts with curated long-tail rarity tiers |
+| Trivia Rumble | 48 questions | Six-category wheel with solo and local pass-and-play modes |
+| Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |
 
 ## What this means for daily longevity
 
-Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. Across the clinical expansion batches to date, 110 Connections boards, 200 diagnosis cases, and 200 next-step cases have been added beyond the original banks, 40 Labline prompts, 116 memory pairs, 40 organism packs, 19 Spelling Hive boards, 20 Word Ladders, 13 original nonogram patterns plus 12 transformations, 12 fictional logic cases, 59 new Medle answers, 20 triage sequences, 30 quantitative comparisons, and 51 Anagram Sprint terms. Several games still have far fewer than 365 unique days. Daily and unlimited Free Play are both supported; Free Play reshuffles or re-seeds existing curated banks rather than generating new content. Practice mode draws from the same available content; it does not create new questions.
+Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. The current counts above describe the curated source banks, not the number of unique calendar days supported. Daily and unlimited Free Play are both available; Free Play re-seeds or reshuffles existing content and does not manufacture new questions. Several smaller banks will need further expansion before the arcade can claim a full year of unique daily content.
 
 The architecture deliberately separates game engines from content datasets so banks can grow without rewriting the UI or scoring systems. However, **do not describe the current release as having 365 unique daily puzzles**.
 
