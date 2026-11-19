@@ -1,3 +1,4 @@
+import { diagnosisCasesExpansion3, nextStepCasesExpansion3, connectionPuzzlesExpansion3 } from "./dataClinical3";
 import { diagnosisCasesExpansion2, nextStepCasesExpansion2, connectionPuzzlesExpansion2, labPromptsExpansion2, pairsBankExpansion2 } from "./dataClinical2";
 import { connectionPuzzlesExpansion, diagnosisCasesExpansion, nextStepCasesExpansion, labPromptsExpansion, pairsBankExpansion, microbePacksExpansion, medleWordsExpansion, triageCasesExpansion, microbePacksExpansion2 } from "./dataExpansion";
 
@@ -240,7 +241,9 @@ export const triageCases = [
 ];
 
 medleWords.push(...medleWordsExpansion.filter((word) => !medleWords.includes(word)));
-connectionPuzzles.push(...connectionPuzzlesExpansion2);
+connectionPuzzles.push(...connectionPuzzlesExpansion2, ...connectionPuzzlesExpansion3);
+diagnosisCases.push(...diagnosisCasesExpansion3);
+nextStepCases.push(...nextStepCasesExpansion3);
 diagnosisCases.push(...diagnosisCasesExpansion2);
 nextStepCases.push(...nextStepCasesExpansion2);
 labPrompts.push(...labPromptsExpansion2);
