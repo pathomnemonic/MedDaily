@@ -1,8 +1,10 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, nextStepCases, pairsBank, triageCases } from "./data";
 import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
-import { hashSeed, lineCells, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle, type GameId } from "./lib";
+import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
+import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
+import { letterWordPoints, makeLetterGrid } from "./arcadeLogic";
 
 type Done = (score: number, maxScore: number, perfect: boolean) => void;
 type Specialty = "general" | "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
@@ -23,6 +25,9 @@ export function GameBoard({ game, seed, onDone, specialty = "general" }: Props &
     case "ladder": return <WordLadder seed={seed} onDone={onDone} />;
     case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
     case "casefile": return <CasefileLogic seed={seed} onDone={onDone} />;
+    case "dive": return <DeepDive seed={seed} onDone={onDone} />;
+    case "trivia": return <TriviaRumble seed={seed} onDone={onDone} />;
+    case "lettergrid": return <LetterGridGame seed={seed} onDone={onDone} />;
   }
 }
 
@@ -67,6 +72,346 @@ function Finish({ title, detail, score, children }: { title: string; detail: str
   return <div className="finish-panel"><div className="finish-spark">✦</div><h3>{title}</h3><p>{detail}</p>{score && <strong className="finish-score">{score}</strong>}{children}</div>;
 }
 function SectionLabel({ children }: { children: ReactNode }) { return <div className="section-label">{children}</div>; }
+
+const DIVE_POINTS = [10, 15, 30, 60, 85, 100];
+const DIVE_TIERS = ["Surface find", "Familiar current", "Reef discovery", "Rare specimen", "Abyssal find", "Hidden gem"];
+
+function DeepDive({ seed, onDone }: Props) {
+  const prompts = useMemo(() => shuffle(deepDivePrompts, seeded(seed + 811)).slice(0, 7), [seed]);
+  const [round, setRound] = useState(0);
+  const [seconds, setSeconds] = useState(25);
+  const [entry, setEntry] = useState("");
+  const [revealed, setRevealed] = useState(false);
+  const [results, setResults] = useState<{ answer: string | null; points: number; tier: number | null }[]>([]);
+  const [last, setLast] = useState<DeepAnswer | null>(null);
+  const [message, setMessage] = useState("One answer per round. A valid, less-obvious answer dives deeper.");
+  const [finished, setFinished] = useState(false);
+  const done = useRef(false);
+  const item = prompts[round];
+  const total = results.reduce((n, r) => n + r.points, 0);
+
+  useEffect(() => {
+    if (revealed || finished) return;
+    const interval = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(interval);
+  }, [round, revealed, finished]);
+
+  useEffect(() => {
+    if (seconds !== 0 || revealed || finished) return;
+    setRevealed(true);
+    setLast(null);
+    setResults((current) => current.length > round ? current : [...current, { answer: null, points: 0, tier: null }]);
+    setMessage("Signal lost. No accepted answer this round.");
+  }, [seconds, revealed, finished, round]);
+
+  const submit = () => {
+    if (revealed || finished || !entry.trim()) return;
+    const value = normalize(entry);
+    const match = item.answers.find((candidate) =>
+      [candidate.answer, ...(candidate.aliases ?? [])].some((accepted) => normalize(accepted) === value)
+    );
+    if (!match) {
+      setMessage("Not in the accepted-answer set. Check the category wording and try another answer.");
+      return;
+    }
+    const points = DIVE_POINTS[match.tier - 1];
+    setLast(match);
+    setResults((current) => [...current.slice(0, round), { answer: match.answer, points, tier: match.tier }]);
+    setRevealed(true);
+    setMessage("Accepted. Your answer earned " + points + " points.");
+  };
+
+  const pass = () => {
+    if (revealed || finished) return;
+    setLast(null);
+    setResults((current) => [...current.slice(0, round), { answer: null, points: 0, tier: null }]);
+    setRevealed(true);
+    setMessage("Round passed. No depth gained.");
+  };
+
+  const next = () => {
+    const currentResults = results.length > round ? results.slice(0, round + 1) : [...results, { answer: null, points: 0, tier: null }];
+    if (round === prompts.length - 1) {
+      const score = currentResults.reduce((n, r) => n + r.points, 0);
+      setFinished(true);
+      if (!done.current) {
+        done.current = true;
+        onDone(score, 700, score === 700);
+      }
+      return;
+    }
+    setResults(currentResults);
+    setRound((value) => value + 1);
+    setSeconds(25);
+    setEntry("");
+    setLast(null);
+    setRevealed(false);
+    setMessage("New category. Think past the first obvious answer.");
+  };
+
+  return <div className="game-layout dive-game">
+    <div className="dive-hud">
+      <div><span className="eyebrow">DAILY DEEP DIVE</span><strong>{total * 10}<small> m</small></strong><span>depth reached</span></div>
+      <div className={"dive-timer" + (seconds <= 5 ? " urgent" : "")}><b>{revealed ? "✓" : seconds}</b><span>{revealed ? "LOCKED" : "SECONDS"}</span></div>
+      <div><span className="eyebrow">EXPEDITION</span><strong>{round + 1}<small> / 7</small></strong><span>prompts</span></div>
+    </div>
+    <div className="dive-depth-track"><i style={{ width: Math.min(100, total / 7) + "%" }} /></div>
+    {!finished ? <>
+      <div className="dive-prompt-card">
+        <div className="dive-surface-art" aria-hidden="true"><span>◉</span><i>✦</i><b>≈</b></div>
+        <span className="eyebrow">{item.scope.toUpperCase()} · PROMPT {round + 1}</span>
+        <h2>{item.prompt}</h2>
+        <p>Type one answer. The accepted set is curated for this game; rarity tiers are editorial, not live population statistics.</p>
+      </div>
+      {!revealed ? <form className="dive-answer-row" onSubmit={(event) => { event.preventDefault(); submit(); }}>
+        <input value={entry} onChange={(event) => setEntry(event.target.value)} autoComplete="off" placeholder="Your answer…" aria-label="Your answer" />
+        <button className="button button-primary" type="submit" disabled={!entry.trim()}>Dive in ↗</button>
+        <button className="button button-quiet" type="button" onClick={pass}>Pass</button>
+      </form> : <div className="dive-result-card">
+        {last ? <>
+          <span className={"dive-tier tier-" + last.tier}>{DIVE_TIERS[last.tier - 1]} · {DIVE_POINTS[last.tier - 1]} pts</span>
+          <h3>{last.answer}</h3>
+          <p>{item.explanation}</p>
+          <div className="dive-answer-examples">{item.answers.slice().sort((a, b) => b.tier - a.tier).slice(0, 5).map((answer) => <span key={answer.answer}>{answer.answer}<b>{DIVE_POINTS[answer.tier - 1]}</b></span>)}</div>
+        </> : <>
+          <span className="dive-tier tier-0">No score this round</span>
+          <h3>Keep moving.</h3>
+          <p>{item.explanation}</p>
+        </>}
+        <button className="button button-primary full-button" onClick={next}>{round === 6 ? "Surface & see score" : "Next prompt ↓"}</button>
+      </div>}
+      <p className="game-feedback" aria-live="polite">{message}</p>
+      <div className="dive-progress-dots">{prompts.map((_, i) => <i key={i} className={i < results.length ? "complete" : i === round ? "current" : ""} />)}</div>
+    </> : <div className="dive-finale">
+      <div className="dive-medal">✦</div><span className="eyebrow">EXPEDITION COMPLETE</span>
+      <h2>{total} / 700</h2><p>{total * 10} metres below the surface. {total >= 500 ? "A deep and impressive run." : "Every dive teaches you a new part of the map."}</p>
+      <div className="dive-log">{prompts.map((prompt, i) => <div key={prompt.id}><span>{i + 1}</span><b>{results[i]?.answer ?? "—"}</b><strong>+{results[i]?.points ?? 0}</strong></div>)}</div>
+    </div>}
+  </div>;
+}
+
+type RumbleMode = "solo" | "pass";
+type RumbleStage = "setup" | "spin" | "spinning" | "wild" | "question" | "reveal" | "done";
+interface RumblePlayer {
+  name: string;
+  crowns: TriviaCategoryId[];
+  progress: Record<TriviaCategoryId, number>;
+  correct: number;
+}
+const newRumblePlayer = (name: string): RumblePlayer => ({
+  name,
+  crowns: [],
+  progress: Object.fromEntries(triviaCategories.map((category) => [category.id, 0])) as Record<TriviaCategoryId, number>,
+  correct: 0
+});
+
+function TriviaRumble({ seed, onDone }: Props) {
+  const [mode, setMode] = useState<RumbleMode>("solo");
+  const [names, setNames] = useState(["Player 1", "Player 2"]);
+  const [players, setPlayers] = useState<RumblePlayer[]>([]);
+  const [stage, setStage] = useState<RumbleStage>("setup");
+  const [turn, setTurn] = useState(0);
+  const [round, setRound] = useState(0);
+  const [rotation, setRotation] = useState(0);
+  const [category, setCategory] = useState<TriviaCategory | null>(null);
+  const [question, setQuestion] = useState<(typeof triviaQuestions)[number] | null>(null);
+  const [picked, setPicked] = useState<number | null>(null);
+  const [message, setMessage] = useState("");
+  const [winner, setWinner] = useState<string | null>(null);
+  const [used, setUsed] = useState<Partial<Record<TriviaCategoryId, string[]>>>({});
+  const done = useRef(false);
+  const currentPlayer = players[turn];
+  const limit = mode === "solo" ? 24 : 36;
+
+  const start = () => {
+    const list = mode === "solo" ? [names[0].trim() || "Player 1"] : [names[0].trim() || "Player 1", names[1].trim() || "Player 2"];
+    setPlayers(list.map(newRumblePlayer));
+    setTurn(0); setRound(0); setRotation(0); setCategory(null); setQuestion(null); setPicked(null);
+    setWinner(null); setUsed({}); done.current = false; setStage("spin");
+  };
+
+  const deal = (selected: TriviaCategory) => {
+    const pool = triviaQuestions.filter((item) => item.category === selected.id);
+    const seen = used[selected.id] ?? [];
+    const fresh = pool.filter((item) => !seen.includes(item.id));
+    const choices = fresh.length ? fresh : pool;
+    const nextQuestion = shuffle(choices, seeded(hashSeed(seed + "|" + round + "|" + turn + "|" + selected.id)))[0];
+    setUsed((all) => ({ ...all, [selected.id]: [...(all[selected.id] ?? []), nextQuestion.id] }));
+    setCategory(selected);
+    setQuestion(nextQuestion);
+    setPicked(null);
+    setStage("question");
+  };
+
+  const spin = () => {
+    if (stage !== "spin") return;
+    const random = seeded(hashSeed(seed + "|" + round + "|" + turn + "|wheel"));
+    const index = Math.floor(random() * 7);
+    const segment = 360 / 7;
+    setRotation((value) => value + 1440 + 360 - (index + 0.5) * segment);
+    setStage("spinning");
+    window.setTimeout(() => {
+      if (index === 6) setStage("wild");
+      else deal(triviaCategories[index]);
+    }, 1500);
+  };
+
+  const answer = (index: number) => {
+    if (stage !== "question" || !question || !category || picked !== null) return;
+    setPicked(index);
+    const correct = index === question.answer;
+    const nextPlayers = players.map((player, playerIndex) => {
+      if (playerIndex !== turn || !correct) return player;
+      const progress = { ...player.progress, [category.id]: Math.min(3, player.progress[category.id] + 1) };
+      const crowns = progress[category.id] >= 3 && !player.crowns.includes(category.id) ? [...player.crowns, category.id] : player.crowns;
+      return { ...player, progress, crowns, correct: player.correct + 1 };
+    });
+    setPlayers(nextPlayers);
+    const newWinner = nextPlayers.find((player) => player.crowns.length === triviaCategories.length);
+    if (newWinner) setWinner(newWinner.name);
+    setMessage(correct
+      ? (nextPlayers[turn].crowns.includes(category.id) && !players[turn].crowns.includes(category.id) ? "Badge unlocked! " + category.name + " mastered." : "Correct! One step closer to the " + category.name + " badge.")
+      : "Not quite. Read the explanation, then spin again.");
+    setStage("reveal");
+  };
+
+  const finish = () => {
+    const best = Math.max(0, ...players.map((player) => player.correct));
+    setStage("done");
+    if (!done.current) {
+      done.current = true;
+      onDone(best * 100, limit * 100, best === limit);
+    }
+  };
+
+  const next = () => {
+    if (winner || round + 1 >= limit) { finish(); return; }
+    setTurn((value) => mode === "solo" ? 0 : (value + 1) % players.length);
+    setRound((value) => value + 1);
+    setCategory(null); setQuestion(null); setPicked(null); setMessage("");
+    setStage("spin");
+  };
+
+  const crownsOpen = currentPlayer?.crowns.length ?? 0;
+
+  return <div className="game-layout trivia-rumble">
+    {stage === "setup" ? <div className="rumble-setup">
+      <div className="rumble-logo">TRIVIA <b>RUMBLE</b><span>⚡</span></div>
+      <p>Spin into six worlds of medical knowledge. Collect three correct answers in a category to win its badge.</p>
+      <div className="rumble-mode-picks">
+        <button className={mode === "solo" ? "chosen" : ""} onClick={() => setMode("solo")}><b>Solo challenge</b><span>Collect all six badges</span></button>
+        <button className={mode === "pass" ? "chosen" : ""} onClick={() => setMode("pass")}><b>Pass & play</b><span>Take turns on one device</span></button>
+      </div>
+      <label className="rumble-name">Player 1<input value={names[0]} onChange={(event) => setNames((v) => [event.target.value, v[1]])} maxLength={18} /></label>
+      {mode === "pass" && <label className="rumble-name">Player 2<input value={names[1]} onChange={(event) => setNames((v) => [v[0], event.target.value])} maxLength={18} /></label>}
+      <button className="button button-primary full-button rumble-start" onClick={start}>Enter the arena ↗</button>
+    </div> : stage !== "done" ? <>
+      <div className="rumble-scoreboard">
+        {players.map((player, i) => <div key={player.name + i} className={"rumble-player" + (turn === i ? " active" : "")}>
+          <b>{player.name}</b><strong>{player.crowns.length}<small> / 6</small></strong>
+          <div className="rumble-crowns">{triviaCategories.map((cat) => <span key={cat.id} className={player.crowns.includes(cat.id) ? "won" : ""} title={cat.name}>{player.crowns.includes(cat.id) ? cat.icon : "·"}</span>)}</div>
+        </div>)}
+      </div>
+      <div className="rumble-roundline"><span>ROUND {round + 1} / {limit}</span><span>{currentPlayer?.name ?? "Your turn"} {mode === "pass" ? "· pass the device" : "· solo run"}</span></div>
+      {stage === "spin" || stage === "spinning" || stage === "wild" ? <div className="rumble-wheel-area">
+        <div className="trivia-wheel-wrap">
+          <div className="trivia-pointer">▼</div>
+          <div className="trivia-wheel" style={{ transform: "rotate(" + rotation + "deg)" }}>
+            {triviaCategories.map((cat, i) => {
+              const angle = i * (360 / 7) + (180 / 7);
+              return <span key={cat.id} className="trivia-wheel-mark" style={{ transform: "rotate(" + angle + "deg) translateY(-94px) rotate(" + (-angle) + "deg)" }}>{cat.icon}</span>;
+            })}
+            <span className="trivia-wheel-wild" style={{ transform: "rotate(" + (6 * 360 / 7 + 180 / 7) + "deg) translateY(-94px) rotate(" + (-(6 * 360 / 7 + 180 / 7)) + "deg)" }}>★</span>
+            <div className="trivia-wheel-hub">GO!</div>
+          </div>
+        </div>
+        {stage === "spin" && <button className="button button-primary rumble-spin" onClick={spin}>SPIN THE WHEEL ↻</button>}
+        {stage === "spinning" && <p className="rumble-wheel-note">The wheel is choosing your category…</p>}
+        {stage === "wild" && <div className="rumble-wild-pick"><h3>Wild card! Choose a category.</h3><div>{triviaCategories.filter((cat) => !currentPlayer.crowns.includes(cat.id)).map((cat) => <button key={cat.id} style={{ "--cat-color": cat.color } as React.CSSProperties} onClick={() => deal(cat)}>{cat.icon} {cat.name}</button>)}</div></div>}
+      </div> : null}
+      {stage === "question" || stage === "reveal" ? question && category && <div className="rumble-question" style={{ "--cat-color": category.color } as React.CSSProperties}>
+        <div className="rumble-category"><span>{category.icon}</span><b>{category.name}</b></div>
+        <div className="rumble-question-card"><span className="eyebrow">{category.short} · QUESTION {round + 1}</span><h2>{question.question}</h2></div>
+        <div className="rumble-options">{question.options.map((option, i) => <button key={option} disabled={stage === "reveal"} className={stage === "reveal" ? (i === question.answer ? "right" : i === picked ? "wrong" : "dim") : picked === i ? "selected" : ""} onClick={() => answer(i)}><span>{String.fromCharCode(65 + i)}</span>{option}</button>)}</div>
+        {stage === "reveal" && <div className={"rumble-explanation" + (picked === question.answer ? " correct" : "")}>
+          <b>{picked === question.answer ? "Nice answer!" : "The correct answer is " + question.options[question.answer] + "."}</b><p>{question.explanation}</p>
+          <button className="button button-primary full-button" onClick={next}>{winner ? "See the winner" : round + 1 === limit ? "View final scores" : mode === "pass" ? "Next player's turn →" : "Spin again →"}</button>
+        </div>}
+      </div> : null}
+    </> : <div className="rumble-finale">
+      <div className="rumble-trophy">🏆</div><span className="eyebrow">ARENA COMPLETE</span><h2>{winner ? winner + " wins!" : "Final scoreboard"}</h2>
+      <div className="rumble-final-list">{[...players].sort((a, b) => b.crowns.length - a.crowns.length || b.correct - a.correct).map((player, i) => <div key={player.name + i}><span>{i + 1}</span><b>{player.name}</b><strong>{player.crowns.length} badges · {player.correct} correct</strong></div>)}</div>
+      <p>Six badges are waiting tomorrow. Keep your streak going.</p>
+    </div>}
+    <p className="rumble-footnote">Original medical question set · local pass-and-play · no account needed</p>
+  </div>;
+}
+
+const LETTER_DICTIONARY = [...new Set([
+  ...medleWords,
+  ...scrambleWords.map(([word]) => word),
+  ...wordLadders.flatMap((ladder) => ladder.path),
+  ...pairsBank.map(([term]) => term),
+  ...connectionPuzzles.flatMap((board) => board.flatMap((group) => group.words)),
+  ...microbePacks.flatMap((pack) => pack.words)
+].map((value) => normalize(String(value)).replace(/\s/g, "").toUpperCase()).filter((word) => /^[A-Z]{3,8}$/.test(word)))];
+
+function LetterGridGame({ seed, onDone }: Props) {
+  const board = useMemo(() => makeLetterGrid(seed, LETTER_DICTIONARY), [seed]);
+  const [entry, setEntry] = useState("");
+  const [found, setFound] = useState<string[]>([]);
+  const [seconds, setSeconds] = useState(90);
+  const [note, setNote] = useState("Find words by connecting letters that touch horizontally, vertically, or diagonally.");
+  const [ended, setEnded] = useState(false);
+  const done = useRef(false);
+  const score = found.reduce((total, word) => total + letterWordPoints(word), 0);
+  const maximum = Math.max(1, board.words.reduce((total, word) => total + letterWordPoints(word), 0));
+
+  const finish = (words: string[]) => {
+    setEnded(true);
+    if (!done.current) {
+      done.current = true;
+      const points = words.reduce((total, word) => total + letterWordPoints(word), 0);
+      onDone(points, maximum, points === maximum);
+    }
+  };
+
+  useEffect(() => {
+    if (ended) return;
+    const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [ended]);
+
+  useEffect(() => {
+    if (seconds === 0 && !ended) finish(found);
+  }, [seconds, ended, found]);
+
+  const submit = () => {
+    const word = entry.trim().toUpperCase();
+    if (ended || !word) return;
+    if (found.includes(word)) { setNote("Already found. Keep searching the grid."); return; }
+    if (!board.words.includes(word)) { setNote("That word is not in this grid. Try another path."); return; }
+    const next = [...found, word];
+    setFound(next); setEntry(""); setNote("+" + letterWordPoints(word) + " points · " + word);
+    if (next.length === board.words.length) finish(next);
+  };
+
+  return <div className="game-layout letter-grid-game">
+    <div className="letter-grid-hud"><div><span className="eyebrow">LETTER LAB</span><h2>Find the hidden words</h2></div><div className={"letter-grid-clock" + (seconds <= 10 ? " urgent" : "")}>{String(Math.floor(seconds / 60)).padStart(2, "0")}:{String(seconds % 60).padStart(2, "0")}</div></div>
+    <div className="letter-grid-board">{board.grid.map((letter, i) => <div key={i} className={found.some((word) => word.includes(letter)) ? "letter-grid-tile" : "letter-grid-tile"}>{letter}</div>)}</div>
+    <p className="letter-grid-score">{score} pts <span>·</span> {found.length} / {board.words.length} words found</p>
+    {!ended ? <>
+      <form className="dive-answer-row" onSubmit={(event) => { event.preventDefault(); submit(); }}>
+        <input value={entry} onChange={(event) => setEntry(event.target.value.replace(/[^a-z]/gi, "").toUpperCase())} autoComplete="off" placeholder="Type a word…" aria-label="Word to find" />
+        <button className="button button-primary" disabled={!entry.trim()}>Find word</button>
+      </form>
+      <p className="game-feedback" aria-live="polite">{note}</p>
+      <div className="letter-grid-found">{found.map((word) => <span key={word}>{word}<b>+{letterWordPoints(word)}</b></span>)}</div>
+      <button className="button button-quiet full-button" onClick={() => finish(found)}>Finish round</button>
+    </> : <div className="letter-grid-finale"><h3>Round complete</h3><strong>{score} / {maximum}</strong><p>{found.length} words found. The hidden-word list is shown below.</p><div>{board.words.slice().sort().map((word) => <span key={word} className={found.includes(word) ? "found" : ""}>{word}</span>)}</div></div>}
+  </div>;
+}
+
 
 function Medle({ seed, onDone, specialty = "general" }: Props) {
   const pool = specialty === "general" ? medleWords : medleWords.filter((w) => specialty === "neurology" ? ["BRAIN","NERVE","OPTIC","VAGUS","ULNAR","SPASM","MOTOR","COMAS"].includes(w) : specialty === "cardiology" ? ["AORTA","VALVE","SHOCK","RALES","SPASM","ACUTE"].includes(w) : specialty === "infectious" ? ["STAPH","STREP","VIRAL","YEAST","SPORE","TITER","COCCI","PRION"].includes(w) : true);
