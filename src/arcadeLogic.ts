@@ -56,6 +56,52 @@ export function letterWordPoints(word: string): number {
   return 10;
 }
 
+import { normalize } from "./lib";
+
+/** Levenshtein distance with an early exit once the distance must exceed `limit`. */
+export function editDistance(a: string, b: string, limit = 3): number {
+  if (Math.abs(a.length - b.length) > limit) return limit + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      best = Math.min(best, row[j]);
+    }
+    if (best > limit) return limit + 1;
+    prev = row;
+  }
+  return prev[b.length];
+}
+
+export interface AnswerLike { answer: string; aliases?: string[] }
+export interface AnswerMatch<T extends AnswerLike> { match: T; fuzzy: boolean }
+
+/**
+ * Match free text against a curated answer list. Exact (normalized) matches win; otherwise a
+ * single-typo (≤1 edit for 5–9 letters, ≤2 for longer) match is accepted only when exactly one
+ * answer is that close, so a typo can never be resolved to the wrong answer.
+ */
+export function matchAnswer<T extends AnswerLike>(input: string, answers: readonly T[]): AnswerMatch<T> | null {
+  const squash = (text: string) => normalize(text).replace(/ /g, "");
+  const value = squash(input);
+  if (!value) return null;
+  const forms = (item: T) => [item.answer, ...(item.aliases ?? [])].map(squash);
+  const exact = answers.find((item) => forms(item).includes(value));
+  if (exact) return { match: exact, fuzzy: false };
+  if (value.length < 5) return null;
+  const allowed = value.length >= 10 ? 2 : 1;
+  const close = answers.filter((item) => forms(item).some((form) => form.length >= 5 && editDistance(value, form, allowed) <= allowed));
+  return close.length === 1 ? { match: close[0], fuzzy: true } : null;
+}
+
+export interface RumbleTurnState { turn: number; playerCount: number; correct: boolean }
+/** Trivia Crack rule: a correct answer keeps the turn; a miss passes it to the next player. */
+export function rumbleNextTurn({ turn, playerCount, correct }: RumbleTurnState): number {
+  return correct || playerCount <= 1 ? turn : (turn + 1) % playerCount;
+}
+
 export interface GeneratedWordLadder {
   start: string;
   end: string;
@@ -150,8 +196,67 @@ export function deepDiveAnswerAward(tier: number, currentRoundScore: number): nu
 }
 
 
+/**
+ * A ladder whose two ends are medical words: BFS over the one-letter-neighbour graph from a medical start
+ * to another medical word 3–5 steps away. Intermediate words are ordinary dictionary words.
+ */
+export function generateMedicalLadder(seed: number, dictionary: readonly string[], medical: readonly string[]): GeneratedWordLadder | null {
+  const words = new Set(dictionary.map((w) => w.toUpperCase()).filter((w) => /^[A-Z]{4}$/.test(w)));
+  const ends = [...new Set(medical.map((w) => w.toUpperCase()))].filter((w) => words.has(w));
+  const neighbours = (word: string): string[] => {
+    const out: string[] = [];
+    for (let i = 0; i < word.length; i++) for (let c = 65; c < 91; c++) {
+      const next = word.slice(0, i) + String.fromCharCode(c) + word.slice(i + 1);
+      if (next !== word && words.has(next)) out.push(next);
+    }
+    return out;
+  };
+  const random = seeded((seed + 0x2545f491) >>> 0);
+  const found: string[][] = [];
+  for (const start of shuffle(ends, random)) {
+    const previous = new Map<string, string | null>([[start, null]]);
+    const depth = new Map<string, number>([[start, 0]]);
+    const queue = [start];
+    for (let i = 0; i < queue.length; i++) {
+      const word = queue[i], d = depth.get(word) ?? 0;
+      if (d >= 3 && d <= 5 && ends.includes(word)) {
+        const path: string[] = [];
+        for (let at: string | null = word; at !== null; at = previous.get(at) ?? null) path.push(at);
+        found.push(path.reverse());
+      }
+      if (d >= 5) continue;
+      for (const next of neighbours(word)) if (!previous.has(next)) { previous.set(next, word); depth.set(next, d + 1); queue.push(next); }
+    }
+    if (found.length >= 12) break;
+  }
+  if (!found.length) return null;
+  const path = shuffle(found, random)[0];
+  return { start: path[0], end: path[path.length - 1], path, note: "Medical ladder: both ends are medical words." };
+}
+
 export function triviaRumbleResult(correctCounts: readonly number[], mode: "solo" | "pass", totalTurns: number): { score: number; maxScore: number; perfect: boolean } {
   const best = Math.max(0, ...correctCounts);
   const perPlayerTurns = mode === "solo" ? totalTurns : Math.ceil(totalTurns / 2);
   return { score: best * 100, maxScore: perPlayerTurns * 100, perfect: best === perPlayerTurns };
 }
+
+/**
+ * Labline scoring (0–100). Prompts with a tolerance score by distance as before; threshold prompts (tolerance 0)
+ * used to be all-or-nothing, so they now award partial credit within ~12% of the value and full marks only when exact.
+ */
+export function labScore(estimate: number, value: number, tolerance: number): number {
+  const diff = Math.abs(estimate - value);
+  if (diff < 1e-9) return 100;
+  if (tolerance === 0) return Math.max(0, Math.round(100 * (1 - diff / Math.max(Math.abs(value) * 0.12, 1e-6))) );
+  if (diff <= tolerance) return Math.max(85, Math.round(100 * (1 - 0.15 * diff / tolerance)));
+  return Math.max(0, Math.round(100 * (1 - diff / Math.max(tolerance * 3, Math.abs(value) * 0.2))));
+}
+/** A slider range that contains the true value but does not put it at the midpoint. */
+export function labRange(value: number, seed: number): { min: number; max: number } {
+  const r = seeded((seed + 0x9e3779b1) >>> 0);
+  const a = 0.3 + r() * 0.35, b = 1.5 + r() * 0.9;
+  const base = Math.abs(value) < 1e-9 ? 1 : Math.abs(value);
+  return { min: Math.max(0, value - base * (1 - a) * 1), max: value + base * (b - 1) };
+}
+/** Bonus for consecutive strong rounds: 0, 10, 20, 30, 30... (the first strong round starts the streak). */
+export const labStreakBonus = (streakBefore: number): number => Math.min(30, streakBefore * 10);

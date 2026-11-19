@@ -1,13 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank, triageCases } from "./data";
+import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank } from "./data";
 import { deductionCases, glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
-import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
-import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
+import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
+import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
+import { labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
+import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
+import { mimeDeck } from "./dataMime";
+import { fiveLetterWords } from "./dataFiveLetter";
+import { medicalRungWords } from "./dataRungs";
+import { riddles, riddleOptions } from "./dataRiddles";
+import { makeCrossword } from "./crosswordGen";
+import { makeTrailPuzzle, trailPackOk } from "./trailLogic";
+import { extendStrandsPath, readStrandsPath } from "./strandsLogic";
+import { reward } from "./juice";
+import { sfx } from "./audio";
+import { vibrate } from "./haptics";
 import { generateDeductionCase } from "./logicGenerator";
 
-type Done = (score: number, maxScore: number, perfect: boolean) => void;
+type Done = (score: number, maxScore: number, perfect: boolean, share?: string) => void;
 type Specialty = "general" | "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
 interface Props { seed: number; onDone: Done; specialty?: Specialty }
 export function GameBoard({ game, seed, onDone, specialty = "general", practice = false }: Props & { game: GameId; practice?: boolean }) {
@@ -15,18 +26,21 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "medle": return <Medle seed={seed} onDone={onDone} specialty={specialty} />;
     case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} />;
     case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} specialty={specialty} />;
-    case "microbe": return <MicrobeHunt seed={seed} onDone={onDone} specialty={specialty} />;
     case "labline": return <Labline seed={seed} onDone={onDone} specialty={specialty} />;
     case "pairs": return <MemoryMatch seed={seed} onDone={onDone} specialty={specialty} />;
-    case "triage": return <TriageOrder seed={seed} onDone={onDone} specialty={specialty} />;
     case "splice": return <AnagramSprint seed={seed} onDone={onDone} specialty={specialty} />;
     case "glyph": return <CellSketch seed={seed} onDone={onDone} practice={practice} />;
     case "higher": return <HigherLower seed={seed} onDone={onDone} specialty={specialty} />;
-    case "ladder": return <WordLadder seed={seed} onDone={onDone} practice={practice} />;
+    case "ladder": return <WordLadder seed={seed} onDone={onDone} />;
     case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
     case "casefile": return <CasefileLogic seed={seed} onDone={onDone} practice={practice} />;
     case "dive": return <DeepDive seed={seed} onDone={onDone} />;
     case "trivia": return <TriviaRumble seed={seed} onDone={onDone} />;
+    case "trail": return <ThemeTrail seed={seed} onDone={onDone} specialty={specialty} />;
+    case "crossword": return <CrosswordClinic seed={seed} onDone={onDone} />;
+    case "riddle": return <RiddleLab seed={seed} onDone={onDone} />;
+    case "bodymap": return <BodyMapBlitz seed={seed} onDone={onDone} />;
+    case "mime": return <MimeTime seed={seed} onDone={onDone} />;
     case "lettergrid": return <LetterGridGame seed={seed} onDone={onDone} />;
   }
 }
@@ -74,129 +88,126 @@ function Finish({ title, detail, score, children }: { title: string; detail: str
 function SectionLabel({ children }: { children: ReactNode }) { return <div className="section-label">{children}</div>; }
 
 const DIVE_POINTS = deepDivePointsByTier;
-const DIVE_TIERS = ["Surface find", "Familiar current", "Reef discovery", "Rare specimen", "Abyssal find", "Hidden gem"];
-type ScoredDeepAnswer = DeepAnswer & { earned: number };
-const diveRoundScore = (answers: ScoredDeepAnswer[]) => answers.reduce((sum, answer) => sum + answer.earned, 0);
+const DIVE_TIERS = ["Skin deep", "Subcutaneous", "Fascia", "Muscle", "Bone", "Marrow"];
+const DIVE_SECONDS = 25;
+interface DiveResult { answer: string | null; tier: number | null; points: number }
 
+/** Deep Scan: seven open questions, 25 seconds each, one typed answer per question. Rarer (less obvious) valid answers scan deeper into the tissue. */
 function DeepDive({ seed, onDone }: Props) {
-  const prompts = useMemo(() => {
-    const random = seeded(seed + 811);
-    const longTail = shuffle(deepDivePrompts.filter((prompt) => prompt.longTail), random).slice(0, 3);
-    const standard = shuffle(deepDivePrompts.filter((prompt) => !prompt.longTail), random).slice(0, 4);
-    return shuffle([...longTail, ...standard], random);
-  }, [seed]);
+  const prompts = useMemo(() => shuffle(deepDivePrompts, seeded(seed + 811)).slice(0, 7), [seed]);
   const [round, setRound] = useState(0);
-  const [seconds, setSeconds] = useState(25);
+  const [seconds, setSeconds] = useState(DIVE_SECONDS);
   const [entry, setEntry] = useState("");
-  const [revealed, setRevealed] = useState(false);
-  const [results, setResults] = useState<ScoredDeepAnswer[][]>([]);
-  const [accepted, setAccepted] = useState<ScoredDeepAnswer[]>([]);
-  const [message, setMessage] = useState("List as many valid answers as you can. Less-obvious answers score more.");
+  const [locked, setLocked] = useState(false);
+  const [results, setResults] = useState<DiveResult[]>([]);
+  const [message, setMessage] = useState("Type one answer. The less obvious (but valid) it is, the deeper the scan reaches.");
   const [finished, setFinished] = useState(false);
+  const [shake, setShake] = useState(0);
+  const input = useRef<HTMLInputElement>(null);
   const done = useRef(false);
   const item = prompts[round];
-  const roundScore = diveRoundScore(accepted);
-  const total = results.reduce((sum, answers) => sum + diveRoundScore(answers), 0) + roundScore;
+  const current = results[round];
+  const total = results.reduce((sum, r) => sum + r.points, 0);
 
+  useEffect(() => { if (!locked && !finished) input.current?.focus({ preventScroll: true }); }, [round, locked, finished]);
   useEffect(() => {
-    if (revealed || finished) return;
-    const interval = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    if (locked || finished) return;
+    const interval = window.setInterval(() => setSeconds((v) => Math.max(0, v - 1)), 1000);
     return () => window.clearInterval(interval);
-  }, [round, revealed, finished]);
-
+  }, [round, locked, finished]);
   useEffect(() => {
-    if (seconds !== 0 || revealed || finished) return;
-    setRevealed(true);
-    setMessage("Time. Review the accepted answers and their editorial rarity tiers.");
-  }, [seconds, revealed, finished]);
+    if (locked || finished) return;
+    if (seconds > 0 && seconds <= 5) sfx("tick");
+    if (seconds === 0) {
+      sfx("whoosh");
+      setResults((all) => [...all.slice(0, round), { answer: null, tier: null, points: 0 }]);
+      setLocked(true);
+      setMessage("Scan timed out on this one.");
+    }
+  }, [seconds, locked, finished, round]);
 
   const submit = () => {
-    if (revealed || finished || !entry.trim()) return;
-    const value = normalize(entry);
-    if (accepted.some((answer) => [answer.answer, ...(answer.aliases ?? [])].some((candidate) => normalize(candidate) === value))) {
-      setMessage("Already accepted. Find another answer.");
-      setEntry("");
+    if (locked || finished || !entry.trim()) return;
+    const found = matchAnswer(entry, item.answers);
+    if (!found) {
+      // An open question: an answer we do not list is not called wrong, it just cannot be scored.
+      reward(false);
+      setShake((n) => n + 1);
+      setMessage("Not on our list yet. It may still be right, but we can't score it. Try another answer while time remains.");
       return;
     }
-    const match = item.answers.find((candidate) =>
-      [candidate.answer, ...(candidate.aliases ?? [])].some((candidate) => normalize(candidate) === value)
-    );
-    if (!match) {
-      setMessage("Not in this prompt's accepted set. Try a different answer.");
-      return;
-    }
-    const earned = deepDiveAnswerAward(match.tier, roundScore);
-    const next = [...accepted, { ...match, earned }];
-    setAccepted(next);
-    setEntry("");
-    if (diveRoundScore(next) >= 100) {
-      setRevealed(true);
-      setMessage("Round maximum reached. You found " + next.length + " accepted answers.");
-    } else {
-      setMessage("+" + earned + " points · " + DIVE_TIERS[match.tier - 1] + ". Keep going.");
-    }
+    const points = deepDiveAnswerAward(found.match.tier, 0);
+    setResults((all) => [...all.slice(0, round), { answer: found.match.answer, tier: found.match.tier, points }]);
+    setLocked(true);
+    reward(true, null, "+" + points);
+    if (found.match.tier >= 5) window.setTimeout(() => sfx("badge"), 400);
+    setMessage(found.fuzzy ? "Counted as “" + found.match.answer + "” (typo forgiven)." : "");
   };
-
-  const pass = () => {
-    if (revealed || finished) return;
-    setRevealed(true);
-    setMessage(accepted.length ? "Round locked. Your accepted answers are scored." : "Round passed. No depth gained.");
+  const surface = () => {
+    if (locked || finished) return;
+    setResults((all) => [...all.slice(0, round), { answer: null, tier: null, points: 0 }]);
+    setLocked(true);
+    setMessage("You skipped this scan.");
   };
-
   const next = () => {
-    const completed = [...results.slice(0, round), accepted];
     if (round === prompts.length - 1) {
-      const score = completed.reduce((sum, answers) => sum + diveRoundScore(answers), 0);
-      setResults(completed);
       setFinished(true);
       if (!done.current) {
         done.current = true;
-        onDone(score, 700, score === 700);
+        const square = ["⬛", "🟦", "🟦", "🟩", "🟨", "🟧", "🟥"];
+        onDone(total, 700, total === 700, "Deep Scan · " + Math.round(total / 5) + " mm deep\n" + results.map((r) => square[r.tier ?? 0]).join("") + "\n🟦 skin → 🟥 marrow");
       }
       return;
     }
-    setResults(completed);
-    setRound((value) => value + 1);
-    setSeconds(25);
+    setRound((v) => v + 1);
+    setSeconds(DIVE_SECONDS);
     setEntry("");
-    setAccepted([]);
-    setRevealed(false);
-    setMessage("New category. Keep the answers coming.");
+    setLocked(false);
+    setMessage("Next scan. Think past the first obvious answer.");
   };
+  const depthPct = (tier: number | null) => tier ? [6, 21, 34, 51, 70, 89][tier - 1] : 3;
 
-  return <div className="game-layout dive-game">
+  return <div className="game-layout dive-game" data-own-sfx="true">
     <div className="dive-hud">
-      <div><span className="eyebrow">DAILY DEEP DIVE</span><strong>{total * 10}<small> m</small></strong><span>depth reached</span></div>
-      <div className={"dive-timer" + (seconds <= 5 && !revealed ? " urgent" : "")}><b>{revealed ? "✓" : seconds}</b><span>{revealed ? "LOCKED" : "SECONDS"}</span></div>
-      <div><span className="eyebrow">EXPEDITION</span><strong>{round + 1}<small> / 7</small></strong><span>prompts</span></div>
+      <div><span className="eyebrow">DEPTH SO FAR</span><strong>{Math.round(total / 5)}<small> mm</small></strong></div>
+      <div className={"dive-timer" + (seconds <= 5 && !locked ? " urgent" : "")}><b>{locked ? "✓" : seconds}</b><span>{locked ? "LOCKED" : "SECONDS"}</span></div>
+      <div><span className="eyebrow">SCAN</span><strong>{Math.min(round + 1, prompts.length)}<small> / 7</small></strong></div>
     </div>
-    <div className="dive-depth-track"><i style={{ width: Math.min(100, total / 7) + "%" }} /></div>
     {!finished ? <>
-      <div className="dive-prompt-card">
-        <div className="dive-surface-art" aria-hidden="true"><span>◉</span><i>✦</i><b>≈</b></div>
-        <span className="eyebrow">{item.scope.toUpperCase()} · PROMPT {round + 1}</span>
-        <h2>{item.prompt}</h2>
-        <p>25 seconds. Submit as many distinct accepted answers as you can. Each answer has an editorial rarity tier; this is not live population data.</p>
+      <div className="dive-stage">
+        <div className="dive-sea" aria-hidden="true">
+          {[1, 2, 3, 4, 5, 6].map((t) => <i key={t} className={"dive-line" + (current?.tier === t ? " hit" : "")} style={{ top: depthPct(t) + "%" }}><span>{DIVE_POINTS[t - 1]}</span></i>)}
+          <b className="dive-diver" style={{ top: depthPct(locked ? current?.tier ?? null : null) + "%" }}>💊</b>
+        </div>
+        <div className="dive-prompt-card" key={round}>
+          <span className="eyebrow">{item.scope.toUpperCase()}</span>
+          <h2>{item.prompt}</h2>
+          <p>One answer. Common answers stop at the skin; unusual ones that are still correct reach bone and marrow. Tiers are editorial, not live player data.</p>
+        </div>
       </div>
-      {!revealed ? <form className="dive-answer-row" onSubmit={(event) => { event.preventDefault(); submit(); }}>
-        <input value={entry} onChange={(event) => setEntry(event.target.value)} autoComplete="off" placeholder="Enter another answer…" aria-label="Your answer" />
-        <button className="button button-primary" type="submit" disabled={!entry.trim()}>Submit ↗</button>
-        <button className="button button-quiet" type="button" onClick={pass}>Lock round</button>
+      {!locked ? <form key={shake} className={"dive-answer-row" + (shake ? " shake" : "")} onSubmit={(e) => { e.preventDefault(); submit(); }}>
+        <input ref={input} value={entry} onChange={(e) => setEntry(e.target.value)} autoComplete="off" autoCapitalize="off" spellCheck={false} placeholder="Type your answer…" aria-label="Your answer" />
+        <button className="button button-primary" type="submit" disabled={!entry.trim()}>Scan ↓</button>
+        <button className="button button-quiet" type="button" onClick={surface}>Skip</button>
       </form> : <div className="dive-result-card">
-        <span className="dive-tier tier-0">{roundScore} / 100 points · {accepted.length} accepted</span>
-        <h3>{accepted.length ? "Your discoveries" : "Keep moving."}</h3>
-        <div className="dive-answer-examples">{accepted.map((answer) => <span key={answer.answer}>{answer.answer}<b>+{answer.earned}</b></span>)}</div>
+        {current?.answer ? <>
+          <span className={"dive-tier tier-" + current.tier}>{DIVE_TIERS[(current.tier ?? 1) - 1]} · +{current.points}</span>
+          <h3>{current.answer}</h3>
+          {(current.tier ?? 0) < 6 && <p className="dive-deeper">Deeper layers existed: {item.answers.filter((a) => a.tier > (current.tier ?? 0)).sort((a, b) => b.tier - a.tier).slice(0, 4).map((a) => a.answer).join(" · ")}</p>}
+        </> : <>
+          <span className="dive-tier tier-0">No score this round</span>
+          <h3>Keep moving.</h3>
+          <p className="dive-deeper">Some answers: {item.answers.slice().sort((a, b) => a.tier - b.tier).slice(0, 3).map((a) => a.answer).join(" · ")} … and deeper: {item.answers.slice().sort((a, b) => b.tier - a.tier).slice(0, 2).map((a) => a.answer).join(" · ")}</p>
+        </>}
         <p>{item.explanation}</p>
-        <div className="dive-answer-examples">{item.answers.filter((answer) => !accepted.some((found) => found.answer === answer.answer)).slice().sort((a, b) => b.tier - a.tier).slice(0, 12).map((answer) => <span key={answer.answer}>{answer.answer}<b>{DIVE_POINTS[answer.tier - 1]}</b></span>)}</div>
-        <button className="button button-primary full-button" onClick={next}>{round === 6 ? "Surface & see score" : "Next prompt ↓"}</button>
+        <button className="button button-primary full-button" onClick={next}>{round === prompts.length - 1 ? "Finish scan" : "Next scan ↓"}</button>
       </div>}
-      <div className="dive-live-score"><span>{accepted.length} answers found</span><b>{roundScore} / 100 points this round</b></div>
       <p className="game-feedback" aria-live="polite">{message}</p>
       <div className="dive-progress-dots">{prompts.map((_, i) => <i key={i} className={i < results.length ? "complete" : i === round ? "current" : ""} />)}</div>
     </> : <div className="dive-finale">
-      <div className="dive-medal">✦</div><span className="eyebrow">EXPEDITION COMPLETE</span>
-      <h2>{total} / 700</h2><p>{total * 10} metres below the surface. {total >= 500 ? "A deep and impressive run." : "Every dive teaches you a new part of the map."}</p>
-      <div className="dive-log">{prompts.map((prompt, i) => <div key={prompt.id}><span>{i + 1}</span><b>{results[i]?.length ? results[i].map((answer) => answer.answer).join(", ") : "—"}</b><strong>+{diveRoundScore(results[i] ?? [])}</strong></div>)}</div>
+      <div className="dive-medal">🩻</div><span className="eyebrow">SCAN COMPLETE</span>
+      <h2>{total} / 700</h2><p>{Math.round(total / 5)} mm below the skin. {total >= 450 ? "Straight through to the marrow." : "Every scan teaches you another layer."}</p>
+      <div className="dive-log">{prompts.map((prompt, i) => <div key={prompt.id}><span>{i + 1}</span><b>{results[i]?.answer ?? "—"}</b><strong>+{results[i]?.points ?? 0}</strong></div>)}</div>
     </div>}
   </div>;
 }
@@ -216,6 +227,7 @@ const newRumblePlayer = (name: string): RumblePlayer => ({
   correct: 0
 });
 
+const RUMBLE_SECONDS = 20;
 function TriviaRumble({ seed, onDone }: Props) {
   const [mode, setMode] = useState<RumbleMode>("solo");
   const [names, setNames] = useState(["Player 1", "Player 2"]);
@@ -228,12 +240,25 @@ function TriviaRumble({ seed, onDone }: Props) {
   const [question, setQuestion] = useState<(typeof triviaQuestions)[number] | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
   const [winner, setWinner] = useState<string | null>(null);
+  const [lastCorrect, setLastCorrect] = useState(false);
   const [used, setUsed] = useState<Partial<Record<TriviaCategoryId, string[]>>>({});
+  const [seconds, setSeconds] = useState(RUMBLE_SECONDS);
   const done = useRef(false);
   const spinTimer = useRef<number | null>(null);
   useEffect(() => () => { if (spinTimer.current !== null) window.clearTimeout(spinTimer.current); }, []);
   const currentPlayer = players[turn];
   const limit = mode === "solo" ? 24 : 36;
+
+  useEffect(() => {
+    if (stage !== "question") return;
+    const interval = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(interval);
+  }, [stage, round]);
+  useEffect(() => {
+    if (stage === "question" && seconds > 0 && seconds <= 5) sfx("tick");
+    if (stage === "question" && seconds === 0) answer(-1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seconds, stage]);
 
   const start = () => {
     const list = mode === "solo" ? [names[0].trim() || "Player 1"] : [names[0].trim() || "Player 1", names[1].trim() || "Player 2"];
@@ -252,6 +277,7 @@ function TriviaRumble({ seed, onDone }: Props) {
     setCategory(selected);
     setQuestion(nextQuestion);
     setPicked(null);
+    setSeconds(RUMBLE_SECONDS);
     setStage("question");
   };
 
@@ -261,6 +287,7 @@ function TriviaRumble({ seed, onDone }: Props) {
     const index = Math.floor(random() * 7);
     const segment = 360 / 7;
     setRotation((value) => value + 1440 + 360 - (index + 0.5) * segment);
+    sfx("spin");
     setStage("spinning");
     spinTimer.current = window.setTimeout(() => {
       spinTimer.current = null;
@@ -272,7 +299,9 @@ function TriviaRumble({ seed, onDone }: Props) {
   const answer = (index: number) => {
     if (stage !== "question" || !question || !category || picked !== null) return;
     setPicked(index);
+    setLastCorrect(index === question.answer);
     const correct = index === question.answer;
+    reward(correct, null, correct ? "+1" : undefined);
     const nextPlayers = players.map((player, playerIndex) => {
       if (playerIndex !== turn || !correct) return player;
       const progress = { ...player.progress, [category.id]: Math.min(3, player.progress[category.id] + 1) };
@@ -280,6 +309,7 @@ function TriviaRumble({ seed, onDone }: Props) {
       return { ...player, progress, crowns, correct: player.correct + 1 };
     });
     setPlayers(nextPlayers);
+    if (nextPlayers[turn].crowns.length > players[turn].crowns.length) window.setTimeout(() => sfx("badge"), 350);
     const newWinner = nextPlayers.find((player) => player.crowns.length === triviaCategories.length);
     if (newWinner) setWinner(newWinner.name);
     setStage("reveal");
@@ -290,22 +320,23 @@ function TriviaRumble({ seed, onDone }: Props) {
     setStage("done");
     if (!done.current) {
       done.current = true;
-      onDone(result.score, result.maxScore, result.perfect);
+      const top = [...players].sort((a, b) => b.crowns.length - a.crowns.length || b.correct - a.correct)[0];
+      onDone(result.score, result.maxScore, result.perfect, "Trivia Rumble · " + top.crowns.length + "/6 badges\n" + triviaCategories.map((cat) => top.crowns.includes(cat.id) ? cat.icon : "▫️").join(" ") + "\n" + top.correct + " correct" + (mode === "pass" ? " · " + players.length + "-player game" : ""));
     }
   };
 
   const next = () => {
     if (winner || round + 1 >= limit) { finish(); return; }
-    setTurn((value) => mode === "solo" ? 0 : (value + 1) % players.length);
+    setTurn((value) => rumbleNextTurn({ turn: value, playerCount: players.length, correct: lastCorrect }));
     setRound((value) => value + 1);
     setCategory(null); setQuestion(null); setPicked(null);
     setStage("spin");
   };
 
-  return <div className="game-layout trivia-rumble">
+  return <div className="game-layout trivia-rumble" data-own-sfx="true">
     {stage === "setup" ? <div className="rumble-setup">
       <div className="rumble-logo">TRIVIA <b>RUMBLE</b><span>⚡</span></div>
-      <p>Spin into six worlds of medical knowledge. Collect three correct answers in a category to win its badge.</p>
+      <p>Spin into six worlds of medical knowledge. Collect three correct answers in a category to win its badge. {mode === "pass" ? "Get one right and you keep the wheel; miss, or run out of the 20 seconds, and it passes." : "Beat the 20-second clock on every question."}</p>
       <div className="rumble-mode-picks">
         <button className={mode === "solo" ? "chosen" : ""} onClick={() => setMode("solo")}><b>Solo challenge</b><span>Collect all six badges</span></button>
         <button className={mode === "pass" ? "chosen" : ""} onClick={() => setMode("pass")}><b>Pass & play</b><span>Take turns on one device</span></button>
@@ -339,11 +370,11 @@ function TriviaRumble({ seed, onDone }: Props) {
       </div> : null}
       {stage === "question" || stage === "reveal" ? question && category && <div className="rumble-question" style={{ "--cat-color": category.color } as React.CSSProperties}>
         <div className="rumble-category"><span>{category.icon}</span><b>{category.name}</b></div>
-        <div className="rumble-question-card"><span className="eyebrow">{category.short} · QUESTION {round + 1}</span><h2>{question.question}</h2></div>
+        <div className="rumble-question-card"><span className="eyebrow">{category.short} · QUESTION {round + 1}</span>{stage === "question" && <div className={"rumble-timer" + (seconds <= 5 ? " urgent" : "")} role="timer" aria-label={seconds + " seconds left"}><i style={{ width: (seconds / RUMBLE_SECONDS * 100) + "%" }} /><b>{seconds}</b></div>}<h2>{question.question}</h2></div>
         <div className="rumble-options">{question.options.map((option, i) => <button key={option} disabled={stage === "reveal"} className={stage === "reveal" ? (i === question.answer ? "right" : i === picked ? "wrong" : "dim") : picked === i ? "selected" : ""} onClick={() => answer(i)}><span>{String.fromCharCode(65 + i)}</span>{option}</button>)}</div>
         {stage === "reveal" && <div className={"rumble-explanation" + (picked === question.answer ? " correct" : "")}>
-          <b>{picked === question.answer ? "Correct! Badge progress updated." : "Not quite. Correct answer: " + question.options[question.answer] + "."}</b><p>{question.explanation}</p>
-          <button className="button button-primary full-button" onClick={next}>{winner ? "See the winner" : round + 1 === limit ? "View final scores" : mode === "pass" ? "Next player's turn →" : "Spin again →"}</button>
+          <b>{picked === question.answer ? (mode === "pass" ? "Correct! You keep the wheel." : "Correct! Badge progress updated.") : (picked === -1 ? "Time's up! " : "Not quite. ") + "Correct answer: " + question.options[question.answer] + "." + (mode === "pass" ? " The wheel passes on." : "")}</b><p>{question.explanation}</p>
+          <button className="button button-primary full-button" onClick={next}>{winner ? "See the winner" : round + 1 === limit ? "View final scores" : mode === "pass" ? (lastCorrect ? "Spin again — you keep going →" : "Next player's turn →") : "Spin again →"}</button>
         </div>}
       </div> : null}
     </> : <div className="rumble-finale">
@@ -457,17 +488,20 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
   const [message, setMessage] = useState("Six tries. Every guess must be five letters.");
   const [ended, setEnded] = useState(false);
   const [won, setWon] = useState(false);
+  const [shake, setShake] = useState(0);
   const done = useRef(false);
   const submit = () => {
     const word = guess.trim().toUpperCase();
     if (ended) return;
-    if (word.length !== 5 || !/^[A-Z]{5}$/.test(word)) { setMessage("Enter exactly five letters."); return; }
-    if (!medleWords.includes(word)) { setMessage("That word isn't in today's medical word list."); return; }
-    if (rows.includes(word)) { setMessage("You've already tried that word."); return; }
+    const invalid = (text: string) => { setMessage(text); setShake((n) => n + 1); sfx("wrong"); vibrate([30, 40, 30]); };
+    if (word.length !== 5 || !/^[A-Z]{5}$/.test(word)) { invalid("Not enough letters. Five, please."); return; }
+    if (!medleWords.includes(word) && !fiveLetterWords.has(word)) { invalid("That isn't a word we know. Try another."); return; }
+    if (rows.includes(word)) { invalid("You've already tried that word."); return; }
     const next = [...rows, word]; setRows(next); setGuess("");
     const correct = word === answer, finished = correct || next.length >= 6;
+    if (correct) reward(true, null, "Solved!"); else if (finished) reward(false); else sfx("pop");
     setMessage(correct ? "Exactly right. Nice diagnosis of a word." : finished ? "The word was " + answer + "." : "Not quite. Use the tile clues to narrow it down.");
-    if (finished) { setEnded(true); setWon(correct); if (!done.current) { done.current = true; onDone(correct ? 100 - (next.length - 1) * 12 : 0, 100, correct && next.length === 1); } }
+    if (finished) { setEnded(true); setWon(correct); if (!done.current) { done.current = true; onDone(correct ? 100 - (next.length - 1) * 12 : 0, 100, correct && next.length === 1, "Stat Word " + (correct ? next.length : "X") + "/6\n" + next.map((row) => scoreWord(row, answer).map((mark) => mark === "correct" ? "🟩" : mark === "present" ? "🟨" : "⬛").join("")).join("\n")); } }
   };
   const keyboardRows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
   const keyboardMarks: Record<string, "correct" | "present" | "absent"> = {};
@@ -480,17 +514,30 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
     if (ended) return;
     if (key === "ENTER") submit();
     else if (key === "⌫") setGuess((value) => value.slice(0, -1));
-    else if (guess.length < 5) setGuess((value) => value + key);
+    else if (guess.length < 5) { setGuess((value) => value + key); sfx("pop"); vibrate(6); }
   };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || ended) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      if (/^[a-zA-Z]$/.test(e.key)) { e.preventDefault(); pressKey(e.key.toUpperCase()); }
+      else if (e.key === "Backspace") { e.preventDefault(); pressKey("⌫"); }
+      else if (e.key === "Enter" && !(t && t.tagName === "BUTTON")) { e.preventDefault(); pressKey("ENTER"); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guess, ended, rows]);
   return <div className="game-layout medle-game">
     <div className="game-instructions"><span className="instruction-dot mint" /> Guess the five-letter medical word in six tries. Green is the right letter in the right place; gold is in the word elsewhere.</div>
     <div className="word-grid" aria-label="Six guess rows">{Array.from({ length: 6 }, (_, r) => {
       const word = rows[r] ?? (r === rows.length ? guess.toUpperCase() : "");
       const marks = rows[r] ? scoreWord(rows[r], answer) : [];
-      return <div className="word-row" key={r}>{Array.from({ length: 5 }, (_, c) => <div key={c} className={"word-cell " + (marks[c] ?? (word[c] ? "filled" : ""))}>{word[c] ?? ""}</div>)}</div>;
+      return <div className={"word-row" + (r === rows.length && shake ? " shake" : "")} key={r + "-" + (r === rows.length ? shake : 0)}>{Array.from({ length: 5 }, (_, c) => <div key={c} style={{ "--i": c } as React.CSSProperties} className={"word-cell " + (marks[c] ?? (word[c] ? "filled" : ""))}>{word[c] ?? ""}</div>)}</div>;
     })}</div>
     {!ended ? <>
-      <form className="word-entry" onSubmit={(e) => { e.preventDefault(); submit(); }}><input autoComplete="off" autoCapitalize="characters" value={guess} maxLength={5} onChange={(e) => setGuess(e.target.value.replace(/[^a-z]/gi, "").slice(0, 5))} aria-label="Five-letter guess" placeholder="TYPE A WORD" /><button className="button button-primary" type="submit">Guess <span>↗</span></button></form>
+      <p className="type-hint">Just start typing, or tap the keys. Enter to guess.</p>
       <div className="medle-keyboard" aria-label="On-screen keyboard">{keyboardRows.map((row, index) => <div key={row} className="medle-key-row">{row.split("").map((key) => <button key={key} type="button" className={keyboardMarks[key]??""} onClick={() => pressKey(key)}>{key}</button>)}{index===2&&<><button type="button" className="wide-key" onClick={() => pressKey("ENTER")}>ENTER</button><button type="button" className="wide-key" onClick={() => pressKey("⌫")}>⌫</button></>}</div>)}</div>
     </> : <Finish title={won ? "Word found!" : "A word for your rounds"} detail={won ? "You solved it in " + rows.length + (rows.length === 1 ? " guess." : " guesses.") : "The answer was " + answer + ". Try another daily puzzle tomorrow."} score={won ? (100 - (rows.length - 1) * 12) + " / 100" : "0 / 100"} />}
     <p className="game-feedback" aria-live="polite">{message}</p>
@@ -507,6 +554,8 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
   const [note, setNote] = useState("Find four groups of four related medical terms.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
+  const guessLog = useRef<string[]>([]);
+  const shareText = () => "Quad Squad\n" + guessLog.current.join("\n");
   const choose = (word: string) => {
     if (ended || solved.some((n) => board[n].words.includes(word))) return;
     setSelected((s) => s.includes(word) ? s.filter((x) => x !== word) : s.length < 4 ? [...s, word] : s);
@@ -514,13 +563,14 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
   const submit = () => {
     if (selected.length !== 4 || ended) return;
     const group = tiles.find((t) => selected.includes(t.word))?.group;
+    guessLog.current.push(selected.map((word) => ["🟨", "🟩", "🟦", "🟪"][tiles.find((t) => t.word === word)?.group ?? 0]).join(""));
     if (group !== undefined && selected.every((word) => board[group].words.includes(word))) {
-      const next = [...solved, group]; setSolved(next); setSelected([]); setNote(board[group].category + " — " + board[group].hint);
-      if (next.length === 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 100 - mistakes * 15), 100, mistakes === 0); } }
+      reward(true); const next = [...solved, group]; setSolved(next); setSelected([]); setNote(board[group].category + " — " + board[group].hint);
+      if (next.length === 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 100 - mistakes * 15), 100, mistakes === 0, shareText()); } }
     } else {
       const nearMiss = group !== undefined && selected.filter((word) => board[group].words.includes(word)).length === 3;
-      const next = mistakes + 1; setMistakes(next); setNote(next >= 4 ? "No mistakes left. The remaining groups are shown below." : nearMiss ? "One away… Three of those terms belong together, but one is from another group." : "Not a set. Look for a different connection."); setSelected([]);
-      if (next >= 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 40 - next * 5), 100, false); } }
+      reward(false); const next = mistakes + 1; setMistakes(next); setNote(next >= 4 ? "No mistakes left. The remaining groups are shown below." : nearMiss ? "One away… Three of those terms belong together, but one is from another group." : "Not a set. Look for a different connection."); setSelected([]);
+      if (next >= 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 40 - next * 5), 100, false, shareText()); } }
     }
   };
   const shuffleTiles = () => {
@@ -562,6 +612,7 @@ const DOCTORDLE_ALIASES: Record<string, string[]> = {
 };
 function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
   const item = pick(diagnosisCases, seed, specialty, "diagnosis");
+  const bank = useMemo(() => [...new Set(diagnosisCases.map((c) => c.answer))].sort(), []);
   const [guess, setGuess] = useState("");
   const [guesses, setGuesses] = useState<string[]>([]);
   const [clueCount, setClueCount] = useState(2);
@@ -577,12 +628,13 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
     const next = [...guesses, guess.trim()];
     const answerKey = normalize(item.answer);
     const correct = value === answerKey || (DOCTORDLE_ALIASES[answerKey] ?? []).some((alias) => normalize(alias) === value);
+    if (correct) reward(true, null, "Diagnosis!"); else reward(false);
     setGuesses(next);
     setGuess("");
     if (correct || next.length >= 6) {
       setEnded(true); setWon(correct);
       setNote(correct ? "Diagnosis confirmed." : "No guesses remaining. Review the case.");
-      if (!done.current) { done.current = true; onDone(correct ? Math.max(0, 100 - (next.length - 1) * 15 - manualHints * 5) : 0, 100, correct && next.length === 1 && manualHints === 0); }
+      if (!done.current) { done.current = true; onDone(correct ? Math.max(0, 100 - (next.length - 1) * 15 - manualHints * 5) : 0, 100, correct && next.length === 1 && manualHints === 0, "Differential " + (correct ? next.length : "X") + "/6\n" + "🟥".repeat(correct ? next.length - 1 : 6) + (correct ? "🟩" : "") + (manualHints ? "\n💡 " + manualHints + (manualHints === 1 ? " hint" : " hints") : "")); }
     } else {
       setClueCount((n) => Math.min(item.clues.length, n + 1));
       setNote("Not quite. A new clue has been added.");
@@ -601,7 +653,12 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
     {!ended ? <>
       <form className="doctordle-entry" onSubmit={(event) => { event.preventDefault(); submit(); }}>
         <label htmlFor="doctordle-guess">Your diagnosis</label>
-        <div><input id="doctordle-guess" value={guess} onChange={(event) => setGuess(event.target.value)} placeholder="Type a diagnosis…" autoComplete="off" /><button className="button button-primary" type="submit" disabled={!guess.trim()}>Guess ↗</button></div>
+        <div><input id="doctordle-guess" value={guess} onChange={(event) => setGuess(event.target.value)} placeholder="Type a diagnosis…" autoComplete="off" autoCapitalize="off" enterKeyHint="go" /><button className="button button-primary" type="submit" disabled={!guess.trim()}>Guess ↗</button></div>
+        {(() => {
+          const q = normalize(guess);
+          const options = q.length < 2 ? [] : bank.filter((a) => normalize(a).includes(q) && normalize(a) !== q && !guesses.some((g) => normalize(g) === normalize(a))).slice(0, 5);
+          return options.length ? <div className="suggest-row" role="listbox" aria-label="Suggestions">{options.map((a) => <button type="button" role="option" aria-selected="false" key={a} onClick={() => { setGuess(a); sfx("pop"); }}>{a}</button>)}</div> : null;
+        })()}
       </form>
       <div className="doctordle-tools"><button className="text-button" onClick={revealClue} disabled={clueCount >= item.clues.length}>Reveal another clue · −5 pts</button><span>{guesses.length}/6 guesses used</span></div>
     </> : <Finish title={won ? "Diagnosis found" : "Case revealed"} detail={(won ? "Solved in " + guesses.length + " of 6 guesses. " : "Six guesses used. ") + item.explanation}><p className="doctordle-answer">Answer: <b>{item.answer}</b></p><p className="source-note">Source note: {item.source}</p></Finish>}
@@ -610,82 +667,6 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
 }
 
 
-function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
-  const pack = pick(microbePacks, seed, specialty, "microbe");
-  const board = useMemo(() => makeWordSearch(pack.words, 14, seed + 99), [pack, seed]);
-  const words = board.placed;
-  const [found, setFound] = useState<string[]>([]);
-  const [foundPaths, setFoundPaths] = useState<number[][]>([]);
-  const [start, setStart] = useState<number | null>(null);
-  const [path, setPath] = useState<number[]>([]);
-  const [note, setNote] = useState("Drag across a word in any straight direction. You can also tap its first and last letters.");
-  const [ended, setEnded] = useState(false);
-  const done = useRef(false);
-
-  const begin = (index: number) => {
-    if (ended || foundPaths.some((cells) => cells.includes(index))) return;
-    if (start === null) { setStart(index); setPath([index]); }
-  };
-  const preview = (index: number) => {
-    if (ended || start === null) return;
-    const cells = lineCells(start, index, 14);
-    if (cells.length) setPath(cells);
-  };
-  const resolve = (cells: number[]) => {
-    if (cells.length < 2) return;
-    const word = cells.map((i) => board.grid[Math.floor(i / 14)][i % 14]).join("");
-    const match = words.find((candidate) => !found.includes(candidate) && (candidate === word || candidate === [...word].reverse().join("")));
-    if (!match) {
-      setNote("That line is not a remaining word. Try another direction or clear your selection.");
-      setStart(null); setPath([]);
-      return;
-    }
-    const next = [...found, match];
-    setFound(next);
-    setFoundPaths((current) => [...current, cells]);
-    setStart(null); setPath([]);
-    setNote(match + " found. " + (words.length - next.length) + " remaining.");
-    if (next.length === words.length) {
-      setEnded(true);
-      if (!done.current) { done.current = true; onDone(100, 100, true); }
-    }
-  };
-  const finish = (index: number) => {
-    if (ended || start === null) return;
-    const cells = lineCells(start, index, 14);
-    if (!cells.length) {
-      setNote("Words run horizontally, vertically, or diagonally in a straight line.");
-      setStart(null); setPath([]);
-      return;
-    }
-    if (cells.length > 1) resolve(cells);
-  };
-  const clear = () => { setStart(null); setPath([]); };
-
-  return <div className="game-layout wordhunt-game">
-    <div className="case-banner microbe-banner"><span>WORD HUNT · THEMED SEARCH</span><strong>{pack.name}</strong><small>Find every hidden word. Words may run forwards, backwards, vertically, horizontally, or diagonally.</small></div>
-    <div className="wordhunt-layout">
-      <div className="wordsearch-board" role="group" aria-label="Letter grid" onPointerMove={(event) => {
-        const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-cell-index]") as HTMLElement | null;
-        if (tile) preview(Number(tile.dataset.cellIndex));
-      }} onPointerUp={(event) => {
-        const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-cell-index]") as HTMLElement | null;
-        if (tile) finish(Number(tile.dataset.cellIndex));
-      }} onPointerCancel={clear}>
-        {board.grid.flat().map((letter, i) => {
-          const isFound = foundPaths.some((cells) => cells.includes(i));
-          return <button key={i} data-cell-index={i} type="button" className={"letter-tile" + (path.includes(i) ? " path-cell" : "") + (isFound ? " found-cell" : "")} onPointerDown={() => begin(i)} onClick={(event) => { if (event.detail === 0) { if (start === null) begin(i); else finish(i); } }} disabled={ended} aria-label={"Row " + (Math.floor(i / 14) + 1) + ", column " + (i % 14 + 1) + ", " + letter}>
-            {letter}
-          </button>;
-        })}
-      </div>
-      <aside className="target-words"><SectionLabel>WORDS TO FIND</SectionLabel><div>{words.map((word) => <span key={word} className={found.includes(word) ? "target-found" : ""}>{word}</span>)}</div></aside>
-    </div>
-    <div className="connection-controls"><span className="mistake-count">{found.length} / {words.length} found</span><button className="button button-soft" onClick={clear} disabled={ended || start === null}>Clear selection</button><span className="wordhunt-progress">{words.length - found.length} left</span></div>
-    <p className="game-feedback" aria-live="polite">{note}</p>
-    {ended && <Finish title="Grid cleared!" detail={"Every hidden word in " + pack.name + " found."} score="100 / 100" />}
-  </div>;
-}
 
 function Labline({ seed, onDone, specialty = "general" }: Props) {
   const rounds = useMemo(() => {
@@ -693,51 +674,96 @@ function Labline({ seed, onDone, specialty = "general" }: Props) {
     return shuffle(pool.length >= 5 ? pool : labPrompts, seeded(seed + 27)).slice(0, 5);
   }, [seed, specialty]);
   const [round, setRound] = useState(0);
-  const [value, setValue] = useState("");
+  const item = rounds[round];
+  const range = useMemo(() => labRange(item.value, seed + round * 13), [item, seed, round]);
+  // Slider step: a clean fraction of the tolerance (or 1% of the value for threshold prompts).
+  const step = useMemo(() => {
+    const raw = item.tolerance > 0 ? item.tolerance / 5 : Math.max(Math.abs(item.value) / 100, 0.01);
+    const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+    return [1, 2, 5, 10].map((m) => m * pow).find((c) => c >= raw) ?? raw;
+  }, [item]);
+  const decimals = Math.max(0, Math.min(3, Math.ceil(-Math.log10(step) - 1e-9)));
+  // Slider bounds sit on whole steps (and always contain the true value) so the thumb snaps cleanly.
+  const sMin = Number((Math.floor(range.min / step) * step).toFixed(decimals)), sMax = Number((Math.ceil(range.max / step) * step).toFixed(decimals));
+  const snap = (v: number) => Number(Math.min(sMax, Math.max(sMin, Math.round(v / step) * step)).toFixed(decimals));
+  const [estimate, setEstimate] = useState<number>(() => snap((sMin + sMax) / 2));
+  const [typing, setTyping] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [points, setPoints] = useState(0);
+  const [earned, setEarned] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [bonus, setBonus] = useState(0);
   const [total, setTotal] = useState(0);
-  const [results, setResults] = useState<{prompt:string;estimate:string;actual:number;unit:string;points:number;context:string;source:string}[]>([]);
-  const [message, setMessage] = useState("Five estimates. Trust your clinical intuition; precision earns the points.");
+  const [pins, setPins] = useState(false);
+  const [results, setResults] = useState<{ prompt: string; estimate: number; actual: number; unit: string; points: number }[]>([]);
   const [finished, setFinished] = useState(false);
   const done = useRef(false);
-  const item = rounds[round];
-
-  const check = () => {
-    const estimate = Number(value);
-    if (value.trim() === "" || !Number.isFinite(estimate)) { setMessage("Enter a number to make your estimate."); return; }
+  const maxScore = rounds.length * 100 + 90;
+  const fmt = (v: number) => Number(v.toFixed(Math.max(decimals, 1)));
+  const lock = () => {
     if (submitted || finished) return;
-    const diff = Math.abs(estimate - item.value);
-    const earned = item.tolerance === 0 ? (diff < 0.0001 ? 100 : 0) : Math.max(0, Math.round(100 * (1 - diff / Math.max(item.tolerance * 3, Math.abs(item.value) * 0.2))));
-    const nextTotal = total + earned;
-    setPoints(earned);
-    setTotal(nextTotal);
-    setSubmitted(true);
-    setResults((current) => [...current, {prompt:item.prompt,estimate:value,actual:item.value,unit:item.unit,points:earned,context:item.context,source:item.source}]);
-    setMessage(diff <= item.tolerance ? "Bullseye — inside the expected reference window." : diff <= item.tolerance * 2 ? "Close estimate. Tighten your range next round." : "A useful reference point to remember.");
+    const typed = typing !== null && typing.trim() !== "" ? Number(typing) : NaN;
+    const guess = Number.isFinite(typed) ? typed : estimate;
+    const points = labScore(guess, item.value, item.tolerance);
+    const streakBonus = points >= 80 ? labStreakBonus(streak) : 0;
+    const nextStreak = points >= 80 ? streak + 1 : 0;
+    const nextTotal = total + points + streakBonus;
+    setEstimate(guess); setEarned(points); setBonus(streakBonus); setStreak(nextStreak); setTotal(nextTotal); setSubmitted(true); setTyping(null);
+    setResults((r) => [...r, { prompt: item.prompt, estimate: guess, actual: item.value, unit: item.unit, points }]);
+    window.setTimeout(() => setPins(true), 60);
+    reward(points >= 60, null, points >= 99 ? "BULLSEYE!" : "+" + (points + streakBonus));
     if (round === rounds.length - 1) {
       setFinished(true);
-      if (!done.current) { done.current = true; onDone(nextTotal, rounds.length * 100, nextTotal === rounds.length * 100); }
+      if (!done.current) {
+        done.current = true;
+        const squares = results.concat([{ prompt: "", estimate: guess, actual: item.value, unit: "", points }]).map((r) => r.points >= 95 ? "🟩" : r.points >= 70 ? "🟨" : r.points >= 35 ? "🟧" : "🟥").join("");
+        onDone(nextTotal, maxScore, nextTotal >= rounds.length * 100, "Labline " + nextTotal + "/" + maxScore + "\n" + squares);
+      }
     }
   };
   const next = () => {
-    if (!submitted || finished) return;
-    setRound((current) => current + 1);
-    setValue("");
-    setPoints(0);
-    setSubmitted(false);
-    setMessage("New estimate. How close can you get?");
+    if (!submitted) return;
+    const nextItem = rounds[round + 1];
+    void nextItem;
+    setRound((r) => r + 1); setSubmitted(false); setPins(false); setBonus(0);
+    setTyping(null);
   };
+  useEffect(() => { if (!submitted) setEstimate(snap((sMin + sMax) / 2)); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [round]);
+  // Ruler geometry for the reveal.
+  const lo = Math.min(estimate, item.value - Math.max(item.tolerance, 0)) , hi = Math.max(estimate, item.value + Math.max(item.tolerance, 0));
+  const pad = Math.max((hi - lo) * 0.25, Math.abs(item.value) * 0.03, 0.001);
+  const rLo = lo - pad, rHi = hi + pad;
+  const pct = (v: number) => ((v - rLo) / (rHi - rLo)) * 100;
+  const verdict = earned >= 99 ? "Bullseye! 🎯" : earned >= 85 ? "Inside the window ✓" : earned >= 60 ? "Close" : earned >= 30 ? "Getting warm" : "Far off";
 
-  return <div className="game-layout labline-game">
-    <div className="lab-console"><span className="lab-light" /><span>LABLINE · ESTIMATION CHALLENGE</span><span className="lab-light second" /></div>
-    <div className="labline-hud"><div><b>{round + 1}<small> / 5</small></b><span>ROUND</span></div><div><b>{total}</b><span>POINTS</span></div><div><b>{Math.max(0, 5 - round - Number(submitted))}</b><span>LEFT</span></div></div>
-    <div className="labline-progress"><i style={{width:((round + Number(submitted))/5*100)+"%"}} /></div>
-    {!finished ? <>
-      <div className="lab-prompt"><SectionLabel>CALIBRATE YOUR CLINICAL EYE</SectionLabel><h3>{item.prompt}</h3><p>Enter your best estimate. No calculator needed.</p></div>
-      {!submitted ? <form className="lab-input-row" onSubmit={(event) => { event.preventDefault(); check(); }}><input type="number" step="any" value={value} onChange={(event) => setValue(event.target.value)} aria-label={"Estimate in " + item.unit} placeholder="Your estimate" /><span>{item.unit || "value"}</span><button className="button button-primary" type="submit" disabled={!value.trim()}>Lock estimate</button></form> : <div className="labline-reveal"><span className="eyebrow">REFERENCE VALUE</span><strong>{item.value} {item.unit}</strong><b>{points} / 100</b><p>{item.context}</p><small>Source: {item.source}</small><button className="button button-primary full-button" onClick={next}>Next estimate →</button></div>}
-      <p className="game-feedback" aria-live="polite">{message}</p>
-    </> : <div className="labline-finale"><Finish title="Calibration complete" detail={"Five clinical estimates. " + (total >= 400 ? "Excellent calibration." : total >= 250 ? "Your reference instincts are developing." : "Keep building your mental reference ranges.")} score={total + " / 500"}><div className="reveal-groups">{results.map((result, index) => <span key={index}><b>{index + 1}. {result.points} pts</b>{result.prompt}<br/>Your estimate: {result.estimate} {result.unit} · Reference: {result.actual} {result.unit}</span>)}</div></Finish></div>}
+  return <div className="game-layout labline-game" data-own-sfx="true">
+    <div className="labline-hud"><div><b>{round + 1}<small> / 5</small></b><span>ROUND</span></div><div><b>{total}</b><span>POINTS</span></div><div className={"hot" + (streak >= 2 ? " on" : "")}><b>{streak >= 2 ? "🔥 ×" + streak : "—"}</b><span>HOT STREAK</span></div></div>
+    <div className="labline-progress"><i style={{ width: ((round + Number(submitted)) / 5 * 100) + "%" }} /></div>
+    {!finished || submitted ? <>
+      <div className="lab-prompt"><SectionLabel>CALIBRATE YOUR CLINICAL EYE</SectionLabel><h3>{item.prompt}</h3></div>
+      {!submitted ? <div className="lab-dial">
+        <div className="lab-readout">
+          {typing === null ? <button className="lab-number" onClick={() => setTyping(String(estimate))} aria-label="Tap to type an exact number">{fmt(estimate)}<small>{item.unit}</small></button>
+            : <form onSubmit={(e) => { e.preventDefault(); lock(); }}><input className="lab-number-input" autoFocus type="number" step="any" value={typing} onChange={(e) => setTyping(e.target.value)} onBlur={() => { const n = Number(typing); if (Number.isFinite(n) && typing.trim()) setEstimate(n); setTyping(null); }} aria-label={"Estimate in " + item.unit} /><small>{item.unit}</small></form>}
+        </div>
+        <div className="lab-slider-row">
+          <button className="lab-step" onClick={() => setEstimate((v) => snap(v - step))} aria-label="Decrease">−</button>
+          <input type="range" className="lab-slider" min={sMin} max={sMax} step={step} value={Math.min(sMax, Math.max(sMin, estimate))} onChange={(e) => { setEstimate(Number(e.target.value)); setTyping(null); }} aria-label={"Estimate in " + item.unit} />
+          <button className="lab-step" onClick={() => setEstimate((v) => snap(v + step))} aria-label="Increase">+</button>
+        </div>
+        <div className="lab-scale"><span>{fmt(sMin)}</span><span>drag, nudge, or tap the number to type</span><span>{fmt(sMax)}</span></div>
+        <button className="button button-primary full-button lab-lock" onClick={lock}>Lock in {fmt(typing !== null && Number.isFinite(Number(typing)) && typing.trim() ? Number(typing) : estimate)} {item.unit}</button>
+      </div> : <div className="lab-reveal">
+        <div className="lab-verdict"><b>{verdict}</b><span>+{earned}{bonus ? " · 🔥 streak bonus +" + bonus : ""}</span></div>
+        <div className="lab-ruler" aria-label={"You said " + fmt(estimate) + ", the value is " + item.value}>
+          {item.tolerance > 0 && <i className="lab-band" style={{ left: pct(item.value - item.tolerance) + "%", width: pct(item.value + item.tolerance) - pct(item.value - item.tolerance) + "%" }} />}
+          <span className={"lab-pin you" + (pins ? " go" : "")} style={{ left: pins ? pct(estimate) + "%" : "50%" }}><em>You</em><b>{fmt(estimate)}</b></span>
+          <span className={"lab-pin answer" + (pins ? " go" : "")} style={{ left: pins ? pct(item.value) + "%" : "50%" }}><em>Answer</em><b>{item.value}</b></span>
+        </div>
+        <p className="lab-context">{item.context} <span className="source-note">{item.source}</span></p>
+        {!finished && <button className="button button-primary full-button" onClick={next}>Next estimate ▶</button>}
+      </div>}
+    </> : null}
+    {finished && submitted && <Finish title="Calibration complete" detail={"Five clinical estimates. " + (total >= 450 ? "Superb calibration." : total >= 300 ? "Your reference instincts are sharp." : "Keep building your mental reference ranges.")} score={total + " / " + maxScore}><div className="labline-results">{results.map((r, i) => <div key={i}><span>{r.prompt}</span><b>{fmt(r.estimate)} vs {r.actual} {r.unit}</b><strong>+{r.points}</strong></div>)}</div></Finish>}
   </div>;
 }
 
@@ -846,150 +872,218 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   </div>;
 }
 
-function TriageOrder({ seed, onDone, specialty = "general" }: Props) {
-  const item = pick(triageCases, seed, specialty, "triage");
-  const [steps, setSteps] = useState(() => shuffle(item.steps, seeded(seed + 21)));
-  const [submitted, setSubmitted] = useState(false);
-  const [correct, setCorrect] = useState(0);
-  const [hintsUsed, setHintsUsed] = useState(0);
-  const [hints, setHints] = useState<string[]>([]);
-  const done = useRef(false);
-  const move = (index: number, delta: number) => {
-    if (submitted) return;
-    const target = index + delta; if (target < 0 || target >= steps.length) return;
-    setSteps((current) => { const copy = [...current]; [copy[index], copy[target]] = [copy[target], copy[index]]; return copy; });
-  };
-  const check = () => {
-    const positions = steps.reduce((count, step, i) => count + (step === item.steps[i] ? 1 : 0), 0);
-    setCorrect(positions); setSubmitted(true);
-    if (!done.current) { done.current = true; onDone(Math.max(0, Math.round(positions / steps.length * 100) - hintsUsed * 10), 100, positions === steps.length && hintsUsed === 0); }
-  };
-  const revealHint = () => {
-    if (submitted || hintsUsed >= 2) return;
-    const position = hintsUsed;
-    setHints((current) => [...current, "Position " + (position + 1) + " should be: " + item.steps[position]]);
-    setHintsUsed((current) => current + 1);
-  };
-  return <div className="game-layout">
-    <div className="case-banner triage-banner"><span>ORDER OF OPERATIONS</span><strong>{item.title}</strong><small>{item.scenario}</small></div>
-    <p className="muted-copy">Arrange the response in the safest order. Use the arrows to move each step.</p>
-    {!submitted && <div className="triage-hint-tools"><button className="text-button" onClick={revealHint} disabled={hintsUsed >= 2}>Reveal a correct position · −10 pts</button><span>{hintsUsed}/2 hints used</span></div>}
-    {hints.length > 0 && <div className="logic-hints">{hints.map((hint,index)=><p key={index}><b>HINT {index+1}</b>{hint}</p>)}</div>}
-    <ol className="triage-list">{steps.map((step, i) => <li key={step} className={submitted ? (item.steps[i] === step ? "step-right" : "step-wrong") : ""}><span className="step-number">{i + 1}</span><p>{step}</p><span className="step-moves"><button aria-label={"Move " + step + " up"} disabled={submitted || i === 0} onClick={() => move(i, -1)}>↑</button><button aria-label={"Move " + step + " down"} disabled={submitted || i === steps.length - 1} onClick={() => move(i, 1)}>↓</button></span></li>)}</ol>
-    {!submitted ? <button className="button button-primary full-button" onClick={check}>Check sequence</button> : <Finish title={correct === steps.length ? "Sequence secured" : "Review the response order"} detail={"You placed " + correct + " of " + steps.length + " steps in the correct position."} score={Math.max(0, Math.round(correct / steps.length * 100) - hintsUsed * 10) + " / 100"}><div className="reveal-groups">{item.steps.map((s, i) => <span key={s}><b>{i + 1}.</b> {s}</span>)}</div></Finish>}
-  </div>;
-}
 
+/** Anagram Sprint: an endless unscramble run. Solves earn time back, misses cost time; speed and combos add points. */
+const SPRINT_START = 60, SPRINT_BONUS = 6, SPRINT_PENALTY = 4, SPRINT_TARGET = 240;
 function AnagramSprint({ seed, onDone }: Props) {
-  const rounds = useMemo(() => shuffle(scrambleWords, seeded(seed + 51)).slice(0, 5), [seed]);
-  const [round, setRound] = useState(0);
-  const [text, setText] = useState("");
-  const [tries, setTries] = useState(0);
-  const [hint, setHint] = useState(false);
-  const [roundFinished, setRoundFinished] = useState(false);
-  const [won, setWon] = useState(false);
+  const deck = useMemo(() => shuffle(scrambleWords, seeded(seed + 51)).filter(([w]) => w.length >= 5 && w.length <= 11), [seed]);
+  const [index, setIndex] = useState(0);
+  const [seconds, setSeconds] = useState(SPRINT_START);
+  const [picked, setPicked] = useState<number[]>([]);
+  const [order, setOrder] = useState(0);
   const [score, setScore] = useState(0);
-  const [seconds, setSeconds] = useState(75);
-  const [note, setNote] = useState("Five words. Seventy-five seconds. Solve each specimen before moving on.");
+  const [streak, setStreak] = useState(0);
+  const [log, setLog] = useState<{ word: string; points: number; fast: boolean }[]>([]);
+  const [note, setNote] = useState("Tap letters (or type) to spell the medical term. Each solve earns +" + SPRINT_BONUS + "s.");
+  const [hint, setHint] = useState(false);
+  const [bad, setBad] = useState(0);
   const [ended, setEnded] = useState(false);
+  const startedAt = useRef(Date.now());
   const done = useRef(false);
-  const word = rounds[round];
-  const scrambled = useMemo(() => {
-    const value = shuffle(word[0].split(""), seeded(seed + 51 + round * 73)).join("");
-    return value === word[0] ? value.slice(1) + value[0] : value;
-  }, [seed, word, round]);
+  const [word, definition] = deck[index % deck.length];
+  const tiles = useMemo(() => {
+    const letters = shuffle(word.split("").map((ch, i) => ({ ch, id: i })), seeded(seed + 51 + index * 73 + order * 7));
+    if (letters.map((t) => t.ch).join("") === word) letters.reverse();
+    return letters;
+  }, [seed, word, index, order]);
 
   useEffect(() => {
     if (ended) return;
-    const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    const timer = window.setInterval(() => setSeconds((v) => Math.max(0, v - 1)), 1000);
     return () => window.clearInterval(timer);
   }, [ended]);
+  useEffect(() => { if (!ended && seconds > 0 && seconds <= 5) sfx("tick"); }, [seconds, ended]);
   useEffect(() => {
     if (seconds !== 0 || ended || done.current) return;
-    done.current = true;
-    setEnded(true);
-    setNote("Time. The remaining words are revealed below.");
-    onDone(score, 100, score === 100);
-  }, [seconds, ended, score, onDone]);
+    done.current = true; setEnded(true); sfx("whoosh");
+    const solved = log.filter((l) => l.points > 0);
+    const fastSquares = log.map((l) => l.points === 0 ? "🟥" : l.fast ? "🟩" : "🟨").join("");
+    onDone(score, SPRINT_TARGET, score >= SPRINT_TARGET, "Anagram Sprint · " + solved.length + " word" + (solved.length === 1 ? "" : "s") + " · " + score + " pts\n" + (fastSquares || "⬛") + (streak >= 3 ? "\n🔥 best run on fire" : ""));
+  }, [seconds, ended, score, onDone, log, streak]);
 
-  const check = () => {
-    const answer = text.trim().replace(/\s/g, "").toUpperCase();
-    if (ended || roundFinished || !answer) return;
-    const nextTries = tries + 1;
-    setTries(nextTries);
-    if (answer === word[0]) {
-      const earned = hint ? 12 : nextTries === 1 ? 20 : nextTries === 2 ? 15 : 10;
-      setScore((current) => current + earned);
-      setWon(true);
-      setRoundFinished(true);
-      setNote("Unscrambled. +" + earned + " points.");
-    } else if (nextTries >= 3) {
-      setWon(false);
-      setRoundFinished(true);
-      setNote("Three attempts used. The answer is " + word[0] + ".");
-    } else {
-      setText("");
-      setNote("Not quite. " + (3 - nextTries) + " attempts left.");
+  const nextWord = (entry: { word: string; points: number; fast: boolean }) => {
+    setLog((l) => [...l, entry]); setIndex((i) => i + 1); setPicked([]); setHint(false); startedAt.current = Date.now();
+  };
+  const pick = (tileIndex: number) => {
+    if (ended || picked.includes(tileIndex)) return;
+    const next = [...picked, tileIndex];
+    setPicked(next); sfx("pop"); vibrate(6);
+    if (next.length === word.length) {
+      const guess = next.map((i) => tiles[i].ch).join("");
+      if (guess === word) {
+        const elapsed = (Date.now() - startedAt.current) / 1000;
+        const fast = elapsed <= 8;
+        const points = 10 + Math.max(0, word.length - 5) * 2 + (fast ? 5 : 0) + Math.min(10, streak * 2) - (hint ? 4 : 0);
+        setScore((v) => v + points); setStreak((v) => v + 1); setSeconds((v) => Math.min(90, v + SPRINT_BONUS));
+        reward(true, null, "+" + points);
+        setNote(word + " ✓  +" + points + (fast ? " (fast!)" : "") + " · +" + SPRINT_BONUS + "s");
+        nextWord({ word, points, fast });
+      } else {
+        reward(false); setBad((n) => n + 1); setStreak(0); setSeconds((v) => Math.max(0, v - SPRINT_PENALTY));
+        setNote("Not quite. −" + SPRINT_PENALTY + "s. Try again.");
+        window.setTimeout(() => setPicked([]), 280);
+      }
     }
   };
-  const next = () => {
-    if (!roundFinished || ended) return;
-    if (round === rounds.length - 1) {
-      const finalScore = score;
-      setEnded(true);
-      if (!done.current) { done.current = true; onDone(finalScore, 100, finalScore === 100); }
-      return;
-    }
-    setRound((current) => current + 1);
-    setText("");
-    setTries(0);
-    setHint(false);
-    setWon(false);
-    setRoundFinished(false);
-    setNote("Next specimen. Keep the pace.");
+  const unpick = (slot: number) => { if (!ended) setPicked((p) => p.slice(0, slot)); };
+  const skip = () => {
+    if (ended) return;
+    setStreak(0); setSeconds((v) => Math.max(0, v - 3)); setNote("Skipped " + word + ". −3s.");
+    nextWord({ word, points: 0, fast: false });
   };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (ended || e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      if (/^[a-zA-Z]$/.test(e.key)) {
+        const i = tiles.findIndex((tile, k) => tile.ch === e.key.toUpperCase() && !picked.includes(k));
+        if (i >= 0) { e.preventDefault(); pick(i); }
+      } else if (e.key === "Backspace") { e.preventDefault(); setPicked((p) => p.slice(0, -1)); }
+      else if (e.key === " " ) { e.preventDefault(); setOrder((o) => o + 1); setPicked([]); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tiles, picked, ended]);
 
-  return <div className="game-layout anagram-sprint">
-    <div className="anagram-hud"><div><span className="eyebrow">ANAGRAM SPRINT</span><b>{round + 1}<small> / 5</small></b></div><div className={"anagram-clock" + (seconds <= 10 ? " urgent" : "")}>{seconds}s</div><div><b>{score}<small> pts</small></b></div></div>
-    <div className="anagram-progress"><i style={{width:((round + Number(roundFinished))/5*100)+"%"}} /></div>
+  const solved = log.filter((l) => l.points > 0).length;
+  return <div className="game-layout anagram-sprint" data-own-sfx="true">
+    <div className="anagram-hud"><div><span className="eyebrow">WORDS</span><b>{solved}</b></div><div className={"anagram-clock" + (seconds <= 10 ? " urgent" : "")}>{seconds}s</div><div><b>{score}<small> pts</small></b>{streak >= 2 && <span className="sprint-streak">🔥 ×{streak}</span>}</div></div>
+    <div className="anagram-progress"><i style={{ width: Math.min(100, seconds / 90 * 100) + "%" }} /></div>
     {!ended ? <>
-      <div className="game-instructions"><span className="instruction-dot mint" /> Unscramble the medical term. Three attempts per word; a hint reduces the maximum points.</div>
-      <div className="anagram-board"><span className="eyebrow">SPECIMEN {round + 1} · {word[0].length} LETTERS</span><div className="anagram-letters">{scrambled.split("").map((ch, i) => <b key={i}>{ch}</b>)}</div>{hint && <p>{word[1]}</p>}</div>
-      {!roundFinished ? <>
-        <form className="word-entry" onSubmit={(event) => { event.preventDefault(); check(); }}><input value={text} onChange={(event) => setText(event.target.value.replace(/[^a-z]/gi, "").toUpperCase())} maxLength={word[0].length} placeholder="Your answer" autoComplete="off" /><button className="button button-primary" type="submit" disabled={!text.trim()}>Submit</button></form>
-        <div className="anagram-tools"><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Reveal definition hint</button><span>{tries} / 3 attempts</span></div>
-      </> : <div className="anagram-round-result"><b>{won ? "Correct" : "Answer revealed"} · {won ? "Points added" : "No points"}</b><h3>{word[0]}</h3><p>{word[1]}</p><button className="button button-primary full-button" onClick={next}>{round === 4 ? "Finish sprint" : "Next specimen →"}</button></div>}
+      <div className="anagram-board"><span className="eyebrow">UNSCRAMBLE · {word.length} LETTERS</span>
+        <div className={"ana-slots" + (bad ? "" : "")} key={bad}>{word.split("").map((_, slot) => <button key={slot} className={"ana-slot" + (picked[slot] !== undefined ? " filled" : "")} onClick={() => unpick(slot)} aria-label={picked[slot] !== undefined ? "Remove letter " + tiles[picked[slot]].ch : "Empty slot " + (slot + 1)}>{picked[slot] !== undefined ? tiles[picked[slot]].ch : ""}</button>)}</div>
+        <div className="ana-tiles">{tiles.map((tile, i) => <button key={i} className={"ana-tile" + (picked.includes(i) ? " used" : "")} disabled={picked.includes(i)} onClick={() => pick(i)}>{tile.ch}</button>)}</div>
+        {hint && <p className="ana-hint">{definition}</p>}
+      </div>
+      <div className="ana-tools"><button className="button button-quiet" onClick={() => { setOrder((o) => o + 1); setPicked([]); }}>🔀 Shuffle</button><button className="button button-quiet" onClick={() => setHint(true)} disabled={hint}>Clue (−4 pts)</button><button className="button button-quiet" onClick={skip}>Skip (−3s)</button></div>
       <p className="game-feedback" aria-live="polite">{note}</p>
-    </> : <Finish title="Sprint complete" detail={"You solved " + (round + Number(roundFinished)) + " of five specimens before the clock ran out."} score={score + " / 100"}><div className="reveal-groups">{rounds.map(([answer, clue], index) => <span key={answer}><b>{index + 1}. {answer}</b>{clue}</span>)}</div></Finish>}
+    </> : <Finish title="Time!" detail={"You unscrambled " + solved + " term" + (solved === 1 ? "" : "s") + " in the sprint."} score={score + " pts"}><div className="reveal-groups">{log.map((l, i) => <span key={i} className={l.points ? "" : "missed"}>{l.word}{l.points ? " +" + l.points : " skipped"}</span>)}</div></Finish>}
   </div>;
 }
 
-function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
-  const base = glyphPatterns[seed % glyphPatterns.length];
-  const generated = practice || seed % 2 === 1;
-  const item = useMemo(() => generated ? { ...base, name: base.name + (practice ? " · Variant" : " · Daily Variant"), pattern: transformNonogram(base.pattern, seed) } : base, [base, seed, practice, generated]);
+interface SketchItem { name: string; hint: string; pattern: number[][] }
+interface SketchResult { name: string; points: number; hints: number; secs: number; solved: boolean }
+
+/** One nonogram. Reports back when the grid satisfies every clue (or the player gives up). */
+function SketchBoard({ item, index, total, seed, onFinished }: { item: SketchItem; index: number; total: number; seed: number; onFinished: (r: SketchResult) => void }) {
   const [cells, setCells] = useState<number[][]>(() => item.pattern.map((row) => row.map(() => 0)));
-  const [checked, setChecked] = useState(false);
+  const [history, setHistory] = useState<number[][][]>([]);
+  const [autoMark, setAutoMark] = useState(true);
+  const [pen, setPen] = useState<"cycle" | "fill" | "cross">("cycle");
+  const [hints, setHints] = useState(0);
+  const [secs, setSecs] = useState(0);
+  const [result, setResult] = useState<SketchResult | null>(null);
+  const painting = useRef<number | null>(null);
   const rowClues = item.pattern.map((row) => nonogramRuns(row));
   const colClues = item.pattern[0].map((_, c) => nonogramRuns(item.pattern.map((row) => row[c])));
-  const lineSolved = (line: number[], clue: number[]) => line.every((value) => value !== 0) && JSON.stringify(nonogramRuns(line.map((value) => value === 1 ? 1 : 0))) === JSON.stringify(clue);
-  const check = () => {
-    const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, value, c) => m + ((value === 1 && cells[r][c] === 1) || (value === 0 && cells[r][c] === 2) ? 1 : 0), 0), 0);
-    setChecked(true);
-    onDone(Math.round(correct / 25 * 100), 100, correct === 25);
+  const sameRuns = (line: number[], clue: number[]) => JSON.stringify(nonogramRuns(line.map((v) => v === 1 ? 1 : 0))) === JSON.stringify(clue);
+  const lineSolved = (line: number[], clue: number[]) => line.every((value) => value !== 0) && sameRuns(line, clue);
+  const satisfies = (grid: number[][]) => grid.every((row, r) => sameRuns(row, rowClues[r])) && colClues.every((clue, c) => sameRuns(grid.map((row) => row[c]), clue));
+
+  useEffect(() => {
+    if (result) return;
+    const t = window.setInterval(() => setSecs((v) => v + 1), 1000);
+    return () => window.clearInterval(t);
+  }, [result]);
+
+  const finish = (solved: boolean, grid: number[][]) => {
+    const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, v, c) => m + ((v === 1 && grid[r][c] === 1) || (v === 0 && grid[r][c] !== 1) ? 1 : 0), 0), 0);
+    const points = solved ? Math.max(40, 100 - hints * 8 - Math.max(0, Math.floor((secs - 60) / 10))) : Math.round(correct / 25 * 45);
+    const r = { name: item.name, points, hints, secs, solved };
+    setResult(r);
+    if (solved) { reward(true, null, "SOLVED!"); window.setTimeout(() => sfx("badge"), 350); } else sfx("wrong");
+  };
+  /** When a line's filled runs already match its clue, the remaining unknown cells in it must be empty. */
+  const withAutoMarks = (grid: number[][]): number[][] => {
+    if (!autoMark) return grid;
+    const next = grid.map((row) => [...row]);
+    next.forEach((row, r) => { if (sameRuns(row, rowClues[r])) row.forEach((v, c) => { if (v === 0) next[r][c] = 2; }); });
+    colClues.forEach((clue, c) => { if (sameRuns(next.map((row) => row[c]), clue)) next.forEach((row) => { if (row[c] === 0) row[c] = 2; }); });
+    return next;
+  };
+  const commit = (grid: number[][]) => {
+    if (result) return;
+    const next = withAutoMarks(grid);
+    setHistory((h) => [...h.slice(-30), cells]); setCells(next);
+    if (satisfies(next)) finish(true, next);
+  };
+  const setCell = (r: number, c: number, value: number) => commit(cells.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? value : v) : x));
+  const undo = () => setHistory((h) => { if (!h.length || result) return h; setCells(h[h.length - 1]); return h.slice(0, -1); });
+  const hint = () => {
+    const wrong: [number, number][] = [];
+    item.pattern.forEach((row, r) => row.forEach((v, c) => { if ((v === 1 && cells[r][c] !== 1) || (v === 0 && cells[r][c] === 1)) wrong.push([r, c]); }));
+    if (!wrong.length) return;
+    const [r, c] = wrong[Math.floor(seeded(seed + hints * 31)() * wrong.length)];
+    setHints((n) => n + 1);
+    commit(cells.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? (item.pattern[r][c] ? 1 : 2) : v) : x));
+  };
+  const giveUp = () => { const grid = item.pattern.map((row) => row.map((v) => v ? 1 : 2)); setCells(grid); finish(false, cells); };
+
+  return <div className="game-layout cellsketch" data-own-sfx="true">
+    <div className="sketch-head"><span>PICTURE {index + 1} / {total}</span><b>{Math.floor(secs / 60)}:{String(secs % 60).padStart(2, "0")}</b><span>{hints ? "💡 " + hints : "no hints"}</span></div>
+    <div className="pen-row" role="radiogroup" aria-label="Pen mode"><span>Pen</span>{([["fill", "● Fill"], ["cross", "× Cross"], ["cycle", "↻ Cycle"]] as const).map(([k, l]) => <button key={k} role="radio" aria-checked={pen === k} className={pen === k ? "on" : ""} onClick={() => setPen(k)}>{l}</button>)}</div>
+    <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue) ? "clue-complete" : ""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue" + (lineSolved(row, rowClues[r]) ? " clue-complete" : "")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={!!result} aria-label={"Row " + (r + 1) + " column " + (c + 1) + ": " + (value === 1 ? "filled" : value === 2 ? "marked empty" : "unknown")} className={"nonogram-cell" + (value === 1 ? " filled-cell" : "") + (value === 2 ? " empty-marked" : "") + (result ? " reveal-cell r" + r : "")} onContextMenu={(e) => { e.preventDefault(); setCell(r, c, value === 2 ? 0 : 2); }} onPointerDown={(e) => { if (e.button === 2) return; e.preventDefault(); painting.current = pen === "fill" ? (value === 1 ? 0 : 1) : pen === "cross" ? (value === 2 ? 0 : 2) : (value + 1) % 3; setCell(r, c, painting.current); vibrate(6); }} onPointerEnter={(e) => { if (painting.current !== null && e.buttons === 1 && value !== painting.current) setCell(r, c, painting.current); }} onPointerUp={() => { painting.current = null; }} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setCell(r, c, (value + 1) % 3); } }}>{value === 1 ? "●" : value === 2 ? "×" : ""}</button>)}</div>)}</div></div>
+    {!result ? <>
+      <div className="nonogram-actions" onPointerLeave={() => { painting.current = null; }}><span>It solves itself the moment every clue is met.</span><span className="nonogram-tools"><button className="button button-quiet" onClick={undo} disabled={!history.length}>↶ Undo</button><button className="button button-quiet" onClick={hint}>💡 Hint −8</button><button className="button button-quiet" onClick={giveUp}>Reveal</button></span></div>
+      <label className="auto-toggle"><input type="checkbox" checked={autoMark} onChange={(e) => setAutoMark(e.target.checked)} /> Auto-mark × on finished lines · drag across cells to paint · right-click for ×</label>
+    </> : <div className="sketch-reveal"><div className="sketch-art" aria-hidden="true">{item.pattern.map((row, r) => <div key={r}>{row.map((v, c) => <i key={c} className={v ? "on" : ""} style={{ "--h": (r * 38 + c * 11) % 360, animationDelay: (r * 5 + c) * 35 + "ms" } as React.CSSProperties} />)}</div>)}</div>
+      <h3>{item.name.replace(/ ·.*$/, "")}</h3><p>{item.hint}</p><span className={"sketch-score" + (result.solved ? "" : " lost")}>{result.solved ? "Solved in " + result.secs + "s · +" + result.points : "Revealed · +" + result.points}</span>
+      <button className="button button-primary full-button" onClick={() => onFinished(result)}>{index + 1 === total ? "See results" : "Next picture ▶"}</button></div>}
+  </div>;
+}
+
+/** Cell Sketch: three pictures per run. Daily and generated variants alternate; solved boards finish themselves. */
+function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
+  const generated = practice || seed % 2 === 1;
+  const items = useMemo<SketchItem[]>(() => {
+    const names = new Set<string>(), picks: SketchItem[] = [];
+    for (const base of shuffle(glyphPatterns, seeded(seed + 61))) {
+      const key = base.name.replace(/ ·.*$/, "");
+      if (names.has(key)) continue;
+      names.add(key);
+      picks.push(generated ? { ...base, pattern: transformNonogram(base.pattern, seed + picks.length) } : base);
+      if (picks.length === 3) break;
+    }
+    return picks;
+  }, [seed, generated]);
+  const [index, setIndex] = useState(0);
+  const [results, setResults] = useState<SketchResult[]>([]);
+  const [finished, setFinished] = useState(false);
+  const done = useRef(false);
+  const total = results.reduce((n, r) => n + r.points, 0);
+  const advance = (r: SketchResult) => {
+    const all = [...results, r];
+    setResults(all);
+    if (all.length === items.length) {
+      setFinished(true);
+      if (!done.current) {
+        done.current = true;
+        const sum = all.reduce((n, x) => n + x.points, 0);
+        onDone(sum, items.length * 100, all.every((x) => x.solved && x.hints === 0 && x.points >= 90), "Cell Sketch · " + all.reduce((n, x) => n + x.secs, 0) + "s\n" + all.map((x) => !x.solved ? "🟥" : x.points >= 90 ? "🟩" : "🟨").join("") + (all.some((x) => x.hints) ? "\n💡 " + all.reduce((n, x) => n + x.hints, 0) + " hint(s)" : ""));
+      }
+    } else setIndex((i) => i + 1);
   };
   return <div className="game-layout">
-    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY PATTERN" : generated ? "GENERATED DAILY PATTERN" : "CURATED DAILY PATTERN"}</div>
-    <div className="game-instructions"><span className="instruction-dot lilac" /> Solve the 5×5 nonogram. Each clue gives the length of consecutive filled runs. Cycle each cell through unknown, filled, and marked empty to keep track without paper.</div>
-    <div className="nonogram-legend"><span><b>●</b> Filled</span><span><b>×</b> Empty</span><span><b>·</b> Unknown</span></div>
-    <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue)?"clue-complete":""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue"+(lineSolved(row,rowClues[r])?" clue-complete":"")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1) + ": " + (value===1?"filled":value===2?"marked empty":"unknown")} className={"nonogram-cell" + (value===1 ? " filled-cell" : "") + (value===2 ? " empty-marked" : "") + (checked && (item.pattern[r][c] ? value!==1 : value!==2) ? " error-cell" : "")} onClick={() => setCells((all) => all.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? (v + 1) % 3 : v) : x))}>{value===1?"●":value===2?"×":""}</button>)}</div>)}</div></div>
-    <div className="nonogram-actions"><span>{cells.flat().filter((value)=>value!==0).length} / 25 cells marked</span><button className="button button-quiet" onClick={()=>setCells(item.pattern.map((row)=>row.map(()=>0)))} disabled={checked}>Reset grid</button></div>
-    {!checked ? <button className="button button-primary full-button" onClick={check}>Check pattern</button> : <Finish title="Pattern revealed" detail={"The hidden shape was " + item.name + ". " + item.hint + ". Filled cells are compared with the solution."} score={Math.round(item.pattern.reduce((n, row, r) => n + row.reduce((m, v, c) => m + ((v===1 && cells[r][c]===1) || (v===0 && cells[r][c]===2) ? 1 : 0), 0), 0) / 25 * 100) + " / 100"} />}
+    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY SET" : generated ? "GENERATED DAILY SET" : "CURATED DAILY SET"} · {total} pts</div>
+    {!finished ? <SketchBoard key={index} item={items[index]} index={index} total={items.length} seed={seed + index * 7} onFinished={advance} />
+      : <Finish title="Gallery complete" detail={results.map((r) => r.name + (r.solved ? " (" + r.secs + "s)" : " (revealed)")).join(" · ")} score={total + " / " + items.length * 100} />}
   </div>;
 }
 
 function HigherLower({ seed, onDone }: Props) {
-  const list = useMemo(() => shuffle(higherLowerPairs.filter((item) => "fun" in item), seeded(seed + 29)).slice(0, 5), [seed]);
+  const list = useMemo(() => shuffle(higherLowerPairs.filter((item) => "fun" in item), seeded(seed + 29)).slice(0, 5).map((item, i) => seeded(seed * 31 + i * 17 + 5)() < 0.5 ? { ...item, a: item.b, av: item.bv, b: item.a, bv: item.av } : item), [seed]);
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [picked, setPicked] = useState<"a" | "b" | "tie" | null>(null);
@@ -1008,26 +1102,26 @@ function HigherLower({ seed, onDone }: Props) {
       advanceTimer.current = null;
       if (round + 1 === list.length) { setFinished(true); onDone(Math.round(next / list.length * 100), 100, next === list.length); }
       else { setRound((r) => r + 1); setPicked(null); setReveal(false); }
-    }, 900);
+    }, 1700);
   };
   return <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot gold" /> Which quantity is greater? Five quick comparisons. Sometimes the answer is a tie.</div>
     <div className="higher-progress">COMPARISON {Math.min(round + 1, 5)} / 5 <span>{score} right</span></div>
-    {!finished ? <div className="higher-cards"><button className={"higher-card" + (reveal && correct === "a" ? " right" : reveal && picked === "a" ? " wrong" : "")} onClick={() => choose("a")} disabled={reveal}><span>A</span><b>{item.a}</b>{reveal && <strong>{item.av}</strong>}</button><div className="higher-or">{reveal && correct === "tie" ? "TIE" : "OR"} <button onClick={() => choose("tie")} disabled={reveal}>=</button></div><button className={"higher-card" + (reveal && correct === "b" ? " right" : reveal && picked === "b" ? " wrong" : "")} onClick={() => choose("b")} disabled={reveal}><span>B</span><b>{item.b}</b>{reveal && <strong>{item.bv}</strong>}</button></div> : <Finish title="Comparison complete" detail={"You called " + score + " of " + list.length + " comparisons correctly."} score={Math.round(score/list.length*100) + " / 100"} />}
+    {!finished ? <div className="higher-cards"><button className={"higher-card" + (reveal && correct === "a" ? " right" : reveal && picked === "a" ? " wrong" : "")} onClick={() => choose("a")} disabled={reveal}><span>A</span><b>{item.a}</b>{reveal && <strong>{item.av.toLocaleString("en-US")} <small>{item.unit}</small></strong>}</button><div className="higher-or">{reveal && correct === "tie" ? "TIE" : "OR"} <button onClick={() => choose("tie")} disabled={reveal}>=</button></div><button className={"higher-card" + (reveal && correct === "b" ? " right" : reveal && picked === "b" ? " wrong" : "")} onClick={() => choose("b")} disabled={reveal}><span>B</span><b>{item.b}</b>{reveal && <strong>{item.bv.toLocaleString("en-US")} <small>{item.unit}</small></strong>}</button></div> : <Finish title="Comparison complete" detail={"You called " + score + " of " + list.length + " comparisons correctly."} score={Math.round(score/list.length*100) + " / 100"} />}
     {reveal && <p className="game-feedback">{item.explanation} <span className="source-note">{item.source}</span></p>}
   </div>;
 }
 
 
-function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
-  const generated = useMemo(() => practice || seed % 2 === 1 ? generateWordLadder(seed, [...ladderDictionary]) : null, [seed, practice]);
-  const item = generated ?? wordLadders[seed % wordLadders.length];
+function WordLadder({ seed, onDone }: Props) {
+  const item = useMemo(() => generateMedicalLadder(seed, [...ladderDictionary], medicalRungWords) ?? wordLadders[seed % wordLadders.length], [seed]);
   const [entered, setEntered] = useState<string[]>([item.start]);
   const [text, setText] = useState("");
   const [note, setNote] = useState("Change one letter at a time. Every step must be a real word.");
   const [showPath, setShowPath] = useState(false);
   const [hintUsed, setHintUsed] = useState(false);
   const [ended, setEnded] = useState(false);
+  const [nudges, setNudges] = useState(0);
   const maxMoves = Math.max(2, item.path.length + 2);
   const diffOne = (a: string, b: string) => a.length === b.length && [...a].filter((c, i) => c !== b[i]).length === 1;
   const add = () => {
@@ -1037,17 +1131,19 @@ function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boo
     if (!ladderDictionary.has(word)) { setNote("That word is not in the ladder dictionary. Try another one-letter neighbor."); return; }
     if (entered.includes(word)) { setNote("You've already used that word."); return; }
     const next = [...entered, word]; setEntered(next); setText("");
-    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (hintUsed ? 20 : 0))), 100, next.length === item.path.length && !hintUsed); }
+    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (hintUsed ? 20 : 0) - nudges * 8)), 100, next.length === item.path.length && !hintUsed && nudges === 0); }
     else if (next.length >= maxMoves) { setEnded(true); onDone(0, 100, false); }
     else setNote("Good step. Keep going.");
   };
   return <div className="game-layout">
-    <div className="eyebrow ladder-mode-label">{practice ? (generated ? "GENERATED FREE-PLAY LADDER" : "CURATED FALLBACK LADDER") : generated ? "GENERATED DAILY LADDER" : "CURATED DAILY LADDER"}</div>
+    <div className="eyebrow ladder-mode-label">MEDICAL LADDER · TURN {item.start} INTO {item.end}</div>
     <div className="game-instructions"><span className="instruction-dot peach" /> Build a word ladder from the start word to the end word. Change one letter at a time; all intermediate steps must be words.</div>
     <div className="ladder-ends"><span>START <b>{item.start}</b></span><span>FINISH <b>{item.end}</b></span></div>
-    <div className="ladder-rungs">{entered.map((w, i) => <span key={i}>{w}</span>)}{!ended && <i>?</i>}</div>
+    <div className="ladder-rungs">{entered.map((w, i) => <span key={i}>{[...w].map((ch, k) => <em key={k} className={i > 0 && ch !== entered[i - 1][k] ? "changed" : ""}>{ch}</em>)}</span>)}{!ended && <i>?</i>}</div>
     {!ended ? <>
       <form className="word-entry" onSubmit={(e) => { e.preventDefault(); add(); }}><input value={text} maxLength={item.start.length} onChange={(e) => setText(e.target.value.replace(/[^a-z]/gi,"").toUpperCase())} placeholder="Next word" /><button className="button button-primary">Add step</button></form>
+      <p className={"ladder-live" + (text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (ladderDictionary.has(text) ? " ok" : " maybe") : " bad") : "")} aria-live="polite">{text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (ladderDictionary.has(text) ? "✓ Valid step" : "One letter changed, but not a word in this round") : "✗ Change exactly one letter from " + entered[entered.length - 1]) : "Type the next " + item.start.length + "-letter word"}</p>
+      <button className="text-button" onClick={() => { const i = entered.length; const nxt = item.path[i]; if (!nxt) return; setNudges((n) => n + 1); const prev = entered[entered.length - 1]; const pos = [...nxt].findIndex((ch, k) => ch !== prev[k]); setNote("Nudge: change letter " + (pos + 1) + " to " + nxt[pos] + "."); }}>Nudge me one letter (−8)</button>
       <button className="text-button" onClick={() => { setShowPath((value) => !value); setHintUsed(true); }}>{showPath ? "Hide suggested path" : "Need a nudge? Reveal one possible path"}</button>
       {showPath && <p className="ladder-hint">One valid route: {item.path.join(" → ")}</p>}
     </> : <Finish title={entered[entered.length-1] === item.end ? "Ladder climbed" : "The ladder revealed"} detail={"One possible path: " + item.path.join(" → ")} score={entered[entered.length-1] === item.end ? (showPath ? "Hint used" : "Solved") : "Try another run"} />}
@@ -1065,18 +1161,22 @@ function SpellingHive({ seed, onDone }: Props) {
   const [note, setNote] = useState("Make words of four or more letters. Every word must use the center letter.");
   const [hint, setHint] = useState(false);
   const [ended, setEnded] = useState(false);
+  const [shuffles, setShuffles] = useState(0);
+  const outer = useMemo(() => shuffle(letters.filter((letter) => letter !== puzzle.center), seeded(seed + 17 + shuffles * 101)), [letters, puzzle, seed, shuffles]);
+  const [starter, setStarter] = useState<string | null>(null);
   const maximum = useMemo(() => puzzle.words.reduce((n, word) => n + wordPoints(word, puzzle), 0), [puzzle]);
   const score = found.reduce((n, word) => n + wordPoints(word, puzzle), 0);
   const points = (word: string) => wordPoints(word, puzzle);
   const submit = () => {
     const word = entry.toUpperCase().trim();
     if (ended || !word) return;
-    if (word.length < 4) { setNote("Use at least four letters."); return; }
-    if (!word.includes(puzzle.center)) { setNote("Every word needs the center letter."); return; }
-    if ([...word].some((letter) => !puzzle.letters.includes(letter))) { setNote("That word uses a letter outside the hive."); return; }
-    if (!puzzle.words.includes(word)) { setNote("Not in today's word list. Try another combination."); return; }
-    if (found.includes(word)) { setNote("Already found. Find a new word."); return; }
+    if (word.length < 4) { sfx("wrong"); setNote("Use at least four letters."); return; }
+    if (!word.includes(puzzle.center)) { sfx("wrong"); setNote("Every word needs the center letter."); return; }
+    if ([...word].some((letter) => !puzzle.letters.includes(letter))) { sfx("wrong"); setNote("That word uses a letter outside the hive."); return; }
+    if (!puzzle.words.includes(word)) { sfx("wrong"); setNote("Not in today's word list. Try another combination."); return; }
+    if (found.includes(word)) { sfx("wrong"); setNote("Already found. Find a new word."); return; }
     const next = [...found, word];
+    reward(true, null, word === puzzle.pangram ? "PANGRAM!" : "+" + points(word));
     setFound(next);
     setEntry("");
     setNote(word === puzzle.pangram ? "Pangram! You used all seven letters." : "+" + points(word) + " points. Keep exploring.");
@@ -1095,7 +1195,7 @@ function SpellingHive({ seed, onDone }: Props) {
     <div className="hive-header"><span className="eyebrow">TODAY'S HIVE</span><strong>{puzzle.title}</strong><small>{found.length} / {puzzle.words.length} words found · {score} points</small></div>
     <div className="hive-board" aria-label="Seven letter spelling hive">
       <button className="hive-letter center-letter" onClick={() => setEntry((v) => v + puzzle.center)}>{puzzle.center}</button>
-      {letters.filter((letter) => letter !== puzzle.center).map((letter, i) => <button key={letter} className={"hive-letter hive-position-" + i} onClick={() => setEntry((v) => v + letter)}>{letter}</button>)}
+      {outer.map((letter, i) => <button key={letter} className={"hive-letter hive-position-" + i} onClick={() => setEntry((v) => v + letter)}>{letter}</button>)}
     </div>
     <div className="hive-entry-row">
       <input value={entry} onChange={(e) => setEntry(e.target.value.toUpperCase().replace(/[^A-Z]/g,""))} onKeyDown={(e) => { if (e.key === "Enter") submit(); }} aria-label="Build a word" placeholder="Build a word…" disabled={ended} />
@@ -1103,8 +1203,16 @@ function SpellingHive({ seed, onDone }: Props) {
       <button className="button button-soft" onClick={() => setEntry((v) => v.slice(0,-1))} disabled={ended || !entry}>⌫</button>
       <button className="button button-quiet" onClick={() => setEntry("")} disabled={ended}>Clear</button>
     </div>
-    <div className="hive-tools"><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Need a hint?</button><button className="text-button" onClick={finish} disabled={ended}>Finish for today</button></div>
+    {(() => {
+      const ratio = score / Math.max(1, maximum);
+      const ranks = [["Larva", 0], ["Worker", 0.1], ["Forager", 0.25], ["Guardian", 0.4], ["Royal Jelly", 0.6], ["Queen", 0.8]] as const;
+      const rank = [...ranks].reverse().find(([, min]) => ratio >= min)![0];
+      const lengths = [...new Set(puzzle.words.map((w) => w.length))].sort((a, b) => a - b);
+      return <div className="hive-progress"><div className="hive-rank"><b>{rank}</b><i><span style={{ width: Math.min(100, ratio * 100 / 0.8) + "%" }} /></i></div><div className="hive-lengths">{lengths.map((n) => <span key={n} className={puzzle.words.filter((w) => w.length === n && !found.includes(w)).length === 0 ? "done" : ""}>{n}-letter <b>{puzzle.words.filter((w) => w.length === n && found.includes(w)).length}/{puzzle.words.filter((w) => w.length === n).length}</b></span>)}</div></div>;
+    })()}
+    <div className="hive-tools"><button className="text-button" onClick={() => setShuffles((n) => n + 1)}>🔀 Shuffle</button><button className="text-button" onClick={() => { const left = puzzle.words.filter((w) => !found.includes(w)); if (left.length) setStarter(left[Math.floor(Math.random() * left.length)].slice(0, 2) + "…"); }} disabled={ended}>Starter hint</button><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Need a hint?</button><button className="text-button" onClick={finish} disabled={ended}>Finish for today</button></div>
     {hint && <p className="game-feedback">{puzzle.hint}</p>}
+    {starter && !ended && <p className="game-feedback">A word still hiding starts with <b>{starter}</b></p>}
     <p className="game-feedback" aria-live="polite">{note}</p>
     {found.length>0&&<div className="hive-found"><SectionLabel>FOUND WORDS</SectionLabel>{found.map((word) => <span key={word} className={word===puzzle.pangram?"pangram-word":""}>{word}<b>+{points(word)}</b></span>)}</div>}
     {ended && <Finish title={found.includes(puzzle.pangram) ? "Pangram found" : "Hive closed"} detail={found.length + " of " + puzzle.words.length + " words found. The longest word is " + puzzle.pangram + "."} score={score + " / " + maximum}><div className="hive-reveal">{puzzle.words.filter((word)=>!found.includes(word)).map((word)=><span key={word}>{word}</span>)}</div></Finish>}
@@ -1189,5 +1297,437 @@ function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: 
     </div>
     {!submitted ? <button className="button button-primary full-button" onClick={check}>Submit deduction</button> : <Finish title={score===100?"Case cracked":"The solution revealed"} detail={"You got " + score + "% of the assignments correct. " + item.title + " is a fictional deduction puzzle."} score={score+" / 100"}><div className="reveal-groups">{item.solution.map((solution)=><span key={solution.suspect}><b>{solution.suspect}</b>{solution.location} · {solution.object}</span>)}</div></Finish>}
     <p className="game-feedback" aria-live="polite">{note}</p>
+  </div>;
+}
+
+
+const MIME_SECONDS = 45;
+type MimeStage = "setup" | "ready" | "play" | "between" | "done";
+function MimeTime({ seed, onDone }: Props) {
+  const [count, setCount] = useState(2);
+  const [names, setNames] = useState(["Player 1", "Player 2", "Player 3", "Player 4", "Player 5", "Player 6"]);
+  const [stage, setStage] = useState<MimeStage>("setup");
+  const [turn, setTurn] = useState(0);
+  const [scores, setScores] = useState<number[]>([]);
+  const [cardIndex, setCardIndex] = useState(0);
+  const [seconds, setSeconds] = useState(MIME_SECONDS);
+  const [gotThisTurn, setGotThisTurn] = useState(0);
+  const [skipsThisTurn, setSkipsThisTurn] = useState(0);
+  const done = useRef(false);
+  const deck = useMemo(() => shuffle(mimeDeck, seeded(seed + 4242)), [seed]);
+  const rounds = count === 1 ? 3 : 2;
+  const totalTurns = count * rounds;
+  const player = turn % count;
+  const card = deck[cardIndex % deck.length];
+
+  const begin = () => { setScores(Array(count).fill(0)); setTurn(0); setCardIndex(0); setStage("ready"); done.current = false; };
+  const startTurn = () => { setSeconds(MIME_SECONDS); setGotThisTurn(0); setSkipsThisTurn(0); setStage("play"); };
+  useEffect(() => {
+    if (stage !== "play") return;
+    const id = window.setInterval(() => setSeconds((v) => Math.max(0, v - 1)), 1000);
+    return () => window.clearInterval(id);
+  }, [stage]);
+  useEffect(() => { if (stage === "play" && seconds > 0 && seconds <= 5) sfx("tick"); if (stage === "play" && seconds === 0) { sfx("whoosh"); endTurn(); } /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [seconds, stage]);
+  const endTurn = () => {
+    setScores((all) => all.map((v, i) => i === player ? v + gotThisTurn : v));
+    setStage("between");
+  };
+  const got = () => { reward(true, null, "+1"); setGotThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
+  const skip = () => { setSkipsThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
+  const nextTurn = () => {
+    if (turn + 1 >= totalTurns) {
+      setStage("done");
+      if (!done.current) {
+        done.current = true;
+        const ranked = names.slice(0, count).map((name, i) => ({ name: name.trim() || "Player " + (i + 1), score: scores[i] })).sort((a, b) => b.score - a.score);
+        const top = ranked[0].score;
+        const medals = ["🥇", "🥈", "🥉"];
+        onDone(top, Math.max(12, top), false, "Mime Time · " + count + (count === 1 ? " player" : " players") + "\n" + ranked.map((r, i) => (medals[i] ?? "▫️") + " " + r.name + " " + r.score).join("\n"));
+      }
+      return;
+    }
+    setTurn((v) => v + 1);
+    setStage("ready");
+  };
+  const ranked = names.slice(0, count).map((name, i) => ({ name: name.trim() || "Player " + (i + 1), score: scores[i] ?? 0 })).sort((a, b) => b.score - a.score);
+
+  return <div className="game-layout mime-game" data-own-sfx="true">
+    {stage === "setup" && <div className="mime-setup">
+      <div className="mime-mask" aria-hidden="true">🎭</div>
+      <h2>Act it out. No talking!</h2>
+      <p>One person acts the card on screen. Everyone else shouts guesses. Tap <b>Got it</b> when someone nails it. {MIME_SECONDS} seconds per turn.</p>
+      <div className="mime-count" role="group" aria-label="Number of players">{[1, 2, 3, 4, 5, 6].map((n) => <button key={n} className={count === n ? "chosen" : ""} onClick={() => setCount(n)}>{n === 1 ? "Solo" : n}</button>)}</div>
+      <div className="mime-names">{names.slice(0, count).map((name, i) => <input key={i} value={name} maxLength={14} aria-label={"Player " + (i + 1) + " name"} onChange={(e) => setNames((all) => all.map((v, j) => j === i ? e.target.value : v))} />)}</div>
+      <button className="button button-primary full-button" onClick={begin}>Start the show ▶</button>
+    </div>}
+    {stage === "ready" && <div className="mime-ready">
+      <span className="eyebrow">TURN {turn + 1} OF {totalTurns}</span>
+      <h2>{names[player].trim() || "Player " + (player + 1)}, you're up!</h2>
+      <p>{count > 1 ? "Take the phone, hide the screen from the others, then start." : "Act each card out loud-free and count your own wins."}</p>
+      <button className="button button-primary full-button" onClick={startTurn}>I'm ready ▶</button>
+    </div>}
+    {stage === "play" && <div className="mime-play">
+      <div className={"mime-clock" + (seconds <= 10 ? " urgent" : "")}><i style={{ width: seconds / MIME_SECONDS * 100 + "%" }} /><b>{seconds}</b></div>
+      <div className="mime-card" key={cardIndex}><span className="mime-kind">{card.kind}</span><h2>{card.term}</h2></div>
+      <div className="mime-buttons"><button className="mime-skip" onClick={skip}>↷ Skip</button><button className="mime-got" onClick={got}>✓ Got it!</button></div>
+      <p className="mime-tally">{gotThisTurn} guessed this turn · {skipsThisTurn} skipped</p>
+    </div>}
+    {stage === "between" && <div className="mime-ready">
+      <span className="eyebrow">TIME'S UP</span>
+      <h2>{gotThisTurn} {gotThisTurn === 1 ? "card" : "cards"}!</h2>
+      <div className="mime-scoreline">{names.slice(0, count).map((name, i) => <span key={i} className={i === player ? "active" : ""}>{name.trim() || "Player " + (i + 1)} <b>{scores[i]}</b></span>)}</div>
+      <button className="button button-primary full-button" onClick={nextTurn}>{turn + 1 >= totalTurns ? "See final scores" : "Pass the phone ▶"}</button>
+    </div>}
+    {stage === "done" && <Finish title={count === 1 ? "Show's over!" : ranked[0].name + " steals the show!"} detail={ranked.map((r, i) => (["🥇", "🥈", "🥉"][i] ?? "▫️") + " " + r.name + ": " + r.score).join("  ·  ")} />}
+  </div>;
+}
+
+
+function RiddleLab({ seed, onDone }: Props) {
+  const picks = useMemo(() => shuffle(riddles, seeded(seed + 991)).slice(0, 5), [seed]);
+  const [round, setRound] = useState(0);
+  const [shown, setShown] = useState(1);
+  const [gone, setGone] = useState<string[]>([]);
+  const [results, setResults] = useState<number[]>([]);
+  const [solved, setSolved] = useState<string | null>(null);
+  const [finished, setFinished] = useState(false);
+  const done = useRef(false);
+  const item = picks[round];
+  const options = useMemo(() => riddleOptions(item, seeded(seed + round * 17 + 5)), [item, seed, round]);
+  const points = (clues: number) => 5 - clues;
+  const guess = (option: string) => {
+    if (solved !== null || gone.includes(option)) return;
+    if (option === item.answer) { setSolved(option); setResults((all) => [...all.slice(0, round), points(shown)]); return; }
+    sfx("wrong");
+    setGone((g) => [...g, option]);
+    if (shown >= 4) { setSolved("__missed"); setResults((all) => [...all.slice(0, round), 0]); }
+    else setShown((n) => n + 1);
+  };
+  const next = () => {
+    if (round === picks.length - 1) {
+      const total = results.reduce((n, v) => n + v, 0);
+      setFinished(true);
+      if (!done.current) {
+        done.current = true;
+        const square = ["⬛", "🟥", "🟧", "🟨", "🟩"];
+        onDone(total, 20, total === 20, "Riddle Lab " + total + "/20\n" + results.map((v) => square[v]).join(""));
+      }
+      return;
+    }
+    setRound((v) => v + 1); setShown(1); setGone([]); setSolved(null);
+  };
+  const total = results.reduce((n, v) => n + v, 0);
+  return <div className="game-layout riddle-game" data-own-sfx="true">
+    <div className="riddle-hud"><span>RIDDLE {Math.min(round + 1, picks.length)} / {picks.length}</span><b>{total} pts</b></div>
+    {!finished ? <>
+      <div className="riddle-kind">I am a <b>{item.kind.toLowerCase()}</b>…</div>
+      <div className="riddle-clues">{item.clues.slice(0, shown).map((clue, i) => <p key={i} className={"riddle-clue clue-" + i}><span>{i + 1}</span>{clue}</p>)}</div>
+      <p className="riddle-worth">{solved === null ? "Worth " + points(shown) + " point" + (points(shown) === 1 ? "" : "s") + " right now" : solved === "__missed" ? "Missed it. The answer was " + item.answer + "." : "+" + points(shown) + " · it was " + item.answer + "!"}</p>
+      <div className="riddle-options">{options.map((opt) => <button key={opt} disabled={solved !== null || gone.includes(opt)} className={(gone.includes(opt) ? "gone" : "") + (solved !== null && opt === item.answer ? " right" : "")} onClick={(e) => { guess(opt); if (opt === item.answer) reward(true, e.currentTarget as Element, "+" + points(shown)); }}>{opt}</button>)}</div>
+      {solved !== null && <button className="button button-primary full-button" onClick={next}>{round === picks.length - 1 ? "See my score" : "Next riddle ▶"}</button>}
+    </> : <Finish title="Case closed" detail={results.map((v, i) => picks[i].answer + " (" + v + ")").join(" · ")} score={total + " / 20"} />}
+  </div>;
+}
+
+interface Organ { id: string; name: string; fact: string; node: (hot: boolean) => ReactNode }
+const BODY_INK = "#2a1658";
+const organStyle = (fill: string, hot: boolean) => ({ fill, stroke: BODY_INK, strokeWidth: hot ? 3.5 : 2, strokeLinejoin: "round" as const });
+const ORGANS: Organ[] = [
+  { id: "colon", name: "Colon", fact: "It frames the small intestine: ascending, transverse, descending, then sigmoid.", node: (h) => <path d="M66 216V186Q66 172 80 172H120Q134 172 134 186V216" fill="none" stroke={h ? "#ffd54a" : "#e08f5a"} strokeWidth={9} strokeLinecap="round" strokeLinejoin="round" /> },
+  { id: "kidney", name: "Kidney", fact: "They sit behind the abdominal cavity beside the spine; the right usually sits a little lower.", node: (h) => <g><ellipse cx={77} cy={168} rx={6} ry={11} {...organStyle("#c0392b", h)} /><ellipse cx={123} cy={168} rx={6} ry={11} {...organStyle("#c0392b", h)} /></g> },
+  { id: "smallint", name: "Small intestine", fact: "About 6 meters long: duodenum, jejunum, ileum.", node: (h) => <g><rect x={82} y={186} width={36} height={24} rx={10} {...organStyle("#ffc1d4", h)} /><path d="M88 194q6-6 12 0t12 0M88 202q6-6 12 0t12 0" fill="none" stroke={BODY_INK} strokeWidth={2} strokeLinecap="round" /></g> },
+  { id: "pancreas", name: "Pancreas", fact: "It lies behind the stomach and is both a digestive and an endocrine gland.", node: (h) => <ellipse cx={108} cy={164} rx={24} ry={5.5} transform="rotate(-8 108 164)" {...organStyle("#ffd966", h)} /> },
+  { id: "liver", name: "Liver", fact: "The largest solid organ, mostly in the right upper quadrant (your left on this diagram).", node: (h) => <path d="M52 140Q70 128 106 136Q114 150 100 162Q70 168 54 156Z" {...organStyle("#b5602f", h)} /> },
+  { id: "stomach", name: "Stomach", fact: "It sits in the left upper abdomen; gastric acid is around pH 1.5–2.", node: (h) => <ellipse cx={124} cy={148} rx={16} ry={12} transform="rotate(25 124 148)" {...organStyle("#ffb36b", h)} /> },
+  { id: "spleen", name: "Spleen", fact: "Tucked behind the stomach under the left ribs.", node: (h) => <ellipse cx={144} cy={142} rx={6} ry={11} {...organStyle("#9a4fd1", h)} /> },
+  { id: "gallbladder", name: "Gallbladder", fact: "A small pouch under the liver that stores bile.", node: (h) => <ellipse cx={95} cy={162} rx={4.5} ry={7} {...organStyle("#3ec28f", h)} /> },
+  { id: "bladder", name: "Bladder", fact: "A pelvic organ that stores urine.", node: (h) => <ellipse cx={100} cy={224} rx={10} ry={7} {...organStyle("#ffe27a", h)} /> },
+  { id: "rlung", name: "Right lung", fact: "Three lobes, and the patient's right is on your left. It is shorter than the left because the liver sits beneath it.", node: (h) => <ellipse cx={78} cy={104} rx={19} ry={32} {...organStyle("#8fd7ff", h)} /> },
+  { id: "llung", name: "Left lung", fact: "Two lobes, with a notch for the heart.", node: (h) => <ellipse cx={122} cy={106} rx={17} ry={30} {...organStyle("#8fd7ff", h)} /> },
+  { id: "heart", name: "Heart", fact: "About the size of your fist, tilted slightly left of the midline.", node: (h) => <path d="M104 126C88 114 90 98 102 100c5 1 7 5 8 8 1-3 3-7 8-8 12-2 14 14-2 26z" transform="translate(2 2)" {...organStyle("#ff4f6e", h)} /> },
+  { id: "thyroid", name: "Thyroid", fact: "Butterfly-shaped, wrapped around the front of the windpipe.", node: (h) => <g><ellipse cx={93} cy={62} rx={7} ry={5} {...organStyle("#ff8a5c", h)} /><ellipse cx={107} cy={62} rx={7} ry={5} {...organStyle("#ff8a5c", h)} /><rect x={96} y={60} width={8} height={4} fill="#ff8a5c" /></g> },
+  { id: "brain", name: "Brain", fact: "About 2% of body weight but around 20% of the body's energy use.", node: (h) => <g><ellipse cx={100} cy={26} rx={17} ry={13} {...organStyle("#ff9fc2", h)} /><path d="M92 22q4 4 0 8M104 20q-4 4 0 9M99 16v6" fill="none" stroke={BODY_INK} strokeWidth={1.5} strokeLinecap="round" /></g> }
+];
+const BODY_SECONDS = 15;
+function BodyMapBlitz({ seed, onDone }: Props) {
+  const targets = useMemo(() => shuffle(ORGANS, seeded(seed + 313)).slice(0, 10), [seed]);
+  const [round, setRound] = useState(0);
+  const [tries, setTries] = useState(0);
+  const [started, setStarted] = useState(Date.now());
+  const [seconds, setSeconds] = useState(BODY_SECONDS);
+  const [state, setState] = useState<"ask" | "reveal">("ask");
+  const [message, setMessage] = useState("");
+  const [pts, setPts] = useState<number[]>([]);
+  const [marks, setMarks] = useState<string[]>([]);
+  const [finished, setFinished] = useState(false);
+  const done = useRef(false);
+  const target = targets[round];
+  const total = pts.reduce((n, v) => n + v, 0);
+
+  useEffect(() => {
+    if (state !== "ask" || finished) return;
+    const id = window.setInterval(() => setSeconds((v) => Math.max(0, v - 1)), 1000);
+    return () => window.clearInterval(id);
+  }, [state, round, finished]);
+  useEffect(() => { if (state === "ask" && seconds === 0 && !finished) resolve(0, "⬛", "Time's up. "); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [seconds, state]);
+
+  const resolve = (points: number, mark: string, lead: string) => {
+    setPts((p) => [...p, points]); setMarks((m) => [...m, mark]);
+    setMessage(lead + target.name + ": " + target.fact);
+    setState("reveal");
+  };
+  const tap = (organ: Organ, el: Element) => {
+    if (state !== "ask") return;
+    const kidney = organ.id === "kidney" && target.id === "kidney";
+    if (organ.id === target.id || kidney) {
+      const elapsed = (Date.now() - started) / 1000;
+      const first = tries === 0;
+      const points = first ? (elapsed <= 4 ? 10 : elapsed <= 8 ? 8 : 6) : tries === 1 ? 3 : 1;
+      reward(true, el, "+" + points);
+      resolve(points, first ? (elapsed <= 4 ? "🟩" : "🟨") : tries === 1 ? "🟧" : "🟥", "Yes! ");
+    } else {
+      reward(false, el);
+      setTries((t) => t + 1);
+      setMessage("That's the " + organ.name.toLowerCase() + ". Try again!");
+      if (tries >= 2) resolve(0, "⬛", "Out of tries. ");
+    }
+  };
+  const next = () => {
+    if (round === targets.length - 1) {
+      setFinished(true);
+      if (!done.current) {
+        done.current = true;
+        onDone(total, 100, total === 100, "Body Map Blitz " + total + "/100\n" + marks.join(""));
+      }
+      return;
+    }
+    setRound((v) => v + 1); setTries(0); setMessage(""); setSeconds(BODY_SECONDS); setStarted(Date.now()); setState("ask");
+  };
+  return <div className="game-layout bodymap-game" data-own-sfx="true">
+    <div className="bodymap-hud"><span>{Math.min(round + 1, targets.length)} / {targets.length}</span><b>{total} pts</b><div className={"bodymap-clock" + (seconds <= 5 ? " urgent" : "")}><i style={{ width: (state === "ask" ? seconds / BODY_SECONDS * 100 : 0) + "%" }} /></div></div>
+    {!finished ? <>
+      <div className="bodymap-prompt">Tap the <b>{target.name}</b></div>
+      <svg className="bodymap-svg" viewBox="20 0 160 240" role="group" aria-label="Body diagram. The patient's right side is on your left.">
+        <path d="M52 74Q30 84 26 132" fill="none" stroke={BODY_INK} strokeWidth={16} strokeLinecap="round" /><path d="M52 74Q30 84 26 132" fill="none" stroke="#ffd9b8" strokeWidth={11} strokeLinecap="round" />
+        <path d="M148 74Q170 84 174 132" fill="none" stroke={BODY_INK} strokeWidth={16} strokeLinecap="round" /><path d="M148 74Q170 84 174 132" fill="none" stroke="#ffd9b8" strokeWidth={11} strokeLinecap="round" />
+        <circle cx={100} cy={28} r={23} fill="#ffd9b8" stroke={BODY_INK} strokeWidth={2.5} />
+        <rect x={91} y={48} width={18} height={16} fill="#ffd9b8" stroke={BODY_INK} strokeWidth={2.5} />
+        <path d="M58 66Q100 58 142 66Q154 70 154 92L152 192Q150 236 100 238Q50 236 48 192L46 92Q46 70 58 66Z" fill="#ffd9b8" stroke={BODY_INK} strokeWidth={2.5} />
+        {ORGANS.map((organ) => {
+          const hot = state === "reveal" && organ.id === target.id;
+          return <g key={organ.id} className={"organ" + (hot ? " organ-hot" : "")} role="button" tabIndex={0} aria-label={organ.name} onClick={(e) => tap(organ, e.currentTarget as Element)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tap(organ, e.currentTarget as Element); } }}>{organ.node(hot)}</g>;
+        })}
+      </svg>
+      <p className="bodymap-note">The patient's right is on your left.</p>
+      <p className="game-feedback" aria-live="polite">{message}</p>
+      {state === "reveal" && <button className="button button-primary full-button" onClick={next}>{round === targets.length - 1 ? "See my score" : "Next organ ▶"}</button>}
+    </> : <Finish title="Map complete" detail={marks.join("")} score={total + " / 100"} />}
+  </div>;
+}
+
+
+function CrosswordClinic({ seed, onDone }: Props) {
+  const cw = useMemo(() => makeCrossword(seed), [seed]);
+  const cells = useMemo(() => {
+    const map = new Map<string, { letter: string; number?: number }>();
+    cw.words.forEach((w) => [...w.word].forEach((ch, i) => {
+      const key = (w.row + (w.across ? 0 : i)) + "," + (w.col + (w.across ? i : 0));
+      const existing = map.get(key);
+      map.set(key, { letter: ch, number: i === 0 ? w.number : existing?.number });
+    }));
+    return map;
+  }, [cw]);
+  const [entries, setEntries] = useState<Record<string, string>>({});
+  const [sel, setSel] = useState<{ r: number; c: number }>(() => ({ r: cw.words[0].row, c: cw.words[0].col }));
+  const [across, setAcross] = useState(true);
+  const [wrong, setWrong] = useState<Set<string>>(new Set());
+  const [reveals, setReveals] = useState(0);
+  const [finished, setFinished] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const done = useRef(false);
+  const key = (r: number, c: number) => r + "," + c;
+  const active = cw.words.find((w) => w.across === across && [...w.word].some((_, i) => key(w.row + (w.across ? 0 : i), w.col + (w.across ? i : 0)) === key(sel.r, sel.c)))
+    ?? cw.words.find((w) => [...w.word].some((_, i) => key(w.row + (w.across ? 0 : i), w.col + (w.across ? i : 0)) === key(sel.r, sel.c)));
+  const activeCells = new Set(active ? [...active.word].map((_, i) => key(active.row + (active.across ? 0 : i), active.col + (active.across ? i : 0))) : []);
+
+  const complete = (next: Record<string, string>) => {
+    if (done.current || ![...cells].every(([k, v]) => next[k] === v.letter)) return;
+    done.current = true; setFinished(true);
+    onDone(Math.max(0, 100 - reveals * 5), 100, reveals === 0, "Crossword Clinic " + cw.words.length + " words" + (reveals ? " · " + reveals + " reveal" + (reveals > 1 ? "s" : "") : " · no reveals ✨") + "\n" + "🟩".repeat(cw.words.length));
+  };
+  const move = (dr: number, dc: number) => {
+    let r = sel.r + dr, c = sel.c + dc;
+    while (r >= 0 && c >= 0 && r < cw.size && c < cw.size && !cells.has(key(r, c))) { r += dr; c += dc; }
+    if (cells.has(key(r, c))) setSel({ r, c });
+  };
+  const advance = () => { const dir = active ? active.across : across; const dr = dir ? 0 : 1, dc = dir ? 1 : 0; if (cells.has(key(sel.r + dr, sel.c + dc))) setSel({ r: sel.r + dr, c: sel.c + dc }); };
+  const type = (letter: string) => {
+    if (finished) return;
+    const next = { ...entries, [key(sel.r, sel.c)]: letter };
+    setEntries(next); setWrong((w) => { const n = new Set(w); n.delete(key(sel.r, sel.c)); return n; });
+    sfx("pop"); advance(); complete(next);
+  };
+  const back = () => {
+    if (entries[key(sel.r, sel.c)]) { setEntries((e) => { const n = { ...e }; delete n[key(sel.r, sel.c)]; return n; }); return; }
+    const dir = active ? active.across : across;
+    const dr = dir ? 0 : -1, dc = dir ? -1 : 0;
+    if (cells.has(key(sel.r + dr, sel.c + dc))) setSel({ r: sel.r + dr, c: sel.c + dc });
+  };
+  const onKey = (e: React.KeyboardEvent) => {
+    if (/^[a-zA-Z]$/.test(e.key)) { e.preventDefault(); type(e.key.toUpperCase()); }
+    else if (e.key === "Backspace") { e.preventDefault(); back(); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); setAcross(true); move(0, 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); setAcross(true); move(0, -1); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); setAcross(false); move(1, 0); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setAcross(false); move(-1, 0); }
+    else if (e.key === " " || e.key === "Tab") { e.preventDefault(); setAcross((v) => !v); }
+  };
+  const check = () => {
+    const bad = new Set<string>();
+    for (const [k, v] of cells) if (entries[k] && entries[k] !== v.letter) bad.add(k);
+    setWrong(bad); sfx(bad.size ? "wrong" : "correct");
+  };
+  const reveal = () => {
+    const k = key(sel.r, sel.c), truth = cells.get(k)!.letter;
+    if (entries[k] === truth) return;
+    setReveals((n) => n + 1);
+    const next = { ...entries, [k]: truth };
+    setEntries(next); setWrong((w) => { const n = new Set(w); n.delete(k); return n; }); sfx("badge"); complete(next);
+  };
+  const covers = (w: (typeof cw.words)[number], r: number, c: number) => [...w.word].some((_, i) => w.row + (w.across ? 0 : i) === r && w.col + (w.across ? i : 0) === c);
+  const pickCell = (r: number, c: number) => {
+    const hasAcross = cw.words.some((w) => w.across && covers(w, r, c)), hasDown = cw.words.some((w) => !w.across && covers(w, r, c));
+    if (r === sel.r && c === sel.c && hasAcross && hasDown) setAcross((v) => !v);
+    else { setSel({ r, c }); if (!hasAcross) setAcross(false); else if (!hasDown) setAcross(true); }
+    input.current?.focus({ preventScroll: true });
+  };
+  const clueList = (isAcross: boolean) => cw.words.filter((w) => w.across === isAcross).sort((a, b) => a.number - b.number);
+  const filled = [...cells.keys()].filter((k) => entries[k]).length;
+  return <div className="game-layout crossword-game" data-own-sfx="true" onKeyDown={onKey}>
+    <div className="crossword-active"><span>{active ? active.number + (active.across ? " Across" : " Down") : ""}</span><b>{active?.clue}</b></div>
+    <input ref={input} className="crossword-input" aria-label="Type letters for the selected square" autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false} value="" onChange={(e) => { const ch = e.target.value.slice(-1); if (/^[a-zA-Z]$/.test(ch)) type(ch.toUpperCase()); }} onKeyDown={onKey} />
+    <div className="crossword-grid" role="grid" style={{ gridTemplateColumns: "repeat(" + cw.size + ", 1fr)" }}>
+      {Array.from({ length: cw.size * cw.size }, (_, i) => {
+        const r = Math.floor(i / cw.size), c = i % cw.size, k = key(r, c), cell = cells.get(k);
+        if (!cell) return <span key={k} className="xw-block" />;
+        const cls = "xw-cell" + (r === sel.r && c === sel.c ? " sel" : activeCells.has(k) ? " in-word" : "") + (wrong.has(k) ? " bad" : "") + (finished ? " done" : "");
+        return <button key={k} className={cls} role="gridcell" aria-label={"Row " + (r + 1) + " column " + (c + 1) + (cell.number ? ", clue " + cell.number : "") + (entries[k] ? ", " + entries[k] : ", empty")} onClick={() => pickCell(r, c)}>{cell.number && <i>{cell.number}</i>}{entries[k] ?? ""}</button>;
+      })}
+    </div>
+    <div className="crossword-tools"><span>{filled} / {cells.size} squares</span><span><button className="button button-quiet" onClick={check} disabled={finished}>✔ Check</button><button className="button button-quiet" onClick={reveal} disabled={finished}>💡 Reveal −5</button><button className="button button-quiet" onClick={() => setAcross((v) => !v)} disabled={finished}>↔ Direction</button></span></div>
+    <div className="crossword-clues">
+      {[true, false].map((isAcross) => <div key={String(isAcross)}><SectionLabel>{isAcross ? "ACROSS" : "DOWN"}</SectionLabel>{clueList(isAcross).map((w) => <button key={w.number + String(isAcross)} className={"xw-clue" + (active === w ? " on" : "")} onClick={() => { setAcross(w.across); setSel({ r: w.row, c: w.col }); input.current?.focus({ preventScroll: true }); }}><b>{w.number}</b> {w.clue} <small>({w.word.length})</small></button>)}</div>)}
+    </div>
+    {finished && <Finish title="Grid complete!" detail={reveals ? reveals + " letter" + (reveals > 1 ? "s" : "") + " revealed." : "Solved without a single reveal."} score={Math.max(0, 100 - reveals * 5) + " / 100"} />}
+  </div>;
+}
+
+
+let trailPacksCache: typeof microbePacks | null = null;
+const trailPacks = () => (trailPacksCache ??= microbePacks.filter(trailPackOk));
+function ThemeTrail({ seed, onDone, specialty = "general" }: Props) {
+  const pack = pick(trailPacks(), seed, specialty, "microbe");
+  const puzzle = useMemo(() => makeTrailPuzzle(pack, seed), [pack, seed]);
+  const { grid, rows, columns } = puzzle;
+  const [found, setFound] = useState<string[]>([]);
+  const [bonus, setBonus] = useState<string[]>([]);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [hintCells, setHintCells] = useState<number[]>([]);
+  const [path, setPath] = useState<number[]>([]);
+  const [note, setNote] = useState("Drag through touching letters (any direction) to spell a hidden term. Or tap letters one by one, then Submit.");
+  const [ended, setEnded] = useState(false);
+  const drag = useRef(false);
+  const moved = useRef(false);
+  const done = useRef(false);
+  const ownerOf = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const word of found) puzzle.paths[word].forEach((cell) => map.set(cell, word));
+    return map;
+  }, [found, puzzle]);
+  const earnedHints = Math.floor(bonus.length / 3);
+  const hintsAvailable = earnedHints - hintsUsed;
+  const currentWord = readStrandsPath(grid, path, columns);
+
+  const finishGame = (all: string[]) => {
+    setEnded(true);
+    if (done.current) return;
+    done.current = true;
+    const score = Math.round(all.length / puzzle.words.length * 100);
+    const squares = puzzle.words.map((w) => all.includes(w) ? (w === puzzle.trail ? "🟪" : "🟦") : "⬛").join("");
+    onDone(score, 100, all.length === puzzle.words.length && hintsUsed === 0, "Theme Trail · " + puzzle.theme + "\n" + squares + (hintsUsed ? "\n💡 " + hintsUsed + " hint" + (hintsUsed > 1 ? "s" : "") : ""));
+  };
+  const submit = () => {
+    if (ended || path.length < 3) { setPath([]); return; }
+    const word = currentWord;
+    const match = puzzle.words.find((w) => w === word && !found.includes(w));
+    if (match) {
+      // Any path that spells the word counts; remember its cells so the board shows where it lives.
+      puzzle.paths[match] = [...path];
+      const next = [...found, match];
+      setFound(next);
+      setHintCells([]);
+      reward(true, null, match === puzzle.trail ? "TRAIL!" : "+1");
+      setNote(match === puzzle.trail ? "You found the trail word, stretching across the whole board!" : "Theme term found: " + match + ".");
+      if (next.length === puzzle.words.length) finishGame(next);
+    } else if (found.includes(word)) setNote("You already found " + word + ".");
+    else if (word.length >= 4 && LETTER_DICTIONARY.includes(word) && !bonus.includes(word)) {
+      setBonus((b) => [...b, word]);
+      sfx("badge");
+      setNote("Bonus word: " + word + ". Every three bonus words earn a hint (" + ((bonus.length + 1) % 3 === 0 ? "hint earned!" : (3 - ((bonus.length + 1) % 3)) + " more to go") + ").");
+    } else { sfx("wrong"); setNote("Not a theme term. Keep tracing."); }
+    setPath([]);
+  };
+  const useHint = () => {
+    if (hintsAvailable <= 0 || ended) return;
+    const left = puzzle.words.filter((w) => !found.includes(w) && w !== puzzle.trail);
+    const target = left[0] ?? puzzle.trail;
+    setHintsUsed((n) => n + 1);
+    setHintCells(puzzle.paths[target]);
+    setNote("Hint: these highlighted letters spell a theme term (in order along a trail).");
+  };
+  const cellAt = (e: React.PointerEvent): number | null => {
+    const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+    const raw = el?.closest("[data-cell]")?.getAttribute("data-cell");
+    return raw === null || raw === undefined ? null : Number(raw);
+  };
+  const onDown = (e: React.PointerEvent, cell: number) => {
+    if (ended) return;
+    e.preventDefault();
+    if (path.length && path[path.length - 1] === cell) { submit(); return; }
+    drag.current = true; moved.current = false;
+    const extended = path.length ? extendStrandsPath(path, cell, rows, columns) : [cell];
+    setPath(extended.length === path.length && path.length ? [cell] : extended);
+    sfx("tap");
+  };
+  const onMove = (e: React.PointerEvent) => {
+    if (!drag.current || ended) return;
+    const cell = cellAt(e);
+    if (cell === null) return;
+    setPath((p) => { const next = extendStrandsPath(p, cell, rows, columns); if (next.length !== p.length) { moved.current = true; sfx("pop"); } return next; });
+  };
+  const onUp = () => {
+    if (!drag.current) return;
+    drag.current = false;
+    if (moved.current) submit();
+  };
+  const accent = (cell: number) => ownerOf.get(cell);
+  return <div className="game-layout trail-game" data-own-sfx="true" onPointerUp={onUp} onPointerLeave={() => { if (drag.current) { drag.current = false; if (moved.current) submit(); } }}>
+    <div className="trail-theme"><span className="eyebrow">TODAY'S THEME</span><strong>{puzzle.theme}</strong><small>{found.length} / {puzzle.words.length} terms · {bonus.length} bonus {bonus.length === 1 ? "word" : "words"}</small></div>
+    <div className="trail-word-live" aria-live="polite">{currentWord || "\u00a0"}</div>
+    <div className="trail-board" style={{ gridTemplateColumns: "repeat(" + columns + ", 1fr)" }} onPointerMove={onMove}>
+      {grid.flat().map((letter, cell) => {
+        const owner = accent(cell), inPath = path.includes(cell);
+        return <button key={cell} data-cell={cell} className={"trail-cell" + (owner ? (owner === puzzle.trail ? " is-trail" : " is-found") : "") + (inPath ? " in-path" : "") + (hintCells.includes(cell) ? " hint" : "")} onPointerDown={(e) => onDown(e, cell)} aria-label={"Letter " + letter}>{letter}</button>;
+      })}
+    </div>
+    <div className="trail-actions">
+      <button className="button button-primary" onClick={submit} disabled={ended || path.length < 3}>Submit</button>
+      <button className="button button-quiet" onClick={() => setPath([])} disabled={!path.length}>Clear</button>
+      <button className="button button-soft" onClick={useHint} disabled={hintsAvailable <= 0 || ended}>💡 Hint ({Math.max(0, hintsAvailable)})</button>
+      <button className="button button-quiet" onClick={() => finishGame(found)} disabled={ended}>Give up</button>
+    </div>
+    <p className="game-feedback" aria-live="polite">{note}</p>
+    {found.length > 0 && <div className="trail-found">{found.map((w) => <span key={w} className={w === puzzle.trail ? "is-trail" : ""}>{w}</span>)}</div>}
+    {ended && <Finish title={found.length === puzzle.words.length ? "Trail complete!" : "Trail revealed"} detail={"The theme was " + puzzle.theme + ". Terms: " + puzzle.words.join(", ") + ". The long trail word was " + puzzle.trail + "."} score={Math.round(found.length / puzzle.words.length * 100) + " / 100"} />}
   </div>;
 }

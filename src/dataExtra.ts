@@ -1,4 +1,5 @@
 import { higherLowerPairsExpansion } from "./dataExpansion";
+import { DROPPED_COMPARISON_PREFIXES, funComparisons } from "./dataFunCompare";
 import { scrambleWordsExpansion2, higherLowerPairsExpansion2 } from "./dataUtilityExpansion";
 import { spellingHiveExpansion, wordLaddersExpansion, deductionCasesExpansion } from "./dataExtraExpansion";
 import { glyphPatternsExpansion } from "./dataGlyphExpansion";
@@ -546,3 +547,9 @@ higherLowerPairs.push(
   {a:"Diameter of the adult aorta near its origin (approximate)",av:2.5,b:"Diameter of a standard golf ball",bv:4.3,unit:"cm",explanation:"The aorta is a large vessel, but its diameter is still smaller than a golf ball.",source:"Standard anatomy estimate; golf-ball diameter is regulated.",fun:true},
   {a:"Length of the adult colon (approximate)",av:1.5,b:"Length of a typical acoustic guitar body",bv:0.5,unit:"meters",explanation:"The colon is around one and a half meters long—several times the length of a guitar body.",source:"Standard anatomy estimate; guitar body dimensions vary.",fun:true}
 );
+
+// What Has More? keeps only genuinely fun, surprising comparisons: drop the dry or obvious ones and add the new set.
+{
+  const keep = higherLowerPairs.filter((item) => "fun" in item && !DROPPED_COMPARISON_PREFIXES.some((prefix) => item.a.startsWith(prefix)));
+  higherLowerPairs.splice(0, higherLowerPairs.length, ...keep, ...(funComparisons as typeof higherLowerPairs));
+}

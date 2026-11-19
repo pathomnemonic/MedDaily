@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
+import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, editDistance, generateWordLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
 import { ladderDictionary } from "./dataExtra";
 
 describe("Letter Lab grid rules", () => {
@@ -34,6 +34,45 @@ describe("Letter Lab grid rules", () => {
     expect(letterWordPoints("HEART")).toBe(4);
     expect(letterWordPoints("NEURON")).toBe(6);
     expect(letterWordPoints("THERAPY")).toBe(10);
+  });
+});
+
+describe("Deep Dive answer matching", () => {
+  const answers = [
+    { answer: "Iron deficiency anemia", aliases: ["IDA"] },
+    { answer: "Beta-thalassemia" },
+    { answer: "Alpha-thalassemia" },
+    { answer: "Lead poisoning" }
+  ];
+  it("accepts exact, normalized, and alias answers without marking them fuzzy", () => {
+    expect(matchAnswer("  iron DEFICIENCY anemia ", answers)).toMatchObject({ fuzzy: false });
+    expect(matchAnswer("ida", answers)?.match.answer).toBe("Iron deficiency anemia");
+  });
+  it("forgives a single typo only when it identifies one answer", () => {
+    expect(matchAnswer("lead poisning", answers)).toMatchObject({ fuzzy: true });
+    expect(matchAnswer("lead poisning", answers)?.match.answer).toBe("Lead poisoning");
+    expect(matchAnswer("alpha-thalasemia", answers)?.match.answer).toBe("Alpha-thalassemia");
+    const twins = [{ answer: "Hypokalemia" }, { answer: "Hyperkalemia" }];
+    expect(matchAnswer("hypekalemia", twins)).toBeNull(); // equidistant from both: refuse to guess
+  });
+  it("ignores spaces and hyphens", () => {
+    expect(matchAnswer("beta thalassemia", answers)?.match.answer).toBe("Beta-thalassemia");
+    expect(matchAnswer("betathalassemia", answers)?.fuzzy).toBe(false);
+  });
+  it("rejects short, unrelated, or empty input", () => {
+    expect(matchAnswer("", answers)).toBeNull();
+    expect(matchAnswer("lead", answers)).toBeNull();
+    expect(matchAnswer("copper", answers)).toBeNull();
+    expect(editDistance("kitten", "sitting", 3)).toBe(3);
+  });
+});
+
+describe("Trivia Rumble turn rule", () => {
+  it("keeps the turn after a correct answer and passes it after a miss", () => {
+    expect(rumbleNextTurn({ turn: 0, playerCount: 2, correct: true })).toBe(0);
+    expect(rumbleNextTurn({ turn: 0, playerCount: 2, correct: false })).toBe(1);
+    expect(rumbleNextTurn({ turn: 1, playerCount: 2, correct: false })).toBe(0);
+    expect(rumbleNextTurn({ turn: 0, playerCount: 1, correct: false })).toBe(0);
   });
 });
 
@@ -116,7 +155,7 @@ describe("Association Blitz scoring", () => {
 
   it("keeps the twelve-pair perfect-run maximum consistent with the UI", () => {
     const pairTotal = Array.from({ length: 12 }, (_, combo) => associationPairPoints(combo)).reduce((sum, points) => sum + points, 0);
-    expect(pairTotal).toBe(1650);
+    expect(pairTotal).toBe(1650); // 12 × 100 base + 450 capped combo bonus
     expect(pairTotal + associationTimeBonus(75)).toBe(1800);
   });
 });
@@ -133,6 +172,7 @@ describe("Deep Dive rarity scoring", () => {
     expect(deepDiveAnswerAward(6, 100)).toBe(0);
     expect(deepDiveAnswerAward(0, 0)).toBe(0);
     expect(deepDiveAnswerAward(7, 0)).toBe(0);
+
   });
 });
 
@@ -145,5 +185,27 @@ describe("Trivia Rumble result scoring", () => {
   it("uses each player's actual turn count for pass-and-play", () => {
     expect(triviaRumbleResult([18, 15], "pass", 36)).toEqual({ score: 1800, maxScore: 1800, perfect: true });
     expect(triviaRumbleResult([12, 10], "pass", 36)).toEqual({ score: 1200, maxScore: 1800, perfect: false });
+  });
+});
+
+import { labRange, labScore, labStreakBonus } from "./arcadeLogic";
+describe("Labline scoring", () => {
+  it("gives partial credit on threshold prompts instead of all-or-nothing", () => {
+    expect(labScore(6.5, 6.5, 0)).toBe(100);
+    expect(labScore(6.4, 6.5, 0)).toBeGreaterThan(70);
+    expect(labScore(6.4, 6.5, 0)).toBeLessThan(100);
+    expect(labScore(9, 6.5, 0)).toBe(0);
+  });
+  it("rewards closeness monotonically and caps the window above 85", () => {
+    const values = [0, 1, 2, 3, 5, 8, 20].map((d) => labScore(14 + d, 14, 1.5));
+    for (let i = 1; i < values.length; i++) expect(values[i]).toBeLessThanOrEqual(values[i - 1]);
+    expect(labScore(14.5, 14, 1.5)).toBeGreaterThanOrEqual(85);
+  });
+  it("builds a slider range that always contains the answer without centering it", () => {
+    for (let seed = 0; seed < 60; seed++) for (const v of [0, 7.4, 14, 126, 500]) {
+      const { min, max } = labRange(v, seed);
+      expect(min).toBeLessThanOrEqual(v); expect(max).toBeGreaterThanOrEqual(v); expect(max).toBeGreaterThan(min);
+    }
+    expect(labStreakBonus(0)).toBe(0); expect(labStreakBonus(2)).toBe(20); expect(labStreakBonus(9)).toBe(30);
   });
 });

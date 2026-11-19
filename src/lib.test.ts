@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { connectionPuzzles, medleWords, diagnosisCases, nextStepCases, labPrompts, triageCases, pairsBank, microbePacks } from "./data";
 import { deductionCases, glyphPatterns, ladderDictionary, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
-import { hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
+import { PARTY_GAMES, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
+import { deepDiveExtras, deepDivePromptsExpanded } from "./dataDeepDiveExtra";
 import { deepDivePrompts, triviaCategories, triviaQuestions } from "./dataArcade";
 
 describe("daily puzzle primitives", () => {
@@ -62,7 +63,7 @@ describe("content bank sanity", () => {
     expect(medleWords.every((word) => /^[A-Z]{5}$/.test(word))).toBe(true);
   });
 
-  it("keeps the 365-board Connections bank at four groups of four unique tiles", () => {
+  it("keeps the 365-board Quad Squad bank at four groups of four unique tiles", () => {
     expect(connectionPuzzles).toHaveLength(365);
     for (const board of connectionPuzzles) {
       expect(board).toHaveLength(4);
@@ -80,7 +81,7 @@ describe("additional daily puzzle packs", () => {
     expect(playable.length).toBeGreaterThanOrEqual(50);
     expect(new Set(playable.map((puzzle) => puzzle.title)).size).toBe(playable.length);
   });
-  it("keeps every Spelling Hive bank internally valid", () => {
+  it("keeps every Seven Cells bank internally valid", () => {
     for (const puzzle of spellingHivePuzzles) {
       expect(puzzle.letters).toHaveLength(7);
       expect(new Set(puzzle.letters).size).toBe(7);
@@ -171,8 +172,10 @@ describe("expanded content integrity", () => {
     expect(triageCases.length).toBeGreaterThanOrEqual(42);
     expect(medleWords.length).toBeGreaterThanOrEqual(365);
     expect(scrambleWordsExtended.length).toBeGreaterThanOrEqual(110);
-    expect(higherLowerPairs.length).toBeGreaterThanOrEqual(110);
-    expect(higherLowerPairs.filter((item) => "fun" in item)).toHaveLength(50);
+    expect(higherLowerPairs.length).toBeGreaterThanOrEqual(40);
+    expect(higherLowerPairs.every((item) => "fun" in item)).toBe(true);
+    expect(new Set(higherLowerPairs.map((item) => item.a)).size).toBe(higherLowerPairs.length);
+    expect(higherLowerPairs.filter((item) => item.av === item.bv).length).toBeLessThanOrEqual(Math.floor(higherLowerPairs.length * 0.1));
     expect(new Set(labPrompts.map((item) => item.id)).size).toBe(labPrompts.length);
     expect(new Set(pairsBank.map(([term]) => term)).size).toBe(pairsBank.length);
     expect(new Set(microbePacks.map((pack) => pack.name)).size).toBe(microbePacks.length);
@@ -244,7 +247,7 @@ describe("new arcade content banks", () => {
     }
   });
 
-  it("keeps dedicated Deep Dive long-tail prompts genuinely open-ended", () => {
+  it("keeps dedicated Deep Scan long-tail prompts genuinely open-ended", () => {
     const longTail = deepDivePrompts.filter((prompt) => prompt.longTail);
     expect(longTail).toHaveLength(9);
     for (const prompt of longTail) {
@@ -271,5 +274,66 @@ describe("new arcade content banks", () => {
       expect(question.answer, question.id).toBeLessThan(4);
       expect(question.explanation.length, question.id).toBeGreaterThan(15);
     }
+  });
+});
+
+
+import { generateMedicalLadder } from "./arcadeLogic";
+import { medicalRungWords } from "./dataRungs";
+describe("medical Letter Rungs", () => {
+  it("builds valid ladders with medical words at both ends for many seeds", () => {
+    const dictionary = [...ladderDictionary];
+    for (let seed = 0; seed < 120; seed++) {
+      const puzzle = generateMedicalLadder(seed, dictionary, medicalRungWords);
+      expect(puzzle, "seed " + seed).not.toBeNull();
+      expect(medicalRungWords).toContain(puzzle!.start);
+      expect(medicalRungWords).toContain(puzzle!.end);
+      expect(puzzle!.path.length).toBeGreaterThanOrEqual(4);
+      expect(puzzle!.path.length).toBeLessThanOrEqual(6);
+      puzzle!.path.forEach((word, i) => {
+        expect(ladderDictionary.has(word), word).toBe(true);
+        if (i > 0) expect([...word].filter((c, k) => c !== puzzle!.path[i - 1][k])).toHaveLength(1);
+      });
+    }
+    expect(generateMedicalLadder(7, dictionary, medicalRungWords)).toEqual(generateMedicalLadder(7, dictionary, medicalRungWords));
+  });
+});
+
+describe("party room codes", () => {
+  it("maps the same code to the same party-friendly game and puzzle on every device", () => {
+    expect(roomGame("abc 123")).toBe(roomGame("ABC123"));
+    expect(roomSeed("abc123")).toBe(roomSeed("ABC-123"));
+    expect(PARTY_GAMES).toContain(roomGame("K7MQ2X"));
+    expect(PARTY_GAMES).not.toContain("trivia");
+    expect(PARTY_GAMES).not.toContain("casefile");
+  });
+  it("spreads codes across several games and generates valid codes", () => {
+    const games = new Set(Array.from({ length: 200 }, (_, i) => roomGame(randomRoomCode(seeded(i + 1)))));
+    expect(games.size).toBeGreaterThanOrEqual(8);
+    expect(normalizeRoomCode(randomRoomCode())).toHaveLength(6);
+  });
+});
+
+
+describe("Deep Scan supplement", () => {
+  it("targets only real prompts and answers, and merges without collisions", () => {
+    for (const [id, extra] of Object.entries(deepDiveExtras)) {
+      const base = deepDivePrompts.find((p) => p.id === id);
+      expect(base, id).toBeDefined();
+      for (const target of Object.keys(extra.alias ?? {})) {
+        expect(base!.answers.some((a) => a.answer.toLowerCase() === target.toLowerCase()), id + " alias target " + target).toBe(true);
+      }
+    }
+    for (const prompt of deepDivePromptsExpanded) {
+      const forms = prompt.answers.flatMap((a) => [a.answer, ...(a.aliases ?? [])].map((f) => f.toLowerCase().replace(/[^a-z0-9]/g, "")));
+      expect(new Set(forms).size, prompt.id + " has a duplicate accepted form").toBe(forms.length);
+      expect(prompt.answers.every((a) => a.tier >= 1 && a.tier <= 6), prompt.id).toBe(true);
+    }
+  });
+  it("widens every prompt's accepted set substantially", () => {
+    const base = deepDivePrompts.reduce((n, p) => n + p.answers.length, 0);
+    const grown = deepDivePromptsExpanded.reduce((n, p) => n + p.answers.length, 0);
+    expect(grown).toBeGreaterThan(base * 1.5);
+    expect(deepDivePromptsExpanded.every((p) => p.answers.length >= 12)).toBe(true);
   });
 });

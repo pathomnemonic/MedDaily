@@ -1,5 +1,6 @@
 import type { GameId } from "./lib";
 import { dailyDateKey } from "./lib";
+import type { ThemeSettings } from "./theme";
 
 export interface GameResult {
   date: string;
@@ -14,15 +15,20 @@ export interface PlayerData {
   results: GameResult[];
   bests: Partial<Record<GameId, number>>;
   sound: boolean;
+  music: boolean;
+  xp: number;
+  haptics?: boolean;
+  theme?: ThemeSettings;
   reducedMotion: boolean;
   hideStreaks: boolean;
 }
 const KEY = "meddaily:player:v1";
-const empty = (): PlayerData => ({ results: [], bests: {}, sound: false, reducedMotion: false, hideStreaks: false });
+const empty = (): PlayerData => ({ results: [], bests: {}, sound: true, music: true, xp: 0, reducedMotion: false, hideStreaks: false });
 export function loadPlayer(): PlayerData {
   try {
     const parsed = JSON.parse(localStorage.getItem(KEY) ?? "null") as Partial<PlayerData> | null;
-    return { ...empty(), ...parsed, results: Array.isArray(parsed?.results) ? parsed.results.map((r) => ({ ...r, scope: r.scope ?? "general" })) : [], bests: parsed?.bests ?? {} };
+    const legacy = parsed != null && parsed.music === undefined; // saves from before music existed never chose sound
+    return { ...empty(), ...parsed, ...(legacy ? { sound: true, music: true } : {}), results: Array.isArray(parsed?.results) ? parsed.results.map((r) => ({ ...r, scope: r.scope ?? "general" })) : [], bests: parsed?.bests ?? {} };
   } catch { return empty(); }
 }
 export function savePlayer(data: PlayerData): void {

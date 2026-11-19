@@ -55,8 +55,8 @@ export const medleWords = [
   "FETAL","FETOR","GRAFT","GOUTY","ILEAL","ILEUS","LIVER","LYMPH","MOLAR","MOTOR",
   "NERVE","NEVUS","OPTIC","OVARY","PENIS","PRION","RALES","RENAL","SINUS","SPASM",
   "SPINE","STAPH","STREP","SHOCK","SERUM","TIBIA","ULCER","ULNAR","VAGUS","VIRAL",
-  "YEAST","WHEAL","Cocci".toUpperCase(),"TITER","PLATE","NODES","FIBER","FIBRO","TONIC",
-  "VENOM","URATE","URETH","SUTUR","SCALE","SEPSI","SPORE","THROM","VALVE","VIRUS"
+  "YEAST","WHEAL","Cocci".toUpperCase(),"TITER","PLATE","NODES","FIBER","TONIC",
+  "VENOM","URATE","SCALE","SPORE","VALVE","VIRUS"
 ];
 
 export const connectionPuzzles: ConnectionGroup[][] = [

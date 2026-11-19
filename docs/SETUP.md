@@ -45,7 +45,9 @@ MedDaily requests \`openid\`, \`email\`, \`profile\`, and the narrow \`drive.app
 
 For local testing, copy \`.env.example\` to \`.env.local\` and set the same variables.
 
-## Optional multiplayer rooms
+## Optional live scoreboard for party rooms
+
+Rooms work without any backend: the six-character code selects the game and puzzle on every device. Firebase only adds a live scoreboard.
 
 Room play uses Firebase Authentication (anonymous guest sign-in) and Cloud Firestore. It does **not** require Google login.
 
@@ -56,7 +58,7 @@ Room play uses Firebase Authentication (anonymous guest sign-in) and Cloud Fires
 5. Publish the included \`firestore.rules\` rules to the project.
 6. Set the Firebase variables in GitHub Actions and redeploy.
 
-A player starts a room simply by entering a six-character code and choosing a game; everyone else joins by entering that exact code. There is no separate create-room step. Rooms use nicknames, the game id, the selected general/specialty scope, date, and deterministic seed. Player records live in a subcollection: each guest can update only their own score, and a room member cannot overwrite another player's result. Scores update in real time as players submit them. The initial multiplayer model is asynchronous same-puzzle competition (not a shared simultaneous board). Rooms are limited to eight players.
+Anyone can open a room by entering a six-character code; the code decides the game, and everyone entering that exact code gets the same one. There is no separate create-room step. Rooms use nicknames, the game id, the selected general/specialty scope, date, and deterministic seed. Player records live in a subcollection: each guest can update only their own score, and a room member cannot overwrite another player's result. Scores update in real time as players submit them. The initial multiplayer model is asynchronous same-puzzle competition (not a shared simultaneous board). Rooms are limited to eight players.
 
 Configure Firebase App Check and appropriate production quotas before inviting a large public audience. Never store patient information in MedDaily.
 

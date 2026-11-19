@@ -25,6 +25,8 @@ export default function Atmosphere() {
     <div className="ambient-orbit ambient-orbit-b"/>
     <div className="ambient-stars">{Array.from({length:34},(_,i)=><i key={i} style={{left:((i*37)%97)+"%",top:((i*61)%93)+"%",animationDelay:-(i%7)+"s"}}/>)}</div>
     <div className="ambient-flyers">{items.map((item,i)=><span className={"ambient-flyer flyer-"+(i%4)} key={i} style={item.style}>{item.symbol}</span>)}</div>
+    <div className="ambient-bokeh">{Array.from({length:16},(_,i)=><i key={i} style={{left:((i*53)%100)+"%",top:((i*37+11)%100)+"%",width:(18+(i*11)%46)+"px",height:(18+(i*11)%46)+"px",animationDuration:(14+(i*3)%11)+"s",animationDelay:(-(i*1.7)%13)+"s"}}/>)}</div>
+    <div className="ambient-shafts"/>
     <div className="ambient-vignette"/>
   </div>;
 }

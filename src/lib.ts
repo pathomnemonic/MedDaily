@@ -1,4 +1,4 @@
-export type GameId = "medle" | "connections" | "diagnosis" | "microbe" | "labline" | "pairs" | "triage" | "splice" | "glyph" | "higher" | "ladder" | "hive" | "casefile" | "dive" | "trivia" | "lettergrid";
+export type GameId = "medle" | "connections" | "diagnosis" | "labline" | "pairs" | "splice" | "glyph" | "higher" | "ladder" | "hive" | "casefile" | "dive" | "trivia" | "lettergrid" | "mime" | "riddle" | "bodymap" | "crossword" | "trail";
 // A single UTC calendar day keeps daily puzzles identical across player time zones.
 export const dailyDateKey = (date = new Date()): string => {
   const y = date.getUTCFullYear(), m = String(date.getUTCMonth()+1).padStart(2,"0"), d = String(date.getUTCDate()).padStart(2,"0");
@@ -59,4 +59,15 @@ export function nonogramRuns(line: readonly number[]): number[] {
   }
   if (current) runs.push(current);
   return runs;
+}
+
+/** Games where several people racing the same puzzle makes sense (a shared, comparable result). */
+export const PARTY_GAMES: readonly GameId[] = ["medle","connections","diagnosis","labline","pairs","splice","higher","hive","dive","lettergrid"];
+export const normalizeRoomCode = (value: string): string => value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+/** The same code always yields the same game and puzzle on every device; no server involved. */
+export const roomGame = (code: string): GameId => PARTY_GAMES[hashSeed("game|" + normalizeRoomCode(code)) % PARTY_GAMES.length];
+export const roomSeed = (code: string): number => hashSeed("seed|" + normalizeRoomCode(code));
+export function randomRoomCode(random: () => number = Math.random): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return Array.from({ length: 6 }, () => alphabet[Math.floor(random() * alphabet.length)]).join("");
 }

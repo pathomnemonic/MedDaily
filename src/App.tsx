@@ -1,8 +1,20 @@
 import { useEffect, useState } from "react";
 import { GameBoard } from "./Games";
+import GameArt from "./components/GameArt";
+import { computeTrophies } from "./achievements";
+import Mascot from "./components/Mascot";
+import Icon from "./components/Icon";
+import Splash from "./components/Splash";
+import StageScene from "./components/StageScene";
+import PipCompanion from "./components/PipCompanion";
+import { levelFor, starsFor, xpForResult } from "./levels";
+import { DEFAULT_THEME, PRESETS, applyTheme, normalizeTheme, swatch, type ThemeSettings } from "./theme";
+import { watchStage, resetCombo } from "./juice";
+import { setHapticsEnabled, vibrate } from "./haptics";
+import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } from "./audio";
 import type { GameId } from "./lib";
-import { hashSeed, dailyDateKey } from "./lib";
-import { achievementsFor, completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
+import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, PARTY_GAMES } from "./lib";
+import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
 import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, rankRoomPlayers, submitRoomScore, watchRoom, type RoomState } from "./firebase";
 import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnected } from "./googleDrive";
 
@@ -11,23 +23,30 @@ type Specialty = "internal" | "familymed" | "neurology" | "cardiology" | "emerge
 type Screen = "home" | "stats" | "settings" | "friends";
 interface GameMeta { id: GameId; title: string; subtitle: string; description: string; icon: string; wash: string; time: string; category: string; level: string; }
 const GAMES: GameMeta[] = [
-  {id:"medle",title:"Medle",subtitle:"The five-letter rounds",description:"Find the hidden medical word in six guesses.",icon:"▦",wash:"mint",time:"2 min",category:"Word play",level:"Easy → tricky"},
-  {id:"connections",title:"Connections",subtitle:"Think in fours",description:"Sort sixteen terms into four hidden medical families.",icon:"⊞",wash:"lilac",time:"4 min",category:"Pattern logic",level:"Moderate"},
-  {id:"diagnosis",title:"DoctorDle",subtitle:"Name the diagnosis",description:"Solve a clinical case in six guesses as clues unlock.",icon:"✚",wash:"peach",time:"3 min",category:"Diagnosis game",level:"Deduction"},
-  {id:"microbe",title:"Word Hunt",subtitle:"Find the hidden terms",description:"Drag through a themed 14×14 letter grid to find every hidden word.",icon:"✣",wash:"blue",time:"4 min",category:"Word search",level:"Moderate"},
-  {id:"labline",title:"Labline",subtitle:"Calibrate your eye",description:"Five rapid-fire estimates of classic lab values and clinical thresholds.",icon:"⌁",wash:"pink",time:"2 min",category:"Numbers",level:"Foundational"},
+// Ordered by how fun, impressive, and replayable each game is (best first). The home grid follows this order.
+  {id:"medle",title:"Stat Word",subtitle:"The five-letter rounds",description:"Find the hidden medical word in six guesses.",icon:"▦",wash:"mint",time:"2 min",category:"Word play",level:"Easy → tricky"},
+  {id:"diagnosis",title:"Differential",subtitle:"Name the diagnosis",description:"Solve a clinical case in six guesses as clues unlock.",icon:"✚",wash:"peach",time:"3 min",category:"Diagnosis game",level:"Deduction"},
+  {id:"trivia",title:"Trivia Rumble",subtitle:"Spin. Answer. Collect badges.",description:"A six-category trivia wheel with solo and pass-and-play modes.",icon:"🎡",wash:"orange",time:"8–12 min",category:"Party quiz",level:"All levels"},
+  {id:"dive",title:"Deep Scan",subtitle:"Go past the obvious",description:"Seven timed open questions, one typed answer each. Common answers stop at the skin; rare ones reach the marrow.",icon:"🩻",wash:"blue",time:"4 min",category:"Open-answer trivia",level:"Think sideways"},
+  {id:"connections",title:"Quad Squad",subtitle:"Think in fours",description:"Sort sixteen terms into four hidden medical families.",icon:"⊞",wash:"lilac",time:"4 min",category:"Pattern logic",level:"Moderate"},
+  {id:"bodymap",title:"Body Map Blitz",subtitle:"Tap the organ. Fast.",description:"Race to tap the right organ on the body diagram. Faster taps score more.",icon:"🫀",wash:"peach",time:"2 min",category:"Anatomy arcade",level:"Quick-fire"},
+  {id:"trail",title:"Theme Trail",subtitle:"Follow the winding words",description:"Trace hidden medical terms through a letter board. They bend in any direction, and the longest one stretches from top to bottom.",icon:"🧬",wash:"mint",time:"4 min",category:"Word trail",level:"Moderate"},
+  {id:"crossword",title:"Crossword Clinic",subtitle:"Fill the tiny grid",description:"A fresh mini crossword every time, with clues from anatomy to pharmacology. Check or reveal letters when stuck.",icon:"✏️",wash:"gold",time:"4 min",category:"Crossword",level:"Moderate"},
+  {id:"lettergrid",title:"Letter Lab",subtitle:"Find words in the grid",description:"Connect neighboring letters to uncover as many hidden words as possible before time runs out.",icon:"🔤",wash:"mint",time:"2 min",category:"Word hunt",level:"Fast & fun"},
+  {id:"hive",title:"Seven Cells",subtitle:"Seven letters, a swarm of terms",description:"Find every accepted medical word in a seven-letter hive. Use the center tile and hunt for the pangram.",icon:"✿",wash:"gold",time:"3 min",category:"Medical wordplay",level:"Easy → tricky"},
+  {id:"riddle",title:"Riddle Lab",subtitle:"Who am I?",description:"A germ, a drug, an organ, or a syndrome speaks in riddles. Guess early for more points.",icon:"🕵️",wash:"lilac",time:"3 min",category:"Guess who",level:"Easy → tricky"},
+  {id:"higher",title:"What Has More?",subtitle:"Ridiculous medical matchups",description:"Pick the bigger number in surprising food, drug, body, and everyday comparisons.",icon:"⚖",wash:"gold",time:"2 min",category:"Wild comparisons",level:"Quick-fire"},
   {id:"pairs",title:"Association Blitz",subtitle:"Make the connections",description:"Flip a 24-card board, find twelve clinical pairs, and build a streak before time runs out.",icon:"◇",wash:"lime",time:"3 min",category:"Association",level:"Moderate"},
-  {id:"triage",title:"Triage Order",subtitle:"What comes first?",description:"Put the priorities of an emergency response in order.",icon:"⇅",wash:"orange",time:"3 min",category:"Clinical reasoning",level:"Step 2"},
+  {id:"mime",title:"Mime Time",subtitle:"Act it out. No talking.",description:"Pass the phone and act out medical scenes, symptoms, and instruments while your friends guess. Beat the clock.",icon:"🎭",wash:"pink",time:"5–10 min",category:"Party charades",level:"Silly"},
+  {id:"casefile",title:"Casefile Logic",subtitle:"The clues don't lie",description:"Solve a fictional three-person deduction grid using rooms, objects, and clues.",icon:"⌕",wash:"lilac",time:"4 min",category:"Logic puzzle",level:"Moderate"},
   {id:"splice",title:"Anagram Sprint",subtitle:"Unscramble the specimen",description:"Unscramble five medical terms before the 75-second clock expires.",icon:"↝",wash:"mint",time:"1 min",category:"Word play",level:"Easy"},
   {id:"glyph",title:"Cell Sketch",subtitle:"Tiny picture logic",description:"Solve a nonogram with fill, empty, and pencil-mark cells.",icon:"▦",wash:"lilac",time:"2 min",category:"Visual logic",level:"Easy → tricky"},
-  {id:"higher",title:"What Has More?",subtitle:"Ridiculous medical matchups",description:"Pick the bigger number in surprising food, drug, body, and everyday comparisons.",icon:"⚖",wash:"gold",time:"2 min",category:"Wild comparisons",level:"Quick-fire"},
-  {id:"ladder",title:"Word Ladder",subtitle:"One letter at a time",description:"Build a one-letter-at-a-time path from the start word to the finish.",icon:"⌁",wash:"peach",time:"3 min",category:"Word play",level:"Moderate"},
-  {id:"hive",title:"Medical Spelling Hive",subtitle:"Seven letters, a swarm of terms",description:"Find every accepted medical word in a seven-letter hive. Use the center tile and hunt for the pangram.",icon:"✿",wash:"gold",time:"3 min",category:"Medical wordplay",level:"Easy → tricky"},
-  {id:"casefile",title:"Casefile Logic",subtitle:"The clues don't lie",description:"Solve a fictional three-person deduction grid using rooms, objects, and clues.",icon:"⌕",wash:"lilac",time:"4 min",category:"Logic puzzle",level:"Moderate"},
-  {id:"dive",title:"Deep Dive",subtitle:"Rare finds go deeper",description:"Seven timed open-answer prompts. Less obvious accepted answers earn more points.",icon:"🌊",wash:"blue",time:"4 min",category:"Open-answer trivia",level:"Think sideways"},
-  {id:"trivia",title:"Trivia Rumble",subtitle:"Spin. Answer. Collect badges.",description:"A six-category trivia wheel with solo and pass-and-play modes.",icon:"🎡",wash:"orange",time:"8–12 min",category:"Party quiz",level:"All levels"},
-  {id:"lettergrid",title:"Letter Lab",subtitle:"Find words in the grid",description:"Connect neighboring letters to uncover as many hidden words as possible before time runs out.",icon:"🔤",wash:"mint",time:"2 min",category:"Word hunt",level:"Fast & fun"},
+  {id:"labline",title:"Labline",subtitle:"Calibrate your eye",description:"Five rapid-fire estimates of classic lab values and clinical thresholds.",icon:"⌁",wash:"pink",time:"2 min",category:"Numbers",level:"Foundational"},
+  {id:"ladder",title:"Letter Rungs",subtitle:"One letter at a time",description:"Build a one-letter-at-a-time path from the start word to the finish.",icon:"⌁",wash:"peach",time:"3 min",category:"Word play",level:"Moderate"},
 ];
+/** Rotating spotlight: the open-answer and trivia games trade the featured slot each UTC day. */
+const FEATURE_ROTATION: GameId[] = ["dive","trivia"];
+const featuredToday = (date: string): GameId => FEATURE_ROTATION[hashSeed("feature|"+date)%FEATURE_ROTATION.length];
 const SPECIALTIES: { id: Specialty; name: string; short: string; icon: string; blurb: string }[] = [
   {id:"internal",name:"Internal Medicine",short:"IM",icon:"✚",blurb:"The broad medical wards: physiology, diagnosis, and management."},
   {id:"familymed",name:"Family Medicine",short:"Family",icon:"⌂",blurb:"Lifespan care, prevention, primary care, and common presentations."},
@@ -70,7 +89,6 @@ export default function App() {
   const [specialty,setSpecialty] = useState<Specialty>("internal");
   const [activeGame,setActiveGame] = useState<GameId|null>(null);
   const [practice,setPractice] = useState(false);
-  const [homeFreePlay,setHomeFreePlay] = useState(false);
   const [notice,setNotice] = useState("");
   const [installPrompt,setInstallPrompt] = useState<InstallPrompt|null>(null);
   const [startAt,setStartAt] = useState(0);
@@ -81,6 +99,11 @@ export default function App() {
   const [joinCode,setJoinCode] = useState("");
   const [roomBusy,setRoomBusy] = useState(false);
   const [lastShare,setLastShare] = useState("");
+  const [partyRun,setPartyRun] = useState(false);
+  const [wipe,setWipe] = useState<{id:GameId;key:number}|null>(null);
+  const [completion,setCompletion] = useState<{title:string;score:number;maxScore:number;perfect:boolean;text:string;party:boolean;stars:number;gain:number;levelUp:string|null;chest:number}|null>(null);
+  const [splash,setSplash] = useState(()=>{try{return sessionStorage.getItem("meddaily:splash")!=="1";}catch{return true;}});
+  const [copied,setCopied] = useState(false);
 
   const date = dailyDateKey();
   const scope = mode === "general" ? "general" : "specialty:" + specialty;
@@ -89,7 +112,7 @@ export default function App() {
 
   useEffect(()=>{
     const sharedRoom = new URLSearchParams(window.location.search).get("room");
-    if (sharedRoom) { setJoinCode(sharedRoom.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6)); setScreen("friends"); }
+    if (sharedRoom) { setJoinCode(normalizeRoomCode(sharedRoom)); setScreen("friends"); }
   },[]);
   useEffect(()=>{
     const handler=(event:Event)=>{event.preventDefault();setInstallPrompt(event as InstallPrompt);};
@@ -99,42 +122,106 @@ export default function App() {
   useEffect(()=>{
     if("serviceWorker" in navigator) navigator.serviceWorker.register(import.meta.env.BASE_URL+"sw.js").catch(()=>setNotice("Offline caching could not be enabled in this browser."));
   },[]);
+  useEffect(()=>{
+    installAudioUnlock();
+    const onDown=(e:PointerEvent)=>{ if((e.target as HTMLElement)?.closest?.("button,a,[role=tab]")) sfx("tap"); };
+    document.addEventListener("pointerdown",onDown,{passive:true});
+    return ()=>document.removeEventListener("pointerdown",onDown);
+  },[]);
+  useEffect(()=>{applyTheme(player.theme);},[player.theme]);
+  useEffect(()=>{setSfxEnabled(player.sound);},[player.sound]);
+  useEffect(()=>{setHapticsEnabled(player.haptics!==false);},[player.haptics]);
+  useEffect(()=>{setMusicEnabled(player.music);},[player.music]);
+  useEffect(()=>{setScene(activeGame??"menu");},[activeGame]);
+  useEffect(()=>{
+    const onKey=(e:KeyboardEvent)=>{
+      if(e.ctrlKey||e.metaKey||e.altKey)return;
+      const t=e.target as HTMLElement|null;
+      const typing=!!t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable);
+      const q=(sel:string)=>[...document.querySelectorAll<HTMLButtonElement>(sel)].filter(b=>!b.disabled&&b.offsetParent!==null);
+      if(document.querySelector(".complete-overlay")){
+        if(e.key==="Escape"){document.querySelector<HTMLButtonElement>(".complete-close")?.click();}
+        else if(e.key==="Enter"&&!typing){const b=document.querySelector<HTMLButtonElement>(".next-up")??document.querySelector<HTMLButtonElement>(".complete-actions .button-primary");b?.click();e.preventDefault();}
+        return;
+      }
+      if(typing||!document.querySelector(".game-stage"))return;
+      if((e.key==="Enter"||e.key===" ")&&t?.tagName!=="BUTTON"){const next=q(".game-layout .full-button")[0];if(next){next.click();e.preventDefault();return;}}
+      const options=q(".rumble-options button, .riddle-options button");
+      const idx=("1234".indexOf(e.key));const letter=("abcd".indexOf(e.key.toLowerCase()));
+      if(options.length&&(idx>=0||(letter>=0&&e.key.length===1&&document.querySelector(".rumble-options")))){const o=options[idx>=0?idx:letter];if(o){o.click();e.preventDefault();return;}}
+      const cards=q(".higher-card");
+      if(cards.length>=2&&(e.key==="ArrowLeft"||e.key==="ArrowRight")){cards[e.key==="ArrowLeft"?0:1].click();e.preventDefault();}
+    };
+    window.addEventListener("keydown",onKey);
+    return ()=>window.removeEventListener("keydown",onKey);
+  },[]);
+  useEffect(()=>{
+    if(!activeGame)return;
+    const stage=document.querySelector<HTMLElement>(".game-stage");
+    return stage?watchStage(stage):undefined;
+  },[activeGame,practice,startAt]);
   useEffect(()=>{document.documentElement.dataset.motion=player.reducedMotion?"reduced":"full";},[player.reducedMotion]);
   useEffect(()=>{
-    if(!roomCode)return;
-    const stop=watchRoom(roomCode,(value)=>{
-      setRoom(value);
-      if(value){setMode(value.scope==="general"?"general":"specialty");if(value.specialty&&value.specialty!=="general")setSpecialty(value.specialty as Specialty);}
-    });
+    if(!roomCode||!multiplayerConfigured())return;
+    let stop=()=>{};
+    try{stop=watchRoom(roomCode,(value)=>{ if(value) setRoom((current)=>current?{...current,...value,players:value.players.length?value.players:current.players}:value); });}catch{/* live scoreboard unavailable; the shared puzzle still works */}
     return ()=>stop();
   },[roomCode]);
 
   const doneToday=completedToday(player,scope);
   const streak=playStreak(player,scope);
-  const firstTodo=GAMES.find(g=>!player.results.some(r=>r.date===date&&r.game===g.id&&r.scope===scope))?.id??"medle";
   const seedFor=(game:GameId)=>hashSeed(date+"|"+scope+"|"+game);
 
-  const openGame=(id:GameId,isPractice=false,forcedSeed?:number)=>{
-    setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??(isPractice?hashSeed(id+"-free-"+Date.now()):seedFor(id)));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
+  const openGame=(id:GameId,isPractice=false,forcedSeed?:number,party=false)=>{
+    sfx("start");resetCombo();vibrate(10);
+    if(!player.reducedMotion){setWipe({id,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}
+    setPartyRun(party);setCompletion(null);setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??(isPractice?hashSeed(id+"-free-"+Date.now()):seedFor(id)));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
     window.scrollTo({top:0,behavior:player.reducedMotion?"auto":"smooth"});
   };
-  const finishGame=(score:number,maxScore:number,perfect:boolean)=>{
+  const finishGame=(score:number,maxScore:number,perfect:boolean,share?:string)=>{
     const gameTitle=GAMES.find(g=>g.id===activeGame)?.title??"MedDaily game";
-    const filled=Math.max(0,Math.min(9,Math.round(score/Math.max(1,maxScore)*9)));
-    const shareGrid=Array.from({length:3},(_,row)=>Array.from({length:3},(_,col)=>(row*3+col)<filled?"🟩":"⬜").join("")).join("\n");
-    setLastShare("MedDaily · "+gameTitle+"\n"+shareGrid+"\n"+(perfect?"Perfect run":score+" / "+maxScore+" points")+"\nPlay: https://pathomnemonic.github.io/MedDaily/");
-    if(practice){setNotice("Free-play round complete. It did not affect your daily record.");return;}
+    const filled=Math.max(0,Math.min(10,Math.round(score/Math.max(1,maxScore)*10)));
+    const fallback="🟩".repeat(filled)+"⬜".repeat(10-filled)+(perfect?"\n✨ Perfect run":"");
+    const where=partyRun?" · Room "+roomCode:practice?" · Free Play":" · "+date;
+    const text=share?"MedDaily"+where+"\n"+share:"MedDaily · "+gameTitle+where+"\n"+fallback+"\nhttps://pathomnemonic.github.io/MedDaily/"+(partyRun?"?room="+roomCode:"");
+    setLastShare(text);setCopied(false);
+    const isNewDaily=!partyRun&&!practice&&!player.results.some(r=>r.date===date&&r.game===activeGame&&r.scope===scope);
+    const todayDone=player.results.filter(r=>r.date===date&&r.scope===scope).length;
+    const chest=isNewDaily&&todayDone+1===3?60:0; // daily goal: finish three games for a bonus chest
+    const gain=xpForResult({score,maxScore,perfect,practice:!partyRun&&!isNewDaily,party:partyRun})+chest;
+    const before=levelFor(player.xp??0),after=levelFor((player.xp??0)+gain);
+    setCompletion({title:gameTitle,score,maxScore,perfect,text,party:partyRun,stars:starsFor(score,maxScore,perfect),gain,chest,levelUp:after.level>before.level?after.title+" · Level "+after.level:null});
+    sfx(perfect?"perfect":"win");
+    if(after.level>before.level)window.setTimeout(()=>sfx("badge"),900);
+    if(partyRun){
+      setRoom(current=>current?{...current,players:current.players.map(p=>p.uid==="me"?{...p,score,maxScore,perfect,finished:true}:p)}:current);
+      if(multiplayerConfigured()&&roomCode) void submitRoomScore(roomCode,score,maxScore,perfect).catch(()=>{/* local result still shown */});
+      setPlayer(cur=>{const n={...cur,xp:(cur.xp??0)+gain};savePlayer(n);return n;});
+      return;
+    }
+    if(practice){setPlayer(cur=>{const n={...cur,xp:(cur.xp??0)+gain};savePlayer(n);return n;});return;}
     const result={date,game:activeGame!,scope,score,maxScore,perfect,durationSeconds:Math.max(0,Math.round((Date.now()-gameStartedAt)/1000))};
-    const nextPlayer = recordResult(player,result);
+    const nextPlayer = {...recordResult(player,result),xp:(player.xp??0)+gain};
+    savePlayer(nextPlayer);
     setPlayer(nextPlayer);
     setNotice(hasDriveConnection() ? "Result saved. Syncing your private Drive copy…" : "Daily result saved on this device.");
     if (hasDriveConnection()) {
       void syncIfConnected(nextPlayer).then((merged: PlayerData | null)=>{ if (merged) { savePlayer(merged); setPlayer(merged); setNotice("Daily result saved and synced to your private Google Drive data."); } }).catch((error: unknown)=>setNotice("Saved locally; Google Drive needs reconnecting: "+(error instanceof Error ? error.message : "Unknown sync error")));
     }
-    if(player.sound)playChime();
-    if(roomCode) void submitRoomScore(roomCode,score,maxScore,perfect).catch(e=>setNotice((e as Error).message));
   };
-  const updateSetting=(key:"sound"|"reducedMotion"|"hideStreaks",value:boolean)=>{
+  const shareResult=async()=>{
+    if(!completion)return;
+    if(navigator.share){try{await navigator.share({text:completion.text});return;}catch{/* fall through to copy */}}
+    try{await navigator.clipboard?.writeText(completion.text);setCopied(true);}catch{setNotice("Copy was blocked by the browser. Select the preview text instead.");}
+  };
+  const updateTheme=(patch:Partial<ThemeSettings>)=>{
+    setPlayer(current=>{const next={...current,theme:normalizeTheme({...(current.theme??DEFAULT_THEME),...patch})};savePlayer(next);return next;});
+  };
+  const cyclePalette=()=>{
+    const cur=normalizeTheme(player.theme);const i=PRESETS.findIndex(p=>p.id===cur.preset);const nxt=PRESETS[(i+1)%PRESETS.length];
+    updateTheme({preset:nxt.id,hue:nxt.hue,sat:nxt.sat});sfx("pop");
+  };
+  const updateSetting=(key:"sound"|"music"|"haptics"|"reducedMotion"|"hideStreaks",value:boolean)=>{
     setPlayer(current=>{const next={...current,[key]:value};savePlayer(next);return next;});
   };
   const install=async()=>{
@@ -152,25 +239,29 @@ export default function App() {
       try{
         const parsed=JSON.parse(String(reader.result)) as Partial<PlayerData>;
         if(!Array.isArray(parsed.results)||typeof parsed.bests!=="object")throw new Error("Invalid file");
-        const next:PlayerData={results:parsed.results.filter(r=>r&&typeof r.date==="string"&&GAMES.some(g=>g.id===r.game)).map(r=>({...r,scope:r.scope??"general"})),bests:parsed.bests??{},sound:Boolean(parsed.sound),reducedMotion:Boolean(parsed.reducedMotion),hideStreaks:Boolean(parsed.hideStreaks)};
+        const next:PlayerData={results:parsed.results.filter(r=>r&&typeof r.date==="string"&&GAMES.some(g=>g.id===r.game)).map(r=>({...r,scope:r.scope??"general"})),bests:parsed.bests??{},sound:parsed.sound!==false,music:parsed.music!==false,xp:Number(parsed.xp)||0,reducedMotion:Boolean(parsed.reducedMotion),hideStreaks:Boolean(parsed.hideStreaks)};
         savePlayer(next);setPlayer(next);setNotice("Progress imported.");
       }catch{setNotice("That file does not look like a MedDaily progress export.");}
     };reader.readAsText(file);
   };
-  const joinFriendsRoom=async(game:GameId)=>{
+  const joinFriendsRoom=async()=>{
+    const code=normalizeRoomCode(joinCode);
+    if(code.length!==6){setNotice("Room codes are six letters or numbers.");return;}
+    const game=roomGame(code),seed=roomSeed(code);
     setRoomBusy(true);setNotice("");
-    try{
-      const joined=await joinOrCreateRoom(joinCode,{gameId:game,scope,specialty:mode==="specialty"?specialty:"general",date,seed:seedFor(game),name:roomName||"Guest"});
-      setRoomCode(joined.code);setRoom(joined);setMode(joined.scope==="general"?"general":"specialty");
-      if(joined.specialty&&joined.specialty!=="general")setSpecialty(joined.specialty as Specialty);
-      setNotice("Connected to room "+joined.code+". If the code was new, you started the room; everyone entering it gets the same game.");
-    }catch(e){setNotice((e as Error).message);}
-    finally{setRoomBusy(false);}
+    const local:RoomState={code,gameId:game,scope:"party",specialty:"general",date,seed,hostUid:"local",players:[{uid:"me",name:roomName.trim()||"You",score:null,maxScore:null,finished:false,perfect:false}],status:"waiting"};
+    setRoomCode(code);setRoom(local);
+    if(multiplayerConfigured()){
+      try{const joined=await joinOrCreateRoom(code,{gameId:game,scope:"party",specialty:"general",date,seed,name:roomName||"Guest"});setRoom(joined);}
+      catch{setNotice("Live scoreboard is unavailable right now. You can still play the same puzzle and compare shared results.");}
+    }
+    setRoomBusy(false);
   };
   const closeRoom=async()=>{
-    if(roomCode){try{await leaveRoom(roomCode);}catch{/* no network */}}
-    setRoomCode("");setRoom(null);setActiveGame(null);setScreen("home");setNotice("Left the room.");
+    if(roomCode&&multiplayerConfigured()){try{await leaveRoom(roomCode);}catch{/* no network */}}
+    setRoomCode("");setRoom(null);setActiveGame(null);setPartyRun(false);setScreen("home");setNotice("Left the room.");
   };
+  const nextUp=completion?(()=>{const left=GAMES.filter(g=>g.id!==activeGame&&!player.results.some(r=>r.date===date&&r.game===g.id&&r.scope===scope));const pool=left.length?left:GAMES.filter(g=>g.id!==activeGame);if(!pool.length)return null;return practice||completion.party?pool[hashSeed(String(completion.score)+activeGame)%pool.length]:pool[0];})():null;
   const title=activeGame?GAMES.find(g=>g.id===activeGame)?.title??"Game":screen==="stats"?"Your progress":screen==="settings"?"Preferences":screen==="friends"?"Play with friends":selectedTitle;
 
   return <div className="app-shell">
@@ -184,87 +275,112 @@ export default function App() {
         <button className={screen==="stats"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}>Trophies</button>
         <button className={screen==="settings"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}>Options</button>
       </nav>
-      <div className="top-actions">{installPrompt&&<button className="install-button" onClick={install}>＋ Install</button>}<div className="avatar-chip">MD</div></div>
+      <div className="top-actions"><button className="level-pill" onClick={()=>{setActiveGame(null);setScreen("stats");}} aria-label={"Level "+levelFor(player.xp??0).level+", "+levelFor(player.xp??0).title+". Open your profile"} title={levelFor(player.xp??0).title+" · "+levelFor(player.xp??0).into+"/"+levelFor(player.xp??0).span+" XP"} style={{"--pct":levelFor(player.xp??0).pct+"%"} as React.CSSProperties}><i/><b>{levelFor(player.xp??0).level}</b></button><button className="sound-toggle" aria-label="Next color palette" title="Change palette" onClick={cyclePalette}><Icon name="palette" size={22}/></button><button className={"sound-toggle"+(player.music?" on":"")} aria-pressed={player.music} aria-label={player.music?"Mute music":"Turn music on"} onClick={()=>updateSetting("music",!player.music)}><Icon name={player.music?"music":"musicOff"} size={22}/></button><button className={"sound-toggle"+(player.sound?" on":"")} aria-pressed={player.sound} aria-label={player.sound?"Mute sound effects":"Turn sound effects on"} onClick={()=>updateSetting("sound",!player.sound)}><Icon name={player.sound?"speaker":"speakerOff"} size={22}/></button>{installPrompt&&<button className="install-button" onClick={install}>＋ Install</button>}<div className="avatar-chip">MD</div></div>
     </header>
 
     <nav className="mobile-nav" aria-label="Mobile navigation">
-      <button className={!activeGame&&screen==="home"?"active":""} onClick={()=>{setActiveGame(null);setScreen("home");}}><span>⌂</span>Arcade</button>
-      <button className={screen==="friends"?"active":""} onClick={()=>{setActiveGame(null);setScreen("friends");}}><span>✳</span>Party</button>
-      <button className={screen==="stats"?"active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}><span>▤</span>Trophies</button>
-      <button className={screen==="settings"?"active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}><span>⚙</span>Options</button>
+      <button className={!activeGame&&screen==="home"?"active":""} onClick={()=>{setActiveGame(null);setScreen("home");}}><span><Icon name="home" size={22}/></span>Arcade</button>
+      <button className={screen==="friends"?"active":""} onClick={()=>{setActiveGame(null);setScreen("friends");}}><span><Icon name="party" size={22}/></span>Party</button>
+      <button className={screen==="stats"?"active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}><span><Icon name="trophy" size={22}/></span>Trophies</button>
+      <button className={screen==="settings"?"active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}><span><Icon name="gear" size={22}/></span>Options</button>
     </nav>
     {notice&&<button className="notice" onClick={()=>setNotice("")} aria-label="Dismiss message">{notice}<span>×</span></button>}
     {room&&<div className="room-strip"><span className="room-dot" /> <b>ROOM {room.code}</b><span>{room.players.length} players · {room.players.filter(p=>p.finished).length} finished</span><button onClick={()=>setScreen("friends")}>Room details</button><button onClick={closeRoom}>Leave</button></div>}
 
     <main>
-      {activeGame?<div className="play-page">
-        <div className="breadcrumb"><button onClick={()=>{setActiveGame(null);setPractice(false);}}>← All games</button><span>/</span><span>{title}</span></div>
-        <div className="play-heading"><div><span className="eyebrow">{practice?"FREE PLAY":selectedTitle.toUpperCase()+" · "+date}</span><h1>{title}</h1><p>{GAMES.find(g=>g.id===activeGame)?.description}</p></div>
-          <div className="mode-switch" role="group" aria-label="Game mode"><button className={!practice?"selected":""} onClick={()=>{if(practice)openGame(activeGame,false,room?.seed);}}>Daily</button><button className={practice?"selected":""} onClick={()=>{if(!practice)openGame(activeGame,true,hashSeed(activeGame+"-practice-"+Date.now()));}}>Free Play</button></div></div>
-        <section className="game-stage"><div className="stage-orbit orbit-one"/><div className="stage-orbit orbit-two"/>
-          <GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(mode==="general"?"general":specialty) as never} practice={practice} onDone={finishGame}/>
+      {activeGame?<div className={"page-enter play-page tone-"+(GAMES.find(g=>g.id===activeGame)?.wash??"lilac")}>
+        <div className="breadcrumb"><button onClick={()=>{setActiveGame(null);setPractice(false);}}>← All games</button><span>/</span><span>{title}</span>{!completion&&<PipCompanion/>}</div>
+        <div className="play-heading"><div className="play-badge" aria-hidden="true"><GameArt game={activeGame}/></div><div className="play-heading-text"><span className="eyebrow">{partyRun?"PARTY ROOM · "+roomCode:practice?"FREE PLAY":selectedTitle.toUpperCase()+" · "+date}</span><h1>{title}</h1><p>{GAMES.find(g=>g.id===activeGame)?.description}</p></div>
+          {!partyRun&&<div className="mode-switch" role="group" aria-label="Game mode"><button className={!practice?"selected":""} onClick={()=>{if(practice)openGame(activeGame,false,room?.seed);}}>Daily</button><button className={practice?"selected":""} onClick={()=>{if(!practice)openGame(activeGame,true,hashSeed(activeGame+"-practice-"+Date.now()));}}>Free Play</button></div>}</div>
+        <section className="game-stage"><div className="stage-orbit orbit-one"/><div className="stage-orbit orbit-two"/><StageScene game={activeGame}/><div className="stage-watermark" aria-hidden="true"><GameArt game={activeGame}/></div>
+          <GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onDone={finishGame}/>
         </section>
         {room&&<RoomScores room={room}/>}
         {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"MedDaily result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
         <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode"}</span></div>
-      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak}/>:screen==="settings"?<SettingsPage player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} configured={multiplayerConfigured()} game={firstTodo} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,false,r.seed)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} today={date} doneToday={doneToday} openGame={openGame} freePlay={homeFreePlay} setFreePlay={setHomeFreePlay}/>}
+      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak} done={doneToday}/>:screen==="settings"?<SettingsPage mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} updateTheme={updateTheme} player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} today={date} openGame={openGame}/>}
     </main>
+    {completion&&<div className="complete-overlay" role="dialog" aria-modal="true" aria-label="Round complete" onClick={()=>setCompletion(null)}>
+      <div className={"complete-card"+(completion.perfect?" perfect":"")} onClick={e=>e.stopPropagation()}>
+        {!player.reducedMotion&&<div className="confetti" aria-hidden="true">{Array.from({length:26},(_,i)=><i key={i} style={{left:((i*37)%100)+"%",animationDelay:((i%9)*0.12)+"s",background:["#ffd54a","#ff5d9e","#52e3b0","#36bdf5","#a99aff"][i%5]}}/>)}</div>}
+        <div className="complete-mascot"><Mascot mood={completion.stars>=3?"cheer":completion.stars===0?"sad":"happy"} size={96}/></div>
+        <div className="complete-stars" aria-label={completion.stars+" of 3 stars"}>{[1,2,3].map(n=><span key={n} className={n<=completion.stars?"on":""} style={{animationDelay:(0.25+n*0.22)+"s"}}>★</span>)}</div>
+        <span className="complete-stamp">{completion.perfect?"PERFECT":completion.stars>=3?"GREAT":completion.stars===0?"TRY AGAIN":"COMPLETE"}</span>
+        <h2>{completion.title}</h2>
+        <p className="complete-sub">{completion.party?"Room "+roomCode+" · send this to your group":practice?"Free Play round finished":"Daily saved · come back tomorrow"}</p>
+        <div className="complete-xp"><b>+{completion.gain} XP</b>{completion.chest>0&&<span className="chest-pop">🎁 Daily goal reached! +{completion.chest} XP chest</span>}{completion.levelUp&&<span className="level-up">LEVEL UP! {completion.levelUp}</span>}</div>
+        <pre className="share-preview">{completion.text.split("\n").filter(l=>!l.startsWith("http")).join("\n")}</pre>
+        <div className="complete-actions">
+          {nextUp&&<button className="button button-primary next-up" onClick={()=>openGame(nextUp.id,completion.party?false:practice,undefined,false)}><span className="next-up-art"><GameArt game={nextUp.id}/></span><span><small>NEXT UP</small><b>{nextUp.title}</b></span><i>▶</i></button>}
+          <button className="button button-soft" onClick={()=>void shareResult()}>{copied?"✓ Copied!":"Share result ↗"}</button>
+          {!completion.party&&<button className="button button-soft" onClick={()=>openGame(activeGame!,true,hashSeed(activeGame+"-again-"+Date.now()))}>Play again ∞</button>}
+          <button className="button button-quiet" onClick={()=>{setCompletion(null);setActiveGame(null);setScreen(completion.party?"friends":"home");}}>{completion.party?"Back to party":"All games"}</button>
+        </div>
+        <button className="complete-close" aria-label="Close" onClick={()=>setCompletion(null)}>×</button>
+      </div>
+    </div>}
+    {wipe&&<div key={wipe.key} className={"game-wipe tone-"+(GAMES.find(g=>g.id===wipe.id)?.wash??"lilac")} aria-hidden="true"><div className="game-wipe-art"><GameArt game={wipe.id}/></div><b>{GAMES.find(g=>g.id===wipe.id)?.title}</b></div>}
+    {splash&&<Splash onStart={()=>{try{sessionStorage.setItem("meddaily:splash","1");}catch{/* ignore */}sfx("start");setSplash(false);}}/>}
     <footer className="site-footer"><div><span className="footer-mark">✳</span><b>meddaily.</b><span>PRESS START · FIND YOUR NEXT FAVORITE</span></div><p>For education only · Not a clinical decision tool · Verify care decisions against current guidance.</p><span className="version">v1.1 · Local-first · Optional Drive sync</span></footer>
   </div>;
 }
 
-function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneToday,openGame,freePlay,setFreePlay}:{
-  player:PlayerData;scope:string;mode:Mode;specialty:Specialty;setMode:(m:Mode)=>void;setSpecialty:(s:Specialty)=>void;today:string;doneToday:number;openGame:(id:GameId,practice?:boolean)=>void;freePlay:boolean;setFreePlay:(value:boolean)=>void;
-}){
-  const done=doneToday;
-  
-  return <div className="home-page">
-    <section className="arcade-intro"><div><span className="eyebrow">MEDDAILY ARCADE</span><h1>Pick a game. Play another.</h1><p>Medical puzzles, word hunts, wild comparisons, and quick logic challenges. Daily rounds are optional; practice is unlimited.</p></div><div className="arcade-intro-actions"><span className="arcade-game-count">{GAMES.length} GAMES</span><div className="home-play-mode" role="group" aria-label="Choose daily or free play"><button className={!freePlay?"selected":""} onClick={()=>setFreePlay(false)}>Daily</button><button className={freePlay?"selected":""} onClick={()=>setFreePlay(true)}>Free Play ∞</button></div></div></section>
-    <section className="dx-dash-feature"><div className="feature-copy"><span className="eyebrow">PERMANENT FEATURE</span><h2>Dx Dash</h2><p>Run the list. Learn the diagnosis. The companion game stays featured here.</p><a className="button button-primary" href="https://pathomnemonic.github.io/buzzword-dash-v2/" target="_blank" rel="noreferrer">PLAY DX DASH ↗</a></div><div className="dx-dash-mark" aria-hidden="true">DX<span>↗</span></div></section>
-    <section className="mode-panel"><div className="mode-panel-head"><div><span className="eyebrow">CHOOSE YOUR PLAYGROUND</span><h2>{freePlay?"One arcade. Unlimited runs.":"One arcade. Your kind of daily."}</h2></div><div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialty Dailies <span>NEW</span></button></div></div>
-      {mode==="specialty"?<div className="specialty-picker"><div className="specialty-intro"><b>Play with your people.</b><p>Choose a specialty or subject. Everyone in the same track gets the same daily set. Subspecialty topics live inside their parent specialty, so the arcade stays balanced across fields.</p></div><div className="specialty-chips">{SPECIALTIES.map(s=><button key={s.id} onClick={()=>setSpecialty(s.id)} className={specialty===s.id?"selected":""}><span>{s.icon}</span>{s.short}</button>)}</div><div className="specialty-selected"><b>{SPECIALTIES.find(s=>s.id===specialty)?.name}</b><span>{SPECIALTIES.find(s=>s.id===specialty)?.blurb}</span></div></div>:<p className="mode-description">The same broad daily set for everyone: medicine, wordplay, estimation, and pure puzzle fun.</p>}
-    </section>
-
-    <section className="daily-strip"><div className="daily-strip-main"><div className="daily-icon">{freePlay?"∞":"☀"}</div><div><span className="eyebrow">{freePlay?"UNLIMITED FREE PLAY":mode==="general"?"THE DAILY ROUNDS":"SPECIALTY DAILY ROUNDS"}</span><h2>{freePlay?"No daily limit. Choose any game.":done===GAMES.length?"Your rounds are complete.":done===0?GAMES.length+" games. One fresh day.":"You're on your way."}</h2><p>{freePlay?"Every selection starts a fresh run. Practice results do not affect your daily record.":mode==="general"?"Same puzzles for everyone today. Play in any order, or jump straight into a favorite.":"A shared specialty-specific daily set. Invite friends from your field to compare how you did."}</p></div></div>
-      {freePlay?<div className="progress-box freeplay-status"><b>UNLIMITED</b><span>Fresh seeded runs</span></div>:<div className="progress-box"><div className="progress-numbers"><b>{done}<small>/{GAMES.length}</small></b><span>completed</span></div><div className="progress-track"><i style={{width:(done/GAMES.length*100)+"%"}}/></div><div className="progress-caption">{Math.round(done/GAMES.length*100)}% of today's arcade</div></div>}</section>
-
-    <section className="section-head"><div><span className="eyebrow">PICK YOUR LOADOUT</span><h2>Choose your next run</h2><p>Every game has its own world, rules, and high score to chase.</p></div><span className="section-aside">{freePlay?"UNLIMITED FREE PLAY":"TODAY · "+today}</span></section>
-    <div className="game-grid">{GAMES.map((game,index)=>{
-      const result=player.results.find(r=>r.date===today&&r.game===game.id&&r.scope===scope);
-      return <button key={game.id} className={"game-card "+game.wash+(result&&!freePlay?" card-done":"")} onClick={()=>openGame(game.id,freePlay)} style={{animationDelay:(index*40)+"ms"}}>
-        <div className="card-topline"><span className="game-category">{game.category}</span><span className={"card-status"+(result&&!freePlay?" status-done":"")}>{freePlay?"∞ Free Play":result?"✓ Done":"Daily"}</span></div>
-        <div className="game-icon-wrap"><span className="game-icon">{game.icon}</span><span className="icon-halo"/></div>
-        <div className="game-card-body"><h3>{game.title}</h3><span className="game-subtitle">{game.subtitle}</span><p>{game.description}</p></div>
-        <div className="game-card-footer"><span>{game.time} <i>·</i> {game.level}</span><span className="card-arrow">↗</span></div>
-      </button>;
-    })}</div>
-
+function HomePage({player,scope,today,openGame}:{player:PlayerData;scope:string;today:string;openGame:(id:GameId,practice?:boolean)=>void}){
+  const featuredId=featuredToday(today);
+  const ordered=[...GAMES.filter(g=>g.id===featuredId),...GAMES.filter(g=>g.id!==featuredId)];
+  const surprise=()=>{
+    const left=GAMES.filter(g=>!player.results.some(r=>r.date===today&&r.game===g.id&&r.scope===scope));
+    const pool=left.length?left:GAMES;
+    openGame(pool[Math.floor(Math.random()*pool.length)].id,left.length===0);
+  };
+  return <div className="home-page page-enter">
+    <a className="dx-banner" href="https://pathomnemonic.github.io/buzzword-dash-v2/" target="_blank" rel="noreferrer" aria-label="Play Dx Dash, our companion game, in a new tab">
+      <span className="dx-rays" aria-hidden="true"/>
+      <svg className="dx-pulse" viewBox="0 0 300 60" aria-hidden="true" preserveAspectRatio="none"><path d="M0 34h60l12-24 14 46 14-34 10 12h190" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      <span className="dx-logo" aria-hidden="true">DX<small>DASH</small></span>
+      <span className="dx-copy"><b>Name the diagnosis. Beat the clock!</b><small>Our companion game · opens in a new tab</small></span>
+      <span className="dx-play">PLAY<i>▶</i></span>
+    </a>
+    <div className="game-grid" onPointerMove={e=>{if(e.pointerType!=="mouse")return;const card=(e.target as HTMLElement).closest(".game-card") as HTMLElement|null;if(!card)return;const b=card.getBoundingClientRect();card.style.setProperty("--ry",(((e.clientX-b.left)/b.width-.5)*10).toFixed(1)+"deg");card.style.setProperty("--rx",(-((e.clientY-b.top)/b.height-.5)*10).toFixed(1)+"deg");}} onPointerOut={e=>{const card=(e.target as HTMLElement).closest(".game-card") as HTMLElement|null;if(card){card.style.removeProperty("--rx");card.style.removeProperty("--ry");}}}>
+      {ordered.map((game,index)=>{
+        const spotlight=game.id===featuredId;
+        const cleared=player.results.some(r=>r.date===today&&r.game===game.id&&r.scope===scope);
+        return <div key={game.id} className="game-card-wrap" style={{animationDelay:(index*40)+"ms"}}>
+          <button className={"game-card "+game.wash+(cleared?" card-done":"")+(spotlight?" card-spotlight":"")} onClick={()=>openGame(game.id,false)} aria-label={"Play "+game.title+(cleared?" (cleared today)":"")}>
+            <div className="game-cover"><GameArt game={game.id}/><span className={"card-status"+(cleared?" status-done":"")}>{cleared?"★ CLEARED":spotlight?"★ FEATURED":"DAILY"}</span></div>
+            <div className="game-card-body"><span className="game-category">{game.category}</span><h3>{game.title}</h3><span className="game-subtitle">{game.subtitle}</span></div>
+            <div className="game-card-footer"><span>⏱ {game.time}</span><span className="card-play">PLAY ▶</span></div>
+          </button>
+          <button className="card-free" onClick={()=>openGame(game.id,true)} aria-label={"Free Play "+game.title} title="Free Play: unlimited, not recorded">∞</button>
+        </div>;
+      })}
+      <div className="game-card-wrap"><button className="game-card surprise-card" onClick={surprise} aria-label="Surprise me with a random game"><div className="game-cover"><Icon name="dice" size={64}/></div><div className="game-card-body"><span className="game-category">Can't decide?</span><h3>Surprise me</h3><span className="game-subtitle">A random game you haven't cleared</span></div><div className="game-card-footer"><span>🎲 random</span><span className="card-play">GO ▶</span></div></button></div>
+    </div>
   </div>;
 }
 
-const PARTY_GAME_IDS = new Set<GameId>(["connections","microbe","pairs","triage","splice","labline","higher","casefile","dive","trivia","lettergrid"]);
-function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,configured,game,games,onJoin,onPlay,onLeave}:{
-  room:RoomState|null;roomName:string;setRoomName:(s:string)=>void;joinCode:string;setJoinCode:(s:string)=>void;busy:boolean;configured:boolean;game:GameId;games:GameMeta[];
-  onJoin:(g:GameId)=>void;onPlay:(r:RoomState)=>void;onLeave:()=>void;
+function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,live,games,onJoin,onPlay,onLeave}:{
+  room:RoomState|null;roomName:string;setRoomName:(s:string)=>void;joinCode:string;setJoinCode:(s:string)=>void;busy:boolean;live:boolean;games:GameMeta[];
+  onJoin:()=>void;onPlay:(r:RoomState)=>void;onLeave:()=>void;
 }){
-  const partyGames=games.filter(g=>PARTY_GAME_IDS.has(g.id));
-  const [selected,setSelected]=useState<GameId>(PARTY_GAME_IDS.has(game)?game:"connections");
-  return <div className="friends-page"><div className="friends-hero"><span className="eyebrow">THE PARTY LOBBY</span><h1>Bring your crew.</h1><p>Choose a shared game and enter the same six-character code. The first player starts it; everyone else joins by typing that code. Each player keeps their own progress while the lobby tracks the round.</p></div>
-    {!configured&&<div className="setup-warning"><b>Online rooms need Firebase enabled.</b><p>Solo and free-play modes work without setup. Real-time shared rooms require the Firebase project settings in the deployment environment; the room-code workflow is ready once connected.</p></div>}
-    {room?<div className="room-card"><div className="room-code-head"><div><span className="eyebrow">YOUR SHARED GAME CODE</span><strong>{room.code}</strong></div><div className="share-actions"><button className="button button-soft" onClick={()=>void navigator.clipboard?.writeText(room.code)}>Copy code</button><button className="button button-primary" onClick={()=>{const url=location.origin+location.pathname+"?room="+room.code;const text="Join my MedDaily "+(games.find(g=>g.id===room.gameId)?.title??"game")+" room: "+room.code;if(navigator.share)void navigator.share({title:"MedDaily room",text,url}).catch(()=>{});else void navigator.clipboard?.writeText(text+" "+url);}}>Share invite ↗</button></div></div>
-      <p className="room-message">{room.specialty==="general"?"Open Arcade":"Specialty daily"} · {games.find(g=>g.id===room.gameId)?.title} · {room.date}</p>
-      <div className="room-players">{room.players.map((p,i)=><div key={p.uid} className="room-player"><span className="player-number">{i+1}</span><b>{p.name}</b><span>{p.finished?(p.score??0)+" pts":"Ready to play"}</span>{p.perfect&&<i>✦</i>}</div>)}</div>
-      <div className="room-actions"><button className="button button-primary" onClick={()=>onPlay(room)}>Play this game <span>↗</span></button><button className="button button-quiet" onClick={onLeave}>Leave room</button></div>
-      <small>Up to eight players. Everyone who enters the same code joins the same game; scores appear here when submitted.</small>
+  const [copied,setCopied]=useState(false);
+  const meta=room?games.find(g=>g.id===room.gameId):undefined;
+  const invite=room?location.origin+location.pathname+"?room="+room.code:"";
+  return <div className="friends-page"><div className="friends-hero"><span className="eyebrow">PARTY ROOMS</span><h1>Same code, same game.</h1><p>Everyone who types the same code plays the same game and the same puzzle. No sign-up, no host. Pick any six letters or numbers, tell your friends, and compare results.</p></div>
+    {room&&meta?<div className="room-card"><div className="room-code-head"><div><span className="eyebrow">ROOM CODE</span><strong>{room.code}</strong></div><div className="share-actions"><button className="button button-soft" onClick={()=>{void navigator.clipboard?.writeText(invite);setCopied(true);}}>{copied?"✓ Link copied":"Copy invite link"}</button></div></div>
+      <div className="room-game"><div className="room-game-art"><GameArt game={meta.id}/></div><div><span className="eyebrow">THIS ROOM PLAYS</span><h2>{meta.title}</h2><p>{meta.description}</p></div></div>
+      <div className="room-players">{room.players.map((p,i)=><div key={p.uid} className="room-player"><span className="player-number">{i+1}</span><b>{p.name}</b><span>{p.finished?"Finished":"Ready"}</span>{p.perfect&&<i>✦</i>}</div>)}</div>
+      <div className="room-actions"><button className="button button-primary" onClick={()=>onPlay(room)}>▶ Play this puzzle</button><button className="button button-quiet" onClick={onLeave}>Leave room</button></div>
+      <small>{live?"Live scores appear above as friends finish. You can also share your result from the finish screen.":"When you finish, tap Share result and paste it into your group chat to compare."}</small>
     </div>:<div className="friends-grid single-room-entry">
-      <section className="friends-card"><div className="friends-card-icon">⌁</div><span className="eyebrow">SAME CODE · SAME GAME</span><h2>Enter a room code</h2><p>Use a code your group has agreed on. The first person to enter a new code starts the room; everyone else types that exact code to join.</p>
-        <label>Your nickname<input maxLength={20} value={roomName} onChange={e=>setRoomName(e.target.value)} placeholder="What should we call you?"/></label>
-        <label>Shared game<select value={selected} onChange={e=>setSelected(e.target.value as GameId)}>{partyGames.map(g=><option value={g.id} key={g.id}>{g.title}</option>)}</select></label>
-        <label>Six-character code<input className="room-code-input" maxLength={6} value={joinCode} onChange={e=>setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,""))} placeholder="ABC123"/></label>
-        <button className="button button-primary full-button" onClick={()=>onJoin(selected)} disabled={busy||!configured||joinCode.length!==6}>{busy?"Connecting…":"Join / start game"}</button>
+      <section className="friends-card"><span className="eyebrow">ENTER A CODE</span><h2>Join a room</h2>
+        <label>Nickname (optional)<input maxLength={20} value={roomName} onChange={e=>setRoomName(e.target.value)} placeholder="What should we call you?"/></label>
+        <label>Six-character code<input className="room-code-input" maxLength={6} value={joinCode} onChange={e=>setJoinCode(normalizeRoomCode(e.target.value))} placeholder="ABC123" autoCapitalize="characters" autoComplete="off"/></label>
+        <div className="room-entry-actions"><button className="button button-primary" onClick={onJoin} disabled={busy||joinCode.length!==6}>{busy?"Joining…":"Join room ↗"}</button><button className="button button-soft" onClick={()=>setJoinCode(randomRoomCode())}>🎲 Random code</button></div>
+        <p className="room-hint">Group rooms use games where racing the same puzzle makes sense: {PARTY_GAMES.map(id=>games.find(g=>g.id===id)?.title).filter(Boolean).join(", ")}. Trivia Rumble has its own pass-and-play mode.</p>
       </section>
     </div>}
-    <div className="privacy-note"><b>Private by default.</b> Solo play never requires an account. Friends rooms use temporary anonymous guest identities and contain only nicknames, game metadata, and scores. Do not enter patient information or other sensitive data.</div>
+    <div className="privacy-note"><b>Private by default.</b> No account needed. Nothing is sent anywhere unless live scoreboards are enabled, and then only a nickname, the room code, and scores. Never enter patient information.</div>
   </div>;
 }
 
@@ -273,26 +389,43 @@ function RoomScores({room}:{room:RoomState}){
   return <section className="room-score-inline"><div className="eyebrow">FRIENDS ROOM LEADERBOARD · {room.code}</div>{ranked.map((p,index)=><span key={p.uid}><b>#{index+1}</b> {p.name}: {p.finished?(p.score??0)+" points"+(p.perfect?" · perfect":""):"playing"}</span>)}</section>;
 }
 
-function StatsPage({player,scope,streak}:{player:PlayerData;scope:string;streak:number}){
+function StatsPage({player,scope,streak,done}:{player:PlayerData;scope:string;streak:number;done:number}){
+  const lvl=levelFor(player.xp??0);
+  const trophies=computeTrophies(player,GAMES.length);
   const results=player.results.filter(r=>r.scope===scope);
   const perfect=results.filter(r=>r.perfect).length;
-  const averageScore=results.length?Math.round(results.reduce((sum,r)=>sum+(r.maxScore>0?r.score/r.maxScore:0),0)/results.length*100):0;
-  const achievements=achievementsFor(player,scope,streak,GAMES.length).filter(item=>!player.hideStreaks||item.name!=="Seven-Day Signal");
-  const unlocked=achievements.filter(item=>item.earned).length;
-  return <div className="stats-page"><span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div><div><b>{averageScore}%</b><span>average score</span></div></div>
-    <section className="achievement-shelf"><div className="achievement-heading"><div><span className="eyebrow">UNLOCKED BY PLAYING</span><h2>Achievements</h2></div><b>{unlocked} / {achievements.length}</b></div><div className="achievement-grid">{achievements.map(item=><article key={item.name} className={"achievement-tile"+(item.earned?" earned":" locked")}><span className="achievement-mark">{item.earned?"✦":"◇"}</span><div><b>{item.name}</b><p>{item.detail}</p><small>{item.earned?"UNLOCKED":"IN PROGRESS"} · {item.progress}</small></div></article>)}</div></section>
+  return <div className="stats-page"><section className="profile-card"><Mascot mood="happy" size={84}/><div className="profile-main"><span className="eyebrow">YOUR PROFILE</span><h1>Lv {lvl.level} · {lvl.title}</h1><i className="profile-bar" role="progressbar" aria-valuenow={lvl.pct} aria-valuemin={0} aria-valuemax={100}><span style={{width:lvl.pct+"%"}}/></i><small>{lvl.into} / {lvl.span} XP to the next level</small>
+        <div className="profile-chips"><span><Icon name="flame" size={22}/> {player.hideStreaks?"—":streak}-day streak</span><span><Icon name="star" size={22}/> {done}/{GAMES.length} cleared today</span><span className="profile-goal" title="Finish three daily games for a bonus chest">{[0,1,2].map(i=><i key={i} className={i<Math.min(done,3)?"on":""}/>)} {done>=3?"🎁 chest claimed":"daily goal"}</span></div></div></section>
+    <span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div></div>
+    <section className="trophy-cabinet"><h2>Trophy cabinet <small>{trophies.filter(t=>t.earned).length} / {trophies.length}</small></h2><div className="trophy-grid">{trophies.map(t=><div key={t.id} className={"trophy"+(t.earned?" earned":"")}><span className="trophy-icon">{t.earned?t.icon:"🔒"}</span><b>{t.name}</b><small>{t.hint}</small></div>)}</div></section>
     <section className="stats-table"><h2>Game shelf</h2>{GAMES.map(g=>{const played=results.filter(r=>r.game===g.id);return <div key={g.id}><span>{g.title}</span><span>{played.length} played</span><b>Best run {Math.max(0,...played.map(r=>r.score))}</b></div>;})}</section>
     <p className="privacy-note">Progress and achievements are calculated from this device's saved results for the current arcade mode. Records stay local unless you choose Google Drive sync in Settings. Room leaderboards are private to the six-character room code.</p>
   </div>;
 }
 
-function SettingsPage({player,driveConnected,updateSetting,exportData,importData,onDriveSync}:{
-  player:PlayerData;driveConnected:boolean;updateSetting:(k:"sound"|"reducedMotion"|"hideStreaks",v:boolean)=>void;exportData:()=>void;importData:(file:File|undefined)=>void;onDriveSync:()=>Promise<void>;
+function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,driveConnected,updateSetting,exportData,importData,onDriveSync}:{
+  mode:Mode;specialty:Specialty;setMode:(m:Mode)=>void;setSpecialty:(s:Specialty)=>void;updateTheme:(p:Partial<ThemeSettings>)=>void;player:PlayerData;driveConnected:boolean;updateSetting:(k:"sound"|"music"|"haptics"|"reducedMotion"|"hideStreaks",v:boolean)=>void;exportData:()=>void;importData:(file:File|undefined)=>void;onDriveSync:()=>Promise<void>;
 }){
   const [syncing,setSyncing]=useState(false);
   const sync=async()=>{setSyncing(true);try{await onDriveSync();}finally{setSyncing(false);}};
   return <div className="settings-page"><span className="eyebrow">MAKE IT YOURS</span><h1>Preferences & backup</h1>
-    <section className="settings-card"><h2>Arcade feel</h2><Setting label="Sound effects" detail="Soft sounds when you finish a round." checked={player.sound} onChange={v=>updateSetting("sound",v)}/><Setting label="Reduced motion" detail="Use quieter transitions and fewer animations." checked={player.reducedMotion} onChange={v=>updateSetting("reducedMotion",v)}/><Setting label="Hide streaks" detail="Keep the focus on playing, not maintaining a streak." checked={player.hideStreaks} onChange={v=>updateSetting("hideStreaks",v)}/></section>
+    <section className="settings-card"><h2>Daily track</h2><p>Everyone on the same track gets the same daily puzzles. Open Arcade is the broad mix; pick a specialty to play your own field's dailies.</p>
+      <div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialties</button></div>
+      {mode==="specialty"&&<div className="specialty-picker"><div className="specialty-chips">{SPECIALTIES.map(sp=><button key={sp.id} onClick={()=>setSpecialty(sp.id)} className={specialty===sp.id?"selected":""}><span>{sp.icon}</span>{sp.short}</button>)}</div><div className="specialty-selected"><b>{SPECIALTIES.find(sp=>sp.id===specialty)?.name}</b><span>{SPECIALTIES.find(sp=>sp.id===specialty)?.blurb}</span></div></div>}
+    </section>
+    <section className="settings-card look-card"><h2>Look &amp; feel</h2>{(()=>{const t=normalizeTheme(player.theme);return <>
+      <p>Pick a palette, or tune your own. Changes apply instantly.</p>
+      <div className="preset-grid" role="radiogroup" aria-label="Color palette">{PRESETS.map(p=><button key={p.id} role="radio" aria-checked={t.preset===p.id} className={"preset"+(t.preset===p.id?" on":"")} onClick={()=>updateTheme({preset:p.id,hue:p.hue,sat:p.sat})}><span className="preset-swatch" style={{background:swatch(p.hue,p.sat)}}><i/><i/><i/></span><b>{p.name}</b></button>)}</div>
+      <label className="slider-row"><span>Base color <small>{Math.round(t.hue)}°</small></span><input className="hue-slider" type="range" min={0} max={360} value={t.hue} onChange={e=>updateTheme({preset:"custom",hue:Number(e.target.value)})}/></label>
+      <label className="slider-row"><span>Vibrancy <small>{Math.round(t.sat*100)}%</small></span><input type="range" min={15} max={140} value={Math.round(t.sat*100)} onChange={e=>updateTheme({preset:"custom",sat:Number(e.target.value)/100})}/></label>
+      <div className="choice-row"><span>Depth</span><div role="radiogroup" aria-label="Depth">{(["chunky","soft"] as const).map(v=><button key={v} role="radio" aria-checked={t.depth===v} className={t.depth===v?"on":""} onClick={()=>updateTheme({depth:v})}>{v==="chunky"?"Chunky 3D":"Soft"}</button>)}</div></div>
+      <div className="choice-row"><span>Corners</span><div role="radiogroup" aria-label="Corners">{(["round","sharp"] as const).map(v=><button key={v} role="radio" aria-checked={t.corners===v} className={t.corners===v?"on":""} onClick={()=>updateTheme({corners:v})}>{v==="round"?"Round":"Sharp"}</button>)}</div></div>
+      <div className="choice-row"><span>Interface size</span><div role="radiogroup" aria-label="Interface size">{([[0.9,"Compact"],[1,"Normal"],[1.12,"Large"]] as const).map(([v,l])=><button key={v} role="radio" aria-checked={t.scale===v} className={t.scale===v?"on":""} onClick={()=>updateTheme({scale:v})}>{l}</button>)}</div></div>
+      <Setting label="Floating medical icons" detail="Drifting pills, cells, and organs in the background." checked={t.particles} onChange={v=>updateTheme({particles:v})}/>
+      <Setting label="Twinkling stars" detail="Tiny sparkles in the background." checked={t.stars} onChange={v=>updateTheme({stars:v})}/>
+      <Setting label="Show Pip the mascot" detail="Pip on the title screen, level bar, and results." checked={t.mascot} onChange={v=>updateTheme({mascot:v})}/>
+      <button className="button button-quiet" onClick={()=>updateTheme({...DEFAULT_THEME})}>Reset look &amp; feel</button></>;})()}</section>
+    <section className="settings-card"><h2>Arcade feel</h2><Setting label="Sound effects" detail="Taps, rights and wrongs, fanfares, and wheel spins." checked={player.sound} onChange={v=>updateSetting("sound",v)}/><Setting label="Haptics" detail="Tiny vibrations on phones when you answer." checked={player.haptics!==false} onChange={v=>updateSetting("haptics",v)}/><Setting label="Music" detail="A different looping tune for the arcade and every game." checked={player.music} onChange={v=>updateSetting("music",v)}/><Setting label="Reduced motion" detail="Use quieter transitions and fewer animations." checked={player.reducedMotion} onChange={v=>updateSetting("reducedMotion",v)}/><Setting label="Hide streaks" detail="Keep the focus on playing, not maintaining a streak." checked={player.hideStreaks} onChange={v=>updateSetting("hideStreaks",v)}/></section>
     <section className="settings-card"><h2>Google Drive backup</h2><p>Sign in only when you want your progress backed up to your private Google Drive app-data folder. MedDaily cannot read your other Drive files. You can keep playing without Google login.</p>
       <button className="button button-primary" onClick={sync} disabled={syncing||!googleDriveConfigured()}>{syncing?"Syncing…":driveConnected?"Reconnect & sync Google Drive":"Sign in with Google & sync"}</button>
       {driveConnected&&<p className="setup-hint">Drive is connected for this browser session. New game results sync automatically while the access token remains valid.</p>}
@@ -305,4 +438,3 @@ function SettingsPage({player,driveConnected,updateSetting,exportData,importData
 function Setting({label,detail,checked,onChange}:{label:string;detail:string;checked:boolean;onChange:(v:boolean)=>void}){
   return <label className="setting-row"><span><b>{label}</b><small>{detail}</small></span><input type="checkbox" checked={checked} onChange={e=>onChange(e.target.checked)}/></label>;
 }
-function playChime(){try{const ctx=new AudioContext(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.value=660;gain.gain.setValueAtTime(0.035,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.22);osc.onended=()=>{void ctx.close();};osc.start();osc.stop(ctx.currentTime+0.22);}catch{/* Audio may be unavailable. */}}

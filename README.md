@@ -7,18 +7,19 @@ A mobile-first medical mini-game arcade built with React, TypeScript, and Vite.
 
 Sixteen playable formats span clinical deduction, word games, estimation, spatial logic, trivia, and party play. Every game has a daily round and an unlimited Free Play mode, selectable directly from the home screen:
 
-- **Medical and clinical:** Medle, DoctorDle, Connections, Word Hunt, Labline, Association Blitz, and Triage Order.
-- **Puzzle and party:** Anagram Sprint, Cell Sketch, What Has More?, Word Ladder, Medical Spelling Hive, Casefile Logic, Deep Dive, Trivia Rumble, and Letter Lab.
+- **Medical and clinical:** Stat Word, Differential, Quad Squad, Specimen Search, Labline, Association Blitz, and Triage Order.
+- **Puzzle and party:** Anagram Sprint, Cell Sketch, What Has More?, Letter Rungs, Seven Cells, Casefile Logic, Deep Scan, Trivia Rumble, and Letter Lab.
 
 The same UTC date + mode + specialty + game key yields the same daily seed, so groups in different time zones share the same puzzle. Open Arcade is the shared, balanced general mode and the default starting point. Specialty Dailies add shared daily sets across 26 clinical specialties and four foundational subjects. Neurology is one track like the other specialties; subspecialty topics belong inside the Neurology track rather than taking up multiple top-level slots.
 
 ## Gameplay principles
 
-- DoctorDle is a six-guess diagnosis puzzle with progressive clues; clinical multiple-choice drills are not presented as standalone games. Deep Dive is a timed, seven-prompt long-tail recall game: submit multiple distinct answers per prompt, with nine rotating 60-answer banks, curated rarity tiers, and a 100-point cap per round. Medle includes an on-screen Wordle-style keyboard.
-- Word Hunt is a 14×14 drag-to-select word search with persistent found-word highlighting. Casefile Logic and Cell Sketch include in-game pencil-mark systems. Casefile rotates between curated daily cases and seeded procedural daily puzzles; Free Play also procedurally generates puzzles with a verified unique solution. Cell Sketch and Word Ladder also generate new Free Play variants.
-- Association Blitz is a timed 24-card memory game with twelve pairs, combo streaks, and a 75-second clock. Medical Spelling Hive now includes 50 playable seven-letter boards with validated center-letter rules and pangrams. What Has More? draws from 116 comparisons, including 50 fun-first matchups such as propofol lipid calories versus bacon fat.
-- Labline and Anagram Sprint now use multi-round progression; Letter Lab is a playable Boggle-style adjacent-letter hunt; Connections adds one-away feedback and reliable reshuffling. Cell Sketch and Word Ladder alternate curated daily boards with seeded generated variants. Shared-code rooms are offered only for formats that support same-puzzle score competition: Connections, Word Hunt, Association Blitz, Triage Order, Anagram Sprint, Labline, What Has More?, Casefile Logic, Deep Dive, Trivia Rumble, and Letter Lab. One person enters a six-character code to start a room; everyone else enters the same code to join. Firebase credentials are still required for live cross-device multiplayer.
-- The Trophies page includes six locally calculated achievements; active friend rooms show a live ranked scoreboard. Achievement progress follows the selected study scope, and the hide-streaks preference also hides streak achievement progress.
+- Differential is a six-guess diagnosis puzzle with progressive clues; clinical multiple-choice drills are not presented as standalone games. Stat Word includes an on-screen Wordle-style keyboard.
+- Specimen Search is a 14×14 drag-to-select word search with persistent found-word highlighting. Casefile Logic and Cell Sketch include in-game pencil-mark systems. Casefile rotates between curated daily cases and seeded procedural daily puzzles; Free Play also procedurally generates puzzles with a verified unique solution. Cell Sketch and Letter Rungs also generate new Free Play variants.
+- Association Blitz is a timed 24-card memory game with twelve pairs, combo streaks, and a 75-second clock. Seven Cells now includes 50 playable seven-letter boards with validated center-letter rules and pangrams. What Has More? draws from 116 comparisons, including 50 fun-first matchups such as propofol lipid calories versus bacon fat.
+- Labline and Anagram Sprint now use multi-round progression; Letter Lab is a playable Boggle-style adjacent-letter hunt; Quad Squad adds one-away feedback and reliable reshuffling. Shared-code rooms are offered only for formats that support same-puzzle score competition: Quad Squad, Specimen Search, Association Blitz, Triage Order, Anagram Sprint, Labline, What Has More?, Casefile Logic, Deep Scan, Trivia Rumble, and Letter Lab. One person enters a six-character code to start a room; everyone else enters the same code to join. Firebase credentials are still required for live cross-device multiplayer.
+- The Trophies page has a 14-trophy cabinet calculated from saved results; room codes need no setup, and an optional Firebase scoreboard adds live ranking.
+- Quad Squad has 160 curated boards. Cell Sketch alternates curated daily boards with seeded generated variants.
 - Completion is shown per game. MedDaily does not calculate a combined arcade score across games of different difficulty.
 - Dx Dash is permanently featured in the arcade and remains a separate game.
 
@@ -27,7 +28,7 @@ The same UTC date + mode + specialty + game key yields the same daily seed, so g
 - Solo play, practice, and local progress work without an account.
 - Progress is saved locally by default.
 - Optional Google sign-in can back up and merge progress in the user's private Google Drive app-data folder.
-- Optional multiplayer rooms use Firebase anonymous guest sessions; no Google login is required to join.
+- Party rooms need no setup: a six-character code deterministically picks a group-friendly game and its puzzle, so everyone typing the same code plays the same thing, and results are compared with Wordle-style share text. Optional Firebase adds a live scoreboard.
 - Do not enter patient-identifiable information.
 
 ## Run locally
@@ -60,3 +61,26 @@ See [Daily-game format research](docs/DLE_RESEARCH.md) for the directory scan, m
 ## Medical content note
 
 Medical material is for education and entertainment, not patient care or a clinical decision tool. Clinical questions include short explanations and source notes, but some source notes are reference signposts rather than live guideline verification. Verify clinical decisions against current authoritative guidance. Content should receive ongoing specialist review before formal teaching or clinical use.
+
+## Home screen and rewards
+
+- Filter shelves (All, Quick, Brain, Words, Clinical, Party), a Surprise me button, and a rotating featured slot that alternates Deep Scan and Trivia Rumble each UTC day. Dx Dash is always featured.
+- A 14-trophy cabinet computed from saved results (`src/achievements.ts`).
+- Mime Time is a pass-the-phone charades game with a 135-prompt deck.
+
+- Every game is medical-themed: Deep Scan descends through tissue layers, Letter Rungs ladders start and end on medical words, and Theme Trail packs are medical word themes.
+
+## Game feel
+
+Title screen with the mascot Pip (also unlocks audio), a player level and XP bar, 1–3 star ratings with confetti on every finish, synthesized music and sound effects per game, chunky tile and key styling, and per-game cover art. See `docs/ADDING_A_GAME.md` to add a game.
+
+## Look & feel options
+
+The default palette is Scrub Teal. Options > Look & feel offers seven palettes (Scrub Teal, Deep Ocean, Midnight Violet, Berry Crush, Forest Ward, Ember, Graphite), a base-color slider, a vibrancy slider, chunky or soft depth, round or sharp corners, three interface sizes, and toggles for floating icons, twinkling stars, and the mascot. A palette button in the top bar cycles presets. Colors are driven by two CSS variables (`--hue`, `--sat`) in `src/styles.css`, so new presets are one line in `src/theme.ts`. Fonts (Fredoka, Lilita One, Manrope, Space Grotesk, DM Mono, all SIL OFL) are self-hosted and precached for offline use.
+
+## Controls and habit loops
+
+- Type straight into Stat Word's tiles (physical keyboard or on-screen keys), with shake on invalid words and a flip reveal. Differential suggests diagnoses as you type. Cell Sketch has Fill, Cross, and Cycle pens (plus right-click for a cross) and drag-painting.
+- Shortcuts: Enter or Space continues past a Next button; 1–4 (or A–D in Trivia) pick answers; the left and right arrows pick in What Has More?; Esc closes the finish screen and Enter plays the suggested next game.
+- Combos raise the pitch of correct-answer chimes and show a ×N badge next to Pip. Phones get short haptic pulses (toggle in Options).
+- A daily goal of three games pays a bonus XP chest, and the finish screen offers a one-tap "Next up" game.
