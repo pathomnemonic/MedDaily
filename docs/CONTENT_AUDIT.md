@@ -1,6 +1,6 @@
 # Content inventory and expansion priorities
 
-**Snapshot:** November 19, 2026
+**Snapshot:** November 19, 2026 (content expansion batch 1)
 
 MedDaily has fourteen playable game formats. This is a functioning first release with a broad specialty structure, not yet a 365-day set of unique content for every game.
 
@@ -9,12 +9,12 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 | Game | Current bank | Notes |
 |---|---:|---|
 | Medle | 58 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
-| Connections | 12 boards | Four groups of four per board |
-| Mystery Case | 20 cases | Progressive clinical-diagnosis clues with explanations and source notes |
-| Next Best Step | 20 cases | Original clinical decision vignettes with explanations and source notes |
-| Microbe Hunt | 8 organism packs | Each pack generates a deterministic word-search grid |
-| Labline | 30 prompts | Reference values, thresholds, and a few vital-sign estimates; normal ranges vary by laboratory and patient |
-| Memory Match | 52 pairs | Medication, mechanism, anatomy, finding, and diagnosis associations |
+| Connections | 32 boards | Four groups of four per board; 20 new cross-specialty boards |
+| Mystery Case | 40 cases | Progressive clinical-diagnosis clues with explanations and source notes |
+| Next Best Step | 40 cases | Original clinical decision vignettes with explanations and source notes |
+| Microbe Hunt | 28 organism packs | Each pack generates a deterministic word-search grid |
+| Labline | 50 prompts | Reference values, thresholds, and a few vital-sign estimates; normal ranges vary by laboratory and patient |
+| Memory Match | 112 pairs | Medication, mechanism, anatomy, finding, and diagnosis associations |
 | Triage Order | 12 sequences | Clinical and emergency sequence-reconstruction puzzles |
 | Anagram Sprint | 30 terms | Three-guess word scramble |
 | Cell Sketch | 6 unique 5×5 nonograms | Row and column run clues; CI verifies one valid solution per board |
@@ -25,7 +25,7 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 
 ## What this means for daily longevity
 
-Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. The content banks above are finite and currently use deterministic cycling, so some games repeat after their bank is exhausted. Practice mode draws from the same available content; it does not create new questions.
+Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. This expansion adds 20 Connections boards, 20 diagnosis cases, 20 next-step cases, 20 Labline prompts, 60 memory pairs, and 20 organism packs. Several games still have far fewer than 365 unique days, and the smallest puzzle formats remain the immediate priority. Practice mode draws from the same available content; it does not create new questions.
 
 The architecture deliberately separates game engines from content datasets so banks can grow without rewriting the UI or scoring systems. However, **do not describe the current release as having 365 unique daily puzzles**.
 
