@@ -606,29 +606,98 @@ function Labline({ seed, onDone, specialty = "general" }: Props) {
 
 function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   const pool = useMemo(() => specialty === "neurology" ? pairsBank.slice(12, 24) : specialty === "infectious" ? pairsBank.slice(36, 46) : specialty === "cardiology" ? pairsBank.slice(0, 12) : pairsBank, [specialty]);
-  const pairs = useMemo(() => shuffle(pool, seeded(seed + 11)).slice(0, 8), [seed, pool]);
-  const left = useMemo(() => shuffle(pairs.map((p, id) => ({ id, label: p[0] })), seeded(seed + 12)), [pairs, seed]);
-  const right = useMemo(() => shuffle(pairs.map((p, id) => ({ id, label: p[1] })), seeded(seed + 13)), [pairs, seed]);
-  const [a, setA] = useState<number | null>(null);
-  const [b, setB] = useState<number | null>(null);
+  const pairSet = useMemo(() => shuffle(pool, seeded(seed + 11)).slice(0, 10), [seed, pool]);
+  const cards = useMemo(() => shuffle(pairSet.flatMap(([term, meaning], pairId) => [
+    { id: pairId * 2, pairId, label: term, side: "TERM" },
+    { id: pairId * 2 + 1, pairId, label: meaning, side: "ASSOCIATION" }
+  ]), seeded(seed + 14)), [pairSet, seed]);
+  const [revealed, setRevealed] = useState<number[]>([]);
   const [matched, setMatched] = useState<number[]>([]);
-  const [wrong, setWrong] = useState(0);
-  const [note, setNote] = useState("Pick a term on the left, then its match on the right.");
+  const [moves, setMoves] = useState(0);
+  const [mismatches, setMismatches] = useState(0);
+  const [combo, setCombo] = useState(0);
+  const [score, setScore] = useState(0);
+  const [seconds, setSeconds] = useState(75);
+  const [locked, setLocked] = useState(false);
   const [ended, setEnded] = useState(false);
+  const [note, setNote] = useState("Memorize the cards. Find all ten term–association pairs before time runs out.");
   const done = useRef(false);
-  const choose = (leftId: number, rightId: number) => {
-    if (leftId === rightId) {
-      const next = [...matched, leftId]; setMatched(next); setNote("Matched: " + pairs[leftId][0] + " ↔ " + pairs[leftId][1] + "."); setA(null); setB(null);
-      if (next.length === pairs.length) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 100 - wrong * 8), 100, wrong === 0); } }
-    } else { setWrong((n) => n + 1); setNote("Not a pair. Try another connection."); setA(null); setB(null); }
+  const flipTimer = useRef<number | null>(null);
+
+  useEffect(() => () => { if (flipTimer.current !== null) window.clearTimeout(flipTimer.current); }, []);
+  useEffect(() => {
+    if (ended) return;
+    const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [ended]);
+  useEffect(() => {
+    if (seconds !== 0 || ended || done.current) return;
+    done.current = true;
+    setEnded(true);
+    setNote("Time. Review the pairs you uncovered and try to build a longer streak next run.");
+    onDone(score, 1650, false);
+  }, [seconds, ended, score, onDone]);
+
+  const flip = (id: number) => {
+    if (ended || locked || revealed.includes(id)) return;
+    const card = cards.find((item) => item.id === id);
+    if (!card || matched.includes(card.pairId)) return;
+    const next = [...revealed, id];
+    setRevealed(next);
+    if (next.length < 2) return;
+
+    setMoves((value) => value + 1);
+    const first = cards.find((item) => item.id === next[0]);
+    if (first?.pairId === card.pairId) {
+      const nextMatched = [...matched, card.pairId];
+      const nextCombo = combo + 1;
+      const earned = 100 + Math.min(combo * 10, 50);
+      const nextScore = score + earned;
+      setMatched(nextMatched);
+      setCombo(nextCombo);
+      setScore(nextScore);
+      setRevealed([]);
+      setNote(nextCombo > 1 ? "Pair found. " + nextCombo + " in a row — +" + earned + " points." : "Pair found. +" + earned + " points.");
+      if (nextMatched.length === pairSet.length) {
+        const finalScore = nextScore + seconds * 2;
+        done.current = true;
+        setEnded(true);
+        setNote("All ten pairs found. Time bonus: " + seconds * 2 + " points.");
+        onDone(finalScore, 1650, mismatches === 0);
+      }
+    } else {
+      setLocked(true);
+      setMismatches((value) => value + 1);
+      setCombo(0);
+      setNote("Not a match. Memorize both cards; they turn back over in a moment.");
+      flipTimer.current = window.setTimeout(() => {
+        setRevealed([]);
+        setLocked(false);
+        flipTimer.current = null;
+      }, 850);
+    }
   };
-  const pickLeft = (id: number) => { if (matched.includes(id) || ended) return; setA(id); if (b !== null) choose(id, b); };
-  const pickRight = (id: number) => { if (matched.includes(id) || ended) return; setB(id); if (a !== null) choose(a, id); };
-  return <div className="game-layout">
-    <div className="game-instructions"><span className="instruction-dot peach" /> Match each clinical term with its definition or key association. Choose one on each side.</div>
-    <div className="pair-columns"><div><SectionLabel>TERM</SectionLabel>{left.map((x) => <button key={x.id} disabled={matched.includes(x.id) || ended} onClick={() => pickLeft(x.id)} className={"pair-tile" + (a === x.id ? " selected" : "") + (matched.includes(x.id) ? " matched" : "")}>{x.label}</button>)}</div><div><SectionLabel>MEANING</SectionLabel>{right.map((x) => <button key={x.id} disabled={matched.includes(x.id) || ended} onClick={() => pickRight(x.id)} className={"pair-tile" + (b === x.id ? " selected" : "") + (matched.includes(x.id) ? " matched" : "")}>{x.label}</button>)}</div></div>
-    <p className="game-feedback" aria-live="polite">{note}</p><div className="game-footnote">{matched.length} of {pairs.length} matched · {wrong} mismatches</div>
-    {ended && <Finish title="All pairs connected" detail={"You matched " + pairs.length + " medical associations."} score={Math.max(0, 100 - wrong * 8) + " / 100"} />}
+
+  return <div className="game-layout association-game">
+    <div className="game-instructions"><span className="instruction-dot peach" /> Ten pairs are hidden in a 4 × 5 memory board. Match terms to their clinical associations, build a streak, and beat the 75-second clock.</div>
+    <div className="association-hud">
+      <div><b>{seconds}</b><span>SECONDS</span></div>
+      <div><b>{matched.length}/{pairSet.length}</b><span>PAIRS</span></div>
+      <div><b>{combo}×</b><span>STREAK</span></div>
+      <div><b>{score}</b><span>POINTS</span></div>
+    </div>
+    <div className="association-grid" aria-label="Memory cards">
+      {cards.map((card) => {
+        const isMatched = matched.includes(card.pairId);
+        const isRevealed = revealed.includes(card.id);
+        return <button key={card.id} type="button" className={"association-card" + (isMatched ? " matched" : "") + (isRevealed ? " revealed" : "")} onClick={() => flip(card.id)} disabled={ended || isMatched || (locked && !isRevealed)} aria-label={isMatched || isRevealed ? card.label : "Hidden association card"}>
+          {isMatched || isRevealed ? <><small>{card.side}</small><span>{card.label}</span></> : <b>✦</b>}
+        </button>;
+      })}
+    </div>
+    <div className="association-footer"><span>{moves} turns · {mismatches} mismatches</span><span>Match streaks earn bonus points</span></div>
+    <p className="game-feedback" aria-live="polite">{note}</p>
+    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All ten associations found in " + moves + " turns." : matched.length + " of ten pairs found. " + mismatches + " mismatches."} score={score + " / 1650"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
   </div>;
 }
 
