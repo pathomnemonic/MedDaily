@@ -14,10 +14,10 @@ The same UTC date + mode + specialty + game key yields the same daily seed, so g
 
 ## Gameplay principles
 
-- DoctorDle is a six-guess diagnosis puzzle with progressive clues; clinical multiple-choice drills are not presented as standalone games.
-- Word Hunt uses a themed word-search grid. Casefile Logic includes an on-screen pencil-mark grid.
-- Association Blitz uses a larger matching board. What Has More? favors surprising comparisons over sterile numeric drills.
-- Group rooms are limited to formats that support a shared challenge. One person enters a six-character code to start a room; everyone else enters the same code to join. Firebase credentials are still required for live cross-device multiplayer.
+- DoctorDle is a six-guess diagnosis puzzle with progressive clues; clinical multiple-choice drills are not presented as standalone games. Medle includes an on-screen Wordle-style keyboard.
+- Word Hunt is a 14×14 drag-to-select word search with persistent found-word highlighting. Casefile Logic and Cell Sketch include in-game pencil-mark systems.
+- Association Blitz is a timed 20-card memory game with ten pairs, combo streaks, and a time bonus. What Has More? draws from 90 comparisons, including 24 fun-first matchups such as propofol lipid calories versus bacon fat.
+- Labline and Anagram Sprint now use multi-round progression; Letter Lab is a playable Boggle-style adjacent-letter hunt; Connections adds one-away feedback and reliable reshuffling. Group rooms are limited to formats that support a shared challenge. One person enters a six-character code to start a room; everyone else enters the same code to join. Firebase credentials are still required for live cross-device multiplayer.
 - Completion is shown per game. MedDaily does not calculate a combined arcade score across games of different difficulty.
 - Dx Dash is permanently featured in the arcade and remains a separate game.
 
