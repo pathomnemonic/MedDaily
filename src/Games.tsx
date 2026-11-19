@@ -384,7 +384,7 @@ function LetterGridGame({ seed, onDone }: Props) {
     if (!done.current) {
       done.current = true;
       const points = words.reduce((total, word) => total + letterWordPoints(word), 0);
-      onDone(points, maximum, points === maximum);
+      onDone(points, maximum, points === maximum, "Letter Lab · " + words.length + " words\\n" + words.map((word) => "🟩".repeat(Math.min(6, word.length))).join("\\n"));
     }
   };
 
