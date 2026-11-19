@@ -44,11 +44,7 @@ export const nextStepCasesExpansion6: NextStepCase[] = [
 { id:"nx138",specialty:"Obstetrics and Gynecology",vignette:"A patient at 34 weeks has preeclampsia with severe-range blood pressure and neurologic symptoms.",question:"What is an appropriate immediate management plan?",options:["Stabilize severe blood pressure, give magnesium sulfate for seizure prophylaxis, and proceed to delivery after stabilization","Outpatient observation until 40 weeks","Use magnesium only as an antihypertensive","Avoid antihypertensive treatment"],answer:0,explanation:"Severe preeclampsia requires prompt treatment of severe hypertension, magnesium seizure prophylaxis, and delivery after maternal stabilization at this gestational age.",source:"ACOG gestational hypertension and preeclampsia guidance."},
 { id:"nx139",specialty:"Obstetrics and Gynecology",vignette:"A patient has cyclic pelvic pain, deep dyspareunia, infertility, and laparoscopically confirmed endometriosis.",question:"Which initial medical therapy is commonly used when pregnancy is not currently desired?",options:["NSAIDs for pain and hormonal suppression such as combined hormonal contraception or progestin","Long-term broad-spectrum antibiotics","Immediate hysterectomy for all patients","Chronic anticoagulation"],answer:0,explanation:"Initial symptom management commonly includes NSAIDs and hormonal suppression; fertility goals and disease severity guide further therapy.",source:"ACOG endometriosis clinical guidance."},
 { id:"nx140",specialty:"Obstetrics and Gynecology",vignette:"A teenager has sudden unilateral pelvic pain, vomiting, and an enlarged ovary with peripheral follicles concerning for torsion.",question:"What is the next step?",options:["Urgent gynecologic consultation and diagnostic laparoscopy with detorsion when indicated","Wait for arterial Doppler flow to disappear before consulting","Treat with oral antibiotics only","Schedule outpatient MRI in six weeks"],answer:0,explanation:"Ovarian torsion is a surgical emergency; Doppler flow does not reliably exclude torsion, and prompt detorsion can preserve ovarian function.",source:"ACOG adolescent adnexal torsion guidance."}
-].map((item, index) => {
-  const shift = (index + 1) % item.options.length;
-  const options = [...item.options.slice(shift), ...item.options.slice(0, shift)];
-  return { ...item, options, answer: options.indexOf(item.options[item.answer]) };
-});
+];
 
 export const connectionPuzzlesExpansion6: ConnectionGroup[][] = [
 [
