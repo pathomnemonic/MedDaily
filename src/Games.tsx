@@ -1306,7 +1306,8 @@ function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: 
     setScore(points);
     setSubmitted(true);
     setNote(matches === 6 ? "Every clue fits. Mystery solved." : matches + " of 6 assignments are in the right place. Review the clues and solution.");
-    onDone(points, 100, matches === 6 && hintsUsed === 0);
+    const shareRows = item.solution.map((solution) => { const current = assignments[solution.suspect]; return (current.location === solution.location ? "🟩" : "⬛") + (current.object === solution.object ? "🟩" : "⬛"); }).join("");
+    onDone(points, 100, matches === 6 && hintsUsed === 0, "Casefile Logic · " + matches + "/6 matches\\n" + shareRows + "\\n" + hintsUsed + " hints used");
   };
   return <div className="game-layout">
     <div className="case-banner logic-banner"><span>{practice?"GENERATED FREE-PLAY CASE":"CURATED DAILY CASE"}</span><strong>{item.title}</strong><small>Deduction, not diagnosis · 3×3 logic grid</small></div>
