@@ -12,6 +12,7 @@ const LONG_DIVE_ALIASES: Record<string, string[]> = {
   "Respiratory syncytial virus": ["RSV"],
   "Human immunodeficiency virus": ["HIV"],
   "Staphylococcus aureus": ["S aureus", "Staph aureus"],
+  "Idiopathic intracranial hypertension": ["Pseudotumor cerebri"],
   "Streptococcus pneumoniae": ["S pneumoniae", "Pneumococcus"],
   "Escherichia coli": ["E coli"],
   "Neisseria meningitidis": ["Meningococcus"],
@@ -77,7 +78,7 @@ export const deepDiveLongTailExpansion: DeepPrompt[] = [
     ["Thiopental","Methohexital","Ropivacaine","Mepivacaine","Chloroprocaine","Tetracaine","Prilocaine","Articaine","Diazepam","Lorazepam"],
     ["Vecuronium","Cisatracurium","Atracurium","Pancuronium","Mivacurium","Sufentanil","Alfentanil","Glycopyrrolate","Droperidol","Metoclopramide"],
     ["Clonidine","Epinephrine","Phenylephrine","Ephedrine","Vasopressin","Ketorolac","Acetaminophen","Tranexamic acid","Aprepitant","Scopolamine"],
-    ["Dantrolene","Flumazenil","Naloxone","Physostigmine","Methylene blue","Calcium chloride","Intralipid","Pyridostigmine","Caffeine citrate","Sugammadex"]
+    ["Dantrolene","Flumazenil","Naloxone","Physostigmine","Methylene blue","Calcium chloride","Intralipid","Pyridostigmine","Caffeine citrate","Benzocaine"]
   ]),
   longDive("long-diagnostics","Name a laboratory test or diagnostic study.","Diagnostics","This prompt includes common laboratory panels, microbiology, cardiac testing, pulmonary studies, and imaging modalities. Rarity tiers are editorial rather than measures of clinical value.",[
     ["Complete blood count","Basic metabolic panel","Comprehensive metabolic panel","Urinalysis","Urine culture","Blood culture","Hemoglobin A1c","Lipid panel","Troponin","Electrocardiogram"],
@@ -109,15 +110,15 @@ export const deepDiveLongTailExpansion: DeepPrompt[] = [
     ["Cerebral venous sinus thrombosis","Subarachnoid hemorrhage","Subdural hematoma","Epidural hematoma","Transient ischemic attack","Status epilepticus","Absence epilepsy","Juvenile myoclonic epilepsy","Temporal lobe epilepsy","Infantile spasms"],
     ["Neuromyelitis optica","MOG antibody-associated disease","Chronic inflammatory demyelinating polyneuropathy","Charcot-Marie-Tooth disease","Spinal muscular atrophy","Duchenne muscular dystrophy","Facioscapulohumeral muscular dystrophy","Lambert-Eaton syndrome","Botulism","Tetanus"],
     ["Creutzfeldt-Jakob disease","Progressive supranuclear palsy","Multiple system atrophy","Corticobasal degeneration","Wilson disease","Friedreich ataxia","Spinocerebellar ataxia","Adrenoleukodystrophy","Subacute combined degeneration","Wernicke encephalopathy"],
-    ["CADASIL","MELAS","Sturge-Weber syndrome","Tuberous sclerosis","Neurofibromatosis type 1","Neurofibromatosis type 2","Pseudotumor cerebri","Tolosa-Hunt syndrome","Susac syndrome","Rasmussen encephalitis"]
+    ["CADASIL","MELAS","Sturge-Weber syndrome","Tuberous sclerosis","Neurofibromatosis type 1","Neurofibromatosis type 2","Posterior reversible encephalopathy syndrome","Tolosa-Hunt syndrome","Susac syndrome","Rasmussen encephalitis"]
   ]),
   longDive("long-procedures","Name a surgical or invasive medical procedure.","Surgery","Accepted answers include common operations, endoscopic procedures, vascular interventions, and bedside procedures. Rarity tiers are editorial.",[
     ["Appendectomy","Cholecystectomy","Cesarean delivery","Hernia repair","Cataract surgery","Coronary artery bypass grafting","Percutaneous coronary intervention","Colonoscopy","Upper endoscopy","Lumbar puncture"],
     ["Thoracentesis","Paracentesis","Arthrocentesis","Central venous catheterization","Endotracheal intubation","Tracheostomy","Chest tube insertion","Dialysis catheter placement","Hemodialysis","Peritoneal dialysis"],
     ["Craniotomy","Laminectomy","Thyroidectomy","Mastectomy","Colectomy","Gastrectomy","Nephrectomy","Splenectomy","Hysterectomy","Prostatectomy"],
     ["Bronchoscopy","ERCP","Endoscopic ultrasound","Esophageal dilation","Endometrial biopsy","Hysteroscopy","Cystoscopy","Ureteroscopy","Lithotripsy","Arthroscopy"],
-    ["Carotid endarterectomy","Endovascular thrombectomy","Mechanical thrombectomy","Aortic valve replacement","Transcatheter aortic valve replacement","Mitral valve repair","Pacemaker implantation","Implantable cardioverter-defibrillator placement","Radiofrequency ablation","Electrophysiology study"],
-    ["Whipple procedure","Nissen fundoplication","Roux-en-Y gastric bypass","Sleeve gastrectomy","Bariatric revision","Pancreaticoduodenectomy","Lobectomy","Pneumonectomy","VATS","Extracorporeal membrane oxygenation cannulation"]
+    ["Carotid endarterectomy","Surgical embolectomy","Mechanical thrombectomy","Aortic valve replacement","Transcatheter aortic valve replacement","Mitral valve repair","Pacemaker implantation","Implantable cardioverter-defibrillator placement","Radiofrequency ablation","Electrophysiology study"],
+    ["Transsphenoidal surgery","Nissen fundoplication","Roux-en-Y gastric bypass","Sleeve gastrectomy","Bariatric revision","Pancreaticoduodenectomy","Lobectomy","Pneumonectomy","VATS","Extracorporeal membrane oxygenation cannulation"]
   ])
 
 ];
