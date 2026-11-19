@@ -1,4 +1,4 @@
-export type GameId = "medle" | "connections" | "diagnosis" | "nextstep" | "microbe" | "labline" | "pairs" | "triage" | "splice" | "glyph" | "higher" | "ladder" | "hive" | "casefile";
+export type GameId = "medle" | "connections" | "diagnosis" | "nextstep" | "microbe" | "labline" | "pairs" | "triage" | "splice" | "glyph" | "higher" | "ladder" | "hive" | "casefile" | "dive" | "trivia" | "lettergrid";
 // A single UTC calendar day keeps daily puzzles identical across player time zones.
 export const dailyDateKey = (date = new Date()): string => {
   const y = date.getUTCFullYear(), m = String(date.getUTCMonth()+1).padStart(2,"0"), d = String(date.getUTCDate()).padStart(2,"0");
