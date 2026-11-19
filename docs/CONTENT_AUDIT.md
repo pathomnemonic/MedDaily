@@ -41,7 +41,7 @@ Clinical cases are filtered toward specialties where curated mappings exist, inc
 
 Remaining content priorities:
 1. Continue replacing generic Spelling Hive entries with clinically meaningful, dictionary-verified words; the playable bank has 46 curated boards with clinical vocabulary notes.
-2. Expand Cell Sketch and Word Ladder while preserving one-solution and valid-path checks (Cell Sketch now has 19 original patterns; Word Ladder has 26 paths).
+2. Expand Cell Sketch and Word Ladder while preserving one-solution and valid-path checks (Cell Sketch now has 24 original patterns plus 12 transformed variants; Word Ladder now has 36 curated paths).
 3. Add specialty-reviewed Connections boards and clinical cases for tracks whose current content falls back to general banks.
 4. Add original/licensed visual material for ECG, imaging, histology, gross pathology, and anatomy recognition.
 5. Continue expanding Deep Dive's long-tail answer sets with clinically defensible aliases and explicit editorial rarity weights—not fabricated player-population statistics.
