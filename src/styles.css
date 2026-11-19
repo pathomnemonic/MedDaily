@@ -1626,3 +1626,23 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .ambient-shafts{position:absolute;inset:-20% -10% 30% -10%;background:conic-gradient(from 200deg at 70% -10%,transparent 0 12deg,hsl(calc(var(--hue) + 25) calc(80% * var(--sat)) 75% / .09) 14deg,transparent 26deg 42deg,hsl(calc(var(--hue) + 25) calc(80% * var(--sat)) 75% / .06) 46deg,transparent 60deg);mask-image:linear-gradient(to bottom,black,transparent 75%);animation:shaftSway 22s ease-in-out infinite alternate}
 @keyframes shaftSway{from{transform:rotate(-2deg)}to{transform:rotate(3deg)}}
 [data-motion="reduced"] .ambient-glow,[data-motion="reduced"] .ambient-bokeh i,[data-motion="reduced"] .ambient-shafts{animation:none}
+
+/* ===== Scenes, companion, level-load wipe, tilt ===== */
+.stage-scene{position:absolute;inset:0;width:100%;height:100%;opacity:.16;pointer-events:none;z-index:0}
+.breadcrumb{position:relative}
+.pip-companion{position:absolute;right:2px;top:-14px;z-index:30;display:flex;flex-direction:row-reverse;align-items:flex-end;gap:4px;pointer-events:none}
+.pip-companion .mascot{width:46px;height:auto;filter:drop-shadow(0 4px 0 rgba(0,0,0,.35))}
+.pip-bubble{position:relative;margin:0 8px 6px 0;padding:6px 12px;border:3px solid #fff;border-radius:14px;background:#fff7ea;color:#2a1658;font:400 15px var(--font-display);box-shadow:0 4px 0 rgba(0,0,0,.3);animation:cardPop .3s cubic-bezier(.2,1.6,.4,1)}
+.pip-bubble::after{content:"";position:absolute;right:-8px;bottom:12px;width:11px;height:11px;background:#fff7ea;border:3px solid #fff;border-bottom:0;border-left:0;transform:rotate(45deg)}
+.pip-bubble.sad{background:#ffe0ea}.pip-bubble.sad::after{background:#ffe0ea}
+@media(min-width:761px){.pip-companion .mascot{width:60px}}
+.game-wipe{position:fixed;inset:0;z-index:90;display:grid;place-items:center;align-content:center;gap:10px;pointer-events:none;background:radial-gradient(circle at 50% 45%,var(--c2),var(--c1) 70%);animation:wipeInOut .9s cubic-bezier(.7,0,.3,1) forwards}
+.game-wipe.tone-mint{--c1:#2fcf9f;--c2:#b9ffe3}.game-wipe.tone-lilac{--c1:#8d70ff;--c2:#e6d9ff}.game-wipe.tone-peach{--c1:#ff7f93;--c2:#ffd8bd}.game-wipe.tone-gold{--c1:#ffb42e;--c2:#fff2ae}.game-wipe.tone-blue{--c1:#2fb3ee;--c2:#c3f1ff}.game-wipe.tone-pink{--c1:#ff63a9;--c2:#ffd6ee}.game-wipe.tone-lime{--c1:#6fd45f;--c2:#eaffb8}.game-wipe.tone-orange{--c1:#ff8236;--c2:#ffd9a8}
+.game-wipe-art{width:min(70vw,360px);animation:wipeArt .9s cubic-bezier(.2,1.4,.4,1) forwards}
+.game-wipe b{font:400 clamp(28px,7vw,48px) var(--font-display);color:#fff;text-shadow:0 4px 0 rgba(38,16,79,.55);animation:wipeArt .9s .05s cubic-bezier(.2,1.4,.4,1) forwards}
+@keyframes wipeInOut{0%{clip-path:circle(0% at 50% 50%);opacity:1}35%{clip-path:circle(75% at 50% 50%);opacity:1}70%{clip-path:circle(75% at 50% 50%);opacity:1}100%{clip-path:circle(75% at 50% 50%);opacity:0}}
+@keyframes wipeArt{0%{transform:scale(.4) rotate(-6deg);opacity:0}40%{transform:scale(1.05) rotate(1deg);opacity:1}100%{transform:scale(1);opacity:1}}
+[data-motion="reduced"] .game-wipe{display:none}
+.burst-dot{background:none!important;width:auto!important;height:auto!important;font:400 18px/1 var(--font-display);text-shadow:0 2px 0 rgba(0,0,0,.35)}
+.game-card{transform-style:preserve-3d}
+.game-card:hover{transform:perspective(800px) translateY(-8px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))!important}

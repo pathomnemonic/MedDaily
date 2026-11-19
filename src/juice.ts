@@ -8,11 +8,13 @@ export function burst(origin: Element | { x: number; y: number } | null, label?:
     if ("getBoundingClientRect" in origin) { const b = origin.getBoundingClientRect(); x = b.left + b.width / 2; y = b.top + b.height / 2; }
     else { x = origin.x; y = origin.y; }
   }
-  for (let i = 0; i < 14; i++) {
+  const glyphs = ["★", "✚", "●", "◆"];
+  for (let i = 0; i < 16; i++) {
     const dot = document.createElement("i");
-    const angle = (Math.PI * 2 * i) / 14 + Math.random() * 0.4, dist = 40 + Math.random() * 50;
+    dot.textContent = glyphs[i % glyphs.length];
+    const angle = (Math.PI * 2 * i) / 16 + Math.random() * 0.4, dist = 40 + Math.random() * 50;
     dot.className = "burst-dot";
-    dot.style.cssText = `left:${x}px;top:${y}px;background:${colors[i % colors.length]};--dx:${Math.cos(angle) * dist}px;--dy:${Math.sin(angle) * dist}px`;
+    dot.style.cssText = `left:${x}px;top:${y}px;color:${colors[i % colors.length]};--dx:${Math.cos(angle) * dist}px;--dy:${Math.sin(angle) * dist}px`;
     document.body.appendChild(dot);
     window.setTimeout(() => dot.remove(), 750);
   }
@@ -28,6 +30,7 @@ export function burst(origin: Element | { x: number; y: number } | null, label?:
 /** Celebrate a right answer / punish a wrong one with sound and (for rights) a burst. */
 export function reward(good: boolean, origin?: Element | null, label?: string) {
   sfx(good ? "correct" : "wrong");
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("pip", { detail: good ? "cheer" : "sad" }));
   if (good) burst(origin ?? null, label);
   else if (origin) { origin.classList.remove("shake"); void (origin as HTMLElement).offsetWidth; origin.classList.add("shake"); }
 }
