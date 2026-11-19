@@ -62,8 +62,8 @@ describe("content bank sanity", () => {
     expect(medleWords.every((word) => /^[A-Z]{5}$/.test(word))).toBe(true);
   });
 
-  it("keeps the 148-board Connections bank at four groups of four unique tiles", () => {
-    expect(connectionPuzzles).toHaveLength(148);
+  it("keeps the 160-board Connections bank at four groups of four unique tiles", () => {
+    expect(connectionPuzzles).toHaveLength(160);
     for (const board of connectionPuzzles) {
       expect(board).toHaveLength(4);
       expect(new Set(board.map((group) => group.category.toLowerCase())).size, JSON.stringify(board)).toBe(4);
