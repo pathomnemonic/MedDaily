@@ -651,26 +651,56 @@ function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
 }
 
 function Labline({ seed, onDone, specialty = "general" }: Props) {
-  const item = pick(labPrompts, seed, specialty, "labline");
+  const rounds = useMemo(() => {
+    const pool = specialty === "neurology" ? labPrompts.filter((_, index) => [18,19,20].includes(index)) : specialty === "cardiology" ? labPrompts.filter((_, index) => [1,3,4,17].includes(index)) : labPrompts;
+    return shuffle(pool.length >= 5 ? pool : labPrompts, seeded(seed + 27)).slice(0, 5);
+  }, [seed, specialty]);
+  const [round, setRound] = useState(0);
   const [value, setValue] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
-  const [message, setMessage] = useState("");
+  const [points, setPoints] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [results, setResults] = useState<{prompt:string;estimate:string;actual:number;unit:string;points:number;context:string;source:string}[]>([]);
+  const [message, setMessage] = useState("Five estimates. Trust your clinical intuition; precision earns the points.");
+  const [finished, setFinished] = useState(false);
   const done = useRef(false);
+  const item = rounds[round];
+
   const check = () => {
-    const n = Number(value);
-    if (value.trim() === "" || !Number.isFinite(n)) { setMessage("Enter a number to make your estimate."); return; }
-    const diff = Math.abs(n - item.value);
-    const points = item.tolerance === 0 ? (diff < 0.0001 ? 100 : 0) : Math.max(0, Math.round(100 * (1 - diff / Math.max(item.tolerance * 3, Math.abs(item.value) * 0.2))));
-    setScore(points); setSubmitted(true);
-    setMessage(diff <= item.tolerance ? "Inside the expected reference window." : diff <= item.tolerance * 2 ? "Close estimate." : "A useful number to add to your mental reference sheet.");
-    if (!done.current) { done.current = true; onDone(points, 100, diff <= item.tolerance); }
+    const estimate = Number(value);
+    if (value.trim() === "" || !Number.isFinite(estimate)) { setMessage("Enter a number to make your estimate."); return; }
+    if (submitted || finished) return;
+    const diff = Math.abs(estimate - item.value);
+    const earned = item.tolerance === 0 ? (diff < 0.0001 ? 100 : 0) : Math.max(0, Math.round(100 * (1 - diff / Math.max(item.tolerance * 3, Math.abs(item.value) * 0.2))));
+    const nextTotal = total + earned;
+    setPoints(earned);
+    setTotal(nextTotal);
+    setSubmitted(true);
+    setResults((current) => [...current, {prompt:item.prompt,estimate:value,actual:item.value,unit:item.unit,points:earned,context:item.context,source:item.source}]);
+    setMessage(diff <= item.tolerance ? "Bullseye — inside the expected reference window." : diff <= item.tolerance * 2 ? "Close estimate. Tighten your range next round." : "A useful reference point to remember.");
+    if (round === rounds.length - 1) {
+      setFinished(true);
+      if (!done.current) { done.current = true; onDone(nextTotal, rounds.length * 100, nextTotal === rounds.length * 100); }
+    }
   };
-  return <div className="game-layout">
-    <div className="lab-console"><span className="lab-light" /><span>LABORATORY · REFERENCE RANGE CHALLENGE</span><span className="lab-light second" /></div>
-    <div className="lab-prompt"><SectionLabel>CALIBRATE YOUR CLINICAL EYE</SectionLabel><h3>{item.prompt}</h3><p>Enter your best estimate. No calculator needed.</p></div>
-    {!submitted ? <form className="lab-input-row" onSubmit={(e) => { e.preventDefault(); check(); }}><input type="number" step="any" value={value} onChange={(e) => setValue(e.target.value)} aria-label={"Estimate in " + item.unit} placeholder="Your estimate" /><span>{item.unit || "value"}</span><button className="button button-primary" type="submit">Check</button></form> : <Finish title={score >= 85 ? "Calibrated!" : "The reference point"} detail={item.context} score={score + " / 100"}><p className="lab-answer">{item.value} {item.unit}</p><p className="source-note">Source note: {item.source}</p></Finish>}
-    <p className="game-feedback" aria-live="polite">{message}</p>
+  const next = () => {
+    if (!submitted || finished) return;
+    setRound((current) => current + 1);
+    setValue("");
+    setPoints(0);
+    setSubmitted(false);
+    setMessage("New estimate. How close can you get?");
+  };
+
+  return <div className="game-layout labline-game">
+    <div className="lab-console"><span className="lab-light" /><span>LABLINE · ESTIMATION CHALLENGE</span><span className="lab-light second" /></div>
+    <div className="labline-hud"><div><b>{round + 1}<small> / 5</small></b><span>ROUND</span></div><div><b>{total}</b><span>POINTS</span></div><div><b>{Math.max(0, 5 - round - Number(submitted))}</b><span>LEFT</span></div></div>
+    <div className="labline-progress"><i style={{width:((round + Number(submitted))/5*100)+"%"}} /></div>
+    {!finished ? <>
+      <div className="lab-prompt"><SectionLabel>CALIBRATE YOUR CLINICAL EYE</SectionLabel><h3>{item.prompt}</h3><p>Enter your best estimate. No calculator needed.</p></div>
+      {!submitted ? <form className="lab-input-row" onSubmit={(event) => { event.preventDefault(); check(); }}><input type="number" step="any" value={value} onChange={(event) => setValue(event.target.value)} aria-label={"Estimate in " + item.unit} placeholder="Your estimate" /><span>{item.unit || "value"}</span><button className="button button-primary" type="submit" disabled={!value.trim()}>Lock estimate</button></form> : <div className="labline-reveal"><span className="eyebrow">REFERENCE VALUE</span><strong>{item.value} {item.unit}</strong><b>{points} / 100</b><p>{item.context}</p><small>Source: {item.source}</small><button className="button button-primary full-button" onClick={next}>Next estimate →</button></div>}
+      <p className="game-feedback" aria-live="polite">{message}</p>
+    </> : <div className="labline-finale"><Finish title="Calibration complete" detail={"Five clinical estimates. " + (total >= 400 ? "Excellent calibration." : total >= 250 ? "Your reference instincts are developing." : "Keep building your mental reference ranges.")} score={total + " / 500"}><div className="reveal-groups">{results.map((result, index) => <span key={index}><b>{index + 1}. {result.points} pts</b>{result.prompt}<br/>Your estimate: {result.estimate} {result.unit} · Reference: {result.actual} {result.unit}</span>)}</div></Finish></div>}
   </div>;
 }
 
