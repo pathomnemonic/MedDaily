@@ -4,7 +4,7 @@ import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks
 import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
+import { associationPairPoints, associationTimeBonus, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
 import { generateDeductionCase } from "./logicGenerator";
 
 type Done = (score: number, maxScore: number, perfect: boolean) => void;
@@ -782,7 +782,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     if (first?.pairId === card.pairId) {
       const nextMatched = [...matched, card.pairId];
       const nextCombo = combo + 1;
-      const earned = 100 + Math.min(combo * 10, 50);
+      const earned = associationPairPoints(combo);
       const nextScore = score + earned;
       setMatched(nextMatched);
       setCombo(nextCombo);
@@ -790,10 +790,10 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
       setRevealed([]);
       setNote(nextCombo > 1 ? "Pair found. " + nextCombo + " in a row — +" + earned + " points." : "Pair found. +" + earned + " points.");
       if (nextMatched.length === pairSet.length) {
-        const finalScore = nextScore + seconds * 2;
+        const finalScore = nextScore + associationTimeBonus(seconds);
         done.current = true;
         setEnded(true);
-        setNote("All twelve pairs found. Time bonus: " + seconds * 2 + " points.");
+        setNote("All twelve pairs found. Time bonus: " + associationTimeBonus(seconds) + " points.");
         onDone(finalScore, 1650, mismatches === 0);
       }
     } else {
