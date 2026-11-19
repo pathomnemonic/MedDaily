@@ -12,7 +12,16 @@ Sixteen playable formats span clinical deduction, word games, estimation, spatia
 
 The same UTC date + mode + specialty + game key yields the same daily seed, so groups in different time zones share the same puzzle. Open Arcade is the shared, balanced general mode and the default starting point. Specialty Dailies add shared daily sets across 26 clinical specialties and four foundational subjects. Neurology is one track like the other specialties; subspecialty topics belong inside the Neurology track rather than taking up multiple top-level slots.
 
-## Gameplay principles\n\n- DoctorDle is a six-guess diagnosis puzzle with progressive clues; clinical multiple-choice drills are not presented as standalone games.\n- Word Hunt uses a themed word-search grid. Casefile Logic includes an on-screen pencil-mark grid.\n- Association Blitz uses a larger matching board. What Has More? favors surprising comparisons over sterile numeric drills.\n- Group rooms are limited to formats that support a shared challenge. One person enters a six-character code to start a room; everyone else enters the same code to join. Firebase credentials are still required for live cross-device multiplayer.\n- Completion is shown per game. MedDaily does not calculate a combined arcade score across games of different difficulty.\n- Dx Dash is permanently featured in the arcade and remains a separate game.\n\n## Privacy and accounts
+## Gameplay principles
+
+- DoctorDle is a six-guess diagnosis puzzle with progressive clues; clinical multiple-choice drills are not presented as standalone games.
+- Word Hunt uses a themed word-search grid. Casefile Logic includes an on-screen pencil-mark grid.
+- Association Blitz uses a larger matching board. What Has More? favors surprising comparisons over sterile numeric drills.
+- Group rooms are limited to formats that support a shared challenge. One person enters a six-character code to start a room; everyone else enters the same code to join. Firebase credentials are still required for live cross-device multiplayer.
+- Completion is shown per game. MedDaily does not calculate a combined arcade score across games of different difficulty.
+- Dx Dash is permanently featured in the arcade and remains a separate game.
+
+## Privacy and accounts
 
 - Solo play, practice, and local progress work without an account.
 - Progress is saved locally by default.
