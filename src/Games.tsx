@@ -1024,6 +1024,7 @@ function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boo
   const [text, setText] = useState("");
   const [note, setNote] = useState("Change one letter at a time. Every step must be a real word.");
   const [showPath, setShowPath] = useState(false);
+  const [hintUsed, setHintUsed] = useState(false);
   const [ended, setEnded] = useState(false);
   const maxMoves = Math.max(2, item.path.length + 2);
   const diffOne = (a: string, b: string) => a.length === b.length && [...a].filter((c, i) => c !== b[i]).length === 1;
@@ -1034,7 +1035,7 @@ function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boo
     if (!ladderDictionary.has(word)) { setNote("That word is not in the ladder dictionary. Try another one-letter neighbor."); return; }
     if (entered.includes(word)) { setNote("You've already used that word."); return; }
     const next = [...entered, word]; setEntered(next); setText("");
-    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (showPath ? 20 : 0))), 100, next.length === item.path.length && !showPath); }
+    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (hintUsed ? 20 : 0))), 100, next.length === item.path.length && !hintUsed); }
     else if (next.length >= maxMoves) { setEnded(true); onDone(0, 100, false); }
     else setNote("Good step. Keep going.");
   };
@@ -1045,7 +1046,7 @@ function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boo
     <div className="ladder-rungs">{entered.map((w, i) => <span key={i}>{w}</span>)}{!ended && <i>?</i>}</div>
     {!ended ? <>
       <form className="word-entry" onSubmit={(e) => { e.preventDefault(); add(); }}><input value={text} maxLength={item.start.length} onChange={(e) => setText(e.target.value.replace(/[^a-z]/gi,"").toUpperCase())} placeholder="Next word" /><button className="button button-primary">Add step</button></form>
-      <button className="text-button" onClick={() => setShowPath((value) => !value)}>{showPath ? "Hide suggested path" : "Need a nudge? Reveal one possible path"}</button>
+      <button className="text-button" onClick={() => { setShowPath((value) => !value); setHintUsed(true); }}>{showPath ? "Hide suggested path" : "Need a nudge? Reveal one possible path"}</button>
       {showPath && <p className="ladder-hint">One valid route: {item.path.join(" → ")}</p>}
     </> : <Finish title={entered[entered.length-1] === item.end ? "Ladder climbed" : "The ladder revealed"} detail={"One possible path: " + item.path.join(" → ")} score={entered[entered.length-1] === item.end ? (showPath ? "Hint used" : "Solved") : "Try another run"} />}
     <p className="game-feedback">{note}</p>
