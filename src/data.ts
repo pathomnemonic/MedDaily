@@ -252,7 +252,7 @@ medleWords.push(...medleWordsExpansion.filter((word) => !medleWords.includes(wor
 medleWords.push(...medleWordsExpansion3.filter((word) => !medleWords.includes(word)));
 const uniqueMedleWords = [...new Set(medleWords)];
 medleWords.splice(0, medleWords.length, ...uniqueMedleWords);
-for (const word of ["TALUS", "CILIA", "BLOAT", "MUCUS"]) {
+for (const word of ["ASCUS", "RAPHE", "NARES", "ACRAL"]) {
   if (!medleWords.includes(word)) medleWords.push(word);
 }
 
