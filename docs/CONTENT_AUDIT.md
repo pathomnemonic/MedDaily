@@ -1,6 +1,6 @@
 # Content inventory and expansion priorities
 
-**Snapshot:** November 19, 2026 (content expansion batch 1)
+**Snapshot:** November 19, 2026 (content expansion batch 7)
 
 MedDaily has fourteen playable game formats. This is a functioning first release with a broad specialty structure, not yet a 365-day set of unique content for every game.
 
@@ -9,9 +9,9 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 | Game | Current bank | Notes |
 |---|---:|---|
 | Medle | 117 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
-| Connections | 62 boards | Four groups of four per board; 20 new cross-specialty boards |
-| Mystery Case | 100 cases | Progressive clinical-diagnosis clues with explanations and source notes |
-| Next Best Step | 100 cases | Original clinical decision vignettes with explanations and source notes |
+| Connections | 72 boards | Four groups of four per board; 20 new cross-specialty boards |
+| Mystery Case | 120 cases | Progressive clinical-diagnosis clues with explanations and source notes |
+| Next Best Step | 120 cases | Original clinical decision vignettes with explanations and source notes |
 | Microbe Hunt | 48 organism packs | Each pack generates a deterministic word-search grid |
 | Labline | 70 prompts | Reference values, thresholds, and a few vital-sign estimates; normal ranges vary by laboratory and patient |
 | Memory Match | 168 pairs | Medication, mechanism, anatomy, finding, and diagnosis associations |
@@ -25,7 +25,7 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 
 ## What this means for daily longevity
 
-Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. The first six expansions add 50 Connections boards, 80 diagnosis cases, 80 next-step cases, 40 Labline prompts, 116 memory pairs, 40 organism packs, 9 Spelling Hive boards, 10 Word Ladders, 12 transformed nonograms, 6 fictional logic cases, 59 new Medle answers, 20 triage sequences, 30 quantitative comparisons, and 51 Anagram Sprint terms. Several games still have far fewer than 365 unique days, and the smallest puzzle formats remain the immediate priority. Practice mode draws from the same available content; it does not create new questions.
+Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. The first seven expansions add 60 Connections boards, 100 diagnosis cases, 100 next-step cases, 40 Labline prompts, 116 memory pairs, 40 organism packs, 9 Spelling Hive boards, 10 Word Ladders, 12 transformed nonograms, 6 fictional logic cases, 59 new Medle answers, 20 triage sequences, 30 quantitative comparisons, and 51 Anagram Sprint terms. Several games still have far fewer than 365 unique days, and the smallest puzzle formats remain the immediate priority. Practice mode draws from the same available content; it does not create new questions.
 
 The architecture deliberately separates game engines from content datasets so banks can grow without rewriting the UI or scoring systems. However, **do not describe the current release as having 365 unique daily puzzles**.
 
@@ -33,7 +33,7 @@ The architecture deliberately separates game engines from content datasets so ba
 
 The app currently has 30 tracks: 26 clinical specialties and four foundational subjects (Anatomy, Pathology, Pharmacology, and Biostatistics/Epidemiology). Neurology is one top-level track, like the other specialties.
 
-Clinical cases are filtered toward specialties where curated mappings exist. Some general-purpose mechanics—such as word games, nonograms, and estimation—draw from shared banks. Track-specific daily seeds are still separate, so friends in the same track share a puzzle while different tracks have distinct daily seeds. The specialty content banks are a first-pass mapping, not a complete curriculum for every discipline.
+Clinical cases are filtered toward specialties where curated mappings exist, including newly expanded pediatric, nephrology, pulmonary, gastroenterology, and infectious-disease tracks. Some general-purpose mechanics—such as word games, nonograms, and estimation—draw from shared banks. Track-specific daily seeds are still separate, so friends in the same track share a puzzle while different tracks have distinct daily seeds. The specialty content banks are a first-pass mapping, not a complete curriculum for every discipline.
 
 ## Recommended next content work
 
