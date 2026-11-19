@@ -119,7 +119,8 @@ describe("Strands-style Word Hunt boards", () => {
       const board = makeStrandsBoard(pack.words, 20261119 + index);
       expect(board.grid).toHaveLength(Math.min(8, board.spangram.length));
       expect(board.grid.every((row) => row.length === 10)).toBe(true);
-      expect(board.words).toHaveLength(pack.words.length);
+      const expectedWords = [...new Set(pack.words.map((word) => word.toUpperCase().replace(/[^A-Z]/g, "")))].filter((word) => word.length >= 3 && word.length <= board.rows * board.columns);
+      expect(board.words).toEqual(expectedWords);
       expect(board.spangram).toBeTruthy();
       const span = board.paths[board.spangram];
       expect(Math.floor(span[0] / board.columns)).toBe(0);
