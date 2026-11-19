@@ -213,7 +213,7 @@ export default function App() {
 }
 
 function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneToday,openGame,freePlay,setFreePlay}:{
-  player:PlayerData;scope:string;mode:Mode;specialty:Specialty;setMode:(m:Mode)=>void;setSpecialty:(s:Specialty)=>void;today:string;doneToday:number;openGame:(id:GameId,practice?:boolean)=>void;
+  player:PlayerData;scope:string;mode:Mode;specialty:Specialty;setMode:(m:Mode)=>void;setSpecialty:(s:Specialty)=>void;today:string;doneToday:number;openGame:(id:GameId,practice?:boolean)=>void;freePlay:boolean;setFreePlay:(value:boolean)=>void;
 }){
   const done=doneToday;
   
