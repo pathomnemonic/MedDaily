@@ -526,6 +526,25 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
   </div>;
 }
 
+const DOCTORDLE_ALIASES: Record<string, string[]> = {
+  "acute myocardial infarction": ["mi", "heart attack", "ami"],
+  "diabetic ketoacidosis": ["dka"],
+  "chronic obstructive pulmonary disease": ["copd"],
+  "acute kidney injury": ["aki"],
+  "chronic kidney disease": ["ckd"],
+  "pulmonary embolism": ["pe"],
+  "deep vein thrombosis": ["dvt"],
+  "subarachnoid hemorrhage": ["sah"],
+  "intracerebral hemorrhage": ["ich"],
+  "multiple sclerosis": ["ms"],
+  "myasthenia gravis": ["mg"],
+  "guillain-barre syndrome": ["gbs", "guillain barre"],
+  "systemic lupus erythematosus": ["sle", "lupus"],
+  "rheumatoid arthritis": ["ra"],
+  "ulcerative colitis": ["uc"],
+  "hepatocellular carcinoma": ["hcc"],
+  "pheochromocytoma": ["pheo"]
+};
 function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
   const item = pick(diagnosisCases, seed, specialty, "diagnosis");
   const [guess, setGuess] = useState("");
@@ -541,7 +560,8 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
     if (!value || ended) return;
     if (guesses.some((g) => normalize(g) === value)) { setNote("You already tried that diagnosis."); return; }
     const next = [...guesses, guess.trim()];
-    const correct = value === normalize(item.answer);
+    const answerKey = normalize(item.answer);
+    const correct = value === answerKey || (DOCTORDLE_ALIASES[answerKey] ?? []).some((alias) => normalize(alias) === value);
     setGuesses(next);
     setGuess("");
     if (correct || next.length >= 6) {
