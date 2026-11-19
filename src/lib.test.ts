@@ -72,6 +72,11 @@ describe("content bank sanity", () => {
 });
 
 describe("additional daily puzzle packs", () => {
+  it("keeps the playable Spelling Hive pool medical-focused and title-unique", () => {
+    const playable = spellingHivePuzzles.filter((puzzle) => !["Practice Round", "Capture the Clue", "Tricone Terms"].includes(puzzle.title));
+    expect(playable).toHaveLength(42);
+    expect(new Set(playable.map((puzzle) => puzzle.title)).size).toBe(playable.length);
+  });
   it("keeps every Spelling Hive bank internally valid", () => {
     for (const puzzle of spellingHivePuzzles) {
       expect(puzzle.letters).toHaveLength(7);
@@ -160,7 +165,8 @@ describe("expanded content integrity", () => {
     expect(triageCases.length).toBeGreaterThanOrEqual(42);
     expect(medleWords.length).toBeGreaterThanOrEqual(140);
     expect(scrambleWordsExtended.length).toBeGreaterThanOrEqual(110);
-    expect(higherLowerPairs.length).toBeGreaterThanOrEqual(66);
+    expect(higherLowerPairs.length).toBeGreaterThanOrEqual(110);
+    expect(higherLowerPairs.filter((item) => "fun" in item)).toHaveLength(50);
     expect(new Set(labPrompts.map((item) => item.id)).size).toBe(labPrompts.length);
     expect(new Set(pairsBank.map(([term]) => term)).size).toBe(pairsBank.length);
     expect(new Set(microbePacks.map((pack) => pack.name)).size).toBe(microbePacks.length);
