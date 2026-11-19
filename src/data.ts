@@ -250,6 +250,11 @@ export const triageCases = [
 
 medleWords.push(...medleWordsExpansion.filter((word) => !medleWords.includes(word)));
 medleWords.push(...medleWordsExpansion3.filter((word) => !medleWords.includes(word)));
+const uniqueMedleWords = [...new Set(medleWords)];
+medleWords.splice(0, medleWords.length, ...uniqueMedleWords);
+for (const word of ["ASCUS", "RAPHE", "NARES", "ACRAL"]) {
+  if (!medleWords.includes(word)) medleWords.push(word);
+}
 
 labPrompts.push(...labPromptsExpansion2, ...labPromptsExpansion3);
 pairsBank.push(...pairsBankExpansion2);
@@ -261,7 +266,36 @@ diagnosisCases.push(...diagnosisCasesExpansion, ...diagnosisCasesExpansion2, ...
 nextStepCases.push(...nextStepCasesExpansion, ...nextStepCasesExpansion2, ...nextStepCasesExpansion3, ...nextStepCasesExpansion4, ...nextStepCasesExpansion5, ...nextStepCasesExpansion6, ...nextStepCasesExpansion7, ...nextStepCasesExpansion8, ...nextStepCasesExpansion9, ...nextStepCasesExpansion10);
 labPrompts.push(...labPromptsExpansion);
 pairsBank.push(...pairsBankExpansion);
+const seenPairTerms = new Set<string>();
+const uniquePairs = pairsBank.filter(([term]) => {
+  const key = term.trim().toLocaleLowerCase();
+  if (seenPairTerms.has(key)) return false;
+  seenPairTerms.add(key);
+  return true;
+});
+pairsBank.splice(0, pairsBank.length, ...uniquePairs);
 microbePacks.push(...microbePacksExpansion, ...microbePacksExpansion2, ...microbePacksExpansion3);
+const seenMicrobePackNames = new Set<string>();
+const uniqueMicrobePacks = microbePacks.filter((pack) => {
+  const key = pack.name.trim().toLocaleLowerCase();
+  if (seenMicrobePackNames.has(key)) return false;
+  seenMicrobePackNames.add(key);
+  return true;
+}).map((pack) => ({ ...pack, words: pack.words.filter((word) => word.length <= 14) }))
+  .filter((pack) => pack.words.length >= 4);
+microbePacks.splice(0, microbePacks.length, ...uniqueMicrobePacks);
+microbePacks.push(
+  { name:"Cardiac anatomy", words:["AORTA","ATRIA","VENTRICLE","VALVE","SEPTUM","MYOCARDIUM","PERICARDIUM"] },
+  { name:"Neuroanatomy", words:["THALAMUS","CEREBELLUM","HIPPOCAMPUS","AMYGDALA","PONS","MEDULLA","PUTAMEN"] },
+  { name:"Endocrine system", words:["THYROID","PITUITARY","ADRENAL","CORTISOL","INSULIN","GLUCAGON","OXYTOCIN"] },
+  { name:"Hematology", words:["PLATELET","HEMOGLOBIN","NEUTROPHIL","LYMPHOCYTE","RETICULOCYTE","FIBRIN"] },
+  { name:"Renal anatomy", words:["GLOMERULUS","NEPHRON","PODOCYTE","URETER","URETHRA","ALDOSTERONE"] },
+  { name:"Gastrointestinal anatomy", words:["ESOPHAGUS","STOMACH","DUODENUM","JEJUNUM","ILEUM","PANCREAS","GALLBLADDER"] },
+  { name:"Respiratory anatomy", words:["BRONCHUS","ALVEOLI","PLEURA","DIAPHRAGM","TRACHEA","LARYNX"] },
+  { name:"Dermatology", words:["MELANIN","KERATIN","DERMIS","EPIDERMIS","PSORIASIS","URTICARIA"] },
+  { name:"Pharmacology", words:["HEPARIN","WARFARIN","PROPOFOL","KETAMINE","ATROPINE","EPINEPHRINE"] },
+  { name:"Clinical signs", words:["CLONUS","NYSTAGMUS","JAUNDICE","CYANOSIS","EDEMA","ASCITES"] }
+);
 
 // Rotate correct options deterministically across the entire clinical bank.
 for (const [index, item] of diagnosisCases.entries()) {

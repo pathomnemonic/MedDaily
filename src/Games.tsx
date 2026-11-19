@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, nextStepCases, pairsBank, triageCases } from "./data";
+import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank, triageCases } from "./data";
 import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { letterWordPoints, makeLetterGrid } from "./arcadeLogic";
+import { letterWordPoints, makeLetterGrid, traceGridWord } from "./arcadeLogic";
 
 type Done = (score: number, maxScore: number, perfect: boolean) => void;
 type Specialty = "general" | "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
@@ -13,8 +13,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general" }: Props &
   switch (game) {
     case "medle": return <Medle seed={seed} onDone={onDone} specialty={specialty} />;
     case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} />;
-    case "diagnosis": return <MysteryCase seed={seed} onDone={onDone} specialty={specialty} />;
-    case "nextstep": return <NextStep seed={seed} onDone={onDone} specialty={specialty} />;
+    case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} specialty={specialty} />;
     case "microbe": return <MicrobeHunt seed={seed} onDone={onDone} specialty={specialty} />;
     case "labline": return <Labline seed={seed} onDone={onDone} specialty={specialty} />;
     case "pairs": return <MemoryMatch seed={seed} onDone={onDone} specialty={specialty} />;
@@ -352,14 +351,16 @@ const LETTER_DICTIONARY = [...new Set([
 
 function LetterGridGame({ seed, onDone }: Props) {
   const board = useMemo(() => makeLetterGrid(seed, LETTER_DICTIONARY), [seed]);
-  const [entry, setEntry] = useState("");
+  const [path, setPath] = useState<number[]>([]);
   const [found, setFound] = useState<string[]>([]);
+  const [foundPaths, setFoundPaths] = useState<number[][]>([]);
   const [seconds, setSeconds] = useState(90);
-  const [note, setNote] = useState("Find words by connecting letters that touch horizontally, vertically, or diagonally.");
+  const [note, setNote] = useState("Connect adjacent letters in any direction. Each cell can be used once per word.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
   const score = found.reduce((total, word) => total + letterWordPoints(word), 0);
   const maximum = Math.max(1, board.words.reduce((total, word) => total + letterWordPoints(word), 0));
+  const currentWord = path.map((index) => board.grid[index]).join("");
 
   const finish = (words: string[]) => {
     setEnded(true);
@@ -375,37 +376,63 @@ function LetterGridGame({ seed, onDone }: Props) {
     const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
     return () => window.clearInterval(timer);
   }, [ended]);
-
   useEffect(() => {
     if (seconds === 0 && !ended) finish(found);
   }, [seconds, ended, found]);
 
+  const chooseCell = (index: number) => {
+    if (ended) return;
+    if (path.includes(index)) {
+      if (path[path.length - 1] === index) setPath((current) => current.slice(0, -1));
+      else setNote("A letter cannot be reused in the same word. Remove the last tile to backtrack.");
+      return;
+    }
+    if (path.length) {
+      const last = path[path.length - 1];
+      const rowGap = Math.abs(Math.floor(last / 4) - Math.floor(index / 4));
+      const colGap = Math.abs((last % 4) - (index % 4));
+      if (rowGap > 1 || colGap > 1) {
+        setNote("Choose a tile touching the previous letter, including diagonals.");
+        return;
+      }
+    }
+    setPath((current) => [...current, index]);
+  };
+
   const submit = () => {
-    const word = entry.trim().toUpperCase();
-    if (ended || !word) return;
-    if (found.includes(word)) { setNote("Already found. Keep searching the grid."); return; }
-    if (!board.words.includes(word)) { setNote("That word is not in this grid. Try another path."); return; }
+    const word = currentWord;
+    if (ended || word.length < 3) return;
+    if (found.includes(word)) { setNote("Already found. Search for another path."); setPath([]); return; }
+    if (!board.words.includes(word) || !traceGridWord(board.grid, word)) {
+      setNote(word + " is not one of the hidden words. Try another path.");
+      setPath([]);
+      return;
+    }
     const next = [...found, word];
-    setFound(next); setEntry(""); setNote("+" + letterWordPoints(word) + " points · " + word);
+    setFound(next);
+    setFoundPaths((current) => [...current, path]);
+    setPath([]);
+    setNote("+" + letterWordPoints(word) + " points · " + word);
     if (next.length === board.words.length) finish(next);
   };
 
   return <div className="game-layout letter-grid-game">
     <div className="letter-grid-hud"><div><span className="eyebrow">LETTER LAB</span><h2>Find the hidden words</h2></div><div className={"letter-grid-clock" + (seconds <= 10 ? " urgent" : "")}>{String(Math.floor(seconds / 60)).padStart(2, "0")}:{String(seconds % 60).padStart(2, "0")}</div></div>
-    <div className="letter-grid-board">{board.grid.map((letter, i) => <div key={i} className={found.some((word) => word.includes(letter)) ? "letter-grid-tile" : "letter-grid-tile"}>{letter}</div>)}</div>
+    <p className="game-instructions"><span className="instruction-dot mint" /> Connect neighboring letters horizontally, vertically, or diagonally. Longer words earn more points.</p>
+    <div className="letter-grid-board" aria-label="Boggle-style letter board">{board.grid.map((letter, i) => {
+      const isFound = foundPaths.some((cells) => cells.includes(i));
+      return <button key={i} type="button" className={"letter-grid-tile" + (path.includes(i) ? " selected" : "") + (isFound ? " found" : "")} onClick={() => chooseCell(i)} disabled={ended || isFound} aria-label={"Tile " + letter + ", row " + (Math.floor(i / 4) + 1) + ", column " + (i % 4 + 1)}>{letter}</button>;
+    })}</div>
+    <div className="letter-grid-current"><span>YOUR WORD</span><strong>{currentWord || "—"}</strong><small>{path.length} tiles</small></div>
+    <div className="letter-grid-controls"><button className="button button-soft" onClick={() => setPath((current) => current.slice(0, -1))} disabled={ended || !path.length}>Undo</button><button className="button button-quiet" onClick={() => setPath([])} disabled={ended || !path.length}>Clear</button><button className="button button-primary" onClick={submit} disabled={ended || path.length < 3}>Submit word</button></div>
     <p className="letter-grid-score">{score} pts <span>·</span> {found.length} / {board.words.length} words found</p>
     {!ended ? <>
-      <form className="dive-answer-row" onSubmit={(event) => { event.preventDefault(); submit(); }}>
-        <input value={entry} onChange={(event) => setEntry(event.target.value.replace(/[^a-z]/gi, "").toUpperCase())} autoComplete="off" placeholder="Type a word…" aria-label="Word to find" />
-        <button className="button button-primary" disabled={!entry.trim()}>Find word</button>
-      </form>
       <p className="game-feedback" aria-live="polite">{note}</p>
       <div className="letter-grid-found">{found.map((word) => <span key={word}>{word}<b>+{letterWordPoints(word)}</b></span>)}</div>
       <button className="button button-quiet full-button" onClick={() => finish(found)}>Finish round</button>
-    </> : <div className="letter-grid-finale"><h3>Round complete</h3><strong>{score} / {maximum}</strong><p>{found.length} words found. The hidden-word list is shown below.</p><div>{board.words.slice().sort().map((word) => <span key={word} className={found.includes(word) ? "found" : ""}>{word}</span>)}</div></div>}
+    </> : <div className="letter-grid-finale"><h3>{found.length === board.words.length ? "Grid cleared!" : "Round complete"}</h3><strong>{score} / {maximum}</strong><p>{found.length} words found before the clock stopped. The full word list is below.</p><div>{board.words.slice().sort().map((word) => <span key={word} className={found.includes(word) ? "found" : ""}>{word}</span>)}</div></div>}
   </div>;
 }
-
 
 function Medle({ seed, onDone, specialty = "general" }: Props) {
   const pool = specialty === "general" ? medleWords : medleWords.filter((w) => specialty === "neurology" ? ["BRAIN","NERVE","OPTIC","VAGUS","ULNAR","SPASM","MOTOR","COMAS"].includes(w) : specialty === "cardiology" ? ["AORTA","VALVE","SHOCK","RALES","SPASM","ACUTE"].includes(w) : specialty === "infectious" ? ["STAPH","STREP","VIRAL","YEAST","SPORE","TITER","COCCI","PRION"].includes(w) : true);
@@ -427,6 +454,19 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
     setMessage(correct ? "Exactly right. Nice diagnosis of a word." : finished ? "The word was " + answer + "." : "Not quite. Use the tile clues to narrow it down.");
     if (finished) { setEnded(true); setWon(correct); if (!done.current) { done.current = true; onDone(correct ? 100 - (next.length - 1) * 12 : 0, 100, correct && next.length === 1); } }
   };
+  const keyboardRows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+  const keyboardMarks: Record<string, "correct" | "present" | "absent"> = {};
+  const priority = { absent: 1, present: 2, correct: 3 };
+  rows.forEach((row) => scoreWord(row, answer).forEach((mark, index) => {
+    const letter = row[index];
+    if (!keyboardMarks[letter] || priority[mark] > priority[keyboardMarks[letter]]) keyboardMarks[letter] = mark;
+  }));
+  const pressKey = (key: string) => {
+    if (ended) return;
+    if (key === "ENTER") submit();
+    else if (key === "⌫") setGuess((value) => value.slice(0, -1));
+    else if (guess.length < 5) setGuess((value) => value + key);
+  };
   return <div className="game-layout medle-game">
     <div className="game-instructions"><span className="instruction-dot mint" /> Guess the five-letter medical word in six tries. Green is the right letter in the right place; gold is in the word elsewhere.</div>
     <div className="word-grid" aria-label="Six guess rows">{Array.from({ length: 6 }, (_, r) => {
@@ -434,7 +474,10 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
       const marks = rows[r] ? scoreWord(rows[r], answer) : [];
       return <div className="word-row" key={r}>{Array.from({ length: 5 }, (_, c) => <div key={c} className={"word-cell " + (marks[c] ?? (word[c] ? "filled" : ""))}>{word[c] ?? ""}</div>)}</div>;
     })}</div>
-    {!ended ? <form className="word-entry" onSubmit={(e) => { e.preventDefault(); submit(); }}><input autoComplete="off" autoCapitalize="characters" value={guess} maxLength={5} onChange={(e) => setGuess(e.target.value.replace(/[^a-z]/gi, "").slice(0, 5))} aria-label="Five-letter guess" placeholder="TYPE A WORD" /><button className="button button-primary" type="submit">Guess <span>↗</span></button></form> : <Finish title={won ? "Word found!" : "A word for your rounds"} detail={won ? "You solved it in " + rows.length + (rows.length === 1 ? " guess." : " guesses.") : "The answer was " + answer + ". Try another daily puzzle tomorrow."} score={won ? (100 - (rows.length - 1) * 12) + " / 100" : "0 / 100"} />}
+    {!ended ? <>
+      <form className="word-entry" onSubmit={(e) => { e.preventDefault(); submit(); }}><input autoComplete="off" autoCapitalize="characters" value={guess} maxLength={5} onChange={(e) => setGuess(e.target.value.replace(/[^a-z]/gi, "").slice(0, 5))} aria-label="Five-letter guess" placeholder="TYPE A WORD" /><button className="button button-primary" type="submit">Guess <span>↗</span></button></form>
+      <div className="medle-keyboard" aria-label="On-screen keyboard">{keyboardRows.map((row, index) => <div key={row} className="medle-key-row">{row.split("").map((key) => <button key={key} type="button" className={keyboardMarks[key]??""} onClick={() => pressKey(key)}>{key}</button>)}{index===2&&<><button type="button" className="wide-key" onClick={() => pressKey("ENTER")}>ENTER</button><button type="button" className="wide-key" onClick={() => pressKey("⌫")}>⌫</button></>}</div>)}</div>
+    </> : <Finish title={won ? "Word found!" : "A word for your rounds"} detail={won ? "You solved it in " + rows.length + (rows.length === 1 ? " guess." : " guesses.") : "The answer was " + answer + ". Try another daily puzzle tomorrow."} score={won ? (100 - (rows.length - 1) * 12) + " / 100" : "0 / 100"} />}
     <p className="game-feedback" aria-live="polite">{message}</p>
   </div>;
 }
@@ -445,6 +488,7 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [solved, setSolved] = useState<number[]>([]);
   const [mistakes, setMistakes] = useState(0);
+  const [shuffleCount, setShuffleCount] = useState(0);
   const [note, setNote] = useState("Find four groups of four related medical terms.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
@@ -459,11 +503,16 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
       const next = [...solved, group]; setSolved(next); setSelected([]); setNote(board[group].category + " — " + board[group].hint);
       if (next.length === 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 100 - mistakes * 15), 100, mistakes === 0); } }
     } else {
-      const next = mistakes + 1; setMistakes(next); setNote(next >= 4 ? "No mistakes left. The remaining groups are shown below." : "Not a set. Look for a different connection."); setSelected([]);
+      const nearMiss = group !== undefined && selected.filter((word) => board[group].words.includes(word)).length === 3;
+      const next = mistakes + 1; setMistakes(next); setNote(next >= 4 ? "No mistakes left. The remaining groups are shown below." : nearMiss ? "One away… Three of those terms belong together, but one is from another group." : "Not a set. Look for a different connection."); setSelected([]);
       if (next >= 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 40 - next * 5), 100, false); } }
     }
   };
-  const shuffleTiles = () => setTiles((t) => shuffle(t, seeded(hashSeed(String(seed) + String(solved.length) + String(mistakes)))));
+  const shuffleTiles = () => {
+    const next = shuffleCount + 1;
+    setShuffleCount(next);
+    setTiles((current) => shuffle(current, seeded(hashSeed(String(seed) + String(solved.length) + String(mistakes) + String(next)))));
+  };
   return <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot lilac" /> Select four terms that share a medical connection. Four groups complete the board; you have four mistakes available.</div>
     <div className="connection-found">{solved.map((n) => <div className="connection-solved" key={n}><strong>{board[n].category}</strong><span>{board[n].words.join(" · ")}</span></div>)}</div>
@@ -477,136 +526,301 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
   </div>;
 }
 
-function MysteryCase({ seed, onDone, specialty = "general" }: Props) {
+const DOCTORDLE_ALIASES: Record<string, string[]> = {
+  "acute myocardial infarction": ["mi", "heart attack", "ami"],
+  "diabetic ketoacidosis": ["dka"],
+  "chronic obstructive pulmonary disease": ["copd"],
+  "acute kidney injury": ["aki"],
+  "chronic kidney disease": ["ckd"],
+  "pulmonary embolism": ["pe"],
+  "deep vein thrombosis": ["dvt"],
+  "subarachnoid hemorrhage": ["sah"],
+  "intracerebral hemorrhage": ["ich"],
+  "multiple sclerosis": ["ms"],
+  "myasthenia gravis": ["mg"],
+  "guillain barre syndrome": ["gbs", "guillain barre"],
+  "systemic lupus erythematosus": ["sle", "lupus"],
+  "rheumatoid arthritis": ["ra"],
+  "ulcerative colitis": ["uc"],
+  "hepatocellular carcinoma": ["hcc"],
+  "pheochromocytoma": ["pheo"]
+};
+function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
   const item = pick(diagnosisCases, seed, specialty, "diagnosis");
-  const [clueCount, setClueCount] = useState(1);
-  const [guesses, setGuesses] = useState(0);
+  const [guess, setGuess] = useState("");
+  const [guesses, setGuesses] = useState<string[]>([]);
+  const [clueCount, setClueCount] = useState(2);
+  const [manualHints, setManualHints] = useState(0);
   const [ended, setEnded] = useState(false);
-  const [correct, setCorrect] = useState(false);
-  const [note, setNote] = useState("Read the clues and name the most likely diagnosis.");
+  const [won, setWon] = useState(false);
+  const [note, setNote] = useState("Read the case, then type the diagnosis. Six guesses; each miss unlocks another clue.");
   const done = useRef(false);
-  const choose = (answer: string) => {
-    if (ended) return;
-    const isRight = answer === item.answer, next = guesses + 1; setGuesses(next);
-    if (isRight || next >= 3) {
-      setEnded(true); setCorrect(isRight); setNote(isRight ? "Correct diagnosis." : "The case is solved. Review the distinguishing clues.");
-      if (!done.current) { done.current = true; onDone(isRight ? 100 - (clueCount - 1) * 18 : 0, 100, isRight && clueCount === 1); }
-    } else { setClueCount((n) => Math.min(item.clues.length, n + 1)); setNote("Not this time. One more clue has been added."); }
+  const submit = () => {
+    const value = normalize(guess);
+    if (!value || ended) return;
+    if (guesses.some((g) => normalize(g) === value)) { setNote("You already tried that diagnosis."); return; }
+    const next = [...guesses, guess.trim()];
+    const answerKey = normalize(item.answer);
+    const correct = value === answerKey || (DOCTORDLE_ALIASES[answerKey] ?? []).some((alias) => normalize(alias) === value);
+    setGuesses(next);
+    setGuess("");
+    if (correct || next.length >= 6) {
+      setEnded(true); setWon(correct);
+      setNote(correct ? "Diagnosis confirmed." : "No guesses remaining. Review the case.");
+      if (!done.current) { done.current = true; onDone(correct ? Math.max(0, 100 - (next.length - 1) * 15 - manualHints * 5) : 0, 100, correct && next.length === 1 && manualHints === 0); }
+    } else {
+      setClueCount((n) => Math.min(item.clues.length, n + 1));
+      setNote("Not quite. A new clue has been added.");
+    }
   };
-  return <div className="game-layout">
-    <div className="case-banner"><span>CASE FILE</span><strong>{item.title}</strong><small>Progressive diagnosis · {clueCount} of {item.clues.length} clues</small></div>
+  const revealClue = () => {
+    if (ended || clueCount >= item.clues.length) return;
+    setClueCount((n) => Math.min(item.clues.length, n + 1));
+    setManualHints((n) => n + 1);
+    setNote("Optional clue revealed. This costs 5 points.");
+  };
+  return <div className="game-layout doctordle-game">
+    <div className="case-banner"><span>DOCTORDLE · CASE {item.id.toUpperCase()}</span><strong>{item.title}</strong><small>{clueCount} of {item.clues.length} clues revealed · {6 - guesses.length} guesses left</small></div>
+    <div className="doctordle-attempts" aria-label="Six diagnosis attempts">{Array.from({length:6},(_,i)=><span key={i} className={i < guesses.length ? "used" : ""}>{i < guesses.length ? guesses[i] : "Diagnosis "+(i+1)}</span>)}</div>
     <div className="clue-stack">{item.clues.slice(0, clueCount).map((clue, i) => <div className="clue-card" key={i}><span>{String(i + 1).padStart(2, "0")}</span><p>{clue}</p></div>)}</div>
-    {!ended ? <div className="answer-options"><SectionLabel>Most likely diagnosis</SectionLabel>{item.options.map((option) => <button key={option} className="answer-option" onClick={() => choose(option)}>{option}<span>→</span></button>)}</div> : <Finish title={correct ? "Case cracked" : "Case closed"} detail={item.explanation} score={correct ? Math.max(0, 100 - (clueCount - 1) * 18) + " / 100" : "0 / 100"}><p className="source-note">Source note: {item.source}</p></Finish>}
+    {!ended ? <>
+      <form className="doctordle-entry" onSubmit={(event) => { event.preventDefault(); submit(); }}>
+        <label htmlFor="doctordle-guess">Your diagnosis</label>
+        <div><input id="doctordle-guess" value={guess} onChange={(event) => setGuess(event.target.value)} placeholder="Type a diagnosis…" autoComplete="off" /><button className="button button-primary" type="submit" disabled={!guess.trim()}>Guess ↗</button></div>
+      </form>
+      <div className="doctordle-tools"><button className="text-button" onClick={revealClue} disabled={clueCount >= item.clues.length}>Reveal another clue · −5 pts</button><span>{guesses.length}/6 guesses used</span></div>
+    </> : <Finish title={won ? "Diagnosis found" : "Case revealed"} detail={(won ? "Solved in " + guesses.length + " of 6 guesses. " : "Six guesses used. ") + item.explanation}><p className="doctordle-answer">Answer: <b>{item.answer}</b></p><p className="source-note">Source note: {item.source}</p></Finish>}
     <p className="game-feedback" aria-live="polite">{note}</p>
   </div>;
 }
 
-function NextStep({ seed, onDone, specialty = "general" }: Props) {
-  const raw = pick(nextStepCases, seed, specialty, "nextstep");
-  const item = raw.id === "n01" ? { ...raw, explanation: raw.explanation.replace("below 3.3 mEq/L", "below 3.5 mEq/L") } : raw;
-  const [choice, setChoice] = useState<number | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [revealed, setRevealed] = useState(false);
-  const done = useRef(false);
-  const submit = () => {
-    if (choice === null || submitted) return;
-    setSubmitted(true);
-    const ok = choice === item.answer;
-    if (!done.current) { done.current = true; onDone(ok ? 100 : 0, 100, ok); }
-  };
-  return <div className="game-layout">
-    <div className="specialty-pill">{item.specialty} · CLINICAL REASONING</div>
-    <div className="vignette-card"><SectionLabel>THE PRESENTATION</SectionLabel><p>{item.vignette}</p></div>
-    <h3 className="game-question">{item.question}</h3>
-    <div className="answer-options">{item.options.map((option, i) => <button key={option} disabled={submitted} onClick={() => setChoice(i)} className={"answer-option" + (choice === i ? " chosen" : "") + (submitted && i === item.answer ? " answer-correct" : "") + (submitted && choice === i && i !== item.answer ? " answer-wrong" : "")}><span className="option-letter">{String.fromCharCode(65 + i)}</span>{option}</button>)}</div>
-    {!submitted ? <button className="button button-primary full-button" disabled={choice === null} onClick={submit}>Lock in answer <span>↗</span></button> : <Finish title={choice === item.answer ? "Good clinical call" : "Review the next step"} detail={item.explanation} score={choice === item.answer ? "100 / 100" : "0 / 100"}><button className="text-button" onClick={() => setRevealed((v) => !v)}>{revealed ? "Hide" : "Show"} source note</button>{revealed && <p className="source-note">{item.source}</p>}</Finish>}
-  </div>;
-}
 
 function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
   const pack = pick(microbePacks, seed, specialty, "microbe");
   const board = useMemo(() => makeWordSearch(pack.words, 14, seed + 99), [pack, seed]);
   const words = board.placed;
   const [found, setFound] = useState<string[]>([]);
+  const [foundPaths, setFoundPaths] = useState<number[][]>([]);
   const [start, setStart] = useState<number | null>(null);
   const [path, setPath] = useState<number[]>([]);
-  const [note, setNote] = useState("Tap the first and last letter of a hidden word.");
+  const [note, setNote] = useState("Drag across a word in any straight direction. You can also tap its first and last letters.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
-  const tap = (index: number) => {
-    if (ended) return;
-    if (start === null) { setStart(index); setPath([index]); return; }
+
+  const begin = (index: number) => {
+    if (ended || foundPaths.some((cells) => cells.includes(index))) return;
+    if (start === null) { setStart(index); setPath([index]); }
+  };
+  const preview = (index: number) => {
+    if (ended || start === null) return;
     const cells = lineCells(start, index, 14);
-    if (!cells.length) { setStart(index); setPath([index]); setNote("Words run in straight lines, including diagonals."); return; }
-    setPath(cells);
+    if (cells.length) setPath(cells);
   };
-  const add = () => {
-    if (path.length < 2) { setNote("Choose a start and end cell first."); return; }
-    const word = path.map((i) => board.grid[Math.floor(i / 14)][i % 14]).join("");
-    const match = words.find((w) => !found.includes(w) && (w === word || w === [...word].reverse().join("")));
-    if (!match) { setNote("No target word on that line. Try again."); setStart(null); setPath([]); return; }
-    const next = [...found, match]; setFound(next); setStart(null); setPath([]); setNote(match + " found.");
-    if (next.length === words.length) { setEnded(true); if (!done.current) { done.current = true; onDone(100, 100, true); } }
+  const resolve = (cells: number[]) => {
+    if (cells.length < 2) return;
+    const word = cells.map((i) => board.grid[Math.floor(i / 14)][i % 14]).join("");
+    const match = words.find((candidate) => !found.includes(candidate) && (candidate === word || candidate === [...word].reverse().join("")));
+    if (!match) {
+      setNote("That line is not a remaining word. Try another direction or clear your selection.");
+      setStart(null); setPath([]);
+      return;
+    }
+    const next = [...found, match];
+    setFound(next);
+    setFoundPaths((current) => [...current, cells]);
+    setStart(null); setPath([]);
+    setNote(match + " found. " + (words.length - next.length) + " remaining.");
+    if (next.length === words.length) {
+      setEnded(true);
+      if (!done.current) { done.current = true; onDone(100, 100, true); }
+    }
   };
-  return <div className="game-layout">
-    <div className="case-banner microbe-banner"><span>MICROBE FIELD GUIDE</span><strong>{pack.name}</strong><small>Trace the organism names through the grid.</small></div>
-    <div className="wordsearch-board" role="group" aria-label="Letter grid">{board.grid.flat().map((letter, i) => <button key={i} className={"letter-tile" + (path.includes(i) ? " path-cell" : "")} onClick={() => tap(i)} disabled={ended}>{letter}</button>)}</div>
-    <div className="target-words"><SectionLabel>FIELD SPECIMENS</SectionLabel><div>{words.map((word) => <span key={word} className={found.includes(word) ? "target-found" : ""}>{word}</span>)}</div></div>
-    <div className="connection-controls"><span className="mistake-count">{found.length} / {words.length} found</span><button className="button button-soft" onClick={() => { setStart(null); setPath([]); }}>Clear</button><button className="button button-primary" onClick={add} disabled={ended}>Mark word</button></div>
+  const finish = (index: number) => {
+    if (ended || start === null) return;
+    const cells = lineCells(start, index, 14);
+    if (!cells.length) {
+      setNote("Words run horizontally, vertically, or diagonally in a straight line.");
+      setStart(null); setPath([]);
+      return;
+    }
+    if (cells.length > 1) resolve(cells);
+  };
+  const clear = () => { setStart(null); setPath([]); };
+
+  return <div className="game-layout wordhunt-game">
+    <div className="case-banner microbe-banner"><span>WORD HUNT · THEMED SEARCH</span><strong>{pack.name}</strong><small>Find every hidden word. Words may run forwards, backwards, vertically, horizontally, or diagonally.</small></div>
+    <div className="wordhunt-layout">
+      <div className="wordsearch-board" role="group" aria-label="Letter grid" onPointerMove={(event) => {
+        const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-cell-index]") as HTMLElement | null;
+        if (tile) preview(Number(tile.dataset.cellIndex));
+      }} onPointerUp={(event) => {
+        const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-cell-index]") as HTMLElement | null;
+        if (tile) finish(Number(tile.dataset.cellIndex));
+      }} onPointerCancel={clear}>
+        {board.grid.flat().map((letter, i) => {
+          const isFound = foundPaths.some((cells) => cells.includes(i));
+          return <button key={i} data-cell-index={i} type="button" className={"letter-tile" + (path.includes(i) ? " path-cell" : "") + (isFound ? " found-cell" : "")} onPointerDown={() => begin(i)} onClick={(event) => { if (event.detail === 0) { if (start === null) begin(i); else finish(i); } }} disabled={ended} aria-label={"Row " + (Math.floor(i / 14) + 1) + ", column " + (i % 14 + 1) + ", " + letter}>
+            {letter}
+          </button>;
+        })}
+      </div>
+      <aside className="target-words"><SectionLabel>WORDS TO FIND</SectionLabel><div>{words.map((word) => <span key={word} className={found.includes(word) ? "target-found" : ""}>{word}</span>)}</div></aside>
+    </div>
+    <div className="connection-controls"><span className="mistake-count">{found.length} / {words.length} found</span><button className="button button-soft" onClick={clear} disabled={ended || start === null}>Clear selection</button><span className="wordhunt-progress">{words.length - found.length} left</span></div>
     <p className="game-feedback" aria-live="polite">{note}</p>
-    {ended && <Finish title="Field guide complete" detail={"You identified all " + words.length + " organisms in this board."} score="100 / 100" />}
+    {ended && <Finish title="Grid cleared!" detail={"Every hidden word in " + pack.name + " found."} score="100 / 100" />}
   </div>;
 }
 
 function Labline({ seed, onDone, specialty = "general" }: Props) {
-  const item = pick(labPrompts, seed, specialty, "labline");
+  const rounds = useMemo(() => {
+    const pool = specialty === "neurology" ? labPrompts.filter((_, index) => [18,19,20].includes(index)) : specialty === "cardiology" ? labPrompts.filter((_, index) => [1,3,4,17].includes(index)) : labPrompts;
+    return shuffle(pool.length >= 5 ? pool : labPrompts, seeded(seed + 27)).slice(0, 5);
+  }, [seed, specialty]);
+  const [round, setRound] = useState(0);
   const [value, setValue] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
-  const [message, setMessage] = useState("");
+  const [points, setPoints] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [results, setResults] = useState<{prompt:string;estimate:string;actual:number;unit:string;points:number;context:string;source:string}[]>([]);
+  const [message, setMessage] = useState("Five estimates. Trust your clinical intuition; precision earns the points.");
+  const [finished, setFinished] = useState(false);
   const done = useRef(false);
+  const item = rounds[round];
+
   const check = () => {
-    const n = Number(value);
-    if (value.trim() === "" || !Number.isFinite(n)) { setMessage("Enter a number to make your estimate."); return; }
-    const diff = Math.abs(n - item.value);
-    const points = item.tolerance === 0 ? (diff < 0.0001 ? 100 : 0) : Math.max(0, Math.round(100 * (1 - diff / Math.max(item.tolerance * 3, Math.abs(item.value) * 0.2))));
-    setScore(points); setSubmitted(true);
-    setMessage(diff <= item.tolerance ? "Inside the expected reference window." : diff <= item.tolerance * 2 ? "Close estimate." : "A useful number to add to your mental reference sheet.");
-    if (!done.current) { done.current = true; onDone(points, 100, diff <= item.tolerance); }
+    const estimate = Number(value);
+    if (value.trim() === "" || !Number.isFinite(estimate)) { setMessage("Enter a number to make your estimate."); return; }
+    if (submitted || finished) return;
+    const diff = Math.abs(estimate - item.value);
+    const earned = item.tolerance === 0 ? (diff < 0.0001 ? 100 : 0) : Math.max(0, Math.round(100 * (1 - diff / Math.max(item.tolerance * 3, Math.abs(item.value) * 0.2))));
+    const nextTotal = total + earned;
+    setPoints(earned);
+    setTotal(nextTotal);
+    setSubmitted(true);
+    setResults((current) => [...current, {prompt:item.prompt,estimate:value,actual:item.value,unit:item.unit,points:earned,context:item.context,source:item.source}]);
+    setMessage(diff <= item.tolerance ? "Bullseye — inside the expected reference window." : diff <= item.tolerance * 2 ? "Close estimate. Tighten your range next round." : "A useful reference point to remember.");
+    if (round === rounds.length - 1) {
+      setFinished(true);
+      if (!done.current) { done.current = true; onDone(nextTotal, rounds.length * 100, nextTotal === rounds.length * 100); }
+    }
   };
-  return <div className="game-layout">
-    <div className="lab-console"><span className="lab-light" /><span>LABORATORY · REFERENCE RANGE CHALLENGE</span><span className="lab-light second" /></div>
-    <div className="lab-prompt"><SectionLabel>CALIBRATE YOUR CLINICAL EYE</SectionLabel><h3>{item.prompt}</h3><p>Enter your best estimate. No calculator needed.</p></div>
-    {!submitted ? <form className="lab-input-row" onSubmit={(e) => { e.preventDefault(); check(); }}><input type="number" step="any" value={value} onChange={(e) => setValue(e.target.value)} aria-label={"Estimate in " + item.unit} placeholder="Your estimate" /><span>{item.unit || "value"}</span><button className="button button-primary" type="submit">Check</button></form> : <Finish title={score >= 85 ? "Calibrated!" : "The reference point"} detail={item.context} score={score + " / 100"}><p className="lab-answer">{item.value} {item.unit}</p><p className="source-note">Source note: {item.source}</p></Finish>}
-    <p className="game-feedback" aria-live="polite">{message}</p>
+  const next = () => {
+    if (!submitted || finished) return;
+    setRound((current) => current + 1);
+    setValue("");
+    setPoints(0);
+    setSubmitted(false);
+    setMessage("New estimate. How close can you get?");
+  };
+
+  return <div className="game-layout labline-game">
+    <div className="lab-console"><span className="lab-light" /><span>LABLINE · ESTIMATION CHALLENGE</span><span className="lab-light second" /></div>
+    <div className="labline-hud"><div><b>{round + 1}<small> / 5</small></b><span>ROUND</span></div><div><b>{total}</b><span>POINTS</span></div><div><b>{Math.max(0, 5 - round - Number(submitted))}</b><span>LEFT</span></div></div>
+    <div className="labline-progress"><i style={{width:((round + Number(submitted))/5*100)+"%"}} /></div>
+    {!finished ? <>
+      <div className="lab-prompt"><SectionLabel>CALIBRATE YOUR CLINICAL EYE</SectionLabel><h3>{item.prompt}</h3><p>Enter your best estimate. No calculator needed.</p></div>
+      {!submitted ? <form className="lab-input-row" onSubmit={(event) => { event.preventDefault(); check(); }}><input type="number" step="any" value={value} onChange={(event) => setValue(event.target.value)} aria-label={"Estimate in " + item.unit} placeholder="Your estimate" /><span>{item.unit || "value"}</span><button className="button button-primary" type="submit" disabled={!value.trim()}>Lock estimate</button></form> : <div className="labline-reveal"><span className="eyebrow">REFERENCE VALUE</span><strong>{item.value} {item.unit}</strong><b>{points} / 100</b><p>{item.context}</p><small>Source: {item.source}</small><button className="button button-primary full-button" onClick={next}>Next estimate →</button></div>}
+      <p className="game-feedback" aria-live="polite">{message}</p>
+    </> : <div className="labline-finale"><Finish title="Calibration complete" detail={"Five clinical estimates. " + (total >= 400 ? "Excellent calibration." : total >= 250 ? "Your reference instincts are developing." : "Keep building your mental reference ranges.")} score={total + " / 500"}><div className="reveal-groups">{results.map((result, index) => <span key={index}><b>{index + 1}. {result.points} pts</b>{result.prompt}<br/>Your estimate: {result.estimate} {result.unit} · Reference: {result.actual} {result.unit}</span>)}</div></Finish></div>}
   </div>;
 }
 
 function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   const pool = useMemo(() => specialty === "neurology" ? pairsBank.slice(12, 24) : specialty === "infectious" ? pairsBank.slice(36, 46) : specialty === "cardiology" ? pairsBank.slice(0, 12) : pairsBank, [specialty]);
-  const pairs = useMemo(() => shuffle(pool, seeded(seed + 11)).slice(0, 6), [seed, pool]);
-  const left = useMemo(() => shuffle(pairs.map((p, id) => ({ id, label: p[0] })), seeded(seed + 12)), [pairs, seed]);
-  const right = useMemo(() => shuffle(pairs.map((p, id) => ({ id, label: p[1] })), seeded(seed + 13)), [pairs, seed]);
-  const [a, setA] = useState<number | null>(null);
-  const [b, setB] = useState<number | null>(null);
+  const pairSet = useMemo(() => shuffle(pool, seeded(seed + 11)).slice(0, 10), [seed, pool]);
+  const cards = useMemo(() => shuffle(pairSet.flatMap(([term, meaning], pairId) => [
+    { id: pairId * 2, pairId, label: term, side: "TERM" },
+    { id: pairId * 2 + 1, pairId, label: meaning, side: "ASSOCIATION" }
+  ]), seeded(seed + 14)), [pairSet, seed]);
+  const [revealed, setRevealed] = useState<number[]>([]);
   const [matched, setMatched] = useState<number[]>([]);
-  const [wrong, setWrong] = useState(0);
-  const [note, setNote] = useState("Pick a term on the left, then its match on the right.");
+  const [moves, setMoves] = useState(0);
+  const [mismatches, setMismatches] = useState(0);
+  const [combo, setCombo] = useState(0);
+  const [score, setScore] = useState(0);
+  const [seconds, setSeconds] = useState(75);
+  const [locked, setLocked] = useState(false);
   const [ended, setEnded] = useState(false);
+  const [note, setNote] = useState("Memorize the cards. Find all ten term–association pairs before time runs out.");
   const done = useRef(false);
-  const choose = (leftId: number, rightId: number) => {
-    if (leftId === rightId) {
-      const next = [...matched, leftId]; setMatched(next); setNote("Matched: " + pairs[leftId][0] + " ↔ " + pairs[leftId][1] + "."); setA(null); setB(null);
-      if (next.length === pairs.length) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 100 - wrong * 8), 100, wrong === 0); } }
-    } else { setWrong((n) => n + 1); setNote("Not a pair. Try another connection."); setA(null); setB(null); }
+  const flipTimer = useRef<number | null>(null);
+
+  useEffect(() => () => { if (flipTimer.current !== null) window.clearTimeout(flipTimer.current); }, []);
+  useEffect(() => { if (ended && flipTimer.current !== null) { window.clearTimeout(flipTimer.current); flipTimer.current = null; } }, [ended]);
+  useEffect(() => {
+    if (ended) return;
+    const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [ended]);
+  useEffect(() => {
+    if (seconds !== 0 || ended || done.current) return;
+    done.current = true;
+    setEnded(true);
+    setNote("Time. Review the pairs you uncovered and try to build a longer streak next run.");
+    onDone(score, 1500, false);
+  }, [seconds, ended, score, onDone]);
+
+  const flip = (id: number) => {
+    if (ended || locked || revealed.includes(id)) return;
+    const card = cards.find((item) => item.id === id);
+    if (!card || matched.includes(card.pairId)) return;
+    const next = [...revealed, id];
+    setRevealed(next);
+    if (next.length < 2) return;
+
+    setMoves((value) => value + 1);
+    const first = cards.find((item) => item.id === next[0]);
+    if (first?.pairId === card.pairId) {
+      const nextMatched = [...matched, card.pairId];
+      const nextCombo = combo + 1;
+      const earned = 100 + Math.min(combo * 10, 50);
+      const nextScore = score + earned;
+      setMatched(nextMatched);
+      setCombo(nextCombo);
+      setScore(nextScore);
+      setRevealed([]);
+      setNote(nextCombo > 1 ? "Pair found. " + nextCombo + " in a row — +" + earned + " points." : "Pair found. +" + earned + " points.");
+      if (nextMatched.length === pairSet.length) {
+        const finalScore = nextScore + seconds * 2;
+        done.current = true;
+        setEnded(true);
+        setNote("All ten pairs found. Time bonus: " + seconds * 2 + " points.");
+        onDone(finalScore, 1500, mismatches === 0);
+      }
+    } else {
+      setLocked(true);
+      setMismatches((value) => value + 1);
+      setCombo(0);
+      setNote("Not a match. Memorize both cards; they turn back over in a moment.");
+      flipTimer.current = window.setTimeout(() => {
+        setRevealed([]);
+        setLocked(false);
+        flipTimer.current = null;
+      }, 850);
+    }
   };
-  const pickLeft = (id: number) => { if (matched.includes(id) || ended) return; setA(id); if (b !== null) choose(id, b); };
-  const pickRight = (id: number) => { if (matched.includes(id) || ended) return; setB(id); if (a !== null) choose(a, id); };
-  return <div className="game-layout">
-    <div className="game-instructions"><span className="instruction-dot peach" /> Match each clinical term with its definition or key association. Choose one on each side.</div>
-    <div className="pair-columns"><div><SectionLabel>TERM</SectionLabel>{left.map((x) => <button key={x.id} disabled={matched.includes(x.id) || ended} onClick={() => pickLeft(x.id)} className={"pair-tile" + (a === x.id ? " selected" : "") + (matched.includes(x.id) ? " matched" : "")}>{x.label}</button>)}</div><div><SectionLabel>MEANING</SectionLabel>{right.map((x) => <button key={x.id} disabled={matched.includes(x.id) || ended} onClick={() => pickRight(x.id)} className={"pair-tile" + (b === x.id ? " selected" : "") + (matched.includes(x.id) ? " matched" : "")}>{x.label}</button>)}</div></div>
-    <p className="game-feedback" aria-live="polite">{note}</p><div className="game-footnote">{matched.length} of {pairs.length} matched · {wrong} mismatches</div>
-    {ended && <Finish title="All pairs connected" detail={"You matched " + pairs.length + " medical associations."} score={Math.max(0, 100 - wrong * 8) + " / 100"} />}
+
+  return <div className="game-layout association-game">
+    <div className="game-instructions"><span className="instruction-dot peach" /> Ten pairs are hidden in a 4 × 5 memory board. Match terms to their clinical associations, build a streak, and beat the 75-second clock.</div>
+    <div className="association-hud">
+      <div><b>{seconds}</b><span>SECONDS</span></div>
+      <div><b>{matched.length}/{pairSet.length}</b><span>PAIRS</span></div>
+      <div><b>{combo}×</b><span>STREAK</span></div>
+      <div><b>{score}</b><span>POINTS</span></div>
+    </div>
+    <div className="association-grid" aria-label="Memory cards">
+      {cards.map((card) => {
+        const isMatched = matched.includes(card.pairId);
+        const isRevealed = revealed.includes(card.id);
+        return <button key={card.id} type="button" className={"association-card" + (isMatched ? " matched" : "") + (isRevealed ? " revealed" : "")} onClick={() => flip(card.id)} disabled={ended || isMatched || locked} aria-label={isMatched || isRevealed ? card.label : "Hidden association card"}>
+          {isMatched || isRevealed ? <><small>{card.side}</small><span>{card.label}</span></> : <b>✦</b>}
+        </button>;
+      })}
+    </div>
+    <div className="association-footer"><span>{moves} turns · {mismatches} mismatches</span><span>Match streaks earn bonus points</span></div>
+    <p className="game-feedback" aria-live="polite">{note}</p>
+    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All ten associations found in " + moves + " turns." : matched.length + " of ten pairs found. " + mismatches + " mismatches."} score={score + " / 1500"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
   </div>;
 }
 
@@ -615,6 +829,8 @@ function TriageOrder({ seed, onDone, specialty = "general" }: Props) {
   const [steps, setSteps] = useState(() => shuffle(item.steps, seeded(seed + 21)));
   const [submitted, setSubmitted] = useState(false);
   const [correct, setCorrect] = useState(0);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [hints, setHints] = useState<string[]>([]);
   const done = useRef(false);
   const move = (index: number, delta: number) => {
     if (submitted) return;
@@ -624,60 +840,134 @@ function TriageOrder({ seed, onDone, specialty = "general" }: Props) {
   const check = () => {
     const positions = steps.reduce((count, step, i) => count + (step === item.steps[i] ? 1 : 0), 0);
     setCorrect(positions); setSubmitted(true);
-    if (!done.current) { done.current = true; onDone(Math.round(positions / steps.length * 100), 100, positions === steps.length); }
+    if (!done.current) { done.current = true; onDone(Math.max(0, Math.round(positions / steps.length * 100) - hintsUsed * 10), 100, positions === steps.length && hintsUsed === 0); }
+  };
+  const revealHint = () => {
+    if (submitted || hintsUsed >= 2) return;
+    const position = hintsUsed;
+    setHints((current) => [...current, "Position " + (position + 1) + " should be: " + item.steps[position]]);
+    setHintsUsed((current) => current + 1);
   };
   return <div className="game-layout">
     <div className="case-banner triage-banner"><span>ORDER OF OPERATIONS</span><strong>{item.title}</strong><small>{item.scenario}</small></div>
     <p className="muted-copy">Arrange the response in the safest order. Use the arrows to move each step.</p>
+    {!submitted && <div className="triage-hint-tools"><button className="text-button" onClick={revealHint} disabled={hintsUsed >= 2}>Reveal a correct position · −10 pts</button><span>{hintsUsed}/2 hints used</span></div>}
+    {hints.length > 0 && <div className="logic-hints">{hints.map((hint,index)=><p key={index}><b>HINT {index+1}</b>{hint}</p>)}</div>}
     <ol className="triage-list">{steps.map((step, i) => <li key={step} className={submitted ? (item.steps[i] === step ? "step-right" : "step-wrong") : ""}><span className="step-number">{i + 1}</span><p>{step}</p><span className="step-moves"><button aria-label={"Move " + step + " up"} disabled={submitted || i === 0} onClick={() => move(i, -1)}>↑</button><button aria-label={"Move " + step + " down"} disabled={submitted || i === steps.length - 1} onClick={() => move(i, 1)}>↓</button></span></li>)}</ol>
-    {!submitted ? <button className="button button-primary full-button" onClick={check}>Check sequence</button> : <Finish title={correct === steps.length ? "Sequence secured" : "Review the response order"} detail={"You placed " + correct + " of " + steps.length + " steps in the correct position."} score={Math.round(correct / steps.length * 100) + " / 100"}><div className="reveal-groups">{item.steps.map((s, i) => <span key={s}><b>{i + 1}.</b> {s}</span>)}</div></Finish>}
+    {!submitted ? <button className="button button-primary full-button" onClick={check}>Check sequence</button> : <Finish title={correct === steps.length ? "Sequence secured" : "Review the response order"} detail={"You placed " + correct + " of " + steps.length + " steps in the correct position."} score={Math.max(0, Math.round(correct / steps.length * 100) - hintsUsed * 10) + " / 100"}><div className="reveal-groups">{item.steps.map((s, i) => <span key={s}><b>{i + 1}.</b> {s}</span>)}</div></Finish>}
   </div>;
 }
 
 function AnagramSprint({ seed, onDone }: Props) {
-  const word = scrambleWords[seed % scrambleWords.length];
+  const rounds = useMemo(() => shuffle(scrambleWords, seeded(seed + 51)).slice(0, 5), [seed]);
+  const [round, setRound] = useState(0);
   const [text, setText] = useState("");
   const [tries, setTries] = useState(0);
   const [hint, setHint] = useState(false);
-  const [done, setDone] = useState(false);
+  const [roundFinished, setRoundFinished] = useState(false);
   const [won, setWon] = useState(false);
+  const [score, setScore] = useState(0);
+  const [seconds, setSeconds] = useState(75);
+  const [note, setNote] = useState("Five words. Seventy-five seconds. Solve each specimen before moving on.");
+  const [ended, setEnded] = useState(false);
+  const done = useRef(false);
+  const word = rounds[round];
+  const scrambled = useMemo(() => {
+    const value = shuffle(word[0].split(""), seeded(seed + 51 + round * 73)).join("");
+    return value === word[0] ? value.slice(1) + value[0] : value;
+  }, [seed, word, round]);
+
+  useEffect(() => {
+    if (ended) return;
+    const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [ended]);
+  useEffect(() => {
+    if (seconds !== 0 || ended || done.current) return;
+    done.current = true;
+    setEnded(true);
+    setNote("Time. The remaining words are revealed below.");
+    onDone(score, 100, score === 100);
+  }, [seconds, ended, score, onDone]);
+
   const check = () => {
-    if (done || !text.trim()) return;
-    const ok = text.trim().replace(/\s/g,"").toUpperCase() === word[0];
-    const n = tries + 1; setTries(n);
-    if (ok || n >= 3) { setDone(true); setWon(ok); onDone(ok ? (hint ? 80 : n === 1 ? 100 : 90) : 0, 100, ok && n === 1 && !hint); }
-    else setText("");
+    const answer = text.trim().replace(/\s/g, "").toUpperCase();
+    if (ended || roundFinished || !answer) return;
+    const nextTries = tries + 1;
+    setTries(nextTries);
+    if (answer === word[0]) {
+      const earned = hint ? 12 : nextTries === 1 ? 20 : nextTries === 2 ? 15 : 10;
+      setScore((current) => current + earned);
+      setWon(true);
+      setRoundFinished(true);
+      setNote("Unscrambled. +" + earned + " points.");
+    } else if (nextTries >= 3) {
+      setWon(false);
+      setRoundFinished(true);
+      setNote("Three attempts used. The answer is " + word[0] + ".");
+    } else {
+      setText("");
+      setNote("Not quite. " + (3 - nextTries) + " attempts left.");
+    }
   };
-  const scrambled = useMemo(() => shuffle(word[0].split(""), seeded(seed + 51)).join(""), [seed, word]);
-  return <div className="game-layout">
-    <div className="game-instructions"><span className="instruction-dot mint" /> Unscramble the letters. Three guesses; ask for a definition hint if you need one.</div>
-    <div className="anagram-board"><span className="eyebrow">SCRAMBLE THE SPECIMEN</span><div className="anagram-letters">{scrambled.split("").map((ch, i) => <b key={i}>{ch}</b>)}</div>{hint && <p>{word[1]}</p>}</div>
-    {!done ? <form className="word-entry" onSubmit={(e) => { e.preventDefault(); check(); }}><input value={text} onChange={(e) => setText(e.target.value)} placeholder="Your answer" autoComplete="off" /><button className="button button-primary">Submit</button></form> : <Finish title={won ? "Unscrambled!" : "The word was " + word[0]} detail={word[1]} score={won ? (hint ? 80 : tries === 1 ? 100 : 90) + " / 100" : "0 / 100"} />}
-    <button className="text-button" onClick={() => setHint(true)} disabled={hint || done}>Need a hint?</button>
+  const next = () => {
+    if (!roundFinished || ended) return;
+    if (round === rounds.length - 1) {
+      const finalScore = score;
+      setEnded(true);
+      if (!done.current) { done.current = true; onDone(finalScore, 100, finalScore === 100); }
+      return;
+    }
+    setRound((current) => current + 1);
+    setText("");
+    setTries(0);
+    setHint(false);
+    setWon(false);
+    setRoundFinished(false);
+    setNote("Next specimen. Keep the pace.");
+  };
+
+  return <div className="game-layout anagram-sprint">
+    <div className="anagram-hud"><div><span className="eyebrow">ANAGRAM SPRINT</span><b>{round + 1}<small> / 5</small></b></div><div className={"anagram-clock" + (seconds <= 10 ? " urgent" : "")}>{seconds}s</div><div><b>{score}<small> pts</small></b></div></div>
+    <div className="anagram-progress"><i style={{width:((round + Number(roundFinished))/5*100)+"%"}} /></div>
+    {!ended ? <>
+      <div className="game-instructions"><span className="instruction-dot mint" /> Unscramble the medical term. Three attempts per word; a hint reduces the maximum points.</div>
+      <div className="anagram-board"><span className="eyebrow">SPECIMEN {round + 1} · {word[0].length} LETTERS</span><div className="anagram-letters">{scrambled.split("").map((ch, i) => <b key={i}>{ch}</b>)}</div>{hint && <p>{word[1]}</p>}</div>
+      {!roundFinished ? <>
+        <form className="word-entry" onSubmit={(event) => { event.preventDefault(); check(); }}><input value={text} onChange={(event) => setText(event.target.value.replace(/[^a-z]/gi, "").toUpperCase())} maxLength={word[0].length} placeholder="Your answer" autoComplete="off" /><button className="button button-primary" type="submit" disabled={!text.trim()}>Submit</button></form>
+        <div className="anagram-tools"><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Reveal definition hint</button><span>{tries} / 3 attempts</span></div>
+      </> : <div className="anagram-round-result"><b>{won ? "Correct" : "Answer revealed"} · {won ? "Points added" : "No points"}</b><h3>{word[0]}</h3><p>{word[1]}</p><button className="button button-primary full-button" onClick={next}>{round === 4 ? "Finish sprint" : "Next specimen →"}</button></div>}
+      <p className="game-feedback" aria-live="polite">{note}</p>
+    </> : <Finish title="Sprint complete" detail={"You solved " + (round + Number(roundFinished)) + " of five specimens before the clock ran out."} score={score + " / 100"}><div className="reveal-groups">{rounds.map(([answer, clue], index) => <span key={answer}><b>{index + 1}. {answer}</b>{clue}</span>)}</div></Finish>}
   </div>;
 }
 
 function CellSketch({ seed, onDone }: Props) {
   const item = glyphPatterns[seed % glyphPatterns.length];
-  const [cells, setCells] = useState<boolean[][]>(() => item.pattern.map((row) => row.map(() => false)));
+  const [cells, setCells] = useState<number[][]>(() => item.pattern.map((row) => row.map(() => 0)));
   const [checked, setChecked] = useState(false);
   const rowClues = item.pattern.map((row) => nonogramRuns(row));
   const colClues = item.pattern[0].map((_, c) => nonogramRuns(item.pattern.map((row) => row[c])));
+  const lineSolved = (line: number[], clue: number[]) => line.every((value) => value !== 0) && JSON.stringify(nonogramRuns(line.map((value) => value === 1 ? 1 : 0))) === JSON.stringify(clue);
   const check = () => {
-    const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, value, c) => m + (Boolean(value) === cells[r][c] ? 1 : 0), 0), 0);
-    setChecked(true); onDone(Math.round(correct / 25 * 100), 100, correct === 25);
+    const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, value, c) => m + ((value === 1 && cells[r][c] === 1) || (value === 0 && cells[r][c] === 2) ? 1 : 0), 0), 0);
+    setChecked(true);
+    onDone(Math.round(correct / 25 * 100), 100, correct === 25);
   };
   return <div className="game-layout">
-    <div className="game-instructions"><span className="instruction-dot lilac" /> Fill the 5×5 grid using the row and column counts. A number tells you how many cells in that line are filled. This is a tiny nonogram.</div>
-    <div className="nonogram-wrap"><div className="nonogram-col-clues">{colClues.map((n, i) => <span key={i}>{n.length ? n.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className="nonogram-clue">{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1)} className={"nonogram-cell" + (value ? " filled-cell" : "") + (checked && value !== Boolean(item.pattern[r][c]) ? " error-cell" : "")} onClick={() => setCells((all) => all.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? !v : v) : x))}>{value ? "•" : ""}</button>)}</div>)}</div></div>
-    {!checked ? <button className="button button-primary full-button" onClick={check}>Check pattern</button> : <Finish title="Pattern revealed" detail={"The hidden shape was " + item.name + ". " + item.hint + ". Your cells are marked for comparison."} score={Math.round(item.pattern.reduce((n, row, r) => n + row.reduce((m, v, c) => m + (Boolean(v) === cells[r][c] ? 1 : 0), 0), 0) / 25 * 100) + " / 100"} />}
+    <div className="game-instructions"><span className="instruction-dot lilac" /> Solve the 5×5 nonogram. Each clue gives the length of consecutive filled runs. Cycle each cell through unknown, filled, and marked empty to keep track without paper.</div>
+    <div className="nonogram-legend"><span><b>●</b> Filled</span><span><b>×</b> Empty</span><span><b>·</b> Unknown</span></div>
+    <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue)?"clue-complete":""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue"+(lineSolved(row,rowClues[r])?" clue-complete":"")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1) + ": " + (value===1?"filled":value===2?"marked empty":"unknown")} className={"nonogram-cell" + (value===1 ? " filled-cell" : "") + (value===2 ? " empty-marked" : "") + (checked && (item.pattern[r][c] ? value!==1 : value!==2) ? " error-cell" : "")} onClick={() => setCells((all) => all.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? (v + 1) % 3 : v) : x))}>{value===1?"●":value===2?"×":""}</button>)}</div>)}</div></div>
+    <div className="nonogram-actions"><span>{cells.flat().filter((value)=>value!==0).length} / 25 cells marked</span><button className="button button-quiet" onClick={()=>setCells(item.pattern.map((row)=>row.map(()=>0)))} disabled={checked}>Reset grid</button></div>
+    {!checked ? <button className="button button-primary full-button" onClick={check}>Check pattern</button> : <Finish title="Pattern revealed" detail={"The hidden shape was " + item.name + ". " + item.hint + ". Filled cells are compared with the solution."} score={Math.round(item.pattern.reduce((n, row, r) => n + row.reduce((m, v, c) => m + ((v===1 && cells[r][c]===1) || (v===0 && cells[r][c]===2) ? 1 : 0), 0), 0) / 25 * 100) + " / 100"} />}
   </div>;
 }
 
 function HigherLower({ seed, onDone }: Props) {
-  const list = useMemo(() => shuffle(higherLowerPairs, seeded(seed + 29)).slice(0, 5), [seed]);
+  const list = useMemo(() => shuffle(higherLowerPairs.filter((item) => "fun" in item), seeded(seed + 29)).slice(0, 5), [seed]);
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
+  const [picked, setPicked] = useState<"a" | "b" | "tie" | null>(null);
   const [reveal, setReveal] = useState(false);
   const [finished, setFinished] = useState(false);
   const item = list[round];
@@ -686,16 +976,16 @@ function HigherLower({ seed, onDone }: Props) {
     if (reveal || finished) return;
     const ok = v === correct;
     const next = score + (ok ? 1 : 0);
-    setScore(next); setReveal(true);
+    setPicked(v); setScore(next); setReveal(true);
     window.setTimeout(() => {
       if (round + 1 === list.length) { setFinished(true); onDone(Math.round(next / list.length * 100), 100, next === list.length); }
-      else { setRound((r) => r + 1); setReveal(false); }
+      else { setRound((r) => r + 1); setPicked(null); setReveal(false); }
     }, 900);
   };
   return <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot gold" /> Which quantity is greater? Five quick comparisons. Sometimes the answer is a tie.</div>
     <div className="higher-progress">COMPARISON {Math.min(round + 1, 5)} / 5 <span>{score} right</span></div>
-    {!finished ? <div className="higher-cards"><button className={"higher-card" + (reveal && correct === "a" ? " right" : "")} onClick={() => choose("a")} disabled={reveal}><span>A</span><b>{item.a}</b>{reveal && <strong>{item.av}</strong>}</button><div className="higher-or">OR <button onClick={() => choose("tie")} disabled={reveal}>=</button></div><button className={"higher-card" + (reveal && correct === "b" ? " right" : "")} onClick={() => choose("b")} disabled={reveal}><span>B</span><b>{item.b}</b>{reveal && <strong>{item.bv}</strong>}</button></div> : <Finish title="Comparison complete" detail={"You called " + score + " of " + list.length + " comparisons correctly."} score={Math.round(score/list.length*100) + " / 100"} />}
+    {!finished ? <div className="higher-cards"><button className={"higher-card" + (reveal && correct === "a" ? " right" : reveal && picked === "a" ? " wrong" : "")} onClick={() => choose("a")} disabled={reveal}><span>A</span><b>{item.a}</b>{reveal && <strong>{item.av}</strong>}</button><div className="higher-or">{reveal && correct === "tie" ? "TIE" : "OR"} <button onClick={() => choose("tie")} disabled={reveal}>=</button></div><button className={"higher-card" + (reveal && correct === "b" ? " right" : reveal && picked === "b" ? " wrong" : "")} onClick={() => choose("b")} disabled={reveal}><span>B</span><b>{item.b}</b>{reveal && <strong>{item.bv}</strong>}</button></div> : <Finish title="Comparison complete" detail={"You called " + score + " of " + list.length + " comparisons correctly."} score={Math.round(score/list.length*100) + " / 100"} />}
     {reveal && <p className="game-feedback">{item.explanation} <span className="source-note">{item.source}</span></p>}
   </div>;
 }
@@ -706,6 +996,7 @@ function WordLadder({ seed, onDone }: Props) {
   const [entered, setEntered] = useState<string[]>([item.start]);
   const [text, setText] = useState("");
   const [note, setNote] = useState("Change one letter at a time. Every step must be a real word.");
+  const [showPath, setShowPath] = useState(false);
   const [ended, setEnded] = useState(false);
   const maxMoves = Math.max(2, item.path.length + 2);
   const diffOne = (a: string, b: string) => a.length === b.length && [...a].filter((c, i) => c !== b[i]).length === 1;
@@ -716,7 +1007,7 @@ function WordLadder({ seed, onDone }: Props) {
     if (!LADDER_WORDS.has(word)) { setNote("That one-letter combination isn't in this round's word list. Try a listed word."); return; }
     if (entered.includes(word)) { setNote("You've already used that word."); return; }
     const next = [...entered, word]; setEntered(next); setText("");
-    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12)), 100, next.length === item.path.length); }
+    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (showPath ? 20 : 0))), 100, next.length === item.path.length && !showPath); }
     else if (next.length >= maxMoves) { setEnded(true); onDone(0, 100, false); }
     else setNote("Good step. Keep going.");
   };
@@ -724,14 +1015,19 @@ function WordLadder({ seed, onDone }: Props) {
     <div className="game-instructions"><span className="instruction-dot peach" /> Build a word ladder from the start word to the end word. Change one letter at a time; all intermediate steps must be words.</div>
     <div className="ladder-ends"><span>START <b>{item.start}</b></span><span>FINISH <b>{item.end}</b></span></div>
     <div className="ladder-rungs">{entered.map((w, i) => <span key={i}>{w}</span>)}{!ended && <i>?</i>}</div>
-    {!ended ? <form className="word-entry" onSubmit={(e) => { e.preventDefault(); add(); }}><input value={text} maxLength={item.start.length} onChange={(e) => setText(e.target.value.replace(/[^a-z]/gi,"").toUpperCase())} placeholder="Next word" /><button className="button button-primary">Add step</button></form> : <Finish title={entered[entered.length-1] === item.end ? "Ladder climbed" : "The ladder revealed"} detail={"One possible path: " + item.path.join(" → ")} score={entered[entered.length-1] === item.end ? "Solved" : "Try another tomorrow"} />}
+    {!ended ? <>
+      <form className="word-entry" onSubmit={(e) => { e.preventDefault(); add(); }}><input value={text} maxLength={item.start.length} onChange={(e) => setText(e.target.value.replace(/[^a-z]/gi,"").toUpperCase())} placeholder="Next word" /><button className="button button-primary">Add step</button></form>
+      <button className="text-button" onClick={() => setShowPath((value) => !value)}>{showPath ? "Hide suggested path" : "Need a nudge? Reveal one possible path"}</button>
+      {showPath && <p className="ladder-hint">One valid route: {item.path.join(" → ")}</p>}
+    </> : <Finish title={entered[entered.length-1] === item.end ? "Ladder climbed" : "The ladder revealed"} detail={"One possible path: " + item.path.join(" → ")} score={entered[entered.length-1] === item.end ? (showPath ? "Hint used" : "Solved") : "Try another run"} />}
     <p className="game-feedback">{note}</p>
   </div>;
 }
 
 
+const MEDICAL_HIVE_PUZZLES = spellingHivePuzzles.filter((puzzle) => !["Practice Round","Capture the Clue","Tricone Terms"].includes(puzzle.title));
 function SpellingHive({ seed, onDone }: Props) {
-  const puzzle = spellingHivePuzzles[seed % spellingHivePuzzles.length];
+  const puzzle = MEDICAL_HIVE_PUZZLES[seed % MEDICAL_HIVE_PUZZLES.length];
   const letters = useMemo(() => shuffle(puzzle.letters, seeded(seed + 83)), [puzzle, seed]);
   const [entry, setEntry] = useState("");
   const [found, setFound] = useState<string[]>([]);
@@ -793,8 +1089,11 @@ function CasefileLogic({ seed, onDone }: Props) {
   const item = deductionCases[seed % deductionCases.length];
   const blank = () => Object.fromEntries(item.suspects.map((suspect) => [suspect, { location:"", object:"" }]));
   const [assignments, setAssignments] = useState(blank);
+  const [pencilMarks, setPencilMarks] = useState<Record<string, "possible" | "excluded">>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [hints, setHints] = useState<string[]>([]);
   const [note, setNote] = useState("Use the clues to assign one unique room and one unique item to each person.");
   const update = (suspect: string, field: "location"|"object", value: string) => {
     if (submitted) return;
@@ -805,6 +1104,26 @@ function CasefileLogic({ seed, onDone }: Props) {
     }
     setAssignments((current) => ({ ...current, [suspect]: { ...current[suspect], [field]: value } }));
   };
+  const togglePencil = (suspect: string, field: "location" | "object", value: string) => {
+    const key = suspect + "|" + field + "|" + value;
+    setPencilMarks((current) => {
+      const next = { ...current };
+      if (!current[key]) next[key] = "possible";
+      else if (current[key] === "possible") next[key] = "excluded";
+      else delete next[key];
+      return next;
+    });
+  };
+  const revealHint = () => {
+    if (submitted || hintsUsed >= 3) return;
+    const solution = item.solution[Math.floor(hintsUsed / 2)];
+    const hint = hintsUsed % 2 === 0
+      ? solution.suspect + " was in the " + solution.location + "."
+      : solution.suspect + " had the " + solution.object + ".";
+    setHints((current) => [...current, hint]);
+    setHintsUsed((current) => current + 1);
+    setNote("Confirmed relationship revealed. This costs 10 points.");
+  };
   const check = () => {
     if (submitted) return;
     const complete = item.suspects.every((suspect) => assignments[suspect].location && assignments[suspect].object);
@@ -813,16 +1132,19 @@ function CasefileLogic({ seed, onDone }: Props) {
       const current = assignments[solution.suspect];
       return n + Number(current.location === solution.location) + Number(current.object === solution.object);
     }, 0);
-    const points = Math.round(matches / 6 * 100);
+    const points = Math.max(0, Math.round(matches / 6 * 100) - hintsUsed * 10);
     setScore(points);
     setSubmitted(true);
     setNote(matches === 6 ? "Every clue fits. Mystery solved." : matches + " of 6 assignments are in the right place. Review the clues and solution.");
-    onDone(points, 100, matches === 6);
+    onDone(points, 100, matches === 6 && hintsUsed === 0);
   };
   return <div className="game-layout">
     <div className="case-banner logic-banner"><span>FICTIONAL LOGIC PUZZLE</span><strong>{item.title}</strong><small>Deduction, not diagnosis</small></div>
     <p className="logic-briefing">{item.briefing}</p>
     <div className="logic-clues"><SectionLabel>CLUE BOARD</SectionLabel>{item.clues.map((clue,i)=><div key={i}><span>{String(i+1).padStart(2,"0")}</span>{clue}</div>)}</div>
+    <div className="logic-hint-tools"><button className="text-button" onClick={revealHint} disabled={submitted || hintsUsed >= 3}>Reveal a confirmed relationship · −10 pts</button><span>{hintsUsed} / 3 hints used</span></div>
+    {hints.length > 0 && <div className="logic-hints">{hints.map((hint,index)=><p key={index}><b>HINT {index+1}</b>{hint}</p>)}</div>}
+    <details className="logic-pencil-board"><summary>Open deduction grid <span>Use pencil marks instead of paper</span></summary><p>Tap a candidate to cycle through unknown, possible, and ruled out. Use these marks to track deductions across both categories; they never change your final assignments.</p><div className="pencil-legend"><span><b>✓</b> Possible</span><span><b>×</b> Ruled out</span><span><b>·</b> Unknown</span></div><div className="pencil-grid"><div className="pencil-head"><b>PERSON</b><b>LOCATION CANDIDATES</b><b>OBJECT CANDIDATES</b></div>{item.suspects.map((suspect)=><div className="pencil-row" key={suspect}><strong>{suspect}</strong><div>{item.locations.map((value)=><button type="button" key={value} className={pencilMarks[suspect+"|location|"+value]??""} onClick={()=>togglePencil(suspect,"location",value)} aria-pressed={Boolean(pencilMarks[suspect+"|location|"+value])} aria-label={suspect+" location "+value+": "+(pencilMarks[suspect+"|location|"+value]??"unknown")}>{pencilMarks[suspect+"|location|"+value]==="possible"?"✓ ":pencilMarks[suspect+"|location|"+value]==="excluded"?"× ":"· "}{value}</button>)}</div><div>{item.objects.map((value)=><button type="button" key={value} className={pencilMarks[suspect+"|object|"+value]??""} onClick={()=>togglePencil(suspect,"object",value)} aria-pressed={Boolean(pencilMarks[suspect+"|object|"+value])} aria-label={suspect+" object "+value+": "+(pencilMarks[suspect+"|object|"+value]??"unknown")}>{pencilMarks[suspect+"|object|"+value]==="possible"?"✓ ":pencilMarks[suspect+"|object|"+value]==="excluded"?"× ":"· "}{value}</button>)}</div></div>)}</div><button type="button" className="text-button" onClick={()=>setPencilMarks({})}>Clear pencil marks</button></details>
     <div className="logic-table"><div className="logic-table-head"><span>PERSON</span><span>LOCATION</span><span>OBJECT</span></div>
       {item.suspects.map((suspect) => <div className="logic-table-row" key={suspect}>
         <strong>{suspect}</strong>

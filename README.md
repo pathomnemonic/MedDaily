@@ -5,12 +5,21 @@ A mobile-first medical mini-game arcade built with React, TypeScript, and Vite.
 
 ## What is here
 
-Fourteen distinct game formats span both educational and just-for-fun play:
+Sixteen playable formats span clinical deduction, word games, estimation, spatial logic, trivia, and party play. Every game has a daily round and an unlimited Free Play mode, selectable directly from the home screen:
 
-- **Medical knowledge:** Medle, Connections, Mystery Case, Next Best Step, Microbe Hunt, Labline, Memory Match, and Triage Order.
-- **Pure puzzle fun:** Anagram Sprint, Cell Sketch (nonogram), Higher or Lower, Word Ladder, Spelling Hive, and Casefile Logic.
+- **Medical and clinical:** Medle, DoctorDle, Connections, Word Hunt, Labline, Association Blitz, and Triage Order.
+- **Puzzle and party:** Anagram Sprint, Cell Sketch, What Has More?, Word Ladder, Medical Spelling Hive, Casefile Logic, Deep Dive, Trivia Rumble, and Letter Lab.
 
 The same UTC date + mode + specialty + game key yields the same daily seed, so groups in different time zones share the same puzzle. Open Arcade is the shared, balanced general mode and the default starting point. Specialty Dailies add shared daily sets across 26 clinical specialties and four foundational subjects. Neurology is one track like the other specialties; subspecialty topics belong inside the Neurology track rather than taking up multiple top-level slots.
+
+## Gameplay principles
+
+- DoctorDle is a six-guess diagnosis puzzle with progressive clues; clinical multiple-choice drills are not presented as standalone games. Medle includes an on-screen Wordle-style keyboard.
+- Word Hunt is a 14×14 drag-to-select word search with persistent found-word highlighting. Casefile Logic and Cell Sketch include in-game pencil-mark systems.
+- Association Blitz is a timed 20-card memory game with ten pairs, combo streaks, and a time bonus. What Has More? draws from 90 comparisons, including 24 fun-first matchups such as propofol lipid calories versus bacon fat.
+- Labline and Anagram Sprint now use multi-round progression; Letter Lab is a playable Boggle-style adjacent-letter hunt; Connections adds one-away feedback and reliable reshuffling. Shared-code rooms are offered only for formats that support same-puzzle score competition: Connections, Word Hunt, Association Blitz, Triage Order, Anagram Sprint, Labline, What Has More?, Casefile Logic, Deep Dive, Trivia Rumble, and Letter Lab. One person enters a six-character code to start a room; everyone else enters the same code to join. Firebase credentials are still required for live cross-device multiplayer.
+- Completion is shown per game. MedDaily does not calculate a combined arcade score across games of different difficulty.
+- Dx Dash is permanently featured in the arcade and remains a separate game.
 
 ## Privacy and accounts
 
