@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { GameBoard } from "./Games";
 import type { GameId } from "./lib";
 import { hashSeed, dailyDateKey } from "./lib";
-import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, totalPlays, type PlayerData } from "./storage";
+import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
 import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, submitRoomScore, watchRoom, type RoomState } from "./firebase";
 import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnected } from "./googleDrive";
 
