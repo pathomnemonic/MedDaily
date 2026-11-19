@@ -95,6 +95,35 @@ export async function createRoom(input: Omit<RoomInfo, "code"> & { name: string 
   throw new Error("Could not find an available room code. Try again.");
 }
 
+export async function joinOrCreateRoom(codeInput: string, input: Omit<RoomInfo, "code"> & { name: string }): Promise<RoomState> {
+  const code = codeInput.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+  if (code.length !== 6) throw new Error("Enter a six-character room code.");
+  const { db } = services();
+  const uid = await identity();
+  const ref = roomRef(code);
+  const member = playerRef(code, uid);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) {
+      const room: RoomDocument = { ...input, code, hostUid: uid, memberUids: [uid], status: "waiting" };
+      tx.set(ref, { ...room, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      tx.set(member, { uid, name: input.name.trim().slice(0, 20) || "Guest", score: null, maxScore: null, finished: false, perfect: false });
+      return;
+    }
+    const room = snap.data() as RoomDocument;
+    const members = room.memberUids ?? [];
+    if (!members.includes(uid) && members.length >= 8) throw new Error("This room is full (maximum eight players).");
+    if (!members.includes(uid)) {
+      tx.update(ref, { memberUids: [...members, uid], updatedAt: serverTimestamp() });
+      tx.set(member, { uid, name: input.name.trim().slice(0, 20) || "Guest", score: null, maxScore: null, finished: false, perfect: false });
+    }
+  });
+  const [snap, playerSnap] = await Promise.all([getDoc(ref), getDoc(member)]);
+  if (!snap.exists() || !playerSnap.exists()) throw new Error("Room could not be joined.");
+  const room = snap.data() as RoomDocument;
+  return { ...room, players: [playerSnap.data() as RoomPlayer] };
+}
+
 export async function joinRoom(codeInput: string, name: string): Promise<RoomState> {
   const code = codeInput.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
   if (code.length !== 6) throw new Error("Enter the six-character room code.");
