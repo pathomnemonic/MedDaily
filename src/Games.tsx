@@ -13,7 +13,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general" }: Props &
   switch (game) {
     case "medle": return <Medle seed={seed} onDone={onDone} specialty={specialty} />;
     case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} />;
-    case "diagnosis": return <MysteryCase seed={seed} onDone={onDone} specialty={specialty} />;
+    case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} specialty={specialty} />;
     case "nextstep": return <NextStep seed={seed} onDone={onDone} specialty={specialty} />;
     case "microbe": return <MicrobeHunt seed={seed} onDone={onDone} specialty={specialty} />;
     case "labline": return <Labline seed={seed} onDone={onDone} specialty={specialty} />;
@@ -477,26 +477,48 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
   </div>;
 }
 
-function MysteryCase({ seed, onDone, specialty = "general" }: Props) {
+function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
   const item = pick(diagnosisCases, seed, specialty, "diagnosis");
-  const [clueCount, setClueCount] = useState(1);
-  const [guesses, setGuesses] = useState(0);
+  const [guess, setGuess] = useState("");
+  const [guesses, setGuesses] = useState<string[]>([]);
+  const [clueCount, setClueCount] = useState(2);
   const [ended, setEnded] = useState(false);
-  const [correct, setCorrect] = useState(false);
-  const [note, setNote] = useState("Read the clues and name the most likely diagnosis.");
+  const [won, setWon] = useState(false);
+  const [note, setNote] = useState("Read the case, then type the diagnosis. Six guesses; each miss unlocks another clue.");
   const done = useRef(false);
-  const choose = (answer: string) => {
-    if (ended) return;
-    const isRight = answer === item.answer, next = guesses + 1; setGuesses(next);
-    if (isRight || next >= 3) {
-      setEnded(true); setCorrect(isRight); setNote(isRight ? "Correct diagnosis." : "The case is solved. Review the distinguishing clues.");
-      if (!done.current) { done.current = true; onDone(isRight ? 100 - (clueCount - 1) * 18 : 0, 100, isRight && clueCount === 1); }
-    } else { setClueCount((n) => Math.min(item.clues.length, n + 1)); setNote("Not this time. One more clue has been added."); }
+  const submit = () => {
+    const value = normalize(guess);
+    if (!value || ended) return;
+    if (guesses.some((g) => normalize(g) === value)) { setNote("You already tried that diagnosis."); return; }
+    const next = [...guesses, guess.trim()];
+    const correct = value === normalize(item.answer);
+    setGuesses(next);
+    setGuess("");
+    if (correct || next.length >= 6) {
+      setEnded(true); setWon(correct);
+      setNote(correct ? "Diagnosis confirmed." : "No guesses remaining. Review the case.");
+      if (!done.current) { done.current = true; onDone(correct ? Math.max(20, 100 - (next.length - 1) * 15) : 0, 100, correct && next.length === 1); }
+    } else {
+      setClueCount((n) => Math.min(item.clues.length, n + 1));
+      setNote("Not quite. A new clue has been added.");
+    }
   };
-  return <div className="game-layout">
-    <div className="case-banner"><span>CASE FILE</span><strong>{item.title}</strong><small>Progressive diagnosis · {clueCount} of {item.clues.length} clues</small></div>
+  const revealClue = () => {
+    if (ended || clueCount >= item.clues.length) return;
+    setClueCount((n) => Math.min(item.clues.length, n + 1));
+    setNote("Clue revealed. Use it to narrow your diagnosis.");
+  };
+  return <div className="game-layout doctordle-game">
+    <div className="case-banner"><span>DOCTORDLE · CASE {item.id.toUpperCase()}</span><strong>{item.title}</strong><small>{clueCount} of {item.clues.length} clues revealed · {6 - guesses.length} guesses left</small></div>
+    <div className="doctordle-attempts" aria-label="Six diagnosis attempts">{Array.from({length:6},(_,i)=><span key={i} className={i < guesses.length ? "used" : ""}>{i < guesses.length ? guesses[i] : "Diagnosis "+(i+1)}</span>)}</div>
     <div className="clue-stack">{item.clues.slice(0, clueCount).map((clue, i) => <div className="clue-card" key={i}><span>{String(i + 1).padStart(2, "0")}</span><p>{clue}</p></div>)}</div>
-    {!ended ? <div className="answer-options"><SectionLabel>Most likely diagnosis</SectionLabel>{item.options.map((option) => <button key={option} className="answer-option" onClick={() => choose(option)}>{option}<span>→</span></button>)}</div> : <Finish title={correct ? "Case cracked" : "Case closed"} detail={item.explanation} score={correct ? Math.max(0, 100 - (clueCount - 1) * 18) + " / 100" : "0 / 100"}><p className="source-note">Source note: {item.source}</p></Finish>}
+    {!ended ? <>
+      <form className="doctordle-entry" onSubmit={(event) => { event.preventDefault(); submit(); }}>
+        <label htmlFor="doctordle-guess">Your diagnosis</label>
+        <div><input id="doctordle-guess" value={guess} onChange={(event) => setGuess(event.target.value)} placeholder="Type a diagnosis…" autoComplete="off" /><button className="button button-primary" type="submit" disabled={!guess.trim()}>Guess ↗</button></div>
+      </form>
+      <div className="doctordle-tools"><button className="text-button" onClick={revealClue} disabled={clueCount >= item.clues.length}>Reveal another clue</button><span>{guesses.length}/6 guesses used</span></div>
+    </> : <Finish title={won ? "Diagnosis found" : "Case revealed"} detail={item.explanation}><p className="doctordle-answer">Answer: <b>{item.answer}</b></p><p className="source-note">Source note: {item.source}</p></Finish>}
     <p className="game-feedback" aria-live="polite">{note}</p>
   </div>;
 }
@@ -530,7 +552,7 @@ function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
   const [found, setFound] = useState<string[]>([]);
   const [start, setStart] = useState<number | null>(null);
   const [path, setPath] = useState<number[]>([]);
-  const [note, setNote] = useState("Tap the first and last letter of a hidden word.");
+  const [note, setNote] = useState("Find every hidden term. Select the first and last letter in a straight line, including diagonals, then mark it.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
   const tap = (index: number) => {
@@ -549,9 +571,9 @@ function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
     if (next.length === words.length) { setEnded(true); if (!done.current) { done.current = true; onDone(100, 100, true); } }
   };
   return <div className="game-layout">
-    <div className="case-banner microbe-banner"><span>MICROBE FIELD GUIDE</span><strong>{pack.name}</strong><small>Trace the organism names through the grid.</small></div>
+    <div className="case-banner microbe-banner"><span>WORD HUNT · THEMED SEARCH</span><strong>{pack.name}</strong><small>Find every hidden word in the themed grid.</small></div>
     <div className="wordsearch-board" role="group" aria-label="Letter grid">{board.grid.flat().map((letter, i) => <button key={i} className={"letter-tile" + (path.includes(i) ? " path-cell" : "")} onClick={() => tap(i)} disabled={ended}>{letter}</button>)}</div>
-    <div className="target-words"><SectionLabel>FIELD SPECIMENS</SectionLabel><div>{words.map((word) => <span key={word} className={found.includes(word) ? "target-found" : ""}>{word}</span>)}</div></div>
+    <div className="target-words"><SectionLabel>WORDS TO FIND</SectionLabel><div>{words.map((word) => <span key={word} className={found.includes(word) ? "target-found" : ""}>{word}</span>)}</div></div>
     <div className="connection-controls"><span className="mistake-count">{found.length} / {words.length} found</span><button className="button button-soft" onClick={() => { setStart(null); setPath([]); }}>Clear</button><button className="button button-primary" onClick={add} disabled={ended}>Mark word</button></div>
     <p className="game-feedback" aria-live="polite">{note}</p>
     {ended && <Finish title="Field guide complete" detail={"You identified all " + words.length + " organisms in this board."} score="100 / 100" />}
@@ -584,7 +606,7 @@ function Labline({ seed, onDone, specialty = "general" }: Props) {
 
 function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   const pool = useMemo(() => specialty === "neurology" ? pairsBank.slice(12, 24) : specialty === "infectious" ? pairsBank.slice(36, 46) : specialty === "cardiology" ? pairsBank.slice(0, 12) : pairsBank, [specialty]);
-  const pairs = useMemo(() => shuffle(pool, seeded(seed + 11)).slice(0, 6), [seed, pool]);
+  const pairs = useMemo(() => shuffle(pool, seeded(seed + 11)).slice(0, 8), [seed, pool]);
   const left = useMemo(() => shuffle(pairs.map((p, id) => ({ id, label: p[0] })), seeded(seed + 12)), [pairs, seed]);
   const right = useMemo(() => shuffle(pairs.map((p, id) => ({ id, label: p[1] })), seeded(seed + 13)), [pairs, seed]);
   const [a, setA] = useState<number | null>(null);
