@@ -1159,3 +1159,8 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .dive-answer-examples span.answer-missed{opacity:.76}
 .dive-answer-examples .dive-tier{padding:2px 6px;font-size:8px}
 @media(max-width:520px){.dive-live-answers>div{grid-template-columns:minmax(0,1fr) auto}.dive-live-answers .dive-tier{grid-column:1/-1;justify-self:start}}
+
+.association-difficulty{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px 0}
+.association-difficulty button{padding:9px 13px;border:1px solid rgba(190,202,255,.18);border-radius:10px;background:rgba(8,15,35,.48);color:#aebbd8;font:700 9px "DM Mono";letter-spacing:.4px;cursor:pointer}
+.association-difficulty button.selected{border-color:var(--gold);background:rgba(255,225,122,.13);color:#ffe9a5}
+.association-difficulty button:disabled{cursor:default;opacity:.7}
