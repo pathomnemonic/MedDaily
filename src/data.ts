@@ -1,3 +1,5 @@
+import { connectionPuzzlesExpansion, diagnosisCasesExpansion, nextStepCasesExpansion, labPromptsExpansion, pairsBankExpansion, microbePacksExpansion } from "./dataExpansion";
+
 export interface ConnectionGroup {
   category: string;
   words: [string, string, string, string];
@@ -235,6 +237,13 @@ export const triageCases = [
   { id:"t11", title:"Acute coronary syndrome", scenario:"A patient has ongoing chest pressure and diaphoresis.", steps:["Assess stability and obtain a 12-lead ECG promptly.","Give aspirin if no contraindication and initiate ACS pathway.","Identify STEMI or high-risk findings and arrange urgent reperfusion/consultation.","Continue monitoring, serial assessment, and definitive risk-directed care."] },
   { id:"t12", title:"Neonatal resuscitation", scenario:"A newborn remains apneic after initial warming, positioning, drying, and stimulation.", steps:["Complete initial steps and assess breathing and heart rate.","Begin positive-pressure ventilation for apnea/gasping or heart rate below 100/min.","Check chest movement and heart-rate response; correct ventilation technique if needed.","Begin coordinated compressions and advanced steps only if heart rate remains below 60/min after effective ventilation."] }
 ];
+
+connectionPuzzles.push(...connectionPuzzlesExpansion);
+diagnosisCases.push(...diagnosisCasesExpansion);
+nextStepCases.push(...nextStepCasesExpansion);
+labPrompts.push(...labPromptsExpansion);
+pairsBank.push(...pairsBankExpansion);
+microbePacks.push(...microbePacksExpansion);
 
 export const gameContentCounts = {
   medleAnswers: medleWords.length,
