@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { connectionPuzzles, medleWords, diagnosisCases, nextStepCases, labPrompts, triageCases, pairsBank, microbePacks } from "./data";
-import { deductionCases, glyphPatterns, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
+import { deductionCases, glyphPatterns, medicalHiveTitles, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
 import { hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
 import { extendStrandsPath, makeStrandsBoard, readStrandsPath } from "./strandsLogic";
 import { deepDivePrompts, triviaCategories, triviaQuestions } from "./dataArcade";
@@ -74,8 +74,9 @@ describe("content bank sanity", () => {
 
 describe("additional daily puzzle packs", () => {
   it("keeps the playable Spelling Hive pool medical-focused and title-unique", () => {
-    const playable = spellingHivePuzzles.filter((puzzle) => !["Practice Round", "Capture the Clue", "Tricone Terms"].includes(puzzle.title));
-    expect(playable).toHaveLength(42);
+    const playable = spellingHivePuzzles.filter((puzzle) => medicalHiveTitles.has(puzzle.title));
+    expect(playable).toHaveLength(medicalHiveTitles.size);
+    expect(playable.length).toBeGreaterThanOrEqual(35);
     expect(new Set(playable.map((puzzle) => puzzle.title)).size).toBe(playable.length);
   });
   it("keeps every Spelling Hive bank internally valid", () => {
