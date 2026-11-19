@@ -258,6 +258,7 @@ describe("expanded content integrity", () => {
     expect(higherLowerPairs.every((item) => Number.isFinite(item.av) && Number.isFinite(item.bv))).toBe(true);
     for (const ladder of wordLadders) {
       expect(ladder.path.every((word) => ladderDictionary.has(word)), ladder.path.join(" → ")).toBe(true);
+      expect(ladder.path.every((word) => ladderDictionary.has(word)), ladder.path.join(" → ")).toBe(true);
       expect(ladder.path[0]).toBe(ladder.start);
       expect(ladder.path[ladder.path.length - 1]).toBe(ladder.end);
       expect(new Set(ladder.path).size).toBe(ladder.path.length);
