@@ -72,7 +72,8 @@ function hit(dur: number, vol: number, when: number, bus: GainNode, hp = 6000) {
   src.start(when, Math.random() * 0.5); src.stop(when + dur + 0.02);
 }
 
-export function sfx(name: Sfx) {
+/** `level` raises the pitch of a correct-answer chime by that many semitones (combo escalation). */
+export function sfx(name: Sfx, level = 0) {
   if (!sfxOn || !unlocked) return;
   const c = ensure(); if (!c || !sfxBus) return;
   if (c.state === "suspended") void c.resume();
@@ -82,7 +83,7 @@ export function sfx(name: Sfx) {
     case "tap": tone(660, 0.06, "square", 0.55, t, bus, 990, 4000); break;
     case "pop": tone(420, 0.09, "sine", 0.6, t, bus, 900); break;
     case "tick": tone(1400, 0.04, "square", 0.5, t, bus); break;
-    case "correct": arp([72, 76, 79], 0.065); break;
+    case "correct": arp([72, 76, 79].map((n) => n + Math.min(8, Math.max(0, level))), 0.065); break;
     case "wrong": tone(220, 0.28, "sawtooth", 0.35, t, bus, 90, 1400); tone(165, 0.28, "square", 0.2, t + 0.04, bus, 70, 1200); break;
     case "start": arp([60, 67, 72], 0.07, "triangle", 0.6, 0.2); break;
     case "badge": arp([79, 83, 86, 91], 0.07, "sine", 0.55, 0.3); break;

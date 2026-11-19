@@ -9,7 +9,8 @@ import StageScene from "./components/StageScene";
 import PipCompanion from "./components/PipCompanion";
 import { levelFor, starsFor, xpForResult } from "./levels";
 import { DEFAULT_THEME, PRESETS, applyTheme, normalizeTheme, swatch, type ThemeSettings } from "./theme";
-import { watchStage } from "./juice";
+import { watchStage, resetCombo } from "./juice";
+import { setHapticsEnabled, vibrate } from "./haptics";
 import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } from "./audio";
 import type { GameId } from "./lib";
 import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, PARTY_GAMES } from "./lib";
@@ -22,27 +23,28 @@ type Specialty = "internal" | "familymed" | "neurology" | "cardiology" | "emerge
 type Screen = "home" | "stats" | "settings" | "friends";
 interface GameMeta { id: GameId; title: string; subtitle: string; description: string; icon: string; wash: string; time: string; category: string; level: string; }
 const GAMES: GameMeta[] = [
+// Ordered by how fun, impressive, and replayable each game is (best first). The home grid follows this order.
   {id:"medle",title:"Stat Word",subtitle:"The five-letter rounds",description:"Find the hidden medical word in six guesses.",icon:"▦",wash:"mint",time:"2 min",category:"Word play",level:"Easy → tricky"},
-  {id:"connections",title:"Quad Squad",subtitle:"Think in fours",description:"Sort sixteen terms into four hidden medical families.",icon:"⊞",wash:"lilac",time:"4 min",category:"Pattern logic",level:"Moderate"},
   {id:"diagnosis",title:"Differential",subtitle:"Name the diagnosis",description:"Solve a clinical case in six guesses as clues unlock.",icon:"✚",wash:"peach",time:"3 min",category:"Diagnosis game",level:"Deduction"},
-  {id:"microbe",title:"Specimen Search",subtitle:"Find the hidden terms",description:"Drag through a themed 14×14 letter grid to find every hidden word.",icon:"✣",wash:"blue",time:"4 min",category:"Word search",level:"Moderate"},
-  {id:"labline",title:"Labline",subtitle:"Calibrate your eye",description:"Five rapid-fire estimates of classic lab values and clinical thresholds.",icon:"⌁",wash:"pink",time:"2 min",category:"Numbers",level:"Foundational"},
+  {id:"trivia",title:"Trivia Rumble",subtitle:"Spin. Answer. Collect badges.",description:"A six-category trivia wheel with solo and pass-and-play modes.",icon:"🎡",wash:"orange",time:"8–12 min",category:"Party quiz",level:"All levels"},
+  {id:"dive",title:"Deep Scan",subtitle:"Go past the obvious",description:"Seven timed open questions, one typed answer each. Common answers stop at the skin; rare ones reach the marrow.",icon:"🩻",wash:"blue",time:"4 min",category:"Open-answer trivia",level:"Think sideways"},
+  {id:"connections",title:"Quad Squad",subtitle:"Think in fours",description:"Sort sixteen terms into four hidden medical families.",icon:"⊞",wash:"lilac",time:"4 min",category:"Pattern logic",level:"Moderate"},
+  {id:"bodymap",title:"Body Map Blitz",subtitle:"Tap the organ. Fast.",description:"Race to tap the right organ on the body diagram. Faster taps score more.",icon:"🫀",wash:"peach",time:"2 min",category:"Anatomy arcade",level:"Quick-fire"},
+  {id:"trail",title:"Theme Trail",subtitle:"Follow the winding words",description:"Trace hidden medical terms through a letter board. They bend in any direction, and the longest one stretches from top to bottom.",icon:"🧬",wash:"mint",time:"4 min",category:"Word trail",level:"Moderate"},
+  {id:"crossword",title:"Crossword Clinic",subtitle:"Fill the tiny grid",description:"A fresh mini crossword every time, with clues from anatomy to pharmacology. Check or reveal letters when stuck.",icon:"✏️",wash:"gold",time:"4 min",category:"Crossword",level:"Moderate"},
+  {id:"lettergrid",title:"Letter Lab",subtitle:"Find words in the grid",description:"Connect neighboring letters to uncover as many hidden words as possible before time runs out.",icon:"🔤",wash:"mint",time:"2 min",category:"Word hunt",level:"Fast & fun"},
+  {id:"hive",title:"Seven Cells",subtitle:"Seven letters, a swarm of terms",description:"Find every accepted medical word in a seven-letter hive. Use the center tile and hunt for the pangram.",icon:"✿",wash:"gold",time:"3 min",category:"Medical wordplay",level:"Easy → tricky"},
+  {id:"riddle",title:"Riddle Lab",subtitle:"Who am I?",description:"A germ, a drug, an organ, or a syndrome speaks in riddles. Guess early for more points.",icon:"🕵️",wash:"lilac",time:"3 min",category:"Guess who",level:"Easy → tricky"},
+  {id:"higher",title:"What Has More?",subtitle:"Ridiculous medical matchups",description:"Pick the bigger number in surprising food, drug, body, and everyday comparisons.",icon:"⚖",wash:"gold",time:"2 min",category:"Wild comparisons",level:"Quick-fire"},
   {id:"pairs",title:"Association Blitz",subtitle:"Make the connections",description:"Flip a 24-card board, find twelve clinical pairs, and build a streak before time runs out.",icon:"◇",wash:"lime",time:"3 min",category:"Association",level:"Moderate"},
-  {id:"triage",title:"Triage Order",subtitle:"What comes first?",description:"Put the priorities of an emergency response in order.",icon:"⇅",wash:"orange",time:"3 min",category:"Clinical reasoning",level:"Step 2"},
+  {id:"mime",title:"Mime Time",subtitle:"Act it out. No talking.",description:"Pass the phone and act out medical scenes, symptoms, and instruments while your friends guess. Beat the clock.",icon:"🎭",wash:"pink",time:"5–10 min",category:"Party charades",level:"Silly"},
+  {id:"casefile",title:"Casefile Logic",subtitle:"The clues don't lie",description:"Solve a fictional three-person deduction grid using rooms, objects, and clues.",icon:"⌕",wash:"lilac",time:"4 min",category:"Logic puzzle",level:"Moderate"},
   {id:"splice",title:"Anagram Sprint",subtitle:"Unscramble the specimen",description:"Unscramble five medical terms before the 75-second clock expires.",icon:"↝",wash:"mint",time:"1 min",category:"Word play",level:"Easy"},
   {id:"glyph",title:"Cell Sketch",subtitle:"Tiny picture logic",description:"Solve a nonogram with fill, empty, and pencil-mark cells.",icon:"▦",wash:"lilac",time:"2 min",category:"Visual logic",level:"Easy → tricky"},
-  {id:"higher",title:"What Has More?",subtitle:"Ridiculous medical matchups",description:"Pick the bigger number in surprising food, drug, body, and everyday comparisons.",icon:"⚖",wash:"gold",time:"2 min",category:"Wild comparisons",level:"Quick-fire"},
+  {id:"microbe",title:"Specimen Search",subtitle:"Find the hidden terms",description:"Drag through a themed 14×14 letter grid to find every hidden word.",icon:"✣",wash:"blue",time:"4 min",category:"Word search",level:"Moderate"},
+  {id:"labline",title:"Labline",subtitle:"Calibrate your eye",description:"Five rapid-fire estimates of classic lab values and clinical thresholds.",icon:"⌁",wash:"pink",time:"2 min",category:"Numbers",level:"Foundational"},
   {id:"ladder",title:"Letter Rungs",subtitle:"One letter at a time",description:"Build a one-letter-at-a-time path from the start word to the finish.",icon:"⌁",wash:"peach",time:"3 min",category:"Word play",level:"Moderate"},
-  {id:"hive",title:"Seven Cells",subtitle:"Seven letters, a swarm of terms",description:"Find every accepted medical word in a seven-letter hive. Use the center tile and hunt for the pangram.",icon:"✿",wash:"gold",time:"3 min",category:"Medical wordplay",level:"Easy → tricky"},
-  {id:"casefile",title:"Casefile Logic",subtitle:"The clues don't lie",description:"Solve a fictional three-person deduction grid using rooms, objects, and clues.",icon:"⌕",wash:"lilac",time:"4 min",category:"Logic puzzle",level:"Moderate"},
-  {id:"dive",title:"Deep Scan",subtitle:"Go past the obvious",description:"Seven timed open questions, one typed answer each. Common answers stop at the skin; rare ones reach the marrow.",icon:"🩻",wash:"blue",time:"4 min",category:"Open-answer trivia",level:"Think sideways"},
-  {id:"trivia",title:"Trivia Rumble",subtitle:"Spin. Answer. Collect badges.",description:"A six-category trivia wheel with solo and pass-and-play modes.",icon:"🎡",wash:"orange",time:"8–12 min",category:"Party quiz",level:"All levels"},
-  {id:"mime",title:"Mime Time",subtitle:"Act it out. No talking.",description:"Pass the phone and act out medical scenes, symptoms, and instruments while your friends guess. Beat the clock.",icon:"🎭",wash:"pink",time:"5–10 min",category:"Party charades",level:"Silly"},
-  {id:"riddle",title:"Riddle Lab",subtitle:"Who am I?",description:"A germ, a drug, an organ, or a syndrome speaks in riddles. Guess early for more points.",icon:"🕵️",wash:"lilac",time:"3 min",category:"Guess who",level:"Easy → tricky"},
-  {id:"bodymap",title:"Body Map Blitz",subtitle:"Tap the organ. Fast.",description:"Race to tap the right organ on the body diagram. Faster taps score more.",icon:"🫀",wash:"peach",time:"2 min",category:"Anatomy arcade",level:"Quick-fire"},
-  {id:"crossword",title:"Crossword Clinic",subtitle:"Fill the tiny grid",description:"A fresh mini crossword every time, with clues from anatomy to pharmacology. Check or reveal letters when stuck.",icon:"✏️",wash:"gold",time:"4 min",category:"Crossword",level:"Moderate"},
-  {id:"trail",title:"Theme Trail",subtitle:"Follow the winding words",description:"Trace hidden medical terms through a letter board. They bend in any direction, and the longest one stretches from top to bottom.",icon:"🧬",wash:"mint",time:"4 min",category:"Word trail",level:"Moderate"},
-  {id:"lettergrid",title:"Letter Lab",subtitle:"Find words in the grid",description:"Connect neighboring letters to uncover as many hidden words as possible before time runs out.",icon:"🔤",wash:"mint",time:"2 min",category:"Word hunt",level:"Fast & fun"},
+  {id:"triage",title:"Triage Order",subtitle:"What comes first?",description:"Put the priorities of an emergency response in order.",icon:"⇅",wash:"orange",time:"3 min",category:"Clinical reasoning",level:"Step 2"}
 ];
 type Shelf = "all" | "quick" | "brain" | "word" | "clinical" | "party";
 const SHELVES: { id: Shelf; label: string; icon: IconName }[] = [
@@ -114,7 +116,7 @@ export default function App() {
   const [lastShare,setLastShare] = useState("");
   const [partyRun,setPartyRun] = useState(false);
   const [wipe,setWipe] = useState<{id:GameId;key:number}|null>(null);
-  const [completion,setCompletion] = useState<{title:string;score:number;maxScore:number;perfect:boolean;text:string;party:boolean;stars:number;gain:number;levelUp:string|null}|null>(null);
+  const [completion,setCompletion] = useState<{title:string;score:number;maxScore:number;perfect:boolean;text:string;party:boolean;stars:number;gain:number;levelUp:string|null;chest:number}|null>(null);
   const [splash,setSplash] = useState(()=>{try{return sessionStorage.getItem("meddaily:splash")!=="1";}catch{return true;}});
   const [copied,setCopied] = useState(false);
 
@@ -143,8 +145,31 @@ export default function App() {
   },[]);
   useEffect(()=>{applyTheme(player.theme);},[player.theme]);
   useEffect(()=>{setSfxEnabled(player.sound);},[player.sound]);
+  useEffect(()=>{setHapticsEnabled(player.haptics!==false);},[player.haptics]);
   useEffect(()=>{setMusicEnabled(player.music);},[player.music]);
   useEffect(()=>{setScene(activeGame??"menu");},[activeGame]);
+  useEffect(()=>{
+    const onKey=(e:KeyboardEvent)=>{
+      if(e.ctrlKey||e.metaKey||e.altKey)return;
+      const t=e.target as HTMLElement|null;
+      const typing=!!t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable);
+      const q=(sel:string)=>[...document.querySelectorAll<HTMLButtonElement>(sel)].filter(b=>!b.disabled&&b.offsetParent!==null);
+      if(document.querySelector(".complete-overlay")){
+        if(e.key==="Escape"){document.querySelector<HTMLButtonElement>(".complete-close")?.click();}
+        else if(e.key==="Enter"&&!typing){const b=document.querySelector<HTMLButtonElement>(".next-up")??document.querySelector<HTMLButtonElement>(".complete-actions .button-primary");b?.click();e.preventDefault();}
+        return;
+      }
+      if(typing||!document.querySelector(".game-stage"))return;
+      if((e.key==="Enter"||e.key===" ")&&t?.tagName!=="BUTTON"){const next=q(".game-layout .full-button")[0];if(next){next.click();e.preventDefault();return;}}
+      const options=q(".rumble-options button, .riddle-options button");
+      const idx=("1234".indexOf(e.key));const letter=("abcd".indexOf(e.key.toLowerCase()));
+      if(options.length&&(idx>=0||(letter>=0&&e.key.length===1&&document.querySelector(".rumble-options")))){const o=options[idx>=0?idx:letter];if(o){o.click();e.preventDefault();return;}}
+      const cards=q(".higher-card");
+      if(cards.length>=2&&(e.key==="ArrowLeft"||e.key==="ArrowRight")){cards[e.key==="ArrowLeft"?0:1].click();e.preventDefault();}
+    };
+    window.addEventListener("keydown",onKey);
+    return ()=>window.removeEventListener("keydown",onKey);
+  },[]);
   useEffect(()=>{
     if(!activeGame)return;
     const stage=document.querySelector<HTMLElement>(".game-stage");
@@ -163,7 +188,7 @@ export default function App() {
   const seedFor=(game:GameId)=>hashSeed(date+"|"+scope+"|"+game);
 
   const openGame=(id:GameId,isPractice=false,forcedSeed?:number,party=false)=>{
-    sfx("start");
+    sfx("start");resetCombo();vibrate(10);
     if(!player.reducedMotion){setWipe({id,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}
     setPartyRun(party);setCompletion(null);setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??(isPractice?hashSeed(id+"-free-"+Date.now()):seedFor(id)));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
     window.scrollTo({top:0,behavior:player.reducedMotion?"auto":"smooth"});
@@ -176,9 +201,11 @@ export default function App() {
     const text=share?"MedDaily"+where+"\n"+share:"MedDaily · "+gameTitle+where+"\n"+fallback+"\nhttps://pathomnemonic.github.io/MedDaily/"+(partyRun?"?room="+roomCode:"");
     setLastShare(text);setCopied(false);
     const isNewDaily=!partyRun&&!practice&&!player.results.some(r=>r.date===date&&r.game===activeGame&&r.scope===scope);
-    const gain=xpForResult({score,maxScore,perfect,practice:!partyRun&&!isNewDaily,party:partyRun});
+    const todayDone=player.results.filter(r=>r.date===date&&r.scope===scope).length;
+    const chest=isNewDaily&&todayDone+1===3?60:0; // daily goal: finish three games for a bonus chest
+    const gain=xpForResult({score,maxScore,perfect,practice:!partyRun&&!isNewDaily,party:partyRun})+chest;
     const before=levelFor(player.xp??0),after=levelFor((player.xp??0)+gain);
-    setCompletion({title:gameTitle,score,maxScore,perfect,text,party:partyRun,stars:starsFor(score,maxScore,perfect),gain,levelUp:after.level>before.level?after.title+" · Level "+after.level:null});
+    setCompletion({title:gameTitle,score,maxScore,perfect,text,party:partyRun,stars:starsFor(score,maxScore,perfect),gain,chest,levelUp:after.level>before.level?after.title+" · Level "+after.level:null});
     sfx(perfect?"perfect":"win");
     if(after.level>before.level)window.setTimeout(()=>sfx("badge"),900);
     if(partyRun){
@@ -209,7 +236,7 @@ export default function App() {
     const cur=normalizeTheme(player.theme);const i=PRESETS.findIndex(p=>p.id===cur.preset);const nxt=PRESETS[(i+1)%PRESETS.length];
     updateTheme({preset:nxt.id,hue:nxt.hue,sat:nxt.sat});sfx("pop");
   };
-  const updateSetting=(key:"sound"|"music"|"reducedMotion"|"hideStreaks",value:boolean)=>{
+  const updateSetting=(key:"sound"|"music"|"haptics"|"reducedMotion"|"hideStreaks",value:boolean)=>{
     setPlayer(current=>{const next={...current,[key]:value};savePlayer(next);return next;});
   };
   const install=async()=>{
@@ -249,6 +276,7 @@ export default function App() {
     if(roomCode&&multiplayerConfigured()){try{await leaveRoom(roomCode);}catch{/* no network */}}
     setRoomCode("");setRoom(null);setActiveGame(null);setPartyRun(false);setScreen("home");setNotice("Left the room.");
   };
+  const nextUp=completion?(()=>{const left=GAMES.filter(g=>g.id!==activeGame&&!player.results.some(r=>r.date===date&&r.game===g.id&&r.scope===scope));const pool=left.length?left:GAMES.filter(g=>g.id!==activeGame);if(!pool.length)return null;return practice||completion.party?pool[hashSeed(String(completion.score)+activeGame)%pool.length]:pool[0];})():null;
   const title=activeGame?GAMES.find(g=>g.id===activeGame)?.title??"Game":screen==="stats"?"Your progress":screen==="settings"?"Preferences":screen==="friends"?"Play with friends":selectedTitle;
 
   return <div className="app-shell">
@@ -295,10 +323,11 @@ export default function App() {
         <span className="complete-stamp">{completion.perfect?"PERFECT":completion.stars>=3?"GREAT":completion.stars===0?"TRY AGAIN":"COMPLETE"}</span>
         <h2>{completion.title}</h2>
         <p className="complete-sub">{completion.party?"Room "+roomCode+" · send this to your group":practice?"Free Play round finished":"Daily saved · come back tomorrow"}</p>
-        <div className="complete-xp"><b>+{completion.gain} XP</b>{completion.levelUp&&<span className="level-up">LEVEL UP! {completion.levelUp}</span>}</div>
+        <div className="complete-xp"><b>+{completion.gain} XP</b>{completion.chest>0&&<span className="chest-pop">🎁 Daily goal reached! +{completion.chest} XP chest</span>}{completion.levelUp&&<span className="level-up">LEVEL UP! {completion.levelUp}</span>}</div>
         <pre className="share-preview">{completion.text.split("\n").filter(l=>!l.startsWith("http")).join("\n")}</pre>
         <div className="complete-actions">
-          <button className="button button-primary" onClick={()=>void shareResult()}>{copied?"✓ Copied!":"Share result ↗"}</button>
+          {nextUp&&<button className="button button-primary next-up" onClick={()=>openGame(nextUp.id,completion.party?false:practice,undefined,false)}><span className="next-up-art"><GameArt game={nextUp.id}/></span><span><small>NEXT UP</small><b>{nextUp.title}</b></span><i>▶</i></button>}
+          <button className="button button-soft" onClick={()=>void shareResult()}>{copied?"✓ Copied!":"Share result ↗"}</button>
           {!completion.party&&<button className="button button-soft" onClick={()=>openGame(activeGame!,true,hashSeed(activeGame+"-again-"+Date.now()))}>Play again ∞</button>}
           <button className="button button-quiet" onClick={()=>{setCompletion(null);setActiveGame(null);setScreen(completion.party?"friends":"home");}}>{completion.party?"Back to party":"All games"}</button>
         </div>
@@ -326,6 +355,7 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
   return <div className="home-page page-enter">
     <section className="arcade-hud">
       <div className="hud-level"><Mascot mood="happy" size={44}/><div><b>Lv {lvl.level} · {lvl.title}</b><i role="progressbar" aria-valuenow={lvl.pct} aria-valuemin={0} aria-valuemax={100}><span style={{width:lvl.pct+"%"}}/></i><small>{lvl.into} / {lvl.span} XP to next level</small></div></div>
+      {!freePlay&&<div className="hud-goal" aria-label={"Daily goal "+Math.min(done,3)+" of 3"}><div className="goal-dots">{[0,1,2].map(i=><i key={i} className={i<Math.min(done,3)?"on":""}/>)}<span className="goal-chest">{done>=3?"🎁":"🔒"}</span></div><small>{done>=3?"Daily chest claimed":"Daily goal "+Math.min(done,3)+"/3 · +60 XP chest"}</small></div>}
       <div className="hud-controls">
         <div className="home-play-mode" role="group" aria-label="Choose daily or free play"><button className={!freePlay?"selected":""} onClick={()=>setFreePlay(false)}>Daily</button><button className={freePlay?"selected":""} onClick={()=>setFreePlay(true)}>Free Play ∞</button></div>
         <div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialties</button></div>
@@ -397,7 +427,7 @@ function StatsPage({player,scope,streak}:{player:PlayerData;scope:string;streak:
 }
 
 function SettingsPage({updateTheme,player,driveConnected,updateSetting,exportData,importData,onDriveSync}:{
-  updateTheme:(p:Partial<ThemeSettings>)=>void;player:PlayerData;driveConnected:boolean;updateSetting:(k:"sound"|"music"|"reducedMotion"|"hideStreaks",v:boolean)=>void;exportData:()=>void;importData:(file:File|undefined)=>void;onDriveSync:()=>Promise<void>;
+  updateTheme:(p:Partial<ThemeSettings>)=>void;player:PlayerData;driveConnected:boolean;updateSetting:(k:"sound"|"music"|"haptics"|"reducedMotion"|"hideStreaks",v:boolean)=>void;exportData:()=>void;importData:(file:File|undefined)=>void;onDriveSync:()=>Promise<void>;
 }){
   const [syncing,setSyncing]=useState(false);
   const sync=async()=>{setSyncing(true);try{await onDriveSync();}finally{setSyncing(false);}};
@@ -414,7 +444,7 @@ function SettingsPage({updateTheme,player,driveConnected,updateSetting,exportDat
       <Setting label="Twinkling stars" detail="Tiny sparkles in the background." checked={t.stars} onChange={v=>updateTheme({stars:v})}/>
       <Setting label="Show Pip the mascot" detail="Pip on the title screen, level bar, and results." checked={t.mascot} onChange={v=>updateTheme({mascot:v})}/>
       <button className="button button-quiet" onClick={()=>updateTheme({...DEFAULT_THEME})}>Reset look &amp; feel</button></>;})()}</section>
-    <section className="settings-card"><h2>Arcade feel</h2><Setting label="Sound effects" detail="Taps, rights and wrongs, fanfares, and wheel spins." checked={player.sound} onChange={v=>updateSetting("sound",v)}/><Setting label="Music" detail="A different looping tune for the arcade and every game." checked={player.music} onChange={v=>updateSetting("music",v)}/><Setting label="Reduced motion" detail="Use quieter transitions and fewer animations." checked={player.reducedMotion} onChange={v=>updateSetting("reducedMotion",v)}/><Setting label="Hide streaks" detail="Keep the focus on playing, not maintaining a streak." checked={player.hideStreaks} onChange={v=>updateSetting("hideStreaks",v)}/></section>
+    <section className="settings-card"><h2>Arcade feel</h2><Setting label="Sound effects" detail="Taps, rights and wrongs, fanfares, and wheel spins." checked={player.sound} onChange={v=>updateSetting("sound",v)}/><Setting label="Haptics" detail="Tiny vibrations on phones when you answer." checked={player.haptics!==false} onChange={v=>updateSetting("haptics",v)}/><Setting label="Music" detail="A different looping tune for the arcade and every game." checked={player.music} onChange={v=>updateSetting("music",v)}/><Setting label="Reduced motion" detail="Use quieter transitions and fewer animations." checked={player.reducedMotion} onChange={v=>updateSetting("reducedMotion",v)}/><Setting label="Hide streaks" detail="Keep the focus on playing, not maintaining a streak." checked={player.hideStreaks} onChange={v=>updateSetting("hideStreaks",v)}/></section>
     <section className="settings-card"><h2>Google Drive backup</h2><p>Sign in only when you want your progress backed up to your private Google Drive app-data folder. MedDaily cannot read your other Drive files. You can keep playing without Google login.</p>
       <button className="button button-primary" onClick={sync} disabled={syncing||!googleDriveConfigured()}>{syncing?"Syncing…":driveConnected?"Reconnect & sync Google Drive":"Sign in with Google & sync"}</button>
       {driveConnected&&<p className="setup-hint">Drive is connected for this browser session. New game results sync automatically while the access token remains valid.</p>}

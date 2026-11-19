@@ -76,3 +76,10 @@ Title screen with the mascot Pip (also unlocks audio), a player level and XP bar
 ## Look & feel options
 
 The default palette is Scrub Teal. Options > Look & feel offers seven palettes (Scrub Teal, Deep Ocean, Midnight Violet, Berry Crush, Forest Ward, Ember, Graphite), a base-color slider, a vibrancy slider, chunky or soft depth, round or sharp corners, three interface sizes, and toggles for floating icons, twinkling stars, and the mascot. A palette button in the top bar cycles presets. Colors are driven by two CSS variables (`--hue`, `--sat`) in `src/styles.css`, so new presets are one line in `src/theme.ts`. Fonts (Fredoka, Lilita One, Manrope, Space Grotesk, DM Mono, all SIL OFL) are self-hosted and precached for offline use.
+
+## Controls and habit loops
+
+- Type straight into Stat Word's tiles (physical keyboard or on-screen keys), with shake on invalid words and a flip reveal. Differential suggests diagnoses as you type. Cell Sketch has Fill, Cross, and Cycle pens (plus right-click for a cross) and drag-painting.
+- Shortcuts: Enter or Space continues past a Next button; 1–4 (or A–D in Trivia) pick answers; the left and right arrows pick in What Has More?; Esc closes the finish screen and Enter plays the suggested next game.
+- Combos raise the pitch of correct-answer chimes and show a ×N badge next to Pip. Phones get short haptic pulses (toggle in Options).
+- A daily goal of three games pays a bonus XP chest, and the finish screen offers a one-tap "Next up" game.

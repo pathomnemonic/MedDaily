@@ -1,4 +1,9 @@
 import { sfx } from "./audio";
+import { vibrate } from "./haptics";
+
+let combo = 0;
+export const getCombo = () => combo;
+export function resetCombo() { combo = 0; if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("pip-reset")); }
 
 /** Small particle burst + optional floating label at a point (or the centre of an element). Cosmetic only. */
 export function burst(origin: Element | { x: number; y: number } | null, label?: string, colors = ["#ffd54a", "#ff5d9e", "#52e3b0", "#36bdf5", "#a99aff"]) {
@@ -29,9 +34,11 @@ export function burst(origin: Element | { x: number; y: number } | null, label?:
 
 /** Celebrate a right answer / punish a wrong one with sound and (for rights) a burst. */
 export function reward(good: boolean, origin?: Element | null, label?: string) {
-  sfx(good ? "correct" : "wrong");
-  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("pip", { detail: good ? "cheer" : "sad" }));
-  if (good) burst(origin ?? null, label);
+  combo = good ? combo + 1 : 0;
+  sfx(good ? "correct" : "wrong", Math.max(0, combo - 1));
+  vibrate(good ? 12 : [30, 40, 30]);
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("pip", { detail: { kind: good ? "cheer" : "sad", combo } }));
+  if (good) burst(origin ?? null, label && combo >= 3 ? label + " ×" + combo : label);
   else if (origin) { origin.classList.remove("shake"); void (origin as HTMLElement).offsetWidth; origin.classList.add("shake"); }
 }
 

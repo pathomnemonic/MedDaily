@@ -1648,3 +1648,26 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .game-card:hover{transform:perspective(800px) translateY(-8px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))!important}
 .stage-scene *{vector-effect:non-scaling-stroke}
 .stage-scene{opacity:.2}
+.combo-badge{display:flex;flex-direction:column;align-items:center;padding:4px 12px;border:3px solid #fff;border-radius:14px;background:linear-gradient(180deg,#ff8a3d,#ff4f94);color:#fff;font:400 22px/1 var(--font-display);text-shadow:0 2px 0 rgba(0,0,0,.35);box-shadow:0 4px 0 rgba(0,0,0,.3);animation:comboBump .35s cubic-bezier(.2,1.8,.4,1)}
+.combo-badge small{font:700 8px var(--font-game);letter-spacing:1.5px}
+@keyframes comboBump{from{transform:scale(.5) rotate(-8deg)}to{transform:none}}
+.hud-goal{display:grid;gap:4px;padding:6px 12px;border-radius:14px;background:rgba(0,0,0,.28);border:2px solid rgba(255,255,255,.14)}
+.goal-dots{display:flex;align-items:center;gap:6px}.goal-dots i{width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,.35);background:rgba(0,0,0,.3)}
+.goal-dots i.on{background:linear-gradient(180deg,#ffe27a,#ffb82e);border-color:#fff;box-shadow:0 0 12px rgba(255,213,74,.6)}
+.goal-chest{margin-left:4px;font-size:22px}.hud-goal small{color:#c3b9ef;font:700 11px var(--font-game)}
+.next-up{display:flex!important;align-items:center;gap:12px;text-align:left;padding:8px 14px!important;min-height:60px}
+.next-up-art{flex:none;width:70px;padding:3px 5px;border-radius:10px;background:rgba(42,22,88,.35)}
+.next-up>span:nth-child(2){display:grid;line-height:1.1;flex:1}.next-up small{font:700 9px var(--font-game);letter-spacing:1.4px;opacity:.7}.next-up b{font:400 20px var(--font-display)}.next-up i{font-style:normal;font-size:18px}
+.chest-pop{padding:5px 14px;border-radius:99px;background:linear-gradient(90deg,#ffd54a,#ff9b3d);color:#3b2200;font:400 15px var(--font-display);animation:startPulse .8s ease-in-out infinite}
+.type-hint{margin:6px 0;text-align:center;color:#a99fd2;font:600 11px var(--font-game)}
+.word-cell.correct,.word-cell.present,.word-cell.absent{animation:tileFlip .55s both;animation-delay:calc(var(--i,0) * .13s)}
+@keyframes tileFlip{0%{transform:rotateX(0)}45%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+.word-cell.filled{animation:arcade-pop .12s ease-out}
+.medle-keyboard{margin-top:6px}
+[data-motion="reduced"] .word-cell.correct,[data-motion="reduced"] .word-cell.present,[data-motion="reduced"] .word-cell.absent{animation:none}
+.suggest-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.suggest-row button{padding:6px 12px;border:2px solid rgba(255,255,255,.3);border-radius:99px;background:rgba(255,255,255,.1);color:#fff;font:700 12px var(--font-game);cursor:pointer}
+.suggest-row button:hover,.suggest-row button:focus-visible{background:#ffd54a;color:#3b2200}
+.pen-row{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px 0;color:#c3b9ef;font:700 12px var(--font-game)}
+.pen-row button{padding:7px 14px;border:2px solid rgba(255,255,255,.25);border-radius:99px;background:rgba(0,0,0,.25);color:#e6defa;font:700 12px var(--font-game);cursor:pointer}
+.pen-row button.on{border-color:#fff;background:linear-gradient(180deg,#ffe27a,#ffb82e);color:#3b2200}

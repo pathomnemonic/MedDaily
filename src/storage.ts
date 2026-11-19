@@ -17,6 +17,7 @@ export interface PlayerData {
   sound: boolean;
   music: boolean;
   xp: number;
+  haptics?: boolean;
   theme?: ThemeSettings;
   reducedMotion: boolean;
   hideStreaks: boolean;

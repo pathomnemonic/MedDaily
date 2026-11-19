@@ -14,6 +14,7 @@ import { makeTrailPuzzle, trailPackOk } from "./trailLogic";
 import { extendStrandsPath, readStrandsPath } from "./strandsLogic";
 import { reward } from "./juice";
 import { sfx } from "./audio";
+import { vibrate } from "./haptics";
 import { generateDeductionCase } from "./logicGenerator";
 
 type Done = (score: number, maxScore: number, perfect: boolean, share?: string) => void;
@@ -488,13 +489,15 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
   const [message, setMessage] = useState("Six tries. Every guess must be five letters.");
   const [ended, setEnded] = useState(false);
   const [won, setWon] = useState(false);
+  const [shake, setShake] = useState(0);
   const done = useRef(false);
   const submit = () => {
     const word = guess.trim().toUpperCase();
     if (ended) return;
-    if (word.length !== 5 || !/^[A-Z]{5}$/.test(word)) { setMessage("Enter exactly five letters."); return; }
-    if (!medleWords.includes(word)) { setMessage("That word isn't in today's medical word list."); return; }
-    if (rows.includes(word)) { setMessage("You've already tried that word."); return; }
+    const invalid = (text: string) => { setMessage(text); setShake((n) => n + 1); sfx("wrong"); vibrate([30, 40, 30]); };
+    if (word.length !== 5 || !/^[A-Z]{5}$/.test(word)) { invalid("Not enough letters. Five, please."); return; }
+    if (!medleWords.includes(word)) { invalid("That word isn't in the medical word list."); return; }
+    if (rows.includes(word)) { invalid("You've already tried that word."); return; }
     const next = [...rows, word]; setRows(next); setGuess("");
     const correct = word === answer, finished = correct || next.length >= 6;
     if (correct) reward(true, null, "Solved!"); else if (finished) reward(false); else sfx("pop");
@@ -512,17 +515,30 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
     if (ended) return;
     if (key === "ENTER") submit();
     else if (key === "⌫") setGuess((value) => value.slice(0, -1));
-    else if (guess.length < 5) setGuess((value) => value + key);
+    else if (guess.length < 5) { setGuess((value) => value + key); sfx("pop"); vibrate(6); }
   };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || ended) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      if (/^[a-zA-Z]$/.test(e.key)) { e.preventDefault(); pressKey(e.key.toUpperCase()); }
+      else if (e.key === "Backspace") { e.preventDefault(); pressKey("⌫"); }
+      else if (e.key === "Enter" && !(t && t.tagName === "BUTTON")) { e.preventDefault(); pressKey("ENTER"); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guess, ended, rows]);
   return <div className="game-layout medle-game">
     <div className="game-instructions"><span className="instruction-dot mint" /> Guess the five-letter medical word in six tries. Green is the right letter in the right place; gold is in the word elsewhere.</div>
     <div className="word-grid" aria-label="Six guess rows">{Array.from({ length: 6 }, (_, r) => {
       const word = rows[r] ?? (r === rows.length ? guess.toUpperCase() : "");
       const marks = rows[r] ? scoreWord(rows[r], answer) : [];
-      return <div className="word-row" key={r}>{Array.from({ length: 5 }, (_, c) => <div key={c} className={"word-cell " + (marks[c] ?? (word[c] ? "filled" : ""))}>{word[c] ?? ""}</div>)}</div>;
+      return <div className={"word-row" + (r === rows.length && shake ? " shake" : "")} key={r + "-" + (r === rows.length ? shake : 0)}>{Array.from({ length: 5 }, (_, c) => <div key={c} style={{ "--i": c } as React.CSSProperties} className={"word-cell " + (marks[c] ?? (word[c] ? "filled" : ""))}>{word[c] ?? ""}</div>)}</div>;
     })}</div>
     {!ended ? <>
-      <form className="word-entry" onSubmit={(e) => { e.preventDefault(); submit(); }}><input autoComplete="off" autoCapitalize="characters" value={guess} maxLength={5} onChange={(e) => setGuess(e.target.value.replace(/[^a-z]/gi, "").slice(0, 5))} aria-label="Five-letter guess" placeholder="TYPE A WORD" /><button className="button button-primary" type="submit">Guess <span>↗</span></button></form>
+      <p className="type-hint">Just start typing, or tap the keys. Enter to guess.</p>
       <div className="medle-keyboard" aria-label="On-screen keyboard">{keyboardRows.map((row, index) => <div key={row} className="medle-key-row">{row.split("").map((key) => <button key={key} type="button" className={keyboardMarks[key]??""} onClick={() => pressKey(key)}>{key}</button>)}{index===2&&<><button type="button" className="wide-key" onClick={() => pressKey("ENTER")}>ENTER</button><button type="button" className="wide-key" onClick={() => pressKey("⌫")}>⌫</button></>}</div>)}</div>
     </> : <Finish title={won ? "Word found!" : "A word for your rounds"} detail={won ? "You solved it in " + rows.length + (rows.length === 1 ? " guess." : " guesses.") : "The answer was " + answer + ". Try another daily puzzle tomorrow."} score={won ? (100 - (rows.length - 1) * 12) + " / 100" : "0 / 100"} />}
     <p className="game-feedback" aria-live="polite">{message}</p>
@@ -597,6 +613,7 @@ const DOCTORDLE_ALIASES: Record<string, string[]> = {
 };
 function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
   const item = pick(diagnosisCases, seed, specialty, "diagnosis");
+  const bank = useMemo(() => [...new Set(diagnosisCases.map((c) => c.answer))].sort(), []);
   const [guess, setGuess] = useState("");
   const [guesses, setGuesses] = useState<string[]>([]);
   const [clueCount, setClueCount] = useState(2);
@@ -637,7 +654,12 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
     {!ended ? <>
       <form className="doctordle-entry" onSubmit={(event) => { event.preventDefault(); submit(); }}>
         <label htmlFor="doctordle-guess">Your diagnosis</label>
-        <div><input id="doctordle-guess" value={guess} onChange={(event) => setGuess(event.target.value)} placeholder="Type a diagnosis…" autoComplete="off" /><button className="button button-primary" type="submit" disabled={!guess.trim()}>Guess ↗</button></div>
+        <div><input id="doctordle-guess" value={guess} onChange={(event) => setGuess(event.target.value)} placeholder="Type a diagnosis…" autoComplete="off" autoCapitalize="off" enterKeyHint="go" /><button className="button button-primary" type="submit" disabled={!guess.trim()}>Guess ↗</button></div>
+        {(() => {
+          const q = normalize(guess);
+          const options = q.length < 2 ? [] : bank.filter((a) => normalize(a).includes(q) && normalize(a) !== q && !guesses.some((g) => normalize(g) === normalize(a))).slice(0, 5);
+          return options.length ? <div className="suggest-row" role="listbox" aria-label="Suggestions">{options.map((a) => <button type="button" role="option" aria-selected="false" key={a} onClick={() => { setGuess(a); sfx("pop"); }}>{a}</button>)}</div> : null;
+        })()}
       </form>
       <div className="doctordle-tools"><button className="text-button" onClick={revealClue} disabled={clueCount >= item.clues.length}>Reveal another clue · −5 pts</button><span>{guesses.length}/6 guesses used</span></div>
     </> : <Finish title={won ? "Diagnosis found" : "Case revealed"} detail={(won ? "Solved in " + guesses.length + " of 6 guesses. " : "Six guesses used. ") + item.explanation}><p className="doctordle-answer">Answer: <b>{item.answer}</b></p><p className="source-note">Source note: {item.source}</p></Finish>}
@@ -1007,6 +1029,7 @@ function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boo
   const [checked, setChecked] = useState(false);
   const [history, setHistory] = useState<number[][][]>([]);
   const [autoMark, setAutoMark] = useState(true);
+  const [pen, setPen] = useState<"cycle" | "fill" | "cross">("cycle");
   const [hints, setHints] = useState(0);
   const painting = useRef<number | null>(null);
   const rowClues = item.pattern.map((row) => nonogramRuns(row));
@@ -1040,8 +1063,9 @@ function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boo
   return <div className="game-layout">
     <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY PATTERN" : "CURATED DAILY PATTERN"}</div>
     <div className="game-instructions"><span className="instruction-dot lilac" /> Solve the 5×5 nonogram. Each clue gives the length of consecutive filled runs. Cycle each cell through unknown, filled, and marked empty to keep track without paper.</div>
+    <div className="pen-row" role="radiogroup" aria-label="Pen mode"><span>Pen</span>{([["fill", "● Fill"], ["cross", "× Cross"], ["cycle", "↻ Cycle"]] as const).map(([k, l]) => <button key={k} role="radio" aria-checked={pen === k} className={pen === k ? "on" : ""} onClick={() => setPen(k)}>{l}</button>)}</div>
     <div className="nonogram-legend"><span><b>●</b> Filled</span><span><b>×</b> Empty</span><span><b>·</b> Unknown</span></div>
-    <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue)?"clue-complete":""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue"+(lineSolved(row,rowClues[r])?" clue-complete":"")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1) + ": " + (value===1?"filled":value===2?"marked empty":"unknown")} className={"nonogram-cell" + (value===1 ? " filled-cell" : "") + (value===2 ? " empty-marked" : "") + (checked && (item.pattern[r][c] ? value!==1 : value!==2) ? " error-cell" : "")} onPointerDown={(e) => { e.preventDefault(); painting.current = (value + 1) % 3; setCell(r, c, painting.current); }} onPointerEnter={(e) => { if (painting.current !== null && e.buttons === 1 && value !== painting.current) setCell(r, c, painting.current); }} onPointerUp={() => { painting.current = null; }} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setCell(r, c, (value + 1) % 3); } }}>{value===1?"●":value===2?"×":""}</button>)}</div>)}</div></div>
+    <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue)?"clue-complete":""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue"+(lineSolved(row,rowClues[r])?" clue-complete":"")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1) + ": " + (value===1?"filled":value===2?"marked empty":"unknown")} className={"nonogram-cell" + (value===1 ? " filled-cell" : "") + (value===2 ? " empty-marked" : "") + (checked && (item.pattern[r][c] ? value!==1 : value!==2) ? " error-cell" : "")} onContextMenu={(e) => { e.preventDefault(); setCell(r, c, value === 2 ? 0 : 2); }} onPointerDown={(e) => { if (e.button === 2) return; e.preventDefault(); painting.current = pen === "fill" ? (value === 1 ? 0 : 1) : pen === "cross" ? (value === 2 ? 0 : 2) : (value + 1) % 3; setCell(r, c, painting.current); vibrate(6); }} onPointerEnter={(e) => { if (painting.current !== null && e.buttons === 1 && value !== painting.current) setCell(r, c, painting.current); }} onPointerUp={() => { painting.current = null; }} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setCell(r, c, (value + 1) % 3); } }}>{value===1?"●":value===2?"×":""}</button>)}</div>)}</div></div>
     <div className="nonogram-actions" onPointerLeave={() => { painting.current = null; }}><span>{cells.flat().filter((value)=>value!==0).length} / 25 marked{hints ? " · " + hints + " hint" + (hints > 1 ? "s" : "") : ""}</span><span className="nonogram-tools"><button className="button button-quiet" onClick={undo} disabled={checked || !history.length}>↶ Undo</button><button className="button button-quiet" onClick={hint} disabled={checked}>💡 Hint −8</button><button className="button button-quiet" onClick={()=>{setHistory((h)=>[...h,cells]);setCells(item.pattern.map((row)=>row.map(()=>0)));}} disabled={checked}>Reset</button></span></div>
     <label className="auto-toggle"><input type="checkbox" checked={autoMark} onChange={(e) => setAutoMark(e.target.checked)} /> Auto-mark × on finished lines · drag across cells to paint</label>
     {!checked ? <button className="button button-primary full-button" onClick={check}>Check pattern</button> : <Finish title="Pattern revealed" detail={"The hidden shape was " + item.name + ". " + item.hint + ". Filled cells are compared with the solution."} score={Math.round(item.pattern.reduce((n, row, r) => n + row.reduce((m, v, c) => m + ((v===1 && cells[r][c]===1) || (v===0 && cells[r][c]===2) ? 1 : 0), 0), 0) / 25 * 100) + " / 100"} />}
@@ -1068,7 +1092,7 @@ function HigherLower({ seed, onDone }: Props) {
       advanceTimer.current = null;
       if (round + 1 === list.length) { setFinished(true); onDone(Math.round(next / list.length * 100), 100, next === list.length); }
       else { setRound((r) => r + 1); setPicked(null); setReveal(false); }
-    }, 900);
+    }, 1700);
   };
   return <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot gold" /> Which quantity is greater? Five quick comparisons. Sometimes the answer is a tie.</div>
