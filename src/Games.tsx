@@ -1166,13 +1166,7 @@ function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: 
     if (assigned === value) return "possible";
     if (assigned && assigned !== value) return "excluded";
     if (item.suspects.some((other) => other !== suspect && assignments[other][field] === value)) return "excluded";
-    if (pencilMarks[key]) return pencilMarks[key];
-    const rowPossible = (field === "location" ? item.locations : item.objects)
-      .some((candidate) => pencilMarks[suspect + "|" + field + "|" + candidate] === "possible");
-    if (rowPossible && pencilMarks[key] !== "possible") return "excluded";
-    const columnPossible = item.suspects.some((other) => other !== suspect && pencilMarks[other + "|" + field + "|" + value] === "possible");
-    if (columnPossible) return "excluded";
-    return "";
+    return pencilMarks[key] ?? "";
   };
   const togglePencil = (suspect: string, field: "location" | "object", value: string) => {
     const key = suspect + "|" + field + "|" + value;
@@ -1182,10 +1176,49 @@ function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: 
     }
     setPencilMarks((current) => {
       const next = { ...current };
-      if (current[key] === "possible") next[key] = "excluded";
-      else next[key] = "possible";
+      if (!current[key]) next[key] = "possible";
+      else if (current[key] === "possible") next[key] = "excluded";
+      else delete next[key];
       return next;
     });
+  };
+  const applyForcedAssignments = () => {
+    const next = Object.fromEntries(item.suspects.map((suspect) => [suspect, { ...assignments[suspect] }])) as typeof assignments;
+    let filled = 0;
+    for (const field of ["location", "object"] as const) {
+      const values = field === "location" ? item.locations : item.objects;
+      let changed = true;
+      let passes = 0;
+      while (changed && passes++ < 6) {
+        changed = false;
+        for (const suspect of item.suspects) {
+          if (next[suspect][field]) continue;
+          const candidates = values.filter((value) =>
+            pencilMarks[suspect + "|" + field + "|" + value] !== "excluded" &&
+            !item.suspects.some((other) => other !== suspect && next[other][field] === value)
+          );
+          if (candidates.length === 1) {
+            next[suspect][field] = candidates[0];
+            filled++;
+            changed = true;
+          }
+        }
+        for (const value of values) {
+          if (item.suspects.some((suspect) => next[suspect][field] === value)) continue;
+          const candidates = item.suspects.filter((suspect) =>
+            (!next[suspect][field] || next[suspect][field] === value) &&
+            pencilMarks[suspect + "|" + field + "|" + value] !== "excluded"
+          );
+          if (candidates.length === 1 && !next[candidates[0]][field]) {
+            next[candidates[0]][field] = value;
+            filled++;
+            changed = true;
+          }
+        }
+      }
+    }
+    setAssignments(next);
+    setNote(filled ? "Applied " + filled + " forced assignment" + (filled === 1 ? "" : "s") + " using your pencil marks and one-to-one rules." : "No forced assignments yet. Add more ruled-out candidates or inspect the clues.");
   };
   const revealHint = () => {
     if (submitted || hintsUsed >= 3) return;
@@ -1217,7 +1250,7 @@ function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: 
     <div className="logic-clues"><SectionLabel>CLUE BOARD</SectionLabel>{item.clues.map((clue,i)=><div key={i}><span>{String(i+1).padStart(2,"0")}</span>{clue}</div>)}</div>
     <div className="logic-hint-tools"><button className="text-button" onClick={revealHint} disabled={submitted || hintsUsed >= 3}>Reveal a confirmed relationship · −10 pts</button><span>{hintsUsed} / 3 hints used</span></div>
     {hints.length > 0 && <div className="logic-hints">{hints.map((hint,index)=><p key={index}><b>HINT {index+1}</b>{hint}</p>)}</div>}
-    <details className="logic-pencil-board" open><summary>Deduction grid <span>Auto-eliminates conflicting candidates as you assign or mark possibilities</span></summary><p>Mark a candidate possible or ruled out. Assignments and one-to-one constraints automatically eliminate impossible candidates across each row and column.</p><div className="pencil-legend"><span><b>✓</b> Possible</span><span><b>×</b> Ruled out</span><span><b>·</b> Unknown</span></div><div className="pencil-grid"><div className="pencil-head"><b>PERSON</b><b>LOCATION CANDIDATES</b><b>OBJECT CANDIDATES</b></div>{item.suspects.map((suspect)=><div className="pencil-row" key={suspect}><strong>{suspect}</strong><div>{item.locations.map((value)=><button type="button" key={value} className={pencilState(suspect,"location",value)} onClick={()=>togglePencil(suspect,"location",value)} aria-pressed={pencilState(suspect,"location",value)!==""} aria-label={suspect+" location "+value+": "+(pencilState(suspect,"location",value)||"unknown")}>{pencilState(suspect,"location",value)==="possible"?"✓ ":pencilState(suspect,"location",value)==="excluded"?"× ":"· "}{value}</button>)}</div><div>{item.objects.map((value)=><button type="button" key={value} className={pencilState(suspect,"object",value)} onClick={()=>togglePencil(suspect,"object",value)} aria-pressed={pencilState(suspect,"object",value)!==""} aria-label={suspect+" object "+value+": "+(pencilState(suspect,"object",value)||"unknown")}>{pencilState(suspect,"object",value)==="possible"?"✓ ":pencilState(suspect,"object",value)==="excluded"?"× ":"· "}{value}</button>)}</div></div>)}</div><button type="button" className="text-button" onClick={()=>setPencilMarks({})}>Clear pencil marks</button></details>
+    <details className="logic-pencil-board" open><summary>Deduction grid <span>Auto-eliminates conflicting candidates as you assign or mark possibilities</span></summary><p>Mark a candidate possible or ruled out. Assignments and one-to-one constraints automatically eliminate impossible candidates across each row and column.</p><div className="pencil-legend"><span><b>✓</b> Possible</span><span><b>×</b> Ruled out</span><span><b>·</b> Unknown</span></div><div className="pencil-grid"><div className="pencil-head"><b>PERSON</b><b>LOCATION CANDIDATES</b><b>OBJECT CANDIDATES</b></div>{item.suspects.map((suspect)=><div className="pencil-row" key={suspect}><strong>{suspect}</strong><div>{item.locations.map((value)=><button type="button" key={value} className={pencilState(suspect,"location",value)} onClick={()=>togglePencil(suspect,"location",value)} aria-pressed={pencilState(suspect,"location",value)!==""} aria-label={suspect+" location "+value+": "+(pencilState(suspect,"location",value)||"unknown")}>{pencilState(suspect,"location",value)==="possible"?"✓ ":pencilState(suspect,"location",value)==="excluded"?"× ":"· "}{value}</button>)}</div><div>{item.objects.map((value)=><button type="button" key={value} className={pencilState(suspect,"object",value)} onClick={()=>togglePencil(suspect,"object",value)} aria-pressed={pencilState(suspect,"object",value)!==""} aria-label={suspect+" object "+value+": "+(pencilState(suspect,"object",value)||"unknown")}>{pencilState(suspect,"object",value)==="possible"?"✓ ":pencilState(suspect,"object",value)==="excluded"?"× ":"· "}{value}</button>)}</div></div>)}</div><div className="logic-pencil-actions"><button type="button" className="text-button" onClick={applyForcedAssignments} disabled={submitted}>Apply forced assignments</button><button type="button" className="text-button" onClick={()=>setPencilMarks({})}>Clear pencil marks</button></div></details>
     <div className="logic-table"><div className="logic-table-head"><span>PERSON</span><span>LOCATION</span><span>OBJECT</span></div>
       {item.suspects.map((suspect) => <div className="logic-table-row" key={suspect}>
         <strong>{suspect}</strong>
