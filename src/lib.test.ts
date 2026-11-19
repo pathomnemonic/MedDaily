@@ -149,6 +149,9 @@ describe("Cell Sketch nonogram clues", () => {
 describe("expanded content integrity", () => {
   it("keeps the expanded daily banks large and distributes answer positions", () => {
     expect(connectionPuzzles.length).toBeGreaterThanOrEqual(70);
+    expect(spellingHivePuzzles.length).toBeGreaterThanOrEqual(24);
+    expect(wordLadders.length).toBeGreaterThanOrEqual(26);
+    expect(deductionCases.length).toBeGreaterThanOrEqual(15);
     expect(diagnosisCases.length).toBeGreaterThanOrEqual(100);
     expect(nextStepCases.length).toBeGreaterThanOrEqual(100);
     const latestAnswers = nextStepCases.slice(-20).map((item) => item.answer);
