@@ -3,7 +3,7 @@ import { GameBoard } from "./Games";
 import type { GameId } from "./lib";
 import { hashSeed, dailyDateKey } from "./lib";
 import { achievementsFor, completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
-import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, submitRoomScore, watchRoom, type RoomState } from "./firebase";
+import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, rankRoomPlayers, submitRoomScore, watchRoom, type RoomState } from "./firebase";
 import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnected } from "./googleDrive";
 
 type Mode = "general" | "specialty";
@@ -269,10 +269,7 @@ function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,config
 }
 
 function RoomScores({room}:{room:RoomState}){
-  const ranked=[...room.players].sort((a,b)=>{
-    if(a.finished!==b.finished)return Number(b.finished)-Number(a.finished);
-    return (b.score??-1)-(a.score??-1);
-  });
+  const ranked=rankRoomPlayers(room.players);
   return <section className="room-score-inline"><div className="eyebrow">FRIENDS ROOM LEADERBOARD · {room.code}</div>{ranked.map((p,index)=><span key={p.uid}><b>#{index+1}</b> {p.name}: {p.finished?(p.score??0)+" points"+(p.perfect?" · perfect":""):"playing"}</span>)}</section>;
 }
 
