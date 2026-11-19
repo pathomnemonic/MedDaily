@@ -1,3 +1,4 @@
+import { diagnosisCasesExpansion6, nextStepCasesExpansion6, connectionPuzzlesExpansion6 } from "./dataClinical6";
 import { diagnosisCasesExpansion5, nextStepCasesExpansion5, connectionPuzzlesExpansion5 } from "./dataClinical5";
 import { diagnosisCasesExpansion4, nextStepCasesExpansion4, connectionPuzzlesExpansion4 } from "./dataClinical4";
 import { diagnosisCasesExpansion3, nextStepCasesExpansion3, connectionPuzzlesExpansion3 } from "./dataClinical3";
@@ -247,12 +248,24 @@ medleWords.push(...medleWordsExpansion.filter((word) => !medleWords.includes(wor
 labPrompts.push(...labPromptsExpansion2);
 pairsBank.push(...pairsBankExpansion2);
 triageCases.push(...triageCasesExpansion);
-connectionPuzzles.push(...connectionPuzzlesExpansion, ...connectionPuzzlesExpansion2, ...connectionPuzzlesExpansion3, ...connectionPuzzlesExpansion4, ...connectionPuzzlesExpansion5);
-diagnosisCases.push(...diagnosisCasesExpansion, ...diagnosisCasesExpansion2, ...diagnosisCasesExpansion3, ...diagnosisCasesExpansion4, ...diagnosisCasesExpansion5);
-nextStepCases.push(...nextStepCasesExpansion, ...nextStepCasesExpansion2, ...nextStepCasesExpansion3, ...nextStepCasesExpansion4, ...nextStepCasesExpansion5);
+connectionPuzzles.push(...connectionPuzzlesExpansion, ...connectionPuzzlesExpansion2, ...connectionPuzzlesExpansion3, ...connectionPuzzlesExpansion4, ...connectionPuzzlesExpansion5, ...connectionPuzzlesExpansion6);
+diagnosisCases.push(...diagnosisCasesExpansion, ...diagnosisCasesExpansion2, ...diagnosisCasesExpansion3, ...diagnosisCasesExpansion4, ...diagnosisCasesExpansion5, ...diagnosisCasesExpansion6);
+nextStepCases.push(...nextStepCasesExpansion, ...nextStepCasesExpansion2, ...nextStepCasesExpansion3, ...nextStepCasesExpansion4, ...nextStepCasesExpansion5, ...nextStepCasesExpansion6);
 labPrompts.push(...labPromptsExpansion);
 pairsBank.push(...pairsBankExpansion);
 microbePacks.push(...microbePacksExpansion, ...microbePacksExpansion2);
+
+// Rotate correct options deterministically across the entire clinical bank.
+for (const [index, item] of diagnosisCases.entries()) {
+  const shift = index % item.options.length;
+  item.options = [...item.options.slice(shift), ...item.options.slice(0, shift)];
+}
+for (const [index, item] of nextStepCases.entries()) {
+  const correct = item.options[item.answer];
+  const shift = index % item.options.length;
+  item.options = [...item.options.slice(shift), ...item.options.slice(0, shift)];
+  item.answer = item.options.indexOf(correct);
+}
 
 export const gameContentCounts = {
   medleAnswers: medleWords.length,
