@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { associationPairPoints, associationTimeBonus, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
+import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
 
 describe("Letter Lab grid rules", () => {
   const grid = [
@@ -102,5 +102,20 @@ describe("Association Blitz scoring", () => {
     const pairTotal = Array.from({ length: 12 }, (_, combo) => associationPairPoints(combo)).reduce((sum, points) => sum + points, 0);
     expect(pairTotal).toBe(1500);
     expect(pairTotal + associationTimeBonus(75)).toBe(1650);
+  });
+});
+
+
+describe("Deep Dive rarity scoring", () => {
+  it("rewards rarer answers more heavily", () => {
+    expect([1,2,3,4,5,6].map((tier) => deepDiveAnswerAward(tier, 0))).toEqual([10,15,30,60,85,100]);
+  });
+
+  it("caps each prompt at one hundred points", () => {
+    expect(deepDiveAnswerAward(6, 80)).toBe(20);
+    expect(deepDiveAnswerAward(1, 95)).toBe(5);
+    expect(deepDiveAnswerAward(6, 100)).toBe(0);
+    expect(deepDiveAnswerAward(0, 0)).toBe(0);
+    expect(deepDiveAnswerAward(7, 0)).toBe(0);
   });
 });
