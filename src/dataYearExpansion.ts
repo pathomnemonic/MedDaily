@@ -45,7 +45,7 @@ export const connectionPuzzlesExpansion11: ConnectionGroup[][] = [
 ],
 [
 {category:"Acute leukemia clues",words:["Blasts","Auer rods","Tumor lysis risk","Bone marrow examination"],hint:"Acute myeloid leukemia clues and workup."},
-{category:"Multiple myeloma",words:["CRAB features","Monoclonal protein","Lytic bone lesions"," rouleaux formation"],hint:"Plasma-cell malignancy."},
+{category:"Multiple myeloma",words:["CRAB features","Monoclonal protein","Lytic bone lesions","Rouleaux formation"],hint:"Plasma-cell malignancy."},
 {category:"Hodgkin lymphoma",words:["Reed-Sternberg cells","CD15 and CD30","Contiguous spread","B symptoms"],hint:"Classic Hodgkin lymphoma."},
 {category:"Chronic lymphocytic leukemia",words:["Older adult","Smudge cells","CD5 and CD23","Hypogammaglobulinemia"],hint:"Common mature B-cell leukemia."}
 ],
