@@ -230,7 +230,7 @@ describe("expanded content integrity", () => {
 
 describe("new arcade content banks", () => {
   it("keeps the daily deep-dive prompts broad, unique, and tiered", () => {
-    expect(deepDivePrompts).toHaveLength(73);
+    expect(deepDivePrompts).toHaveLength(79);
     expect(new Set(deepDivePrompts.map((prompt) => prompt.id)).size).toBe(deepDivePrompts.length);
     for (const prompt of deepDivePrompts) {
       expect(prompt.prompt.length, prompt.id).toBeGreaterThan(12);
@@ -243,7 +243,7 @@ describe("new arcade content banks", () => {
 
   it("keeps dedicated Deep Dive long-tail prompts genuinely open-ended", () => {
     const longTail = deepDivePrompts.filter((prompt) => prompt.longTail);
-    expect(longTail.length).toBeGreaterThanOrEqual(3);
+    expect(longTail).toHaveLength(9);
     for (const prompt of longTail) {
       expect(prompt.answers.length, prompt.id).toBeGreaterThanOrEqual(60);
       const accepted = prompt.answers.flatMap((item) => [item.answer, ...(item.aliases ?? [])]);
