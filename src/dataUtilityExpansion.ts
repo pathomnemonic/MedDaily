@@ -115,7 +115,7 @@ export const triageCasesExpansion2 = [
 export const medleWordsExpansion3 = [
 "FETUS","LUNGS","BLOOD","CELLS","GLAND","HEART","JOINT","BONES","CLOTS","BRUIT",
 "PULSE","PRONE","ELBOW","WRIST","ANKLE","FEMUR","SKULL","ORBIT","NASAL","URINE",
-"STOOL","BLAST","SPERM","VULVA","VITAL","RIGID","FLUID","FEVER","COUGH","CRAMP"
+"STOOL","BLAST","SPERM","VULVA","VITAL","RIGID","FLUID","FEVER","COUGH","CRAMP","FEMUR","FECAL","VITAL","STENT","RATIO"
 ];
 
 export const scrambleWordsExpansion2 = [
