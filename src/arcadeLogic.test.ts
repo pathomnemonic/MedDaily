@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord } from "./arcadeLogic";
+import { generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
 
 describe("Letter Lab grid rules", () => {
   const grid = [
@@ -61,5 +61,24 @@ describe("generated Word Ladder puzzles", () => {
   });
   it("is deterministic for the same seed", () => {
     expect(generateWordLadder(17, dictionary)).toEqual(generateWordLadder(17, dictionary));
+  });
+});
+
+describe("generated Cell Sketch variants", () => {
+  it("preserves a square nonogram's dimensions and filled-cell count", () => {
+    const pattern = [
+      [0,1,0,0,0],
+      [1,1,1,0,0],
+      [0,1,0,1,0],
+      [0,0,1,1,1],
+      [0,0,0,1,0]
+    ];
+    const filled = pattern.flat().filter(Boolean).length;
+    for (let seed = 0; seed < 8; seed++) {
+      const transformed = transformNonogram(pattern, seed);
+      expect(transformed).toHaveLength(5);
+      expect(transformed.every((row) => row.length === 5)).toBe(true);
+      expect(transformed.flat().filter(Boolean)).toHaveLength(filled);
+    }
   });
 });
