@@ -65,7 +65,7 @@ describe("content bank sanity", () => {
       expect(board).toHaveLength(4);
       const words = board.flatMap((group) => group.words);
       expect(words).toHaveLength(16);
-      expect(new Set(words.map((word) => word.toLowerCase())).size).toBe(16);
+      expect(new Set(words.map((word) => word.toLowerCase())).size, JSON.stringify(board)).toBe(16);
     }
   });
 });
@@ -178,7 +178,7 @@ describe("expanded content integrity", () => {
       expect(ladder.path[0]).toBe(ladder.start);
       expect(ladder.path[ladder.path.length - 1]).toBe(ladder.end);
       for (let i = 1; i < ladder.path.length; i++) {
-        expect([...ladder.path[i - 1]].filter((letter, index) => letter !== ladder.path[i][index])).toHaveLength(1);
+        expect([...ladder.path[i - 1]].filter((letter, index) => letter !== ladder.path[i][index]), ladder.path.join(" → ")).toHaveLength(1);
       }
     }
   });
