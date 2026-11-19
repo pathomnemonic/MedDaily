@@ -4,7 +4,7 @@ import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks
 import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { letterWordPoints, makeLetterGrid } from "./arcadeLogic";
+import { letterWordPoints, makeLetterGrid, traceGridWord } from "./arcadeLogic";
 
 type Done = (score: number, maxScore: number, perfect: boolean) => void;
 type Specialty = "general" | "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
@@ -351,14 +351,16 @@ const LETTER_DICTIONARY = [...new Set([
 
 function LetterGridGame({ seed, onDone }: Props) {
   const board = useMemo(() => makeLetterGrid(seed, LETTER_DICTIONARY), [seed]);
-  const [entry, setEntry] = useState("");
+  const [path, setPath] = useState<number[]>([]);
   const [found, setFound] = useState<string[]>([]);
+  const [foundPaths, setFoundPaths] = useState<number[][]>([]);
   const [seconds, setSeconds] = useState(90);
-  const [note, setNote] = useState("Find words by connecting letters that touch horizontally, vertically, or diagonally.");
+  const [note, setNote] = useState("Connect adjacent letters in any direction. Each cell can be used once per word.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
   const score = found.reduce((total, word) => total + letterWordPoints(word), 0);
   const maximum = Math.max(1, board.words.reduce((total, word) => total + letterWordPoints(word), 0));
+  const currentWord = path.map((index) => board.grid[index]).join("");
 
   const finish = (words: string[]) => {
     setEnded(true);
@@ -374,37 +376,63 @@ function LetterGridGame({ seed, onDone }: Props) {
     const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
     return () => window.clearInterval(timer);
   }, [ended]);
-
   useEffect(() => {
     if (seconds === 0 && !ended) finish(found);
   }, [seconds, ended, found]);
 
+  const chooseCell = (index: number) => {
+    if (ended || foundPaths.some((cells) => cells.includes(index))) return;
+    if (path.includes(index)) {
+      if (path[path.length - 1] === index) setPath((current) => current.slice(0, -1));
+      else setNote("A letter cannot be reused in the same word. Remove the last tile to backtrack.");
+      return;
+    }
+    if (path.length) {
+      const last = path[path.length - 1];
+      const rowGap = Math.abs(Math.floor(last / 4) - Math.floor(index / 4));
+      const colGap = Math.abs((last % 4) - (index % 4));
+      if (rowGap > 1 || colGap > 1) {
+        setNote("Choose a tile touching the previous letter, including diagonals.");
+        return;
+      }
+    }
+    setPath((current) => [...current, index]);
+  };
+
   const submit = () => {
-    const word = entry.trim().toUpperCase();
-    if (ended || !word) return;
-    if (found.includes(word)) { setNote("Already found. Keep searching the grid."); return; }
-    if (!board.words.includes(word)) { setNote("That word is not in this grid. Try another path."); return; }
+    const word = currentWord;
+    if (ended || word.length < 3) return;
+    if (found.includes(word)) { setNote("Already found. Search for another path."); setPath([]); return; }
+    if (!board.words.includes(word) || !traceGridWord(board.grid, word)) {
+      setNote(word + " is not one of the hidden words. Try another path.");
+      setPath([]);
+      return;
+    }
     const next = [...found, word];
-    setFound(next); setEntry(""); setNote("+" + letterWordPoints(word) + " points · " + word);
+    setFound(next);
+    setFoundPaths((current) => [...current, path]);
+    setPath([]);
+    setNote("+" + letterWordPoints(word) + " points · " + word);
     if (next.length === board.words.length) finish(next);
   };
 
   return <div className="game-layout letter-grid-game">
     <div className="letter-grid-hud"><div><span className="eyebrow">LETTER LAB</span><h2>Find the hidden words</h2></div><div className={"letter-grid-clock" + (seconds <= 10 ? " urgent" : "")}>{String(Math.floor(seconds / 60)).padStart(2, "0")}:{String(seconds % 60).padStart(2, "0")}</div></div>
-    <div className="letter-grid-board">{board.grid.map((letter, i) => <div key={i} className={found.some((word) => word.includes(letter)) ? "letter-grid-tile" : "letter-grid-tile"}>{letter}</div>)}</div>
+    <p className="game-instructions"><span className="instruction-dot mint" /> Connect neighboring letters horizontally, vertically, or diagonally. Longer words earn more points.</p>
+    <div className="letter-grid-board" aria-label="Boggle-style letter board">{board.grid.map((letter, i) => {
+      const isFound = foundPaths.some((cells) => cells.includes(i));
+      return <button key={i} type="button" className={"letter-grid-tile" + (path.includes(i) ? " selected" : "") + (isFound ? " found" : "")} onClick={() => chooseCell(i)} disabled={ended || isFound} aria-label={"Tile " + letter + ", row " + (Math.floor(i / 4) + 1) + ", column " + (i % 4 + 1)}>{letter}</button>;
+    })}</div>
+    <div className="letter-grid-current"><span>YOUR WORD</span><strong>{currentWord || "—"}</strong><small>{path.length} tiles</small></div>
+    <div className="letter-grid-controls"><button className="button button-soft" onClick={() => setPath((current) => current.slice(0, -1))} disabled={ended || !path.length}>Undo</button><button className="button button-quiet" onClick={() => setPath([])} disabled={ended || !path.length}>Clear</button><button className="button button-primary" onClick={submit} disabled={ended || path.length < 3}>Submit word</button></div>
     <p className="letter-grid-score">{score} pts <span>·</span> {found.length} / {board.words.length} words found</p>
     {!ended ? <>
-      <form className="dive-answer-row" onSubmit={(event) => { event.preventDefault(); submit(); }}>
-        <input value={entry} onChange={(event) => setEntry(event.target.value.replace(/[^a-z]/gi, "").toUpperCase())} autoComplete="off" placeholder="Type a word…" aria-label="Word to find" />
-        <button className="button button-primary" disabled={!entry.trim()}>Find word</button>
-      </form>
       <p className="game-feedback" aria-live="polite">{note}</p>
       <div className="letter-grid-found">{found.map((word) => <span key={word}>{word}<b>+{letterWordPoints(word)}</b></span>)}</div>
       <button className="button button-quiet full-button" onClick={() => finish(found)}>Finish round</button>
-    </> : <div className="letter-grid-finale"><h3>Round complete</h3><strong>{score} / {maximum}</strong><p>{found.length} words found. The hidden-word list is shown below.</p><div>{board.words.slice().sort().map((word) => <span key={word} className={found.includes(word) ? "found" : ""}>{word}</span>)}</div></div>}
+    </> : <div className="letter-grid-finale"><h3>{found.length === board.words.length ? "Grid cleared!" : "Round complete"}</h3><strong>{score} / {maximum}</strong><p>{found.length} words found before the clock stopped. The full word list is below.</p><div>{board.words.slice().sort().map((word) => <span key={word} className={found.includes(word) ? "found" : ""}>{word}</span>)}</div></div>}
   </div>;
 }
-
 
 function Medle({ seed, onDone, specialty = "general" }: Props) {
   const pool = specialty === "general" ? medleWords : medleWords.filter((w) => specialty === "neurology" ? ["BRAIN","NERVE","OPTIC","VAGUS","ULNAR","SPASM","MOTOR","COMAS"].includes(w) : specialty === "cardiology" ? ["AORTA","VALVE","SHOCK","RALES","SPASM","ACUTE"].includes(w) : specialty === "infectious" ? ["STAPH","STREP","VIRAL","YEAST","SPORE","TITER","COCCI","PRION"].includes(w) : true);
