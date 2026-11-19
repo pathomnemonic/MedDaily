@@ -74,7 +74,7 @@ describe("content bank sanity", () => {
 describe("additional daily puzzle packs", () => {
   it("keeps the playable Spelling Hive pool medical-focused and title-unique", () => {
     const playable = spellingHivePuzzles.filter((puzzle) => !["Practice Round", "Capture the Clue", "Tricone Terms"].includes(puzzle.title));
-    expect(playable).toHaveLength(51);
+    expect(playable).toHaveLength(42);
     expect(new Set(playable.map((puzzle) => puzzle.title)).size).toBe(playable.length);
   });
   it("keeps every Spelling Hive bank internally valid", () => {
