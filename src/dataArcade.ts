@@ -219,6 +219,36 @@ export const deepDivePrompts: DeepPrompt[] = [
   ]),
   dive("d70","Name a cause of secondary erythrocytosis or polycythemia.","Hematology","Secondary erythrocytosis is driven by increased erythropoietin or chronic hypoxia; distinguish it from polycythemia vera.",[
     ["Chronic hypoxemia"],["Obstructive sleep apnea","Cigarette smoking or carbon monoxide"],["Erythropoietin-producing renal cell carcinoma","High altitude"],["Testosterone therapy","Chronic lung disease"],["Renal artery stenosis"],["Post-transplant erythrocytosis"]
+  ]),
+  dive("d71","Name a cause of macrocytic anemia.","Hematology","Macrocytosis may reflect impaired DNA synthesis, alcohol or liver disease, marrow disorders, medications, or reticulocytosis.",[
+    ["Vitamin B12 deficiency"],["Folate deficiency","Alcohol use"],["Liver disease","Hypothyroidism"],["Reticulocytosis","Myelodysplastic syndrome","Hydroxyurea"],["Methotrexate","Zidovudine","Valproate"],["Nitrous oxide exposure","Phenytoin","Copper deficiency","Diamond-Blackfan anemia"]
+  ]),
+  dive("d72","Name a mechanism or cause of hypoxemia.","Pulmonology","Hypoxemia results from low inspired oxygen, hypoventilation, diffusion limitation, V/Q mismatch, or right-to-left shunt.",[
+    ["Ventilation-perfusion mismatch"],["Right-to-left shunt","Hypoventilation"],["Diffusion impairment","Low inspired oxygen at altitude"],["Pneumonia","Pulmonary edema","Pulmonary embolism"],["Atelectasis","ARDS","COPD exacerbation"],["Pneumothorax","Intracardiac shunt","Obesity hypoventilation","Neuromuscular respiratory weakness"]
+  ]),
+  dive("d73","Name a cause of chronic diarrhea.","Gastroenterology","Chronic diarrhea can be inflammatory, osmotic, secretory, malabsorptive, infectious, medication-related, or functional.",[
+    ["Irritable bowel syndrome"],["Celiac disease","Inflammatory bowel disease"],["Lactose intolerance","Microscopic colitis"],["Chronic pancreatitis","Bile acid diarrhea","Giardiasis"],["Small intestinal bacterial overgrowth","Metformin","Hyperthyroidism"],["Whipple disease","Common variable immunodeficiency","Short bowel syndrome","Colorectal cancer"]
+  ]),
+  dive("d74","Name an organism that can cause osteomyelitis.","Infectious Disease","Staphylococcus aureus is the leading cause; age, sickle cell disease, puncture wounds, hardware, and immune status shift the organism.",[
+    ["Staphylococcus aureus"],["Salmonella species","Group B Streptococcus"],["Pseudomonas aeruginosa","Kingella kingae"],["Escherichia coli","Klebsiella pneumoniae","Staphylococcus epidermidis"],["Mycobacterium tuberculosis","Brucella species","Serratia marcescens"],["Cutibacterium acnes","Candida species","Aspergillus species","Bacteroides species"]
+  ]),
+  dive("d75","Name a cause or association of pulmonary hypertension.","Cardiology","Pulmonary hypertension may arise from pulmonary arterial disease, left-heart disease, lung disease or hypoxia, chronic thromboembolism, and multifactorial conditions.",[
+    ["Left-sided heart disease"],["Chronic lung disease","Chronic thromboembolic disease"],["Systemic sclerosis","Congenital heart disease"],["HIV infection","Portal hypertension","Methamphetamine exposure"],["Obstructive sleep apnea","Interstitial lung disease","Schistosomiasis"],["Heritable BMPR2-associated disease","Sickle cell disease","Sarcoidosis","Chronic hypoxia at altitude"]
+  ]),
+  dive("d76","Name a cause of acute liver failure.","Gastroenterology","Acute liver failure can follow toxic, viral, autoimmune, ischemic, metabolic, vascular, or pregnancy-related injury.",[
+    ["Acetaminophen toxicity"],["Acute hepatitis B","Autoimmune hepatitis"],["Hepatitis A","Hepatitis E","Ischemic hepatitis"],["Wilson disease","Amanita phalloides poisoning","Drug-induced liver injury"],["Herpes simplex hepatitis","Budd-Chiari syndrome","Acute fatty liver of pregnancy"],["HELLP syndrome","Valproate toxicity","Isoniazid toxicity","Severe heatstroke"]
+  ]),
+  dive("d77","Name a cause of adrenal insufficiency.","Endocrinology","Primary adrenal failure damages the adrenal cortex; secondary or tertiary disease reduces ACTH or hypothalamic stimulation.",[
+    ["Autoimmune adrenalitis"],["Abrupt glucocorticoid withdrawal","Bilateral adrenal hemorrhage"],["Tuberculosis","Metastatic disease"],["Pituitary adenoma or surgery","Pituitary apoplexy","Sheehan syndrome"],["Adrenoleukodystrophy","Adrenal histoplasmosis","Immune checkpoint inhibitor toxicity"],["Bilateral adrenalectomy","Congenital adrenal hyperplasia","Lymphocytic hypophysitis","Infiltrative sarcoidosis"]
+  ]),
+  dive("d78","Name a cause of pleural effusion.","Pulmonology","Pleural fluid may be a transudate from systemic hydrostatic or oncotic forces, or an exudate from local inflammation, infection, malignancy, or vascular disease.",[
+    ["Congestive heart failure"],["Pneumonia","Malignancy"],["Pulmonary embolism","Cirrhosis with hepatic hydrothorax"],["Tuberculosis","Nephrotic syndrome","Pancreatitis"],["Rheumatoid pleuritis","Systemic lupus erythematosus","Uremia"],["Esophageal rupture","Chylothorax","Hemothorax","Meigs syndrome"]
+  ]),
+  dive("d79","Name a cause of hyperammonemia.","Hepatology","Ammonia rises with impaired hepatic clearance, portosystemic shunting, excess nitrogen load, selected medications, or urea-cycle defects.",[
+    ["Acute liver failure"],["Cirrhosis","Urea-cycle disorder"],["Portosystemic shunt","Gastrointestinal bleeding"],["Valproate","Urease-producing urinary infection","Reye syndrome"],["Ornithine transcarbamylase deficiency","Severe catabolic stress","Total parenteral nutrition"],["Citrullinemia","Argininosuccinic aciduria","Multiple myeloma-associated hyperammonemia","Post-transplant metabolic decompensation"]
+  ]),
+  dive("d80","Name a cause or association of eosinophilia.","Hematology","Eosinophilia is associated with allergic disease, drug reactions, helminths, selected malignancies, immune disorders, and primary hematologic disease.",[
+    ["Atopic disease"],["Asthma","Helminth infection"],["Drug hypersensitivity","Eosinophilic esophagitis"],["DRESS syndrome","Eosinophilic granulomatosis with polyangiitis","Hodgkin lymphoma"],["Strongyloidiasis","Schistosomiasis","Allergic bronchopulmonary aspergillosis"],["Hypereosinophilic syndrome","Adrenal insufficiency","Toxocariasis","Chronic eosinophilic leukemia"]
   ])
 
 ];
