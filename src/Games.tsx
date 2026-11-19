@@ -4,7 +4,7 @@ import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks
 import { deductionCases, glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { associationPairPoints, associationTimeBonus, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
+import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
 import { generateDeductionCase } from "./logicGenerator";
 
 type Done = (score: number, maxScore: number, perfect: boolean) => void;
@@ -73,7 +73,7 @@ function Finish({ title, detail, score, children }: { title: string; detail: str
 }
 function SectionLabel({ children }: { children: ReactNode }) { return <div className="section-label">{children}</div>; }
 
-const DIVE_POINTS = [10, 15, 30, 60, 85, 100];
+const DIVE_POINTS = deepDivePointsByTier;
 const DIVE_TIERS = ["Surface find", "Familiar current", "Reef discovery", "Rare specimen", "Abyssal find", "Hidden gem"];
 type ScoredDeepAnswer = DeepAnswer & { earned: number };
 const diveRoundScore = (answers: ScoredDeepAnswer[]) => answers.reduce((sum, answer) => sum + answer.earned, 0);
@@ -125,7 +125,7 @@ function DeepDive({ seed, onDone }: Props) {
       setMessage("Not in this prompt's accepted set. Try a different answer.");
       return;
     }
-    const earned = Math.min(DIVE_POINTS[match.tier - 1], 100 - roundScore);
+    const earned = deepDiveAnswerAward(match.tier, roundScore);
     const next = [...accepted, { ...match, earned }];
     setAccepted(next);
     setEntry("");
