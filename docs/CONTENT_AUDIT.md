@@ -17,7 +17,7 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 | Triage Order | 42 sequences | Clinical and emergency sequence-reconstruction puzzles |
 | Anagram Sprint | 111 terms | Three-guess word scramble |
 | Cell Sketch | 31 unique-named 5×5 nonograms (19 original patterns plus 12 rotations/reflections) | Row and column run clues; CI verifies one valid solution per board |
-| What Has More? | 82 comparisons (16 fun-first rounds) | Clinical quantities plus playful food, medication, and everyday comparisons; values are explicitly approximate where appropriate |
+| What Has More? | 90 comparisons (24 fun-first rounds) | Clinical quantities plus playful food, medication, and everyday comparisons; values are explicitly approximate where appropriate |
 | Word Ladder | 26 ladders | Each intended solution path uses real words and one-letter changes |
 | Medical Spelling Hive | 42 medical-themed seven-letter boards | 42 curated medical-themed boards; three generic boards are excluded from play |
 | Casefile Logic | 15 cases | Fictional deduction puzzles; one-to-one assignment rules |
