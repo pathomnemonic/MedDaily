@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { GameBoard } from "./Games";
 import type { GameId } from "./lib";
 import { hashSeed, dailyDateKey } from "./lib";
-import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
+import { achievementsFor, completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
 import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, submitRoomScore, watchRoom, type RoomState } from "./firebase";
 import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnected } from "./googleDrive";
 
@@ -279,15 +279,7 @@ function RoomScores({room}:{room:RoomState}){
 function StatsPage({player,scope,streak}:{player:PlayerData;scope:string;streak:number}){
   const results=player.results.filter(r=>r.scope===scope);
   const perfect=results.filter(r=>r.perfect).length;
-  const uniqueGames=new Set(results.map(r=>r.game)).size;
-  const achievements=[
-    {name:"First Run",detail:"Complete your first game.",earned:results.length>=1,progress:Math.min(results.length,1)+"/1"},
-    {name:"Curious Mind",detail:"Try five different game formats.",earned:uniqueGames>=5,progress:Math.min(uniqueGames,5)+"/5"},
-    {name:"Full Arcade",detail:"Play every game in the arcade.",earned:uniqueGames>=GAMES.length,progress:Math.min(uniqueGames,GAMES.length)+"/"+GAMES.length},
-    {name:"Perfect Five",detail:"Earn five perfect rounds.",earned:perfect>=5,progress:Math.min(perfect,5)+"/5"},
-    {name:"Century Club",detail:"Complete 100 rounds.",earned:results.length>=100,progress:Math.min(results.length,100)+"/100"},
-    {name:"Seven-Day Signal",detail:"Maintain a seven-day daily streak.",earned:streak>=7,progress:Math.min(streak,7)+"/7"}
-  ];
+  const achievements=achievementsFor(player,scope,streak,GAMES.length);
   const unlocked=achievements.filter(item=>item.earned).length;
   return <div className="stats-page"><span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div></div>
     <section className="achievement-shelf"><div className="achievement-heading"><div><span className="eyebrow">UNLOCKED BY PLAYING</span><h2>Achievements</h2></div><b>{unlocked} / {achievements.length}</b></div><div className="achievement-grid">{achievements.map(item=><article key={item.name} className={"achievement-tile"+(item.earned?" earned":" locked")}><span className="achievement-mark">{item.earned?"✦":"◇"}</span><div><b>{item.name}</b><p>{item.detail}</p><small>{item.earned?"UNLOCKED":"IN PROGRESS"} · {item.progress}</small></div></article>)}</div></section>
