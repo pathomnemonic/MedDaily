@@ -119,7 +119,7 @@ export default function App() {
   };
   const finishGame=(score:number,maxScore:number,perfect:boolean)=>{
     const gameTitle=GAMES.find(g=>g.id===activeGame)?.title??"MedDaily game";
-    setLastShare("MedDaily · "+gameTitle+"\\n"+(perfect?"Perfect run":score+" / "+maxScore+" points")+"\\nPlay: https://pathomnemonic.github.io/MedDaily/");
+    setLastShare("MedDaily · "+gameTitle+"\n"+(perfect?"Perfect run":score+" / "+maxScore+" points")+"\nPlay: https://pathomnemonic.github.io/MedDaily/");
     if(practice){setNotice("Free-play round complete. It did not affect your daily record.");return;}
     const result={date,game:activeGame!,scope,score,maxScore,perfect,durationSeconds:Math.max(0,Math.round((Date.now()-gameStartedAt)/1000))};
     const nextPlayer = recordResult(player,result);
