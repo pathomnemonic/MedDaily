@@ -20,7 +20,7 @@ MedDaily exposes sixteen playable game formats. The retired Next Best Step bank 
 | What Has More? | 116 comparisons (50 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
 | Word Ladder | 26 curated ladders + procedural Free Play | Each intended solution path uses real words and one-letter changes |
 | Medical Spelling Hive | 50 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
-| Casefile Logic | 30 curated cases + procedural Free Play | Curated daily logic puzzles; unlimited Free Play generates seeded, uniquely solvable 3×3 deduction grids with pencil marks and scored hints |
+| Casefile Logic | 30 curated cases + seeded procedural daily rotation and Free Play | Alternates curated cases with generated, uniquely solvable 3×3 deduction grids; both modes include pencil marks and scored hints |
 | Deep Dive | 70 prompts | Timed open-answer prompts with curated long-tail rarity tiers |
 | Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes |
 | Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |
@@ -39,12 +39,12 @@ Clinical cases are filtered toward specialties where curated mappings exist, inc
 
 ## Recommended next content work
 
-Prioritize the smallest banks first:
-1. Expand Casefile Logic and Medical Spelling Hive to at least 50 distinct daily sets each; continue replacing generic word boards with medically meaningful sets.
+Remaining content priorities:
+1. Continue replacing generic Spelling Hive entries with clinically meaningful, dictionary-verified words; the playable bank now has 50 boards.
 2. Expand Cell Sketch and Word Ladder while preserving one-solution and valid-path checks (Cell Sketch now has 19 original patterns; Word Ladder has 26 paths).
 3. Add specialty-reviewed Connections boards and clinical cases for tracks whose current content falls back to general banks.
-4. Add original/licensed visual material for Framed-style ECG, imaging, histology, gross pathology, and anatomy recognition.
-5. Add a long-tail, open-answer party game where scoring rarity is based on an explicit curated weighting system—not a fabricated player-population statistic.
+4. Add original/licensed visual material for ECG, imaging, histology, gross pathology, and anatomy recognition.
+5. Continue expanding Deep Dive's long-tail answer sets with clinically defensible aliases and explicit editorial rarity weights—not fabricated player-population statistics.
 
 ## Accuracy and review standard
 
