@@ -221,10 +221,6 @@ export const connectionPuzzlesExpansion11: ConnectionGroup[][] = [
 
 ];
 
-import type { ConnectionGroup } from "./data";
-const g = (category: string, words: string[], hint: string): ConnectionGroup => ({ category, words, hint });
-const b = (...groups: ConnectionGroup[]) => groups;
-
 export const labPromptsExpansion4: LabPrompt[] = [
 {id:"ly101",prompt:"Diagnostic hemoglobin A1c threshold for prediabetes lower bound",value:5.7,tolerance:0,unit:"%",context:"A1c 5.7–6.4% is the prediabetes range; confirm and interpret in context.",source:"ADA Standards of Care."},
 {id:"ly102",prompt:"Diagnostic hemoglobin A1c threshold for diabetes",value:6.5,tolerance:0,unit:"%",context:"A1c at least 6.5% is a diagnostic criterion using an appropriate standardized assay.",source:"ADA Standards of Care."},
