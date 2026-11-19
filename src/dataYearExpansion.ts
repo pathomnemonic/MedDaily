@@ -69,7 +69,7 @@ export const connectionPuzzlesExpansion11: ConnectionGroup[][] = [
 ],
 [
 {category:"Opioid toxicity",words:["Respiratory depression","Pinpoint pupils","Decreased consciousness","Naloxone"],hint:"Classic toxidrome and reversal."},
-{category:"Anticholinergic toxicity",words:["Dry skin","Mydriasis","Urinary retention","Delirium"],hint:"Muscarinic blockade."},
+{category:"Anticholinergic toxicity",words:["Dry skin","Decreased bowel sounds","Urinary retention","Delirium"],hint:"Muscarinic blockade."},
 {category:"Sympathomimetic toxicity",words:["Diaphoresis","Mydriasis","Tachycardia","Agitation"],hint:"Excess catecholaminergic activity."},
 {category:"Serotonin syndrome",words:["Clonus","Hyperreflexia","Hyperthermia","Recent serotonergic exposure"],hint:"Neuromuscular excitation after serotonergic medication exposure."}
 ]
