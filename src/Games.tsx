@@ -4,7 +4,7 @@ import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks
 import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { letterWordPoints, makeLetterGrid, traceGridWord } from "./arcadeLogic";
+import { letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord } from "./arcadeLogic";
 import { generateDeductionCase } from "./logicGenerator";
 
 type Done = (score: number, maxScore: number, perfect: boolean) => void;
@@ -106,10 +106,8 @@ function DeepDive({ seed, onDone }: Props) {
 
   const submit = () => {
     if (revealed || finished || !entry.trim()) return;
-    const value = normalize(entry);
-    const match = item.answers.find((candidate) =>
-      [candidate.answer, ...(candidate.aliases ?? [])].some((accepted) => normalize(accepted) === value)
-    );
+    const found = matchAnswer(entry, item.answers);
+    const match = found?.match;
     if (!match) {
       setMessage("Not in the accepted-answer set. Check the category wording and try another answer.");
       return;
@@ -118,7 +116,7 @@ function DeepDive({ seed, onDone }: Props) {
     setLast(match);
     setResults((current) => [...current.slice(0, round), { answer: match.answer, points, tier: match.tier }]);
     setRevealed(true);
-    setMessage("Accepted. Your answer earned " + points + " points.");
+    setMessage((found?.fuzzy ? "Counted as “" + match.answer + "” (typo forgiven). " : "Accepted. ") + "Your answer earned " + points + " points.");
   };
 
   const pass = () => {
@@ -205,6 +203,7 @@ const newRumblePlayer = (name: string): RumblePlayer => ({
   correct: 0
 });
 
+const RUMBLE_SECONDS = 20;
 function TriviaRumble({ seed, onDone }: Props) {
   const [mode, setMode] = useState<RumbleMode>("solo");
   const [names, setNames] = useState(["Player 1", "Player 2"]);
@@ -217,10 +216,22 @@ function TriviaRumble({ seed, onDone }: Props) {
   const [question, setQuestion] = useState<(typeof triviaQuestions)[number] | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
   const [winner, setWinner] = useState<string | null>(null);
+  const [lastCorrect, setLastCorrect] = useState(false);
   const [used, setUsed] = useState<Partial<Record<TriviaCategoryId, string[]>>>({});
+  const [seconds, setSeconds] = useState(RUMBLE_SECONDS);
   const done = useRef(false);
   const currentPlayer = players[turn];
   const limit = mode === "solo" ? 24 : 36;
+
+  useEffect(() => {
+    if (stage !== "question") return;
+    const interval = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(interval);
+  }, [stage, round]);
+  useEffect(() => {
+    if (stage === "question" && seconds === 0) answer(-1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seconds, stage]);
 
   const start = () => {
     const list = mode === "solo" ? [names[0].trim() || "Player 1"] : [names[0].trim() || "Player 1", names[1].trim() || "Player 2"];
@@ -239,6 +250,7 @@ function TriviaRumble({ seed, onDone }: Props) {
     setCategory(selected);
     setQuestion(nextQuestion);
     setPicked(null);
+    setSeconds(RUMBLE_SECONDS);
     setStage("question");
   };
 
@@ -258,6 +270,7 @@ function TriviaRumble({ seed, onDone }: Props) {
   const answer = (index: number) => {
     if (stage !== "question" || !question || !category || picked !== null) return;
     setPicked(index);
+    setLastCorrect(index === question.answer);
     const correct = index === question.answer;
     const nextPlayers = players.map((player, playerIndex) => {
       if (playerIndex !== turn || !correct) return player;
@@ -282,7 +295,7 @@ function TriviaRumble({ seed, onDone }: Props) {
 
   const next = () => {
     if (winner || round + 1 >= limit) { finish(); return; }
-    setTurn((value) => mode === "solo" ? 0 : (value + 1) % players.length);
+    setTurn((value) => rumbleNextTurn({ turn: value, playerCount: players.length, correct: lastCorrect }));
     setRound((value) => value + 1);
     setCategory(null); setQuestion(null); setPicked(null);
     setStage("spin");
@@ -291,7 +304,7 @@ function TriviaRumble({ seed, onDone }: Props) {
   return <div className="game-layout trivia-rumble">
     {stage === "setup" ? <div className="rumble-setup">
       <div className="rumble-logo">TRIVIA <b>RUMBLE</b><span>⚡</span></div>
-      <p>Spin into six worlds of medical knowledge. Collect three correct answers in a category to win its badge.</p>
+      <p>Spin into six worlds of medical knowledge. Collect three correct answers in a category to win its badge. {mode === "pass" ? "Get one right and you keep the wheel; miss, or run out of the 20 seconds, and it passes." : "Beat the 20-second clock on every question."}</p>
       <div className="rumble-mode-picks">
         <button className={mode === "solo" ? "chosen" : ""} onClick={() => setMode("solo")}><b>Solo challenge</b><span>Collect all six badges</span></button>
         <button className={mode === "pass" ? "chosen" : ""} onClick={() => setMode("pass")}><b>Pass & play</b><span>Take turns on one device</span></button>
@@ -325,11 +338,11 @@ function TriviaRumble({ seed, onDone }: Props) {
       </div> : null}
       {stage === "question" || stage === "reveal" ? question && category && <div className="rumble-question" style={{ "--cat-color": category.color } as React.CSSProperties}>
         <div className="rumble-category"><span>{category.icon}</span><b>{category.name}</b></div>
-        <div className="rumble-question-card"><span className="eyebrow">{category.short} · QUESTION {round + 1}</span><h2>{question.question}</h2></div>
+        <div className="rumble-question-card"><span className="eyebrow">{category.short} · QUESTION {round + 1}</span>{stage === "question" && <div className={"rumble-timer" + (seconds <= 5 ? " urgent" : "")} role="timer" aria-label={seconds + " seconds left"}><i style={{ width: (seconds / RUMBLE_SECONDS * 100) + "%" }} /><b>{seconds}</b></div>}<h2>{question.question}</h2></div>
         <div className="rumble-options">{question.options.map((option, i) => <button key={option} disabled={stage === "reveal"} className={stage === "reveal" ? (i === question.answer ? "right" : i === picked ? "wrong" : "dim") : picked === i ? "selected" : ""} onClick={() => answer(i)}><span>{String.fromCharCode(65 + i)}</span>{option}</button>)}</div>
         {stage === "reveal" && <div className={"rumble-explanation" + (picked === question.answer ? " correct" : "")}>
-          <b>{picked === question.answer ? "Correct! Badge progress updated." : "Not quite. Correct answer: " + question.options[question.answer] + "."}</b><p>{question.explanation}</p>
-          <button className="button button-primary full-button" onClick={next}>{winner ? "See the winner" : round + 1 === limit ? "View final scores" : mode === "pass" ? "Next player's turn →" : "Spin again →"}</button>
+          <b>{picked === question.answer ? (mode === "pass" ? "Correct! You keep the wheel." : "Correct! Badge progress updated.") : (picked === -1 ? "Time's up! " : "Not quite. ") + "Correct answer: " + question.options[question.answer] + "." + (mode === "pass" ? " The wheel passes on." : "")}</b><p>{question.explanation}</p>
+          <button className="button button-primary full-button" onClick={next}>{winner ? "See the winner" : round + 1 === limit ? "View final scores" : mode === "pass" ? (lastCorrect ? "Spin again — you keep going →" : "Next player's turn →") : "Spin again →"}</button>
         </div>}
       </div> : null}
     </> : <div className="rumble-finale">

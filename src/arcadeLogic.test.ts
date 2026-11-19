@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { letterWordPoints, makeLetterGrid, traceGridWord } from "./arcadeLogic";
+import { editDistance, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord } from "./arcadeLogic";
 
 describe("Letter Lab grid rules", () => {
   const grid = [
@@ -33,5 +33,40 @@ describe("Letter Lab grid rules", () => {
     expect(letterWordPoints("HEART")).toBe(4);
     expect(letterWordPoints("NEURON")).toBe(6);
     expect(letterWordPoints("THERAPY")).toBe(10);
+  });
+});
+
+describe("Deep Dive answer matching", () => {
+  const answers = [
+    { answer: "Iron deficiency anemia", aliases: ["IDA"] },
+    { answer: "Beta-thalassemia" },
+    { answer: "Alpha-thalassemia" },
+    { answer: "Lead poisoning" }
+  ];
+  it("accepts exact, normalized, and alias answers without marking them fuzzy", () => {
+    expect(matchAnswer("  iron DEFICIENCY anemia ", answers)).toMatchObject({ fuzzy: false });
+    expect(matchAnswer("ida", answers)?.match.answer).toBe("Iron deficiency anemia");
+  });
+  it("forgives a single typo only when it identifies one answer", () => {
+    expect(matchAnswer("lead poisning", answers)).toMatchObject({ fuzzy: true });
+    expect(matchAnswer("lead poisning", answers)?.match.answer).toBe("Lead poisoning");
+    expect(matchAnswer("alpha-thalasemia", answers)?.match.answer).toBe("Alpha-thalassemia");
+    const twins = [{ answer: "Hypokalemia" }, { answer: "Hyperkalemia" }];
+    expect(matchAnswer("hypekalemia", twins)).toBeNull(); // equidistant from both: refuse to guess
+  });
+  it("rejects short, unrelated, or empty input", () => {
+    expect(matchAnswer("", answers)).toBeNull();
+    expect(matchAnswer("lead", answers)).toBeNull();
+    expect(matchAnswer("copper", answers)).toBeNull();
+    expect(editDistance("kitten", "sitting", 3)).toBe(3);
+  });
+});
+
+describe("Trivia Rumble turn rule", () => {
+  it("keeps the turn after a correct answer and passes it after a miss", () => {
+    expect(rumbleNextTurn({ turn: 0, playerCount: 2, correct: true })).toBe(0);
+    expect(rumbleNextTurn({ turn: 0, playerCount: 2, correct: false })).toBe(1);
+    expect(rumbleNextTurn({ turn: 1, playerCount: 2, correct: false })).toBe(0);
+    expect(rumbleNextTurn({ turn: 0, playerCount: 1, correct: false })).toBe(0);
   });
 });

@@ -1119,3 +1119,9 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .freeplay-status b{font:700 18px "Space Grotesk";color:var(--mint)}
 .freeplay-status span{font:500 8px "DM Mono";color:#91a2c8}
 @media(max-width:640px){.arcade-intro{align-items:flex-start}.arcade-intro-actions{justify-items:start}.arcade-intro-actions .arcade-game-count{display:none}.home-play-mode button{padding:7px 9px}}
+
+.rumble-timer{position:relative;height:20px;margin:9px 0 3px;border-radius:99px;background:rgba(0,0,0,.28);overflow:hidden}
+.rumble-timer i{position:absolute;inset:0 auto 0 0;border-radius:99px;background:linear-gradient(90deg,#8bffd5,#ffe27a);transition:width 1s linear}
+.rumble-timer b{position:relative;display:block;text-align:center;font:400 13px/20px var(--font-display);color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.4)}
+.rumble-timer.urgent i{background:linear-gradient(90deg,#ff5b8a,#ff9b5b)}
+.rumble-timer.urgent b{animation:arcade-pulse .7s infinite}

@@ -21,8 +21,8 @@ MedDaily exposes sixteen playable game formats. The retired Next Best Step bank 
 | Word Ladder | 26 ladders | Each intended solution path uses real words and one-letter changes |
 | Medical Spelling Hive | 42 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
 | Casefile Logic | 15 cases | Fictional deduction puzzles with tri-state pencil marks, one-to-one assignments, and scored progressive hints |
-| Deep Dive | 70 prompts | Timed open-answer prompts with curated long-tail rarity tiers |
-| Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes |
+| Deep Dive | 70 prompts | Timed open-answer prompts with curated long-tail rarity tiers; typo-tolerant matching (a typo is forgiven only when it identifies exactly one accepted answer). The accepted set is closed, so valid but unlisted answers are rejected; widening each prompt's answer list is the main remaining gap |
+| Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes; 20-second question timer; in pass-and-play a correct answer keeps the wheel and a miss or timeout passes it |
 | Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |
 
 ## What this means for daily longevity
