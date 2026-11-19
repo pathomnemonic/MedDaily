@@ -177,3 +177,72 @@ export const deductionCases: DeductionCase[] = [
     ]
   }
 ];
+
+
+// Batch 2: strengthen the smallest word and deduction banks.
+spellingHivePuzzles.push(
+{title:"Therapy Garden",letters:["T","H","E","R","A","P","Y"],center:"R",words:["THERAPY","HEART","EARTH","HATER","PARTY","PRAY","TRAP","RATE","TARE","PEAR","REAP","HARP","TAPER","RAPT","TARP","RATHER"],pangram:"THERAPY",hint:"The pangram names a broad process of care."},
+{title:"Organic Chemistry",letters:["O","R","G","A","N","I","C"],center:"R",words:["ORGANIC","ORGAN","GRAIN","GROAN","CIGAR","RACING","CARGO","RING","RANG","ROAN","RAIN","COIN","IRON","ICON","CORN","ROAR","CARING"],pangram:"ORGANIC",hint:"The pangram describes a broad class of compounds."},
+{title:"Nuclear Medicine",letters:["N","U","C","L","E","A","R"],center:"E",words:["NUCLEAR","UNCLEAR","CLEAN","CLEAR","CRANE","LEARN","LANCE","LUNAR","UNCLE","EARN","NEAR","CARE","CURE","REAL","LACE","RACE","REEL"],pangram:"NUCLEAR",hint:"The pangram relates to the atom's central structure."},
+{title:"Stainer's Bench",letters:["S","T","A","I","N","E","R"],center:"R",words:["STAINER","RETAINS","RETAIN","STAIN","TRAIN","RAISE","TEARS","TARES","RATES","STARE","STARS","RANT","RENT","EARN","NEAR","RAIN","RISE","TIRE","SIRE","TERN"],pangram:"STAINER",hint:"The pangram is someone or something that leaves a mark."},
+{title:"Retinal Signals",letters:["R","E","T","I","N","A","L"],center:"A",words:["RETINAL","RELIANT","LINEAR","RETAIN","TRAIN","TRAIL","TRIAL","LATER","ALERT","ALTER","IRATE","INERT","TILER","REAL","RATE","TARE","RAIL","TAIL","RANT"],pangram:"RETINAL",hint:"The pangram refers to the light-sensing tissue."},
+{title:"Glucose Circuit",letters:["G","L","U","C","O","S","E"],center:"O",words:["GLUCOSE","CLOSE","CLOGS","CLUES","SOLE","SOUL","LOSE","LOOSE","COOLS","COOL","GOES","LOGS","GLUE","CUES","CLOG","COLE","GLOVES"],pangram:"GLUCOSE",hint:"The pangram is a major circulating fuel."},
+{title:"Folates and Salts",letters:["F","O","L","A","T","E","S"],center:"A",words:["FOLATES","FETAL","LEAST","STEAL","STOLE","TALES","TEALS","SEAL","SALE","LATE","TALE","TEAL","LOAF","LOSE","SOFA","FAST","FEAT","FLAT","FLOAT"],pangram:"FOLATES",hint:"The pangram is a vitamin family important in cell division."},
+{title:"Steroid Shelf",letters:["S","T","E","R","O","I","D"],center:"E",words:["STEROID","TIRED","STORE","RISE","SIDE","EDIT","TIRE","DIRE","DIRT","RODE","TIER","SIRE","SORT","ROTS","REST","DORIES"],pangram:"STEROID",hint:"The pangram is a medication class with many physiologic effects."},
+{title:"Garden Rounds",letters:["G","A","R","D","E","N","S"],center:"A",words:["GARDENS","DANGER","RANGED","GANDER","GRADE","GRAND","DARES","DEARS","EARN","NEAR","RANG","SAND","SEND","GARDEN","AGED","AGAR","EARS","SAGA"],pangram:"GARDENS",hint:"The pangram is a place where many things grow."}
+);
+
+wordLadders.push(
+{start:"BOLD",end:"TUNE",path:["BOLD","BOND","BEND","SEND","SAND","SANE","CANE","CONE","BONE","TONE","TUNE"],note:"A long ladder through common words."},
+{start:"FINE",end:"MOVE",path:["FINE","FIVE","DIVE","LIVE","LOVE","MOVE"],note:"One letter changes at each step."},
+{start:"MILE",end:"ICON",path:["MILE","TILE","TIDE","SIDE","SINE","LINE","LION","IRON","ICON"],note:"Follow the letter changes carefully."},
+{start:"CARE",end:"LAST",path:["CARE","CASE","CASH","WASH","WISH","FISH","FIST","LIST","LAST"],note:"A multi-step path from care to last."},
+{start:"COST",end:"PATH",path:["COST","LOST","LAST","PAST","FAST","FATE","LATE","MATE","MATH","PATH"],note:"A word ladder with several turns."},
+{start:"EARS",end:"PAST",path:["EARS","EARN","BARN","BARK","DARK","DART","PART","PARK","MARK","MARS","MASS","PASS","PAST"],note:"Change exactly one letter at every rung."},
+{start:"SEAT",end:"SHELF",path:["SEAT","MEAT","MELT","BELT","BELL","CELL","SELL","SELF","SHELF"],note:"The path ends at a household object."},
+{start:"GAME",end:"RARE",path:["GAME","NAME","SAME","SAVE","SAFE","SAGE","PAGE","PACE","RACE","RARE"],note:"Each intermediate word differs by one letter."},
+{start:"RING",end:"LUNG",path:["RING","SING","SONG","LONG","LUNG"],note:"A short ladder with a changing vowel."},
+{start:"DATA",end:"GAME",path:["DATA","DATE","GATE","GAME"],note:"A compact ladder using familiar words."}
+);
+
+// Rotations and reflections preserve each original nonogram's unique row/column solution.
+const rotateGlyph = (pattern: number[][]) => pattern[0].map((_, c) => pattern.map((row) => row[c]).reverse());
+const mirrorGlyph = (pattern: number[][]) => pattern.map((row) => [...row].reverse());
+const originalGlyphs = glyphPatterns.slice(0, 6);
+glyphPatterns.push(
+  ...originalGlyphs.map((item) => ({...item, name:item.name+" · rotated", pattern:rotateGlyph(item.pattern)})),
+  ...originalGlyphs.map((item) => ({...item, name:item.name+" · mirrored", pattern:mirrorGlyph(item.pattern)}))
+);
+
+deductionCases.push(
+{
+title:"The Misfiled Scan",briefing:"Three clinicians each reviewed a different study in a different department. Match the clinician, department, and item.",suspects:["Dr. Vale","Dr. Kim","Dr. Shah"],locations:["CT Suite","Ward","Laboratory"],objects:["Film","Pager","Clipboard"],
+clues:["Dr. Vale worked in neither the Ward nor the Laboratory.","The Film was in the CT Suite.","Dr. Kim was not in the CT Suite.","The Pager was not in the Laboratory.","Dr. Shah did not have the Clipboard."],
+solution:[{suspect:"Dr. Vale",location:"CT Suite",object:"Film"},{suspect:"Dr. Kim",location:"Ward",object:"Clipboard"},{suspect:"Dr. Shah",location:"Laboratory",object:"Pager"}]
+},
+{
+title:"The Missing Instrument",briefing:"A fictional teaching session ended with three instruments in three rooms. Determine who had each instrument and where.",suspects:["Dr. Brooks","Dr. Imani","Dr. Chen"],locations:["Simulation Lab","Lecture Hall","Skills Room"],objects:["Otoscope","Reflex hammer","Syringe"],
+clues:["Dr. Brooks was in neither the Lecture Hall nor the Skills Room.","The Otoscope was in the Simulation Lab.","Dr. Imani was not in the Simulation Lab.","The Reflex hammer was not in the Skills Room.","Dr. Chen did not have the Syringe."],
+solution:[{suspect:"Dr. Brooks",location:"Simulation Lab",object:"Otoscope"},{suspect:"Dr. Imani",location:"Lecture Hall",object:"Syringe"},{suspect:"Dr. Chen",location:"Skills Room",object:"Reflex hammer"}]
+},
+{
+title:"The Conference Mix-Up",briefing:"Three speakers left a different teaching aid in separate conference spaces. Match all assignments.",suspects:["Dr. Okafor","Dr. Lin","Dr. Patel"],locations:["Auditorium","Library","Seminar Room"],objects:["Anatomy model","Slide deck","Case notes"],
+clues:["Dr. Okafor was in neither the Library nor the Seminar Room.","The Anatomy model was in the Auditorium.","Dr. Lin was not in the Auditorium.","The Slide deck was not in the Seminar Room.","Dr. Patel did not have the Case notes."],
+solution:[{suspect:"Dr. Okafor",location:"Auditorium",object:"Anatomy model"},{suspect:"Dr. Lin",location:"Library",object:"Case notes"},{suspect:"Dr. Patel",location:"Seminar Room",object:"Slide deck"}]
+},
+{
+title:"The Specimen Handoff",briefing:"Three research teams each delivered one specimen to a different campus location. Reconstruct the fictional handoff.",suspects:["Team North","Team East","Team West"],locations:["Cold Room","Microscopy Lab","Archive"],objects:["Tissue block","Culture plate","Blood tube"],
+clues:["Team North used neither the Microscopy Lab nor the Archive.","The Tissue block was in the Cold Room.","Team East did not use the Cold Room.","The Culture plate was not in the Archive.","Team West did not carry the Blood tube."],
+solution:[{suspect:"Team North",location:"Cold Room",object:"Tissue block"},{suspect:"Team East",location:"Microscopy Lab",object:"Culture plate"},{suspect:"Team West",location:"Archive",object:"Blood tube"}]
+},
+{
+title:"The Night Call",briefing:"Three residents responded to different nonclinical simulation stations and each carried a different tool.",suspects:["Resident A","Resident B","Resident C"],locations:["Control Room","Mock Ward","Debrief Room"],objects:["Timer","Checklist","Stethoscope"],
+clues:["Resident A was in neither the Mock Ward nor the Debrief Room.","The Timer was in the Control Room.","Resident B was not in the Control Room.","The Checklist was not in the Debrief Room.","Resident C did not carry the Stethoscope."],
+solution:[{suspect:"Resident A",location:"Control Room",object:"Timer"},{suspect:"Resident B",location:"Mock Ward",object:"Stethoscope"},{suspect:"Resident C",location:"Debrief Room",object:"Checklist"}]
+},
+{
+title:"The Library Return",briefing:"Three students returned different study materials to separate library desks. Match each student with the desk and item.",suspects:["Ari","Mina","Jon"],locations:["Reference Desk","East Desk","West Desk"],objects:["Atlas","Flashcards","Textbook"],
+clues:["Ari used neither the East Desk nor the West Desk.","The Atlas was at the Reference Desk.","Mina did not use the Reference Desk.","The Flashcards were not at the West Desk.","Jon did not return the Textbook."],
+solution:[{suspect:"Ari",location:"Reference Desk",object:"Atlas"},{suspect:"Mina",location:"East Desk",object:"Textbook"},{suspect:"Jon",location:"West Desk",object:"Flashcards"}]
+}
+);
