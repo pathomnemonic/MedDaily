@@ -9,9 +9,9 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 | Game | Current bank | Notes |
 |---|---:|---|
 | Medle | 117 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
-| Connections | 42 boards | Four groups of four per board; 20 new cross-specialty boards |
-| Mystery Case | 60 cases | Progressive clinical-diagnosis clues with explanations and source notes |
-| Next Best Step | 60 cases | Original clinical decision vignettes with explanations and source notes |
+| Connections | 52 boards | Four groups of four per board; 20 new cross-specialty boards |
+| Mystery Case | 80 cases | Progressive clinical-diagnosis clues with explanations and source notes |
+| Next Best Step | 80 cases | Original clinical decision vignettes with explanations and source notes |
 | Microbe Hunt | 48 organism packs | Each pack generates a deterministic word-search grid |
 | Labline | 70 prompts | Reference values, thresholds, and a few vital-sign estimates; normal ranges vary by laboratory and patient |
 | Memory Match | 160 pairs | Medication, mechanism, anatomy, finding, and diagnosis associations |
@@ -25,7 +25,7 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 
 ## What this means for daily longevity
 
-Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. The first four expansions add 30 Connections boards, 40 diagnosis cases, 40 next-step cases, 40 Labline prompts, 108 memory pairs, 40 organism packs, 9 Spelling Hive boards, 10 Word Ladders, 12 transformed nonograms, 6 fictional logic cases, 59 new Medle answers, 20 triage sequences, 30 quantitative comparisons, and 51 Anagram Sprint terms. Several games still have far fewer than 365 unique days, and the smallest puzzle formats remain the immediate priority. Practice mode draws from the same available content; it does not create new questions.
+Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. The first five expansions add 40 Connections boards, 60 diagnosis cases, 60 next-step cases, 40 Labline prompts, 108 memory pairs, 40 organism packs, 9 Spelling Hive boards, 10 Word Ladders, 12 transformed nonograms, 6 fictional logic cases, 59 new Medle answers, 20 triage sequences, 30 quantitative comparisons, and 51 Anagram Sprint terms. Several games still have far fewer than 365 unique days, and the smallest puzzle formats remain the immediate priority. Practice mode draws from the same available content; it does not create new questions.
 
 The architecture deliberately separates game engines from content datasets so banks can grow without rewriting the UI or scoring systems. However, **do not describe the current release as having 365 unique daily puzzles**.
 
