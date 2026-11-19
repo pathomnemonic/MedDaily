@@ -117,7 +117,7 @@ export function generateDeductionCase(seed: number): GeneratedDeductionCase {
   if (remaining.length !== 1 || selected.length < 5) {
     for (const clue of available) {
       if (!selected.includes(clue) && satisfies(solution, clue)) selected.push(clue);
-      if (selected.length >= 7 && countDeductionSolutions(selected) === 1) break;
+      if (selected.length >= 5 && countDeductionSolutions(selected) === 1) break;
     }
   }
 
