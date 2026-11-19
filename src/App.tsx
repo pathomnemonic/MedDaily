@@ -79,6 +79,7 @@ export default function App() {
   const [roomName,setRoomName] = useState("");
   const [joinCode,setJoinCode] = useState("");
   const [roomBusy,setRoomBusy] = useState(false);
+  const [lastShare,setLastShare] = useState("");
 
   const date = dailyDateKey();
   const scope = mode === "general" ? "general" : "specialty:" + specialty;
@@ -113,10 +114,12 @@ export default function App() {
   const seedFor=(game:GameId)=>hashSeed(date+"|"+scope+"|"+game);
 
   const openGame=(id:GameId,isPractice=false,forcedSeed?:number)=>{
-    setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??seedFor(id));setGameStartedAt(Date.now());setScreen("home");setNotice("");
+    setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??seedFor(id));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
     window.scrollTo({top:0,behavior:player.reducedMotion?"auto":"smooth"});
   };
   const finishGame=(score:number,maxScore:number,perfect:boolean)=>{
+    const gameTitle=GAMES.find(g=>g.id===activeGame)?.title??"MedDaily game";
+    setLastShare("MedDaily · "+gameTitle+"\\n"+(perfect?"Perfect run":score+" / "+maxScore+" points")+"\\nPlay: https://pathomnemonic.github.io/MedDaily/");
     if(practice){setNotice("Free-play round complete. It did not affect your daily record.");return;}
     const result={date,game:activeGame!,scope,score,maxScore,perfect,durationSeconds:Math.max(0,Math.round((Date.now()-gameStartedAt)/1000))};
     const nextPlayer = recordResult(player,result);
@@ -199,6 +202,7 @@ export default function App() {
           <GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(mode==="general"?"general":specialty) as never} onDone={finishGame}/>
         </section>
         {room&&<RoomScores room={room}/>}
+        {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"MedDaily result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
         <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode"}</span></div>
       </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak}/>:screen==="settings"?<SettingsPage player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} configured={multiplayerConfigured()} game={firstTodo} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,false,r.seed)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} today={date} doneToday={doneToday} openGame={openGame} firstTodo={firstTodo}/>}
     </main>
