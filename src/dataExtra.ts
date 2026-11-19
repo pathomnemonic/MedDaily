@@ -152,6 +152,7 @@ export interface HivePuzzle {
   pangram: string;
   hint: string;
 }
+export const medicalHiveTitles = new Set(["Triage Garden","Healing Letters","Medical Mix","Stomach Set","Therapy Garden","Organic Chemistry","Nuclear Medicine","Stainer's Bench","Retinal Signals","Glucose Circuit","Folates and Salts","Steroid Shelf","Plaster Cast","Sterile Cluster","Thermal Control","Hematic Signals","Gastric Garden","Inhaler Station","Steroid Pathway","Pulse Check","Biochemical Pathways","Fracture Clinic","Bacterial Culture","Migraine Pathway","Pregnancy Test","Diagnostic Signs","Pharmacy Shelf","Cortisol Rhythm","Glucagon Release","Steroid Effects","Vitamin Cabinet","Heparin Protocol","Neuronal Network","Adrenal Cortex","Sedation Suite","Pituitary Review","Vascular Surgery","Capillary Bed"]);
 export const spellingHivePuzzles: HivePuzzle[] = [
   {
     title:"Triage Garden",
