@@ -843,6 +843,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   const [mismatches, setMismatches] = useState(0);
   const [combo, setCombo] = useState(0);
   const [score, setScore] = useState(0);
+  const [finalScore, setFinalScore] = useState<number | null>(null);
   const [seconds, setSeconds] = useState(100);
   const [started, setStarted] = useState(false);
   const [locked, setLocked] = useState(false);
@@ -862,6 +863,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   useEffect(() => {
     if (seconds !== 0 || !started || ended || done.current) return;
     done.current = true;
+    setFinalScore(score);
     setEnded(true);
     setNote("Time. Review the associations you uncovered and try Expert mode next run.");
     onDone(score, maximum, false, "Association Blitz · " + matched.length + "/" + pairSet.length + " pairs\n" + "🟩".repeat(matched.length) + "⬜".repeat(pairSet.length - matched.length) + "\n" + mismatches + " mismatches");
@@ -889,7 +891,8 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
       setRevealed([]);
       setNote(nextCombo > 1 ? "Pair found. " + nextCombo + " in a row — +" + earned + " points." : "Pair found. +" + earned + " points.");
       if (nextMatched.length === pairSet.length) {
-        const finalScore = nextScore + seconds * 2;
+        const scoreWithBonus = nextScore + seconds * 2;
+        setFinalScore(scoreWithBonus);
         done.current = true;
         setEnded(true);
         setNote("All " + pairSet.length + " pairs found. Time bonus: " + seconds * 2 + " points.");
@@ -931,7 +934,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     </div>
     <div className="association-footer"><span>{moves} turns · {mismatches} mismatches</span><span>{started ? "Find the remaining pairs" : "Timer starts on your first flip"}</span></div>
     <p className="game-feedback" aria-live="polite">{note}</p>
-    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All " + pairSet.length + " associations found in " + moves + " turns." : matched.length + " of " + pairSet.length + " pairs found. " + mismatches + " mismatches."} score={score + " / " + maximum}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
+    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All " + pairSet.length + " associations found in " + moves + " turns." : matched.length + " of " + pairSet.length + " pairs found. " + mismatches + " mismatches."} score={(finalScore ?? score) + " / " + maximum}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
   </div>;
 }
 
