@@ -725,6 +725,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   const flipTimer = useRef<number | null>(null);
 
   useEffect(() => () => { if (flipTimer.current !== null) window.clearTimeout(flipTimer.current); }, []);
+  useEffect(() => { if (ended && flipTimer.current !== null) { window.clearTimeout(flipTimer.current); flipTimer.current = null; } }, [ended]);
   useEffect(() => {
     if (ended) return;
     const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
@@ -790,7 +791,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
       {cards.map((card) => {
         const isMatched = matched.includes(card.pairId);
         const isRevealed = revealed.includes(card.id);
-        return <button key={card.id} type="button" className={"association-card" + (isMatched ? " matched" : "") + (isRevealed ? " revealed" : "")} onClick={() => flip(card.id)} disabled={ended || isMatched || (locked && !isRevealed)} aria-label={isMatched || isRevealed ? card.label : "Hidden association card"}>
+        return <button key={card.id} type="button" className={"association-card" + (isMatched ? " matched" : "") + (isRevealed ? " revealed" : "")} onClick={() => flip(card.id)} disabled={ended || isMatched || locked} aria-label={isMatched || isRevealed ? card.label : "Hidden association card"}>
           {isMatched || isRevealed ? <><small>{card.side}</small><span>{card.label}</span></> : <b>✦</b>}
         </button>;
       })}
