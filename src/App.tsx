@@ -242,7 +242,7 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
   </div>;
 }
 
-const PARTY_GAME_IDS = new Set<GameId>(["connections","microbe","pairs","triage","anagram","labline","higherlower","casefile","dive","trivia","lettergrid"]);
+const PARTY_GAME_IDS = new Set<GameId>(["connections","microbe","pairs","triage","splice","labline","higher","casefile","dive","trivia","lettergrid"]);
 function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,configured,game,games,onJoin,onPlay,onLeave}:{
   room:RoomState|null;roomName:string;setRoomName:(s:string)=>void;joinCode:string;setJoinCode:(s:string)=>void;busy:boolean;configured:boolean;game:GameId;games:GameMeta[];
   onJoin:(g:GameId)=>void;onPlay:(r:RoomState)=>void;onLeave:()=>void;
