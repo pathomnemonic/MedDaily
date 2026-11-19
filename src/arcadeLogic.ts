@@ -1,4 +1,33 @@
 import { seeded, shuffle } from "./lib";
+import type { ConnectionGroup } from "./data";
+
+/** Assemble four non-overlapping category groups into a fresh Connections board. */
+export function generateConnectionsBoard(
+  puzzles: readonly (readonly ConnectionGroup[])[],
+  seed: number
+): ConnectionGroup[] {
+  const unique = new Map<string, ConnectionGroup>();
+  for (const group of puzzles.flat()) {
+    const key = group.category + "|" + [...group.words].sort().join("|");
+    if (!unique.has(key)) unique.set(key, group);
+  }
+  const groups = [...unique.values()];
+  for (let attempt = 0; attempt < 80; attempt++) {
+    const candidates = shuffle(groups, seeded((seed + attempt * 104729) >>> 0));
+    const selected: ConnectionGroup[] = [];
+    const categories = new Set<string>();
+    const words = new Set<string>();
+    for (const group of candidates) {
+      const normalized = group.words.map((word) => word.trim().toLowerCase());
+      if (categories.has(group.category) || normalized.some((word) => words.has(word))) continue;
+      selected.push(group);
+      categories.add(group.category);
+      normalized.forEach((word) => words.add(word));
+      if (selected.length === 4) return selected;
+    }
+  }
+  throw new Error("Could not assemble four distinct Connections categories.");
+}
 
 const DICE = [
   "AAEEGN","ABBJOO","ACHOPS","AFFKPS","AOOTTW","CIMOTU","DEILRX","DELRVY",
