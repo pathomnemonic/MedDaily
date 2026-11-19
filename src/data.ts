@@ -1,3 +1,4 @@
+import { diagnosisCasesExpansion7, nextStepCasesExpansion7, connectionPuzzlesExpansion7 } from "./dataClinical7";
 import { diagnosisCasesExpansion6, nextStepCasesExpansion6, connectionPuzzlesExpansion6 } from "./dataClinical6";
 import { diagnosisCasesExpansion5, nextStepCasesExpansion5, connectionPuzzlesExpansion5 } from "./dataClinical5";
 import { diagnosisCasesExpansion4, nextStepCasesExpansion4, connectionPuzzlesExpansion4 } from "./dataClinical4";
@@ -248,9 +249,9 @@ medleWords.push(...medleWordsExpansion.filter((word) => !medleWords.includes(wor
 labPrompts.push(...labPromptsExpansion2);
 pairsBank.push(...pairsBankExpansion2);
 triageCases.push(...triageCasesExpansion);
-connectionPuzzles.push(...connectionPuzzlesExpansion, ...connectionPuzzlesExpansion2, ...connectionPuzzlesExpansion3, ...connectionPuzzlesExpansion4, ...connectionPuzzlesExpansion5, ...connectionPuzzlesExpansion6);
-diagnosisCases.push(...diagnosisCasesExpansion, ...diagnosisCasesExpansion2, ...diagnosisCasesExpansion3, ...diagnosisCasesExpansion4, ...diagnosisCasesExpansion5, ...diagnosisCasesExpansion6);
-nextStepCases.push(...nextStepCasesExpansion, ...nextStepCasesExpansion2, ...nextStepCasesExpansion3, ...nextStepCasesExpansion4, ...nextStepCasesExpansion5, ...nextStepCasesExpansion6);
+connectionPuzzles.push(...connectionPuzzlesExpansion, ...connectionPuzzlesExpansion2, ...connectionPuzzlesExpansion3, ...connectionPuzzlesExpansion4, ...connectionPuzzlesExpansion5, ...connectionPuzzlesExpansion6, ...connectionPuzzlesExpansion7);
+diagnosisCases.push(...diagnosisCasesExpansion, ...diagnosisCasesExpansion2, ...diagnosisCasesExpansion3, ...diagnosisCasesExpansion4, ...diagnosisCasesExpansion5, ...diagnosisCasesExpansion6, ...diagnosisCasesExpansion7);
+nextStepCases.push(...nextStepCasesExpansion, ...nextStepCasesExpansion2, ...nextStepCasesExpansion3, ...nextStepCasesExpansion4, ...nextStepCasesExpansion5, ...nextStepCasesExpansion6, ...nextStepCasesExpansion7);
 labPrompts.push(...labPromptsExpansion);
 pairsBank.push(...pairsBankExpansion);
 microbePacks.push(...microbePacksExpansion, ...microbePacksExpansion2);
