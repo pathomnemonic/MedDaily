@@ -14,9 +14,9 @@ const GAMES: GameMeta[] = [
   {id:"medle",title:"Medle",subtitle:"The five-letter rounds",description:"Find the hidden medical word in six guesses.",icon:"▦",wash:"mint",time:"2 min",category:"Word play",level:"Easy → tricky"},
   {id:"connections",title:"Connections",subtitle:"Think in fours",description:"Sort sixteen terms into four hidden medical families.",icon:"⊞",wash:"lilac",time:"4 min",category:"Pattern logic",level:"Moderate"},
   {id:"diagnosis",title:"DoctorDle",subtitle:"Name the diagnosis",description:"Solve a clinical case in six guesses as clues unlock.",icon:"✚",wash:"peach",time:"3 min",category:"Diagnosis game",level:"Deduction"},
-  {id:"microbe",title:"Word Hunt",subtitle:"Find the hidden terms",description:"Drag through a themed 14×14 letter grid to find every hidden word.",icon:"✣",wash:"blue",time:"4 min",category:"Word search",level:"Moderate"},
+  {id:"microbe",title:"Word Hunt",subtitle:"Find the hidden terms",description:"Trace adjacent letters through a themed grid, find the hidden words, and connect the spangram.",icon:"✣",wash:"blue",time:"4 min",category:"Word search",level:"Moderate"},
   {id:"labline",title:"Labline",subtitle:"Calibrate your eye",description:"Five rapid-fire estimates of classic lab values and clinical thresholds.",icon:"⌁",wash:"pink",time:"2 min",category:"Numbers",level:"Foundational"},
-  {id:"pairs",title:"Association Blitz",subtitle:"Make the connections",description:"Flip a 24-card board, find twelve clinical pairs, and build a streak before time runs out.",icon:"◇",wash:"lime",time:"3 min",category:"Association",level:"Moderate"},
+  {id:"pairs",title:"Association Blitz",subtitle:"Make the connections",description:"Match 12 or 15 clinical pairs under a clock; expert mode adds five pairs and tightens the timer.",icon:"◇",wash:"lime",time:"3 min",category:"Association",level:"Moderate"},
   {id:"triage",title:"Triage Order",subtitle:"What comes first?",description:"Put the priorities of an emergency response in order.",icon:"⇅",wash:"orange",time:"3 min",category:"Clinical reasoning",level:"Step 2"},
   {id:"splice",title:"Anagram Sprint",subtitle:"Unscramble the specimen",description:"Unscramble five medical terms before the 75-second clock expires.",icon:"↝",wash:"mint",time:"1 min",category:"Word play",level:"Easy"},
   {id:"glyph",title:"Cell Sketch",subtitle:"Tiny picture logic",description:"Solve a nonogram with fill, empty, and pencil-mark cells.",icon:"▦",wash:"lilac",time:"2 min",category:"Visual logic",level:"Easy → tricky"},
@@ -24,7 +24,7 @@ const GAMES: GameMeta[] = [
   {id:"ladder",title:"Word Ladder",subtitle:"One letter at a time",description:"Build a one-letter-at-a-time path from the start word to the finish.",icon:"⌁",wash:"peach",time:"3 min",category:"Word play",level:"Moderate"},
   {id:"hive",title:"Medical Spelling Hive",subtitle:"Seven letters, a swarm of terms",description:"Find every accepted medical word in a seven-letter hive. Use the center tile and hunt for the pangram.",icon:"✿",wash:"gold",time:"3 min",category:"Medical wordplay",level:"Easy → tricky"},
   {id:"casefile",title:"Casefile Logic",subtitle:"The clues don't lie",description:"Solve a fictional three-person deduction grid using rooms, objects, and clues.",icon:"⌕",wash:"lilac",time:"4 min",category:"Logic puzzle",level:"Moderate"},
-  {id:"dive",title:"Deep Dive",subtitle:"Rare finds go deeper",description:"Seven timed open-answer prompts. Less obvious accepted answers earn more points.",icon:"🌊",wash:"blue",time:"4 min",category:"Open-answer trivia",level:"Think sideways"},
+  {id:"dive",title:"Deep Dive",subtitle:"Rare finds go deeper",description:"List as many valid answers as possible across seven timed prompts; rarer accepted answers earn more.",icon:"🌊",wash:"blue",time:"4 min",category:"Open-answer trivia",level:"Think sideways"},
   {id:"trivia",title:"Trivia Rumble",subtitle:"Spin. Answer. Collect badges.",description:"A six-category trivia wheel with solo and pass-and-play modes.",icon:"🎡",wash:"orange",time:"8–12 min",category:"Party quiz",level:"All levels"},
   {id:"lettergrid",title:"Letter Lab",subtitle:"Find words in the grid",description:"Connect neighboring letters to uncover as many hidden words as possible before time runs out.",icon:"🔤",wash:"mint",time:"2 min",category:"Word hunt",level:"Fast & fun"},
 ];
@@ -118,11 +118,9 @@ export default function App() {
     setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??(isPractice?hashSeed(id+"-free-"+Date.now()):seedFor(id)));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
     window.scrollTo({top:0,behavior:player.reducedMotion?"auto":"smooth"});
   };
-  const finishGame=(score:number,maxScore:number,perfect:boolean)=>{
+  const finishGame=(score:number,maxScore:number,perfect:boolean,shareText?:string)=>{
     const gameTitle=GAMES.find(g=>g.id===activeGame)?.title??"MedDaily game";
-    const filled=Math.max(0,Math.min(9,Math.round(score/Math.max(1,maxScore)*9)));
-    const shareGrid=Array.from({length:3},(_,row)=>Array.from({length:3},(_,col)=>(row*3+col)<filled?"🟩":"⬜").join("")).join("\n");
-    setLastShare("MedDaily · "+gameTitle+"\n"+shareGrid+"\n"+(perfect?"Perfect run":score+" / "+maxScore+" points")+"\nPlay: https://pathomnemonic.github.io/MedDaily/");
+    setLastShare((shareText??("MedDaily · "+gameTitle+"\n"+(perfect?"Perfect run":"Round complete")))+"\nPlay: https://pathomnemonic.github.io/MedDaily/");
     if(practice){setNotice("Free-play round complete. It did not affect your daily record.");return;}
     const result={date,game:activeGame!,scope,score,maxScore,perfect,durationSeconds:Math.max(0,Math.round((Date.now()-gameStartedAt)/1000))};
     const nextPlayer = recordResult(player,result);
@@ -163,7 +161,8 @@ export default function App() {
       const joined=await joinOrCreateRoom(joinCode,{gameId:game,scope,specialty:mode==="specialty"?specialty:"general",date,seed:seedFor(game),name:roomName||"Guest"});
       setRoomCode(joined.code);setRoom(joined);setMode(joined.scope==="general"?"general":"specialty");
       if(joined.specialty&&joined.specialty!=="general")setSpecialty(joined.specialty as Specialty);
-      setNotice("Connected to room "+joined.code+". If the code was new, you started the room; everyone entering it gets the same game.");
+      const actualTitle=GAMES.find(g=>g.id===joined.gameId)?.title??"shared game";
+      setNotice(joined.gameId===game?"Connected to room "+joined.code+" for "+actualTitle+". Everyone entering this code gets the same game.":"That code already hosts "+actualTitle+". You joined the existing game rather than starting a different one.");
     }catch(e){setNotice((e as Error).message);}
     finally{setRoomBusy(false);}
   };
@@ -205,7 +204,7 @@ export default function App() {
           <GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(mode==="general"?"general":specialty) as never} practice={practice} onDone={finishGame}/>
         </section>
         {room&&<RoomScores room={room}/>}
-        {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"MedDaily result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
+        {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><div><button className="button button-soft" onClick={()=>void navigator.clipboard?.writeText(lastShare)}>Copy result</button><button className="button button-primary" onClick={()=>{if(navigator.share)void navigator.share({title:"MedDaily result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share ↗</button></div></div>}
         <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode"}</span></div>
       </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak}/>:screen==="settings"?<SettingsPage player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} configured={multiplayerConfigured()} game={firstTodo} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,false,r.seed)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} today={date} doneToday={doneToday} openGame={openGame} freePlay={homeFreePlay} setFreePlay={setHomeFreePlay}/>}
     </main>
@@ -249,8 +248,8 @@ function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,config
 }){
   const partyGames=games.filter(g=>PARTY_GAME_IDS.has(g.id));
   const [selected,setSelected]=useState<GameId>(PARTY_GAME_IDS.has(game)?game:"connections");
-  return <div className="friends-page"><div className="friends-hero"><span className="eyebrow">THE PARTY LOBBY</span><h1>Bring your crew.</h1><p>Choose a shared game and enter the same six-character code. The first player starts it; everyone else joins by typing that code. Each player keeps their own progress while the lobby tracks the round.</p></div>
-    {!configured&&<div className="setup-warning"><b>Online rooms need Firebase enabled.</b><p>Solo and free-play modes work without setup. Real-time shared rooms require the Firebase project settings in the deployment environment; the room-code workflow is ready once connected.</p></div>}
+  return <div className="friends-page"><div className="friends-hero"><span className="eyebrow">THE PARTY LOBBY</span><h1>Bring your crew.</h1><p>The first player chooses a game and enters a six-character code to start the room. Everyone else only needs that same code; the existing room supplies the game and puzzle seed, regardless of their local study settings.</p></div>
+    {!configured&&<div className="setup-warning"><b>Online rooms need Firebase enabled.</b><p>Solo and free-play modes work without setup. Real-time shared rooms require Firebase repository variables, Anonymous Authentication, and the included Firestore rules. <a href="https://github.com/pathomnemonic/MedDaily/blob/main/docs/MULTIPLAYER_SETUP.md" target="_blank" rel="noreferrer">Open the setup guide ↗</a></p></div>}
     {room?<div className="room-card"><div className="room-code-head"><div><span className="eyebrow">YOUR SHARED GAME CODE</span><strong>{room.code}</strong></div><div className="share-actions"><button className="button button-soft" onClick={()=>void navigator.clipboard?.writeText(room.code)}>Copy code</button><button className="button button-primary" onClick={()=>{const url=location.origin+location.pathname+"?room="+room.code;const text="Join my MedDaily "+(games.find(g=>g.id===room.gameId)?.title??"game")+" room: "+room.code;if(navigator.share)void navigator.share({title:"MedDaily room",text,url}).catch(()=>{});else void navigator.clipboard?.writeText(text+" "+url);}}>Share invite ↗</button></div></div>
       <p className="room-message">{room.specialty==="general"?"Open Arcade":"Specialty daily"} · {games.find(g=>g.id===room.gameId)?.title} · {room.date}</p>
       <div className="room-players">{room.players.map((p,i)=><div key={p.uid} className="room-player"><span className="player-number">{i+1}</span><b>{p.name}</b><span>{p.finished?(p.score??0)+" pts":"Ready to play"}</span>{p.perfect&&<i>✦</i>}</div>)}</div>
@@ -259,8 +258,8 @@ function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,config
     </div>:<div className="friends-grid single-room-entry">
       <section className="friends-card"><div className="friends-card-icon">⌁</div><span className="eyebrow">SAME CODE · SAME GAME</span><h2>Enter a room code</h2><p>Use a code your group has agreed on. The first person to enter a new code starts the room; everyone else types that exact code to join.</p>
         <label>Your nickname<input maxLength={20} value={roomName} onChange={e=>setRoomName(e.target.value)} placeholder="What should we call you?"/></label>
-        <label>Shared game<select value={selected} onChange={e=>setSelected(e.target.value as GameId)}>{partyGames.map(g=><option value={g.id} key={g.id}>{g.title}</option>)}</select></label>
-        <label>Six-character code<input className="room-code-input" maxLength={6} value={joinCode} onChange={e=>setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,""))} placeholder="ABC123"/></label>
+        <label>Game for a new code<select value={selected} onChange={e=>setSelected(e.target.value as GameId)}>{partyGames.map(g=><option value={g.id} key={g.id}>{g.title}</option>)}</select></label>
+        <label>Room code · use the same code to join<input className="room-code-input" maxLength={6} value={joinCode} onChange={e=>setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,""))} placeholder="ABC123"/></label>
         <button className="button button-primary full-button" onClick={()=>onJoin(selected)} disabled={busy||!configured||joinCode.length!==6}>{busy?"Connecting…":"Join / start game"}</button>
       </section>
     </div>}
@@ -279,7 +278,7 @@ function RoomScores({room}:{room:RoomState}){
 function StatsPage({player,scope,streak}:{player:PlayerData;scope:string;streak:number}){
   const results=player.results.filter(r=>r.scope===scope);
   const perfect=results.filter(r=>r.perfect).length;
-  const achievements=achievementsFor(player,scope,player.hideStreaks?0:streak,GAMES.length);
+  const achievements=achievementsFor(player,scope,streak,GAMES.length).filter(item=>!player.hideStreaks||item.name!=="Seven-Day Signal");
   const unlocked=achievements.filter(item=>item.earned).length;
   return <div className="stats-page"><span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div></div>
     <section className="achievement-shelf"><div className="achievement-heading"><div><span className="eyebrow">UNLOCKED BY PLAYING</span><h2>Achievements</h2></div><b>{unlocked} / {achievements.length}</b></div><div className="achievement-grid">{achievements.map(item=><article key={item.name} className={"achievement-tile"+(item.earned?" earned":" locked")}><span className="achievement-mark">{item.earned?"✦":"◇"}</span><div><b>{item.name}</b><p>{item.detail}</p><small>{item.earned?"UNLOCKED":"IN PROGRESS"} · {item.progress}</small></div></article>)}</div></section>
