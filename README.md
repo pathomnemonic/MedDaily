@@ -1,6 +1,24 @@
 # MedDaily
 
+**A little curiosity. A lot of medicine.**  
 A mobile-first medical mini-game arcade built with React, TypeScript, and Vite.
+
+## What is here
+
+Twelve distinct game formats span both educational and just-for-fun play:
+
+- **Medical knowledge:** Medle, Connections, Mystery Case, Next Best Step, Microbe Hunt, Labline, Memory Match, and Triage Order.
+- **Pure puzzle fun:** Anagram Sprint, Cell Sketch (nonogram), Higher or Lower, and Word Ladder.
+
+The same UTC date + mode + specialty + game key yields the same daily seed, so groups in different time zones share the same puzzle. Open Arcade is the shared, balanced general mode and the default starting point. Specialty Dailies add shared daily sets across 26 clinical specialties and four foundational subjects. Neurology is one track like the other specialties; subspecialty topics belong inside the Neurology track rather than taking up multiple top-level slots.
+
+## Privacy and accounts
+
+- Solo play, practice, and local progress work without an account.
+- Progress is saved locally by default.
+- Optional Google sign-in can back up and merge progress in the user's private Google Drive app-data folder.
+- Optional multiplayer rooms use Firebase anonymous guest sessions; no Google login is required to join.
+- Do not enter patient-identifiable information.
 
 ## Run locally
 
@@ -9,7 +27,7 @@ npm install
 npm run dev
 \`\`\`
 
-## Build and test
+## Test and build
 
 \`\`\`sh
 npm test
@@ -17,21 +35,14 @@ npm run build
 npm run preview
 \`\`\`
 
-## Product principles
+## Deployment and optional services
 
-- Games are short, distinct, replayable, and designed for touch screens.
-- Daily puzzles are deterministic by local calendar date; practice runs never affect daily records.
-- Progress is stored locally in the browser. No account or paid backend is required.
-- Medical material is for education, not patient care. Verify clinical decisions against current guidance.
+See [Setup](docs/SETUP.md). The site can build and deploy without Google or Firebase credentials. Google Drive sync and multiplayer are optional.
 
-## Initial game modes
+## Format research
 
-Medle, Connections, Mystery Case, Next Best Step, Microbe Hunt, Labline, Memory Match, and Triage Order.
+See [Daily-game format research](docs/DLE_RESEARCH.md) for the directory scan, mechanic selection, and future game candidates.
 
-## Content
+## Medical content note
 
-Puzzle data lives independently from presentation code in \`src/data.ts\`. Each clinical case includes a brief rationale and a source note. Content is educational and should be independently reviewed before formal teaching or clinical use.
-
-## Deployment
-
-The included GitHub Actions workflow builds the PWA and deploys it to GitHub Pages. Enable Pages in the repository settings with GitHub Actions as the source.
+Medical material is for education and entertainment, not patient care or a clinical decision tool. Clinical questions include short explanations and source notes, but some source notes are reference signposts rather than live guideline verification. Verify clinical decisions against current authoritative guidance. Content should receive ongoing specialist review before formal teaching or clinical use.
