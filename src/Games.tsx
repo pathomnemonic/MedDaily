@@ -896,7 +896,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
         done.current = true;
         setEnded(true);
         setNote("All " + pairSet.length + " pairs found. Time bonus: " + seconds * 2 + " points.");
-        onDone(finalScore, maximum, mismatches === 0, "Association Blitz · " + pairSet.length + "/" + pairSet.length + " pairs\n" + "🟩".repeat(pairSet.length) + "\n" + moves + " turns · " + mismatches + " mismatches");
+        onDone(scoreWithBonus, maximum, mismatches === 0, "Association Blitz · " + pairSet.length + "/" + pairSet.length + " pairs\n" + "🟩".repeat(pairSet.length) + "\n" + moves + " turns · " + mismatches + " mismatches");
       }
     } else {
       setLocked(true);
