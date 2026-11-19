@@ -5,7 +5,7 @@ import { deductionCases, glyphPatterns, higherLowerPairs, medicalHiveTitles, scr
 import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { extendStrandsPath, makeStrandsBoard, readStrandsPath } from "./strandsLogic";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
+import { generateConnectionsBoard, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
 import { generateDeductionCase } from "./logicGenerator";
 
 type Done = (score: number, maxScore: number, perfect: boolean, shareText?: string) => void;
@@ -14,7 +14,7 @@ interface Props { seed: number; onDone: Done; specialty?: Specialty }
 export function GameBoard({ game, seed, onDone, specialty = "general", practice = false }: Props & { game: GameId; practice?: boolean }) {
   switch (game) {
     case "medle": return <Medle seed={seed} onDone={onDone} specialty={specialty} />;
-    case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} />;
+    case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} practice={practice} />;
     case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} specialty={specialty} />;
     case "microbe": return <MicrobeHunt seed={seed} onDone={onDone} specialty={specialty} />;
     case "labline": return <Labline seed={seed} onDone={onDone} specialty={specialty} />;
@@ -499,8 +499,8 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
   </div>;
 }
 
-function Connections({ seed, onDone, specialty = "general" }: Props) {
-  const board = pick(connectionPuzzles, seed, specialty, "connections");
+function Connections({ seed, onDone, specialty = "general", practice = false }: Props & { practice?: boolean }) {
+  const board = useMemo(() => practice ? generateConnectionsBoard(connectionPuzzles, seed + 31) : pick(connectionPuzzles, seed, specialty, "connections"), [seed, specialty, practice]);
   const [tiles, setTiles] = useState(() => shuffle(board.flatMap((g, group) => g.words.map((word) => ({ word, group }))), seeded(seed + 31)));
   const [selected, setSelected] = useState<string[]>([]);
   const [solved, setSolved] = useState<number[]>([]);
