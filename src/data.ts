@@ -1,4 +1,4 @@
-import { connectionPuzzlesExpansion, diagnosisCasesExpansion, nextStepCasesExpansion, labPromptsExpansion, pairsBankExpansion, microbePacksExpansion, medleWordsExpansion, higherLowerPairsExpansion, triageCasesExpansion, microbePacksExpansion2 } from "./dataExpansion";
+import { connectionPuzzlesExpansion, diagnosisCasesExpansion, nextStepCasesExpansion, labPromptsExpansion, pairsBankExpansion, microbePacksExpansion, medleWordsExpansion, triageCasesExpansion, microbePacksExpansion2 } from "./dataExpansion";
 
 export interface ConnectionGroup {
   category: string;
@@ -239,7 +239,6 @@ export const triageCases = [
 ];
 
 medleWords.push(...medleWordsExpansion.filter((word) => !medleWords.includes(word)));
-higherLowerPairs.push(...higherLowerPairsExpansion);
 triageCases.push(...triageCasesExpansion);
 connectionPuzzles.push(...connectionPuzzlesExpansion);
 diagnosisCases.push(...diagnosisCasesExpansion);
