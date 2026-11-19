@@ -538,7 +538,7 @@ const DOCTORDLE_ALIASES: Record<string, string[]> = {
   "intracerebral hemorrhage": ["ich"],
   "multiple sclerosis": ["ms"],
   "myasthenia gravis": ["mg"],
-  "guillain-barre syndrome": ["gbs", "guillain barre"],
+  "guillain barre syndrome": ["gbs", "guillain barre"],
   "systemic lupus erythematosus": ["sle", "lupus"],
   "rheumatoid arthritis": ["ra"],
   "ulcerative colitis": ["uc"],
