@@ -241,6 +241,17 @@ describe("new arcade content banks", () => {
     }
   });
 
+  it("keeps dedicated Deep Dive long-tail prompts genuinely open-ended", () => {
+    const longTail = deepDivePrompts.filter((prompt) => prompt.longTail);
+    expect(longTail.length).toBeGreaterThanOrEqual(3);
+    for (const prompt of longTail) {
+      expect(prompt.answers.length, prompt.id).toBeGreaterThanOrEqual(60);
+      const normalized = prompt.answers.map((item) => item.answer.toLowerCase().trim());
+      expect(new Set(normalized).size, prompt.id).toBe(normalized.length);
+      expect(prompt.answers.every((item) => item.tier >= 1 && item.tier <= 6), prompt.id).toBe(true);
+    }
+  });
+
   it("keeps Trivia Rumble balanced across six categories with valid choices", () => {
     expect(triviaCategories).toHaveLength(6);
     expect(triviaQuestions.length).toBeGreaterThanOrEqual(365);
