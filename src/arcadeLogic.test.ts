@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
+import { associationPairPoints, associationTimeBonus, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
 
 describe("Letter Lab grid rules", () => {
   const grid = [
@@ -80,5 +80,27 @@ describe("generated Cell Sketch variants", () => {
       expect(transformed.every((row) => row.length === 5)).toBe(true);
       expect(transformed.flat().filter(Boolean)).toHaveLength(filled);
     }
+  });
+});
+
+
+describe("Association Blitz scoring", () => {
+  it("rewards streaks without allowing the per-pair bonus to grow without bound", () => {
+    expect([0, 1, 2, 3, 4, 5, 6, 11].map(associationPairPoints)).toEqual([100, 110, 120, 130, 140, 150, 150, 150]);
+    expect(associationPairPoints(-4)).toBe(100);
+  });
+
+  it("caps the time bonus and never awards negative points", () => {
+    expect(associationTimeBonus(75)).toBe(150);
+    expect(associationTimeBonus(100)).toBe(150);
+    expect(associationTimeBonus(1)).toBe(2);
+    expect(associationTimeBonus(0)).toBe(0);
+    expect(associationTimeBonus(-10)).toBe(0);
+  });
+
+  it("keeps the twelve-pair perfect-run maximum consistent with the UI", () => {
+    const pairTotal = Array.from({ length: 12 }, (_, combo) => associationPairPoints(combo)).reduce((sum, points) => sum + points, 0);
+    expect(pairTotal).toBe(1500);
+    expect(pairTotal + associationTimeBonus(75)).toBe(1650);
   });
 });
