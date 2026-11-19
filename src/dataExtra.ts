@@ -295,7 +295,7 @@ wordLadders.push(
 
 
 wordLadders.push(
-{start:"HEAL",end:"SEEK",path:["HEAL","HEAR","SEAR","SEER","SEEK"],note:"Follow a short chain of one-letter changes."},
+{start:"SAME",end:"SAFE",path:["SAME","SAVE","SAFE"],note:"A compact three-word ladder."},
 {start:"MIND",end:"LINE",path:["MIND","MILD","MILE","TILE","TIDE","SIDE","SINE","LINE"],note:"A longer route through familiar words."},
 {start:"MULE",end:"MIND",path:["MULE","MILE","MILD","MIND"],note:"A compact ladder with two vowel changes."},
 {start:"LION",end:"RING",path:["LION","LINE","SINE","SING","RING"],note:"Move from an animal to a circular object."},
