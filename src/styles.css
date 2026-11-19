@@ -1034,3 +1034,13 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .association-card.matched{background:linear-gradient(145deg,rgba(45,139,117,.4),rgba(30,82,82,.65));border-color:var(--mint);color:#d9fff1}
 .association-footer{display:flex;justify-content:space-between;gap:8px;color:#8798bb;font:500 8px "DM Mono";letter-spacing:.3px}
 @media(max-width:520px){.association-grid{gap:5px}.association-card{min-height:88px;padding:7px 4px}.association-card span{font-size:8px}.association-card small{font-size:6px}.association-hud>div{padding:8px 3px}.association-hud b{font-size:17px}}
+
+.wordhunt-layout{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:18px;align-items:start}
+.wordhunt-layout .wordsearch-board{width:100%;max-width:540px;margin:12px auto}
+.wordhunt-layout .target-words{padding:12px;border:1px solid rgba(194,208,255,.12);border-radius:13px;background:rgba(6,12,31,.28)}
+.wordhunt-layout .target-words>div{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.wordhunt-layout .target-words span{font-size:8px;text-align:center}
+.letter-tile{touch-action:none;user-select:none;-webkit-user-select:none}
+.letter-tile.found-cell{background:rgba(114,240,197,.25);border-color:var(--mint);color:#eafff8}
+.wordhunt-progress{color:#8fa3c8;font:500 9px "DM Mono"}
+@media(max-width:760px){.wordhunt-layout{grid-template-columns:1fr}.wordhunt-layout .target-words{order:-1}.wordhunt-layout .target-words>div{grid-template-columns:repeat(3,minmax(0,1fr))}.wordhunt-layout .wordsearch-board{gap:2px}.wordhunt-layout .letter-tile{border-radius:3px;font-size:clamp(7px,2.4vw,11px)}}
