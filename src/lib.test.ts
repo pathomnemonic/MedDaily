@@ -246,9 +246,10 @@ describe("new arcade content banks", () => {
     expect(longTail.length).toBeGreaterThanOrEqual(3);
     for (const prompt of longTail) {
       expect(prompt.answers.length, prompt.id).toBeGreaterThanOrEqual(60);
-      const normalized = prompt.answers.map((item) => item.answer.toLowerCase().trim());
+      const accepted = prompt.answers.flatMap((item) => [item.answer, ...(item.aliases ?? [])]);
+      const normalized = accepted.map((answer) => answer.toLowerCase().replace(/[^a-z0-9]/g, ""));
       expect(new Set(normalized).size, prompt.id).toBe(normalized.length);
-      expect(prompt.answers.every((item) => item.tier >= 1 && item.tier <= 6), prompt.id).toBe(true);
+      expect([1,2,3,4,5,6].map((tier) => prompt.answers.filter((item) => item.tier === tier).length), prompt.id).toEqual([10,10,10,10,10,10]);
     }
   });
 
