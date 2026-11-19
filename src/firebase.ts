@@ -35,6 +35,15 @@ interface RoomDocument extends RoomInfo {
   status: "waiting" | "playing";
 }
 
+export function rankRoomPlayers(players: readonly RoomPlayer[]): RoomPlayer[] {
+  return [...players].sort((a, b) => {
+    if (a.finished !== b.finished) return Number(b.finished) - Number(a.finished);
+    const scoreDifference = (b.score ?? -1) - (a.score ?? -1);
+    if (scoreDifference !== 0) return scoreDifference;
+    return Number(b.perfect) - Number(a.perfect);
+  });
+}
+
 let app: ReturnType<typeof initializeApp> | null = null;
 function services() {
   if (!configured) throw new Error("Multiplayer is not configured yet. See the Firebase setup guide.");
