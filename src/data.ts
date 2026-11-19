@@ -243,21 +243,18 @@ export const triageCases = [
 ];
 
 medleWords.push(...medleWordsExpansion.filter((word) => !medleWords.includes(word)));
-connectionPuzzles.push(...connectionPuzzlesExpansion2, ...connectionPuzzlesExpansion3, ...connectionPuzzlesExpansion4, ...connectionPuzzlesExpansion5);
-diagnosisCases.push(...diagnosisCasesExpansion5);
-nextStepCases.push(...nextStepCasesExpansion5);
-diagnosisCases.push(...diagnosisCasesExpansion4);
-nextStepCases.push(...nextStepCasesExpansion4);
-diagnosisCases.push(...diagnosisCasesExpansion3);
-nextStepCases.push(...nextStepCasesExpansion3);
-diagnosisCases.push(...diagnosisCasesExpansion2);
-nextStepCases.push(...nextStepCasesExpansion2);
+
+
+
+
+
+
 labPrompts.push(...labPromptsExpansion2);
 pairsBank.push(...pairsBankExpansion2);
 triageCases.push(...triageCasesExpansion);
-connectionPuzzles.push(...connectionPuzzlesExpansion);
+connectionPuzzles.push(...connectionPuzzlesExpansion, ...connectionPuzzlesExpansion2, ...connectionPuzzlesExpansion3, ...connectionPuzzlesExpansion4, ...connectionPuzzlesExpansion5);
 diagnosisCases.push(...diagnosisCasesExpansion);
-nextStepCases.push(...nextStepCasesExpansion);
+nextStepCases.push(...nextStepCasesExpansion, ...nextStepCasesExpansion2, ...nextStepCasesExpansion3, ...nextStepCasesExpansion4, ...nextStepCasesExpansion5);
 labPrompts.push(...labPromptsExpansion);
 pairsBank.push(...pairsBankExpansion);
 microbePacks.push(...microbePacksExpansion, ...microbePacksExpansion2);
