@@ -2,7 +2,7 @@
 
 **Snapshot:** November 19, 2026 (gameplay parity iteration)
 
-MedDaily exposes nineteen playable game formats. The retired Next Best Step bank remains in the repository for reference but is not presented as a standalone game. The current banks are not yet a 365-day set of unique puzzles for every game.
+MedDaily exposes twenty playable game formats. The retired Next Best Step bank remains in the repository for reference but is not presented as a standalone game. The current banks are not yet a 365-day set of unique puzzles for every game.
 
 ## Curated content currently included
 
@@ -26,6 +26,7 @@ MedDaily exposes nineteen playable game formats. The retired Next Best Step bank
 | Mime Time | 135 act-it-out prompts (procedures, symptoms, ward life, instruments, specialties, patients) | Pass-the-phone charades for 1–6 players; 45-second turns, skip/got-it scoring; every prompt can be acted without props or speech |
 | Riddle Lab | 52 first-person riddles (12 microbes, 12 drugs, 10 organs, 8 molecules, 10 syndromes) | Four clues from cryptic to obvious; four options with same-kind distractors; 4/3/2/1 points by clues used |
 | Body Map Blitz | 14 organs on an original SVG body diagram | Ten timed targets per round, speed-scored, with a short fact after each; patient's right is on the viewer's left |
+| Crossword Clinic | 100+ clue/answer pairs; a fresh 6–7 word grid per seed | Generated crossing grids verified so every letter run is exactly one clued word (120 seeds tested); check, reveal, and direction toggle |
 | Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |
 
 ## What this means for daily longevity
@@ -64,3 +65,7 @@ The arcade home is now games-first: a compact HUD (streak, cleared count, Daily/
 ## Sound and music
 
 All audio is synthesized in the browser (`src/audio.ts`); there are no audio files. Sound effects and music are on by default (the top bar has mute buttons and Options has toggles), and the engine only starts after the first tap or key press because browsers require it. Each game seeds its own key, scale, tempo, and melody. A stage observer (`src/juice.ts`) plays right/wrong sounds and particle bursts from state classes, and games with their own timing opt out with `data-own-sfx`.
+
+## PWA and offline
+
+The service worker now precaches the built JS and CSS on install (so the first offline visit works), matches cached files regardless of `Vary` headers, and the manifest ships 192/512 PNG icons plus an Apple touch icon. Verified in Chromium: install, go offline, reload, and play a game. Google Fonts are not cached, so offline the display fonts fall back to system fonts. Progress is stored in `localStorage` (with JSON export/import); it has not been migrated to IndexedDB.

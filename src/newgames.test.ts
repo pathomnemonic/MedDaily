@@ -34,3 +34,28 @@ describe("Mime Time deck", () => {
     expect(mimeDeck.every((m) => m.term.trim().length > 3)).toBe(true);
   });
 });
+
+import { crosswordBank } from "./dataCrossword";
+import { isValid, makeCrossword } from "./crosswordGen";
+
+describe("Mini Crossword", () => {
+  it("has a clean clue bank", () => {
+    expect(crosswordBank.length).toBeGreaterThanOrEqual(100);
+    const words = crosswordBank.map(([w]) => w);
+    expect(new Set(words).size).toBe(words.length);
+    for (const [word, clue] of crosswordBank) {
+      expect(word, word).toMatch(/^[A-Z]{4,8}$/);
+      expect(clue.length, word).toBeGreaterThan(5);
+      expect(clue.toUpperCase().includes(word), word + " clue contains its answer").toBe(false);
+    }
+  });
+  it("generates valid, deterministic grids for many seeds", () => {
+    for (let seed = 1; seed <= 120; seed++) {
+      const cw = makeCrossword(seed);
+      expect(isValid(cw), "seed " + seed).toBe(true);
+      expect(cw.words.length).toBeGreaterThanOrEqual(6);
+      expect(new Set(cw.words.map((w) => w.word)).size).toBe(cw.words.length);
+    }
+    expect(JSON.stringify(makeCrossword(5))).toBe(JSON.stringify(makeCrossword(5)));
+  });
+});

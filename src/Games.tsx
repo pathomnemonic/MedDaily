@@ -8,6 +8,7 @@ import { letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGri
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
 import { mimeDeck } from "./dataMime";
 import { riddles, riddleOptions } from "./dataRiddles";
+import { makeCrossword } from "./crosswordGen";
 import { reward } from "./juice";
 import { sfx } from "./audio";
 import { generateDeductionCase } from "./logicGenerator";
@@ -32,6 +33,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "casefile": return <CasefileLogic seed={seed} onDone={onDone} practice={practice} />;
     case "dive": return <DeepDive seed={seed} onDone={onDone} />;
     case "trivia": return <TriviaRumble seed={seed} onDone={onDone} />;
+    case "crossword": return <CrosswordClinic seed={seed} onDone={onDone} />;
     case "riddle": return <RiddleLab seed={seed} onDone={onDone} />;
     case "bodymap": return <BodyMapBlitz seed={seed} onDone={onDone} />;
     case "mime": return <MimeTime seed={seed} onDone={onDone} />;
@@ -1458,5 +1460,102 @@ function BodyMapBlitz({ seed, onDone }: Props) {
       <p className="game-feedback" aria-live="polite">{message}</p>
       {state === "reveal" && <button className="button button-primary full-button" onClick={next}>{round === targets.length - 1 ? "See my score" : "Next organ ▶"}</button>}
     </> : <Finish title="Map complete" detail={marks.join("")} score={total + " / 100"} />}
+  </div>;
+}
+
+
+function CrosswordClinic({ seed, onDone }: Props) {
+  const cw = useMemo(() => makeCrossword(seed), [seed]);
+  const cells = useMemo(() => {
+    const map = new Map<string, { letter: string; number?: number }>();
+    cw.words.forEach((w) => [...w.word].forEach((ch, i) => {
+      const key = (w.row + (w.across ? 0 : i)) + "," + (w.col + (w.across ? i : 0));
+      const existing = map.get(key);
+      map.set(key, { letter: ch, number: i === 0 ? w.number : existing?.number });
+    }));
+    return map;
+  }, [cw]);
+  const [entries, setEntries] = useState<Record<string, string>>({});
+  const [sel, setSel] = useState<{ r: number; c: number }>(() => ({ r: cw.words[0].row, c: cw.words[0].col }));
+  const [across, setAcross] = useState(true);
+  const [wrong, setWrong] = useState<Set<string>>(new Set());
+  const [reveals, setReveals] = useState(0);
+  const [finished, setFinished] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const done = useRef(false);
+  const key = (r: number, c: number) => r + "," + c;
+  const active = cw.words.find((w) => w.across === across && [...w.word].some((_, i) => key(w.row + (w.across ? 0 : i), w.col + (w.across ? i : 0)) === key(sel.r, sel.c)))
+    ?? cw.words.find((w) => [...w.word].some((_, i) => key(w.row + (w.across ? 0 : i), w.col + (w.across ? i : 0)) === key(sel.r, sel.c)));
+  const activeCells = new Set(active ? [...active.word].map((_, i) => key(active.row + (active.across ? 0 : i), active.col + (active.across ? i : 0))) : []);
+
+  const complete = (next: Record<string, string>) => {
+    if (done.current || ![...cells].every(([k, v]) => next[k] === v.letter)) return;
+    done.current = true; setFinished(true);
+    onDone(Math.max(0, 100 - reveals * 5), 100, reveals === 0, "Crossword Clinic " + cw.words.length + " words" + (reveals ? " · " + reveals + " reveal" + (reveals > 1 ? "s" : "") : " · no reveals ✨") + "\n" + "🟩".repeat(cw.words.length));
+  };
+  const move = (dr: number, dc: number) => {
+    let r = sel.r + dr, c = sel.c + dc;
+    while (r >= 0 && c >= 0 && r < cw.size && c < cw.size && !cells.has(key(r, c))) { r += dr; c += dc; }
+    if (cells.has(key(r, c))) setSel({ r, c });
+  };
+  const advance = () => { const dir = active ? active.across : across; const dr = dir ? 0 : 1, dc = dir ? 1 : 0; if (cells.has(key(sel.r + dr, sel.c + dc))) setSel({ r: sel.r + dr, c: sel.c + dc }); };
+  const type = (letter: string) => {
+    if (finished) return;
+    const next = { ...entries, [key(sel.r, sel.c)]: letter };
+    setEntries(next); setWrong((w) => { const n = new Set(w); n.delete(key(sel.r, sel.c)); return n; });
+    sfx("pop"); advance(); complete(next);
+  };
+  const back = () => {
+    if (entries[key(sel.r, sel.c)]) { setEntries((e) => { const n = { ...e }; delete n[key(sel.r, sel.c)]; return n; }); return; }
+    const dir = active ? active.across : across;
+    const dr = dir ? 0 : -1, dc = dir ? -1 : 0;
+    if (cells.has(key(sel.r + dr, sel.c + dc))) setSel({ r: sel.r + dr, c: sel.c + dc });
+  };
+  const onKey = (e: React.KeyboardEvent) => {
+    if (/^[a-zA-Z]$/.test(e.key)) { e.preventDefault(); type(e.key.toUpperCase()); }
+    else if (e.key === "Backspace") { e.preventDefault(); back(); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); setAcross(true); move(0, 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); setAcross(true); move(0, -1); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); setAcross(false); move(1, 0); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setAcross(false); move(-1, 0); }
+    else if (e.key === " " || e.key === "Tab") { e.preventDefault(); setAcross((v) => !v); }
+  };
+  const check = () => {
+    const bad = new Set<string>();
+    for (const [k, v] of cells) if (entries[k] && entries[k] !== v.letter) bad.add(k);
+    setWrong(bad); sfx(bad.size ? "wrong" : "correct");
+  };
+  const reveal = () => {
+    const k = key(sel.r, sel.c), truth = cells.get(k)!.letter;
+    if (entries[k] === truth) return;
+    setReveals((n) => n + 1);
+    const next = { ...entries, [k]: truth };
+    setEntries(next); setWrong((w) => { const n = new Set(w); n.delete(k); return n; }); sfx("badge"); complete(next);
+  };
+  const covers = (w: (typeof cw.words)[number], r: number, c: number) => [...w.word].some((_, i) => w.row + (w.across ? 0 : i) === r && w.col + (w.across ? i : 0) === c);
+  const pickCell = (r: number, c: number) => {
+    const hasAcross = cw.words.some((w) => w.across && covers(w, r, c)), hasDown = cw.words.some((w) => !w.across && covers(w, r, c));
+    if (r === sel.r && c === sel.c && hasAcross && hasDown) setAcross((v) => !v);
+    else { setSel({ r, c }); if (!hasAcross) setAcross(false); else if (!hasDown) setAcross(true); }
+    input.current?.focus({ preventScroll: true });
+  };
+  const clueList = (isAcross: boolean) => cw.words.filter((w) => w.across === isAcross).sort((a, b) => a.number - b.number);
+  const filled = [...cells.keys()].filter((k) => entries[k]).length;
+  return <div className="game-layout crossword-game" data-own-sfx="true" onKeyDown={onKey}>
+    <div className="crossword-active"><span>{active ? active.number + (active.across ? " Across" : " Down") : ""}</span><b>{active?.clue}</b></div>
+    <input ref={input} className="crossword-input" aria-label="Type letters for the selected square" autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false} value="" onChange={(e) => { const ch = e.target.value.slice(-1); if (/^[a-zA-Z]$/.test(ch)) type(ch.toUpperCase()); }} onKeyDown={onKey} />
+    <div className="crossword-grid" role="grid" style={{ gridTemplateColumns: "repeat(" + cw.size + ", 1fr)" }}>
+      {Array.from({ length: cw.size * cw.size }, (_, i) => {
+        const r = Math.floor(i / cw.size), c = i % cw.size, k = key(r, c), cell = cells.get(k);
+        if (!cell) return <span key={k} className="xw-block" />;
+        const cls = "xw-cell" + (r === sel.r && c === sel.c ? " sel" : activeCells.has(k) ? " in-word" : "") + (wrong.has(k) ? " bad" : "") + (finished ? " done" : "");
+        return <button key={k} className={cls} role="gridcell" aria-label={"Row " + (r + 1) + " column " + (c + 1) + (cell.number ? ", clue " + cell.number : "") + (entries[k] ? ", " + entries[k] : ", empty")} onClick={() => pickCell(r, c)}>{cell.number && <i>{cell.number}</i>}{entries[k] ?? ""}</button>;
+      })}
+    </div>
+    <div className="crossword-tools"><span>{filled} / {cells.size} squares</span><span><button className="button button-quiet" onClick={check} disabled={finished}>✔ Check</button><button className="button button-quiet" onClick={reveal} disabled={finished}>💡 Reveal −5</button><button className="button button-quiet" onClick={() => setAcross((v) => !v)} disabled={finished}>↔ Direction</button></span></div>
+    <div className="crossword-clues">
+      {[true, false].map((isAcross) => <div key={String(isAcross)}><SectionLabel>{isAcross ? "ACROSS" : "DOWN"}</SectionLabel>{clueList(isAcross).map((w) => <button key={w.number + String(isAcross)} className={"xw-clue" + (active === w ? " on" : "")} onClick={() => { setAcross(w.across); setSel({ r: w.row, c: w.col }); input.current?.focus({ preventScroll: true }); }}><b>{w.number}</b> {w.clue} <small>({w.word.length})</small></button>)}</div>)}
+    </div>
+    {finished && <Finish title="Grid complete!" detail={reveals ? reveals + " letter" + (reveals > 1 ? "s" : "") + " revealed." : "Solved without a single reveal."} score={Math.max(0, 100 - reveals * 5) + " / 100"} />}
   </div>;
 }

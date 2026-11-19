@@ -33,6 +33,7 @@ const GAMES: GameMeta[] = [
   {id:"mime",title:"Mime Time",subtitle:"Act it out. No talking.",description:"Pass the phone and act out medical scenes, symptoms, and instruments while your friends guess. Beat the clock.",icon:"🎭",wash:"pink",time:"5–10 min",category:"Party charades",level:"Silly"},
   {id:"riddle",title:"Riddle Lab",subtitle:"Who am I?",description:"A germ, a drug, an organ, or a syndrome speaks in riddles. Guess early for more points.",icon:"🕵️",wash:"lilac",time:"3 min",category:"Guess who",level:"Easy → tricky"},
   {id:"bodymap",title:"Body Map Blitz",subtitle:"Tap the organ. Fast.",description:"Race to tap the right organ on the body diagram. Faster taps score more.",icon:"🫀",wash:"peach",time:"2 min",category:"Anatomy arcade",level:"Quick-fire"},
+  {id:"crossword",title:"Crossword Clinic",subtitle:"Fill the tiny grid",description:"A fresh mini crossword every time, with clues from anatomy to pharmacology. Check or reveal letters when stuck.",icon:"✏️",wash:"gold",time:"4 min",category:"Crossword",level:"Moderate"},
   {id:"lettergrid",title:"Letter Lab",subtitle:"Find words in the grid",description:"Connect neighboring letters to uncover as many hidden words as possible before time runs out.",icon:"🔤",wash:"mint",time:"2 min",category:"Word hunt",level:"Fast & fun"},
 ];
 type Shelf = "all" | "quick" | "brain" | "word" | "clinical" | "party";
@@ -42,8 +43,8 @@ const SHELVES: { id: Shelf; label: string; icon: string }[] = [
 const SHELF_OF: Record<Shelf, GameId[]> = {
   all:[],
   quick:["splice","labline","higher","medle","dive","glyph","mime","bodymap","riddle"],
-  brain:["connections","glyph","casefile","ladder","pairs","hive","riddle"],
-  word:["medle","microbe","splice","ladder","hive","lettergrid","diagnosis"],
+  brain:["connections","glyph","casefile","ladder","pairs","hive","riddle","crossword"],
+  word:["medle","microbe","splice","ladder","hive","lettergrid","diagnosis","crossword"],
   clinical:["diagnosis","triage","labline","dive","riddle","bodymap"],
   party:[...PARTY_GAMES,"trivia","mime"]
 };

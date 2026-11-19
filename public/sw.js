@@ -1,12 +1,20 @@
-const CACHE = "meddaily-shell-v1";
-const CORE = ["./", "./index.html", "./manifest.webmanifest", "./meddaily-icon.svg"];
+const CACHE = "meddaily-shell-v2";
+const CORE = ["./", "./index.html", "./manifest.webmanifest", "./meddaily-icon.svg", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 const shellUrl = new URL("./index.html", self.registration.scope).toString();
 const rootUrl = new URL("./", self.registration.scope).toString();
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      .then((cache) => cache.addAll(CORE.map((path) => new URL(path, self.registration.scope).toString())))
+      .then(async (cache) => {
+        await cache.addAll(CORE.map((path) => new URL(path, self.registration.scope).toString()));
+        // Precache the built JS/CSS the shell references so the very first offline visit works.
+        try {
+          const html = await (await fetch(shellUrl, { cache: "reload" })).text();
+          const assets = [...html.matchAll(/(?:src|href)="(\.\/assets\/[^"]+)"/g)].map((m) => new URL(m[1], self.registration.scope).toString());
+          await Promise.all(assets.map((asset) => cache.add(asset).catch(() => undefined)));
+        } catch { /* offline during install: runtime caching still fills in */ }
+      })
       .then(() => self.skipWaiting())
   );
 });
@@ -33,14 +41,14 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE).then((cache) => cache.put(shellUrl, copy));
         }
         return response;
-      }).catch(async () => (await caches.match(shellUrl)) || (await caches.match(rootUrl))
+      }).catch(async () => (await caches.match(shellUrl, { ignoreVary: true })) || (await caches.match(rootUrl, { ignoreVary: true }))
       )
     );
     return;
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
+    caches.match(request, { ignoreVary: true }).then((cached) => {
       if (cached) return cached;
       return fetch(request).then((response) => {
         if (response.ok) {

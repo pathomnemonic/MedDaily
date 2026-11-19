@@ -147,6 +147,13 @@ const ART: Record<GameId, () => ReactNode> = {
     <circle cx={150} cy={30} r={13} fill="none" stroke="#fff" strokeWidth={4} /><path d="M160 40l14 14" stroke="#fff" strokeWidth={5} strokeLinecap="round" />
     <path d="M142 30h16M150 22v16" stroke="#ffd54a" strokeWidth={0} />
   </g>,
+  crossword: () => <g>
+    {Array.from({ length: 7 }, (_, r) => Array.from({ length: 9 }, (_, c) => {
+      const on = (r === 3) || (c === 2 && r < 6) || (c === 6 && r > 0) || (r === 0 && c >= 4 && c <= 8) || (r === 5 && c >= 0 && c <= 4);
+      return on ? <g key={r + "-" + c}><rect x={22 + c * 17} y={4 + r * 15} width={16} height={14} rx={2.5} fill={c === 2 && r === 3 ? "#ffd54a" : "#fff7ea"} stroke={INK} strokeWidth={2} />{(r === 3 && c % 3 === 0) && <text x={30 + c * 17} y={15 + r * 15} textAnchor="middle" fontFamily="Lilita One, sans-serif" fontSize={10} fill={INK}>{"MEDICAL"[c % 7]}</text>}</g> : null;
+    }))}
+    <path d="M168 92l18-18 6 6-18 18-9 3z" fill="#ff6aa2" {...S} strokeWidth={2.5} />
+  </g>,
   mime: () => <g>
     <ellipse cx={100} cy={96} rx={52} ry={7} fill="#2a165855" />
     <path d="M62 30c0-18 20-24 38-24s38 6 38 24c0 26-14 52-38 52S62 56 62 30z" fill="#fff7ea" {...S} />
