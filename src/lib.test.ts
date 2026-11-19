@@ -125,6 +125,7 @@ describe("Cell Sketch nonogram clues", () => {
 
   it("gives each hidden 5x5 shape a unique solution from row and column runs", () => {
     expect(glyphPatterns.length).toBeGreaterThanOrEqual(36);
+    expect(new Set(glyphPatterns.map((puzzle) => puzzle.name)).size).toBe(glyphPatterns.length);
     for (const puzzle of glyphPatterns) {
       const pattern = puzzle.pattern;
       const rowClues = pattern.map(runs);
