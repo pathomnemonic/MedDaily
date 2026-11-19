@@ -12,7 +12,7 @@ const longDive = (
 });
 
 export const deepDiveLongTailExpansion: DeepPrompt[] = [
-  longDive("long-antimicrobials","Name an antimicrobial medication.","Pharmacology","This broad category includes antibacterial, antimycobacterial, antifungal, and antiviral agents. Rarity tiers are editorial game weights, not prescribing guidance.",[
+  longDive("long-antimicrobials","Name an antibacterial medication.","Pharmacology","The accepted set spans common first-line agents, resistant-organism therapies, and selected antimycobacterial drugs. Rarity tiers are editorial game weights, not prescribing guidance.",[
     ["Amoxicillin","Ampicillin","Penicillin G","Penicillin V","Cephalexin","Ceftriaxone","Azithromycin","Doxycycline","Ciprofloxacin","Trimethoprim-sulfamethoxazole"],
     ["Amoxicillin-clavulanate","Ampicillin-sulbactam","Piperacillin-tazobactam","Cefazolin","Cefuroxime","Cefdinir","Cefepime","Ceftazidime","Meropenem","Vancomycin"],
     ["Nafcillin","Oxacillin","Dicloxacillin","Cefpodoxime","Cefotaxime","Ceftaroline","Ertapenem","Imipenem-cilastatin","Aztreonam","Clindamycin"],
