@@ -279,7 +279,7 @@ main{max-width:1440px;margin:0 auto;padding:0 38px 54px;min-height:calc(100vh - 
 .ladder-rungs i{border-style:dashed;color:var(--gold)}
 .stats-page,.settings-page,.friends-page{max-width:900px;margin:50px auto;padding-bottom:45px}
 .stats-page h1,.settings-page h1,.friends-hero h1{font:700 38px "Space Grotesk";letter-spacing:-1.7px;margin:9px 0 28px}
-.stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .stats-grid>div{padding:22px;border-radius:17px;border:1px solid var(--line);background:rgba(22,31,61,.75)}
 .stats-grid b{display:block;font:600 29px "Space Grotesk";color:var(--mint)}.stats-grid span{color:#97a8ca;font-size:9px}
 .stats-table,.settings-card{padding:20px;margin-top:16px;border:1px solid var(--line);border-radius:17px;background:rgba(22,31,61,.72)}
