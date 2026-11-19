@@ -1,3 +1,5 @@
+import { diagnosisCases, nextStepCases, pairsBank } from "./data";
+import { hashSeed, seeded, shuffle } from "./lib";
 export type DeepTier = 1 | 2 | 3 | 4 | 5 | 6;
 export interface DeepAnswer { answer: string; tier: DeepTier; aliases?: string[] }
 export interface DeepPrompt { id: string; prompt: string; scope: string; explanation: string; answers: DeepAnswer[] }
@@ -183,3 +185,69 @@ export const triviaQuestions: TriviaQuestion[] = [
   {id:"tc07",category:"clinical",difficulty:1,question:"Which finding is most concerning for septic arthritis in a patient with an acutely swollen joint?",options:["Fever and severe pain with passive range of motion","Chronic painless crepitus","Symmetric DIP nodules","Pain that resolves with activity"],answer:0,explanation:"An acutely painful joint with restricted passive motion warrants urgent arthrocentesis to evaluate for infection."},
   {id:"tc08",category:"clinical",difficulty:1,question:"A patient has crushing chest pain and an ECG with ST elevation in contiguous leads. What is the key time-critical action?",options:["Arrange urgent reperfusion","Schedule outpatient stress testing","Wait for a second troponin before activating the pathway","Start antibiotics"],answer:0,explanation:"A STEMI requires immediate reperfusion assessment and activation; do not wait for troponin when the ECG is diagnostic."}
 ];
+
+
+function classifyTriviaTopic(raw: string): TriviaCategoryId {
+  const text = raw.toLowerCase();
+  if (/\b(drug|medication|antidote|antibiotic|insulin|anticoagulant|pharmac|dose|toxicity|overdose|reversal|beta blocker|diuretic|warfarin|heparin)\b/.test(text)) return "pharmacology";
+  if (/\b(bacter|virus|viral|fung|parasite|microb|infection|infectious|sepsis|pneumonia|meningitis|mycobacter|treponema|clostrid|staph|strep|pseudomonas|legionella|organism)\b/.test(text)) return "microbiology";
+  if (/\b(anatom|nerve|cranial|cortex|cerebell|hippocamp|artery|vein|bone|muscle|spinal|optic|retina|foramen|nephron|atrium|ventricle|diaphragm)\b/.test(text)) return "anatomy";
+  if (/\b(physiolog|electrolyte|acid.base|anion gap|potassium|sodium|calcium|hormone|thyroid|adrenal|glucose|insulin resistance|oxygen|ventilat|osmolality|aldosterone|cortisol|fev1|preload|afterload)\b/.test(text)) return "physiology";
+  if (/\b(patholog|biopsy|histolog|malignan|carcinoma|leukemia|lymphoma|tumou?r|necrosis|granuloma|amyloid|hemolytic|anemia|vasculitis|neoplasm|metaplasia|dysplasia)\b/.test(text)) return "pathology";
+  return "clinical";
+}
+
+const associationTrivia: TriviaQuestion[] = pairsBank.map(([term, definition], index) => {
+  const correct = String(definition);
+  const distractors = [...new Set(pairsBank.map((pair) => String(pair[1])).filter((value) => value !== correct && value.trim().length > 0))];
+  const chosen = shuffle(distractors, seeded(hashSeed("assoc|" + index + "|" + term))).slice(0, 3);
+  const options = shuffle([correct, ...chosen], seeded(hashSeed("order|" + term))) as [string,string,string,string];
+  return {
+    id: "assoc-" + String(index + 1).padStart(3, "0"),
+    category: classifyTriviaTopic(String(term) + " " + correct),
+    question: "Which description best matches " + term + "?",
+    options,
+    answer: options.indexOf(correct),
+    explanation: String(term) + ": " + correct,
+    difficulty: 1
+  };
+});
+
+const diagnosisTrivia: TriviaQuestion[] = diagnosisCases
+  .filter((item) => item.options.length === 4 && item.options.includes(item.answer))
+  .map((item) => ({
+    id: "diagnosis-" + item.id,
+    category: classifyTriviaTopic(item.title + " " + item.clues.join(" ") + " " + item.explanation),
+    question: "Which diagnosis best fits this presentation? " + item.clues.slice(0, 3).join(" "),
+    options: [...item.options] as [string,string,string,string],
+    answer: item.options.indexOf(item.answer),
+    explanation: item.explanation + " Reference: " + item.source,
+    difficulty: 2
+  }));
+
+const nextStepTrivia: TriviaQuestion[] = nextStepCases
+  .filter((item) => item.options.length === 4 && item.answer >= 0 && item.answer < 4)
+  .map((item) => ({
+    id: "nextstep-" + item.id,
+    category: classifyTriviaTopic(item.specialty + " " + item.vignette + " " + item.question),
+    question: item.vignette + " " + item.question,
+    options: [...item.options] as [string,string,string,string],
+    answer: item.answer,
+    explanation: item.explanation + " Reference: " + item.source,
+    difficulty: 2
+  }));
+
+// Large, curated clinical banks back the wheel so categories do not run out after a few sessions.
+triviaQuestions.push(...associationTrivia, ...diagnosisTrivia, ...nextStepTrivia);
+
+export const triviaContentCounts = {
+  authoredQuestions: 48,
+  associationQuestions: associationTrivia.length,
+  diagnosisQuestions: diagnosisTrivia.length,
+  nextStepQuestions: nextStepTrivia.length,
+  totalQuestions: triviaQuestions.length,
+  byCategory: Object.fromEntries(triviaCategories.map((category) => [
+    category.id,
+    triviaQuestions.filter((question) => question.category === category.id).length
+  ])) as Record<TriviaCategoryId, number>
+};
