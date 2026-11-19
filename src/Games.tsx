@@ -8,7 +8,7 @@ import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, ty
 import { generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
 import { generateDeductionCase } from "./logicGenerator";
 
-type Done = (score: number, maxScore: number, perfect: boolean) => void;
+type Done = (score: number, maxScore: number, perfect: boolean, shareText?: string) => void;
 type Specialty = "general" | "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
 interface Props { seed: number; onDone: Done; specialty?: Specialty }
 export function GameBoard({ game, seed, onDone, specialty = "general", practice = false }: Props & { game: GameId; practice?: boolean }) {
