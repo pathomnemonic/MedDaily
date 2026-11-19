@@ -763,8 +763,12 @@ function Labline({ seed, onDone, specialty = "general" }: Props) {
 }
 
 function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
-  const pool = useMemo(() => specialty === "neurology" ? pairsBank.slice(12, 24) : specialty === "infectious" ? pairsBank.slice(36, 46) : specialty === "cardiology" ? pairsBank.slice(0, 12) : pairsBank, [specialty]);
-  const pairSet = useMemo(() => shuffle(pool, seeded(seed + 11)).slice(0, 10), [seed, pool]);
+  const [difficulty, setDifficulty] = useState<"standard" | "expert">("standard");
+  const pairCount = difficulty === "expert" ? 15 : 12;
+  const timeLimit = difficulty === "expert" ? 75 : 100;
+  const basePool = useMemo(() => specialty === "neurology" ? pairsBank.slice(12, 24) : specialty === "infectious" ? pairsBank.slice(36, 46) : specialty === "cardiology" ? pairsBank.slice(0, 12) : pairsBank, [specialty]);
+  const pool = basePool.length >= pairCount ? basePool : pairsBank;
+  const pairSet = useMemo(() => shuffle(pool, seeded(seed + 11)).slice(0, pairCount), [seed, pool, pairCount]);
   const cards = useMemo(() => shuffle(pairSet.flatMap(([term, meaning], pairId) => [
     { id: pairId * 2, pairId, label: term, side: "TERM" },
     { id: pairId * 2 + 1, pairId, label: meaning, side: "ASSOCIATION" }
@@ -775,30 +779,33 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   const [mismatches, setMismatches] = useState(0);
   const [combo, setCombo] = useState(0);
   const [score, setScore] = useState(0);
-  const [seconds, setSeconds] = useState(75);
+  const [seconds, setSeconds] = useState(100);
+  const [started, setStarted] = useState(false);
   const [locked, setLocked] = useState(false);
   const [ended, setEnded] = useState(false);
-  const [note, setNote] = useState("Memorize the cards. Find all ten term–association pairs before time runs out.");
+  const [note, setNote] = useState("Choose a difficulty, then flip cards to find the hidden associations.");
   const done = useRef(false);
   const flipTimer = useRef<number | null>(null);
+  const maximum = pairSet.length * 150 + timeLimit * 2;
 
   useEffect(() => () => { if (flipTimer.current !== null) window.clearTimeout(flipTimer.current); }, []);
   useEffect(() => { if (ended && flipTimer.current !== null) { window.clearTimeout(flipTimer.current); flipTimer.current = null; } }, [ended]);
   useEffect(() => {
-    if (ended) return;
+    if (!started || ended) return;
     const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
     return () => window.clearInterval(timer);
-  }, [ended]);
+  }, [started, ended]);
   useEffect(() => {
-    if (seconds !== 0 || ended || done.current) return;
+    if (seconds !== 0 || !started || ended || done.current) return;
     done.current = true;
     setEnded(true);
-    setNote("Time. Review the pairs you uncovered and try to build a longer streak next run.");
-    onDone(score, 1500, false);
-  }, [seconds, ended, score, onDone]);
+    setNote("Time. Review the associations you uncovered and try Expert mode next run.");
+    onDone(score, maximum, false);
+  }, [seconds, started, ended, score, maximum, onDone]);
 
   const flip = (id: number) => {
     if (ended || locked || revealed.includes(id)) return;
+    setStarted(true);
     const card = cards.find((item) => item.id === id);
     if (!card || matched.includes(card.pairId)) return;
     const next = [...revealed, id];
@@ -821,8 +828,8 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
         const finalScore = nextScore + seconds * 2;
         done.current = true;
         setEnded(true);
-        setNote("All ten pairs found. Time bonus: " + seconds * 2 + " points.");
-        onDone(finalScore, 1500, mismatches === 0);
+        setNote("All " + pairSet.length + " pairs found. Time bonus: " + seconds * 2 + " points.");
+        onDone(finalScore, maximum, mismatches === 0);
       }
     } else {
       setLocked(true);
@@ -833,12 +840,16 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
         setRevealed([]);
         setLocked(false);
         flipTimer.current = null;
-      }, 850);
+      }, difficulty === "expert" ? 650 : 850);
     }
   };
 
   return <div className="game-layout association-game">
-    <div className="game-instructions"><span className="instruction-dot peach" /> Ten pairs are hidden in a 4 × 5 memory board. Match terms to their clinical associations, build a streak, and beat the 75-second clock.</div>
+    <div className="game-instructions"><span className="instruction-dot peach" /> Match clinical terms to their associations. Expert mode adds five pairs and shortens the clock.</div>
+    <div className="association-difficulty" role="group" aria-label="Association Blitz difficulty">
+      <button className={difficulty === "standard" ? "selected" : ""} onClick={() => { if (!started) { setDifficulty("standard"); setSeconds(100); } }} disabled={started}>Standard · 12 pairs</button>
+      <button className={difficulty === "expert" ? "selected" : ""} onClick={() => { if (!started) { setDifficulty("expert"); setSeconds(75); } }} disabled={started}>Expert · 15 pairs</button>
+    </div>
     <div className="association-hud">
       <div><b>{seconds}</b><span>SECONDS</span></div>
       <div><b>{matched.length}/{pairSet.length}</b><span>PAIRS</span></div>
@@ -854,9 +865,9 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
         </button>;
       })}
     </div>
-    <div className="association-footer"><span>{moves} turns · {mismatches} mismatches</span><span>Match streaks earn bonus points</span></div>
+    <div className="association-footer"><span>{moves} turns · {mismatches} mismatches</span><span>{started ? "Find the remaining pairs" : "Timer starts on your first flip"}</span></div>
     <p className="game-feedback" aria-live="polite">{note}</p>
-    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All ten associations found in " + moves + " turns." : matched.length + " of ten pairs found. " + mismatches + " mismatches."} score={score + " / 1500"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
+    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All " + pairSet.length + " associations found in " + moves + " turns." : matched.length + " of " + pairSet.length + " pairs found. " + mismatches + " mismatches."} score={score + " / " + maximum}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
   </div>;
 }
 
