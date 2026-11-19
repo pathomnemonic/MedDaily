@@ -8,6 +8,7 @@ import { diagnosisCasesExpansion4, nextStepCasesExpansion4, connectionPuzzlesExp
 import { diagnosisCasesExpansion3, nextStepCasesExpansion3, connectionPuzzlesExpansion3 } from "./dataClinical3";
 import { diagnosisCasesExpansion2, nextStepCasesExpansion2, connectionPuzzlesExpansion2, labPromptsExpansion2, pairsBankExpansion2 } from "./dataClinical2";
 import { connectionPuzzlesExpansion, diagnosisCasesExpansion, nextStepCasesExpansion, labPromptsExpansion, pairsBankExpansion, microbePacksExpansion, medleWordsExpansion, triageCasesExpansion, microbePacksExpansion2 } from "./dataExpansion";
+import { labPromptsExpansion3, pairsBankExpansion3, microbePacksExpansion3, triageCasesExpansion2, medleWordsExpansion3 } from "./dataUtilityExpansion";
 
 export interface ConnectionGroup {
   category: string;
@@ -248,16 +249,19 @@ export const triageCases = [
 ];
 
 medleWords.push(...medleWordsExpansion.filter((word) => !medleWords.includes(word)));
+medleWords.push(...medleWordsExpansion3.filter((word) => !medleWords.includes(word)));
 
-labPrompts.push(...labPromptsExpansion2);
+labPrompts.push(...labPromptsExpansion2, ...labPromptsExpansion3);
 pairsBank.push(...pairsBankExpansion2);
-triageCases.push(...triageCasesExpansion);
+const knownPairTerms = new Set(pairsBank.map(([term]) => term));
+pairsBank.push(...pairsBankExpansion3.filter(([term]) => !knownPairTerms.has(term)));
+triageCases.push(...triageCasesExpansion, ...triageCasesExpansion2);
 connectionPuzzles.push(...connectionPuzzlesExpansion, ...connectionPuzzlesExpansion2, ...connectionPuzzlesExpansion3, ...connectionPuzzlesExpansion4, ...connectionPuzzlesExpansion5, ...connectionPuzzlesExpansion6, ...connectionPuzzlesExpansion7, ...connectionPuzzlesExpansion8, ...connectionPuzzlesExpansion9, ...connectionPuzzlesExpansion10);
 diagnosisCases.push(...diagnosisCasesExpansion, ...diagnosisCasesExpansion2, ...diagnosisCasesExpansion3, ...diagnosisCasesExpansion4, ...diagnosisCasesExpansion5, ...diagnosisCasesExpansion6, ...diagnosisCasesExpansion7, ...diagnosisCasesExpansion8, ...diagnosisCasesExpansion9, ...diagnosisCasesExpansion10);
 nextStepCases.push(...nextStepCasesExpansion, ...nextStepCasesExpansion2, ...nextStepCasesExpansion3, ...nextStepCasesExpansion4, ...nextStepCasesExpansion5, ...nextStepCasesExpansion6, ...nextStepCasesExpansion7, ...nextStepCasesExpansion8, ...nextStepCasesExpansion9, ...nextStepCasesExpansion10);
 labPrompts.push(...labPromptsExpansion);
 pairsBank.push(...pairsBankExpansion);
-microbePacks.push(...microbePacksExpansion, ...microbePacksExpansion2);
+microbePacks.push(...microbePacksExpansion, ...microbePacksExpansion2, ...microbePacksExpansion3);
 
 // Rotate correct options deterministically across the entire clinical bank.
 for (const [index, item] of diagnosisCases.entries()) {
