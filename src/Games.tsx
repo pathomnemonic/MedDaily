@@ -635,7 +635,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     done.current = true;
     setEnded(true);
     setNote("Time. Review the pairs you uncovered and try to build a longer streak next run.");
-    onDone(score, 1650, false);
+    onDone(score, 1500, false);
   }, [seconds, ended, score, onDone]);
 
   const flip = (id: number) => {
@@ -663,7 +663,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
         done.current = true;
         setEnded(true);
         setNote("All ten pairs found. Time bonus: " + seconds * 2 + " points.");
-        onDone(finalScore, 1650, mismatches === 0);
+        onDone(finalScore, 1500, mismatches === 0);
       }
     } else {
       setLocked(true);
@@ -697,7 +697,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     </div>
     <div className="association-footer"><span>{moves} turns · {mismatches} mismatches</span><span>Match streaks earn bonus points</span></div>
     <p className="game-feedback" aria-live="polite">{note}</p>
-    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All ten associations found in " + moves + " turns." : matched.length + " of ten pairs found. " + mismatches + " mismatches."} score={score + " / 1650"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
+    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All ten associations found in " + moves + " turns." : matched.length + " of ten pairs found. " + mismatches + " mismatches."} score={score + " / 1500"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
   </div>;
 }
 
