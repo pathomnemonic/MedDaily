@@ -1013,6 +1013,7 @@ function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boo
     else setNote("Good step. Keep going.");
   };
   return <div className="game-layout">
+    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY LADDER" : "CURATED DAILY LADDER"}</div>
     <div className="game-instructions"><span className="instruction-dot peach" /> Build a word ladder from the start word to the end word. Change one letter at a time; all intermediate steps must be words.</div>
     <div className="ladder-ends"><span>START <b>{item.start}</b></span><span>FINISH <b>{item.end}</b></span></div>
     <div className="ladder-rungs">{entered.map((w, i) => <span key={i}>{w}</span>)}{!ended && <i>?</i>}</div>
