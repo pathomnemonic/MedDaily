@@ -1,6 +1,6 @@
 # Content inventory and expansion priorities
 
-**Snapshot:** November 19, 2026 (content expansion batch 7)
+**Snapshot:** November 19, 2026 (content expansion batch 8)
 
 MedDaily has fourteen playable game formats. This is a functioning first release with a broad specialty structure, not yet a 365-day set of unique content for every game.
 
@@ -19,9 +19,9 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 | Anagram Sprint | 81 terms | Three-guess word scramble |
 | Cell Sketch | 18 unique-named 5×5 nonograms (6 originals plus rotations/reflections) | Row and column run clues; CI verifies one valid solution per board |
 | Higher or Lower | 46 comparisons | Quantitative comparisons, including ties |
-| Word Ladder | 16 ladders | Each intended solution path uses real words and one-letter changes |
-| Spelling Hive | 14 seven-letter boards | Curated answer sets, center-letter rule, and pangram bonus |
-| Casefile Logic | 9 cases | Fictional deduction puzzles; one-to-one assignment rules |
+| Word Ladder | 26 ladders | Each intended solution path uses real words and one-letter changes |
+| Spelling Hive | 24 seven-letter boards | Curated answer sets, center-letter rule, and pangram bonus |
+| Casefile Logic | 15 cases | Fictional deduction puzzles; one-to-one assignment rules |
 
 ## What this means for daily longevity
 
@@ -38,7 +38,7 @@ Clinical cases are filtered toward specialties where curated mappings exist, inc
 ## Recommended next content work
 
 Prioritize the smallest banks first:
-1. Expand Casefile Logic and Spelling Hive to at least 50 distinct daily sets each.
+1. Expand Casefile Logic and Spelling Hive to at least 50 distinct daily sets each (current: 15 and 24).
 2. Expand Cell Sketch and Word Ladder while preserving one-solution and valid-path checks.
 3. Add specialty-reviewed Connections boards and clinical cases for tracks whose current content falls back to general banks.
 4. Add original/licensed visual material for Framed-style ECG, imaging, histology, gross pathology, and anatomy recognition.
