@@ -260,3 +260,14 @@ export function labRange(value: number, seed: number): { min: number; max: numbe
 }
 /** Bonus for consecutive strong rounds: 0, 10, 20, 30, 30... (the first strong round starts the streak). */
 export const labStreakBonus = (streakBefore: number): number => Math.min(30, streakBefore * 10);
+
+/**
+ * Body Map Blitz scoring for one tap. `distFrac` is the gap between the tap and the nearest edge of the target,
+ * as a fraction of the diagram's width (0 when the tap is inside). Inside scores 6–10 by speed; near misses still
+ * earn partial credit, so every tap is graded by how close it landed rather than hit-or-miss.
+ */
+export function bodyTapPoints(inside: boolean, distFrac: number, elapsedSeconds: number): number {
+  if (inside) return elapsedSeconds <= 4 ? 10 : elapsedSeconds <= 8 ? 8 : 6;
+  if (!(distFrac >= 0)) return 0;
+  return distFrac <= 0.03 ? 5 : distFrac <= 0.06 ? 3 : distFrac <= 0.1 ? 1 : 0;
+}
