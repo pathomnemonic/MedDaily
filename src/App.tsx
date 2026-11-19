@@ -119,7 +119,7 @@ export default function App() {
     setPlayer(nextPlayer);
     setNotice(hasDriveConnection() ? "Result saved. Syncing your private Drive copy…" : "Daily result saved on this device.");
     if (hasDriveConnection()) {
-      void syncIfConnected(nextPlayer).then((merged)=>{ if (merged) { savePlayer(merged); setPlayer(merged); setNotice("Daily result saved and synced to your private Google Drive data."); } }).catch((error)=>setNotice("Saved locally; Google Drive needs reconnecting: "+(error as Error).message));
+      void syncIfConnected(nextPlayer).then((merged: PlayerData | null)=>{ if (merged) { savePlayer(merged); setPlayer(merged); setNotice("Daily result saved and synced to your private Google Drive data."); } }).catch((error: unknown)=>setNotice("Saved locally; Google Drive needs reconnecting: "+(error instanceof Error ? error.message : "Unknown sync error")));
     }
     if(player.sound)playChime();
     if(roomCode) void submitRoomScore(roomCode,score,maxScore,perfect).catch(e=>setNotice((e as Error).message));

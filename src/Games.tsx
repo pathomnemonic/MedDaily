@@ -66,7 +66,7 @@ function Finish({ title, detail, score, children }: { title: string; detail: str
 }
 function SectionLabel({ children }: { children: ReactNode }) { return <div className="section-label">{children}</div>; }
 
-function Medle({ seed, onDone, specialty }: Props) {
+function Medle({ seed, onDone, specialty = "general" }: Props) {
   const pool = specialty === "general" ? medleWords : medleWords.filter((w) => specialty === "neurology" ? ["BRAIN","NERVE","OPTIC","VAGUS","ULNAR","SPASM","MOTOR","COMAS"].includes(w) : specialty === "cardiology" ? ["AORTA","VALVE","SHOCK","RALES","SPASM","ACUTE"].includes(w) : specialty === "infectious" ? ["STAPH","STREP","VIRAL","YEAST","SPORE","TITER","COCCI","PRION"].includes(w) : true);
   const answer = pool[seed % pool.length] ?? "ACUTE";
   const [guess, setGuess] = useState("");
@@ -98,7 +98,7 @@ function Medle({ seed, onDone, specialty }: Props) {
   </div>;
 }
 
-function Connections({ seed, onDone, specialty }: Props) {
+function Connections({ seed, onDone, specialty = "general" }: Props) {
   const board = pick(connectionPuzzles, seed, specialty, "connections");
   const [tiles, setTiles] = useState(() => shuffle(board.flatMap((g, group) => g.words.map((word) => ({ word, group }))), seeded(seed + 31)));
   const [selected, setSelected] = useState<string[]>([]);
@@ -136,7 +136,7 @@ function Connections({ seed, onDone, specialty }: Props) {
   </div>;
 }
 
-function MysteryCase({ seed, onDone, specialty }: Props) {
+function MysteryCase({ seed, onDone, specialty = "general" }: Props) {
   const item = pick(diagnosisCases, seed, specialty, "diagnosis");
   const [clueCount, setClueCount] = useState(1);
   const [guesses, setGuesses] = useState(0);
@@ -160,7 +160,7 @@ function MysteryCase({ seed, onDone, specialty }: Props) {
   </div>;
 }
 
-function NextStep({ seed, onDone, specialty }: Props) {
+function NextStep({ seed, onDone, specialty = "general" }: Props) {
   const raw = pick(nextStepCases, seed, specialty, "nextstep");
   const item = raw.id === "n01" ? { ...raw, explanation: raw.explanation.replace("below 3.3 mEq/L", "below 3.5 mEq/L") } : raw;
   const [choice, setChoice] = useState<number | null>(null);
@@ -182,7 +182,7 @@ function NextStep({ seed, onDone, specialty }: Props) {
   </div>;
 }
 
-function MicrobeHunt({ seed, onDone, specialty }: Props) {
+function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
   const pack = pick(microbePacks, seed, specialty, "microbe");
   const board = useMemo(() => makeWordSearch(pack.words, 14, seed + 99), [pack, seed]);
   const words = board.placed;
@@ -217,7 +217,7 @@ function MicrobeHunt({ seed, onDone, specialty }: Props) {
   </div>;
 }
 
-function Labline({ seed, onDone, specialty }: Props) {
+function Labline({ seed, onDone, specialty = "general" }: Props) {
   const item = pick(labPrompts, seed, specialty, "labline");
   const [value, setValue] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -241,7 +241,7 @@ function Labline({ seed, onDone, specialty }: Props) {
   </div>;
 }
 
-function MemoryMatch({ seed, onDone, specialty }: Props) {
+function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   const pool = useMemo(() => specialty === "neurology" ? pairsBank.slice(12, 24) : specialty === "infectious" ? pairsBank.slice(36, 46) : specialty === "cardiology" ? pairsBank.slice(0, 12) : pairsBank, [specialty]);
   const pairs = useMemo(() => shuffle(pool, seeded(seed + 11)).slice(0, 6), [seed, pool]);
   const left = useMemo(() => shuffle(pairs.map((p, id) => ({ id, label: p[0] })), seeded(seed + 12)), [pairs, seed]);
@@ -269,7 +269,7 @@ function MemoryMatch({ seed, onDone, specialty }: Props) {
   </div>;
 }
 
-function TriageOrder({ seed, onDone, specialty }: Props) {
+function TriageOrder({ seed, onDone, specialty = "general" }: Props) {
   const item = pick(triageCases, seed, specialty, "triage");
   const [steps, setSteps] = useState(() => shuffle(item.steps, seeded(seed + 21)));
   const [submitted, setSubmitted] = useState(false);
@@ -324,7 +324,7 @@ function CellSketch({ seed, onDone }: Props) {
   const colClues = item.pattern[0].map((_, c) => item.pattern.reduce((n, row) => n + row[c], 0));
   const check = () => {
     const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, value, c) => m + (Boolean(value) === cells[r][c] ? 1 : 0), 0), 0);
-    setChecked(true); onDone(Math.round(correct / 25 * 100), 100, correct === 25 && total > 0);
+    setChecked(true); onDone(Math.round(correct / 25 * 100), 100, correct === 25);
   };
   return <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot lilac" /> Fill the 5×5 grid using the row and column counts. A number tells you how many cells in that line are filled. This is a tiny nonogram.</div>
