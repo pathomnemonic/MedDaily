@@ -165,7 +165,8 @@ describe("expanded content integrity", () => {
     expect(triageCases.length).toBeGreaterThanOrEqual(42);
     expect(medleWords.length).toBeGreaterThanOrEqual(140);
     expect(scrambleWordsExtended.length).toBeGreaterThanOrEqual(110);
-    expect(higherLowerPairs.length).toBeGreaterThanOrEqual(66);
+    expect(higherLowerPairs.length).toBeGreaterThanOrEqual(110);
+    expect(higherLowerPairs.filter((item) => "fun" in item)).toHaveLength(50);
     expect(new Set(labPrompts.map((item) => item.id)).size).toBe(labPrompts.length);
     expect(new Set(pairsBank.map(([term]) => term)).size).toBe(pairsBank.length);
     expect(new Set(microbePacks.map((pack) => pack.name)).size).toBe(microbePacks.length);
