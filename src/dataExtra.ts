@@ -254,7 +254,7 @@ wordLadders.push(
 {start:"FINE",end:"MOVE",path:["FINE","FIVE","DIVE","LIVE","LOVE","MOVE"],note:"One letter changes at each step."},
 {start:"MILE",end:"LINE",path:["MILE","TILE","TIDE","SIDE","SINE","LINE"],note:"Follow the letter changes carefully."},
 {start:"CARE",end:"LAST",path:["CARE","CASE","CASH","WASH","WISH","FISH","FIST","LIST","LAST"],note:"A multi-step path from care to last."},
-{start:"COST",end:"PATH",path:["COST","LOST","LAST","PAST","FAST","FATE","LATE","MATE","MATH","PATH"],note:"A word ladder with several turns."},
+{start:"COST",end:"FAST",path:["COST","LOST","LAST","PAST","FAST"],note:"A word ladder with several turns."},
 {start:"EARS",end:"PAST",path:["EARS","EARN","BARN","BARK","DARK","DART","PART","PARK","MARK","MARS","MASS","PASS","PAST"],note:"Change exactly one letter at every rung."},
 {start:"SEAT",end:"SELF",path:["SEAT","MEAT","MELT","BELT","BELL","CELL","SELL","SELF"],note:"The path ends at a household object."},
 {start:"GAME",end:"RARE",path:["GAME","NAME","SAME","SAVE","SAFE","SAGE","PAGE","PACE","RACE","RARE"],note:"Each intermediate word differs by one letter."},
