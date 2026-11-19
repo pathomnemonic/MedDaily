@@ -1101,3 +1101,5 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .ladder-hint{max-width:540px;margin:10px auto;padding:10px 12px;border:1px solid rgba(255,213,138,.2);border-radius:10px;background:rgba(255,213,138,.07);color:#e5d3a8;font:500 10px/1.7 "DM Mono";text-align:center}
 
 .higher-card.wrong{border-color:#ff8d9f;background:rgba(181,65,91,.16)}
+
+.pencil-row button.possible{border-color:#72edbf;background:rgba(114,240,197,.14);color:#baffdf}
