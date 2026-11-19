@@ -49,3 +49,30 @@ export function playStreak(data: PlayerData, scope?: string): number {
 export function totalPlays(data: PlayerData, scope?: string): number {
   return data.results.filter((r) => !scope || r.scope === scope).length;
 }
+
+export interface AchievementProgress {
+  name: string;
+  detail: string;
+  earned: boolean;
+  progress: string;
+}
+
+export function achievementsFor(data: PlayerData, scope: string, streak: number, totalGames: number): AchievementProgress[] {
+  const results = data.results.filter((result) => result.scope === scope);
+  const perfect = results.filter((result) => result.perfect).length;
+  const uniqueGames = new Set(results.map((result) => result.game)).size;
+  const targets = [
+    { name: "First Run", detail: "Complete your first game.", value: results.length, target: 1 },
+    { name: "Curious Mind", detail: "Try five different game formats.", value: uniqueGames, target: 5 },
+    { name: "Full Arcade", detail: "Play every game in the arcade.", value: uniqueGames, target: totalGames },
+    { name: "Perfect Five", detail: "Earn five perfect rounds.", value: perfect, target: 5 },
+    { name: "Century Club", detail: "Complete 100 rounds.", value: results.length, target: 100 },
+    { name: "Seven-Day Signal", detail: "Maintain a seven-day daily streak.", value: streak, target: 7 }
+  ];
+  return targets.map(({ name, detail, value, target }) => ({
+    name,
+    detail,
+    earned: value >= target,
+    progress: Math.min(value, target) + "/" + target
+  }));
+}
