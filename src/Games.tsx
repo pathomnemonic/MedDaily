@@ -657,7 +657,7 @@ function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
   };
   const revealHint = () => {
     if (!hintReady || ended) return;
-    const remaining = board.words.filter((word) => word !== board.spangram && !found.includes(word));
+    const remaining = board.words.filter((word) => !found.includes(word));
     const target = remaining[(seed + hintsUsed * 13) % remaining.length];
     setHintedWord(target);
     setHintsUsed((value) => value + 1);
