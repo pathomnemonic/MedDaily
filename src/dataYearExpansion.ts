@@ -145,6 +145,79 @@ export const connectionPuzzlesExpansion11: ConnectionGroup[][] = [
 {category:"Truncus arteriosus",words:["Single arterial trunk","Common semilunar valve","Aortopulmonary septation failure","22q11 deletion association"],hint:"Failure of aorticopulmonary septation."},
 {category:"Total anomalous pulmonary venous return",words:["Pulmonary veins drain to systemic venous circulation","Snowman sign","Cyanosis","Obstructed pulmonary venous return"],hint:"Pulmonary venous return fails to reach the left atrium normally."}
 ]
+,
+[
+{category:"MRSA-active antibiotics",words:["Vancomycin","Linezolid","Daptomycin","Ceftaroline"],hint:"Agents with activity against methicillin-resistant Staphylococcus aureus."},
+{category:"Antipseudomonal beta-lactams",words:["Piperacillin-tazobactam","Cefepime","Ceftazidime","Meropenem"],hint:"Common beta-lactams with Pseudomonas coverage."},
+{category:"Atypical pneumonia antibiotics",words:["Azithromycin","Doxycycline","Levofloxacin","Clarithromycin"],hint:"Agents used to cover atypical respiratory pathogens."},
+{category:"Anaerobic coverage",words:["Metronidazole","Clindamycin","Ampicillin-sulbactam","Amoxicillin-clavulanate"],hint:"Agents with clinically useful anaerobic activity."}
+],
+[
+{category:"Large-vessel vasculitis clues",words:["Jaw claudication","Arm claudication","Pulse discrepancy","Temporal artery biopsy"],hint:"Clues that suggest giant cell or Takayasu arteritis."},
+{category:"Medium-vessel vasculitis",words:["Polyarteritis nodosa","Kawasaki disease","Livedo reticularis","Mononeuritis multiplex"],hint:"Systemic medium-vessel inflammation and associated findings."},
+{category:"ANCA-associated vasculitis",words:["Granulomatosis with polyangiitis","Microscopic polyangiitis","Eosinophilic granulomatosis with polyangiitis","PR3-ANCA"],hint:"Small-vessel vasculitides associated with ANCA."},
+{category:"Immune-complex vasculitis",words:["IgA vasculitis","Cryoglobulinemic vasculitis","Leukocytoclastic vasculitis","Hypocomplementemia"],hint:"Small-vessel inflammation from immune-complex deposition."}
+],
+[
+{category:"B-cell immunodeficiencies",words:["X-linked agammaglobulinemia","Common variable immunodeficiency","Selective IgA deficiency","Hyper-IgM syndrome"],hint:"Humoral immune defects with impaired antibody function."},
+{category:"T-cell immunodeficiencies",words:["DiGeorge syndrome","Severe combined immunodeficiency","Bare lymphocyte syndrome","Chronic mucocutaneous candidiasis"],hint:"Disorders affecting cellular immunity or T-cell function."},
+{category:"Phagocyte disorders",words:["Chronic granulomatous disease","Leukocyte adhesion deficiency","Chediak-Higashi syndrome","Myeloperoxidase deficiency"],hint:"Defects in neutrophil number, trafficking, or microbial killing."},
+{category:"Complement disorders",words:["C5-C9 deficiency","C3 deficiency","C1 esterase inhibitor deficiency","CD55 deficiency"],hint:"Defects in complement-mediated host defense or regulation."}
+],
+[
+{category:"Diabetic ketoacidosis",words:["High anion gap acidosis","Ketonemia","Kussmaul respirations","Insulin deficiency"],hint:"Ketone-driven metabolic acidosis."},
+{category:"Hyperosmolar hyperglycemic state",words:["Extreme hyperglycemia","Marked hyperosmolality","Minimal ketosis","Profound dehydration"],hint:"Severe hyperglycemia with little or no ketoacidosis."},
+{category:"Adrenal crisis",words:["Refractory hypotension","Hyperkalemia","Hyponatremia","Low cortisol"],hint:"Acute glucocorticoid deficiency."},
+{category:"Thyroid storm",words:["Hyperthermia","Tachyarrhythmia","CNS dysfunction","Thionamide then iodine"],hint:"Life-threatening thyrotoxicosis."}
+],
+[
+{category:"Upper gastrointestinal bleeding",words:["Hematemesis","Melena","Elevated BUN-to-creatinine ratio","Coffee-ground emesis"],hint:"Bleeding proximal to the ligament of Treitz."},
+{category:"Lower gastrointestinal bleeding",words:["Hematochezia","Diverticulosis","Angiodysplasia","Ischemic colitis"],hint:"Common causes and presentation of distal intestinal bleeding."},
+{category:"Esophageal variceal bleeding",words:["Portal hypertension","Octreotide","Ceftriaxone","Endoscopic band ligation"],hint:"Initial management of suspected variceal hemorrhage."},
+{category:"Mallory-Weiss tear",words:["Forceful retching","Longitudinal mucosal laceration","Gastroesophageal junction","Post-emetic hematemesis"],hint:"Mucosal tear after vomiting or retching."}
+],
+[
+{category:"Calcium oxalate stones",words:["Envelope-shaped crystals","Ethylene glycol exposure","Hypercalciuria","Radiopaque calculus"],hint:"The most common kidney stone composition."},
+{category:"Uric acid stones",words:["Rhomboid crystals","Gout association","Acidic urine","Radiolucent calculus"],hint:"Purine metabolism and low urinary pH."},
+{category:"Struvite stones",words:["Coffin-lid crystals","Urease-positive bacteria","Alkaline urine","Staghorn calculus"],hint:"Magnesium ammonium phosphate stones."},
+{category:"Cystine stones",words:["Hexagonal crystals","Cystinuria","COLA aminoaciduria","Recurrent childhood stones"],hint:"Inherited defect in dibasic amino-acid transport."}
+],
+[
+{category:"Trisomy 21 findings",words:["Atrioventricular septal defect","Duodenal atresia","Single palmar crease","Hypotonia"],hint:"Common congenital and neonatal associations."},
+{category:"Trisomy 18 findings",words:["Clenched fists","Rocker-bottom feet","Micrognathia","Choroid plexus cysts"],hint:"Edwards syndrome features."},
+{category:"Trisomy 13 findings",words:["Holoprosencephaly","Postaxial polydactyly","Cleft lip and palate","Scalp defects"],hint:"Patau syndrome features."},
+{category:"Turner syndrome findings",words:["Cystic hygroma","Coarctation of the aorta","Streak ovaries","Peripheral lymphedema"],hint:"45,X-associated prenatal and postnatal findings."}
+],
+[
+{category:"Upper motor neuron findings",words:["Spasticity","Hyperreflexia","Babinski sign","Clonus"],hint:"Corticospinal tract dysfunction."},
+{category:"Lower motor neuron findings",words:["Fasciculations","Muscle atrophy","Hyporeflexia","Flaccid weakness"],hint:"Anterior horn cell, root, or peripheral nerve dysfunction."},
+{category:"Dorsal column dysfunction",words:["Loss of vibration","Loss of proprioception","Sensory ataxia","Positive Romberg sign"],hint:"Impaired discriminative sensation and position sense."},
+{category:"Spinothalamic tract dysfunction",words:["Loss of pain sensation","Loss of temperature sensation","Contralateral sensory deficit","Dissociated sensory loss"],hint:"Anterolateral system injury."}
+],
+[
+{category:"Psoriasis",words:["Silvery scale","Auspitz sign","Extensor plaques","Nail pitting"],hint:"Chronic inflammatory plaque disease."},
+{category:"Lichen planus",words:["Wickham striae","Violaceous polygonal papules","Pruritus","Oral mucosal lesions"],hint:"Classic lichenoid eruption."},
+{category:"Pemphigus vulgaris",words:["Flaccid bullae","Mucosal involvement","Positive Nikolsky sign","Intercellular IgG"],hint:"Intraepidermal blistering from desmoglein antibodies."},
+{category:"Bullous pemphigoid",words:["Tense bullae","Older adult","Subepidermal split","Linear IgG and C3"],hint:"Subepidermal autoimmune blistering disease."}
+],
+[
+{category:"Anthracycline toxicities",words:["Cardiomyopathy","Doxorubicin","Free-radical injury","Dexrazoxane"],hint:"Dose-related cardiac injury and its protective agent."},
+{category:"Platinum chemotherapy toxicities",words:["Nephrotoxicity","Ototoxicity","Peripheral neuropathy","Cisplatin"],hint:"Classic adverse effects of platinum agents."},
+{category:"Vinca alkaloid toxicities",words:["Peripheral neuropathy","Constipation","Microtubule inhibition","Vincristine"],hint:"Disruption of microtubule polymerization."},
+{category:"Taxane toxicities",words:["Neutropenia","Hypersensitivity reactions","Microtubule stabilization","Paclitaxel"],hint:"Microtubule-stabilizing chemotherapy agents."}
+],
+[
+{category:"Acute hemolytic transfusion reaction",words:["Fever and flank pain","Hypotension","Hemoglobinuria","ABO incompatibility"],hint:"Acute intravascular hemolysis after incompatible blood."},
+{category:"Febrile nonhemolytic transfusion reaction",words:["Fever and chills","Cytokine-mediated","No evidence of hemolysis","Leukoreduction"],hint:"Common noninfectious transfusion reaction."},
+{category:"Transfusion-related acute lung injury",words:["Acute hypoxemia","Bilateral pulmonary infiltrates","Noncardiogenic edema","Within six hours"],hint:"Acute lung injury temporally associated with transfusion."},
+{category:"Transfusion-associated circulatory overload",words:["Volume overload","Hypertension","Elevated BNP","Response to diuresis"],hint:"Hydrostatic pulmonary edema after transfusion."}
+],
+[
+{category:"QT prolongation",words:["Torsades de pointes risk","Hypocalcemia","Class III antiarrhythmics","Macrolide antibiotics"],hint:"Delayed ventricular repolarization."},
+{category:"PR prolongation",words:["First-degree AV block","Beta blockers","Non-dihydropyridine calcium-channel blockers","Digoxin"],hint:"Delayed conduction through the AV node."},
+{category:"QRS widening",words:["Sodium-channel blockade","Tricyclic antidepressant toxicity","Hyperkalemia","Class Ic antiarrhythmics"],hint:"Slowed ventricular depolarization."},
+{category:"ST-segment elevation patterns",words:["Transmural ischemia","Acute pericarditis","Early repolarization","Brugada pattern"],hint:"Important causes of ST-segment elevation."}
+]
 
 ];
 
