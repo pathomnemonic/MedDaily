@@ -3,7 +3,7 @@ import { connectionPuzzles, medleWords, diagnosisCases, nextStepCases, labPrompt
 import { deductionCases, glyphPatterns, medicalHiveTitles, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
 import { hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
 import { extendStrandsPath, makeStrandsBoard, readStrandsPath } from "./strandsLogic";
-import { deepDivePrompts, triviaCategories, triviaQuestions } from "./dataArcade";
+import { deepDivePrompts, triviaCategories, triviaContentCounts, triviaQuestions } from "./dataArcade";
 
 describe("daily puzzle primitives", () => {
   it("creates stable seeds for stable keys", () => {
@@ -280,6 +280,7 @@ describe("new arcade content banks", () => {
     expect(triviaCategories).toHaveLength(6);
     expect(triviaQuestions.length).toBeGreaterThanOrEqual(365);
     expect(new Set(triviaCategories.map((category) => category.id)).size).toBe(6);
+    expect(Math.min(...Object.values(triviaContentCounts.byCategory))).toBeGreaterThanOrEqual(30);
     expect(new Set(triviaQuestions.map((question) => question.id)).size).toBe(triviaQuestions.length);
     for (const category of triviaCategories) {
       expect(triviaQuestions.filter((question) => question.category === category.id).length, category.id).toBeGreaterThanOrEqual(8);
