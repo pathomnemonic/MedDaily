@@ -978,6 +978,7 @@ function AnagramSprint({ seed, onDone }: Props) {
   const [roundFinished, setRoundFinished] = useState(false);
   const [won, setWon] = useState(false);
   const [score, setScore] = useState(0);
+  const [roundResults, setRoundResults] = useState<boolean[]>([]);
   const [seconds, setSeconds] = useState(75);
   const [note, setNote] = useState("Five words. Seventy-five seconds. Solve each specimen before moving on.");
   const [ended, setEnded] = useState(false);
@@ -998,7 +999,7 @@ function AnagramSprint({ seed, onDone }: Props) {
     done.current = true;
     setEnded(true);
     setNote("Time. The remaining words are revealed below.");
-    onDone(score, 100, score === 100);
+    onDone(score, 100, score === 100, "Anagram Sprint · " + roundResults.length + "/5 rounds\\n" + roundResults.map((result) => result ? "🟩" : "⬛").join(""));
   }, [seconds, ended, score, onDone]);
 
   const check = () => {
@@ -1010,10 +1011,12 @@ function AnagramSprint({ seed, onDone }: Props) {
       const earned = hint ? 12 : nextTries === 1 ? 20 : nextTries === 2 ? 15 : 10;
       setScore((current) => current + earned);
       setWon(true);
+      setRoundResults((current) => [...current.slice(0, round), true]);
       setRoundFinished(true);
       setNote("Unscrambled. +" + earned + " points.");
     } else if (nextTries >= 3) {
       setWon(false);
+      setRoundResults((current) => [...current.slice(0, round), false]);
       setRoundFinished(true);
       setNote("Three attempts used. The answer is " + word[0] + ".");
     } else {
@@ -1026,7 +1029,7 @@ function AnagramSprint({ seed, onDone }: Props) {
     if (round === rounds.length - 1) {
       const finalScore = score;
       setEnded(true);
-      if (!done.current) { done.current = true; onDone(finalScore, 100, finalScore === 100); }
+      if (!done.current) { done.current = true; onDone(finalScore, 100, finalScore === 100, "Anagram Sprint · 5/5 rounds\\n" + roundResults.map((result) => result ? "🟩" : "⬛").join("")); }
       return;
     }
     setRound((current) => current + 1);
