@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { connectionPuzzles, medleWords, diagnosisCases, nextStepCases, labPrompts, triageCases, pairsBank, microbePacks } from "./data";
-import { deductionCases, glyphPatterns, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
+import { deductionCases, glyphPatterns, ladderDictionary, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
 import { hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
 import { deepDivePrompts, triviaCategories, triviaQuestions } from "./dataArcade";
 
@@ -215,6 +215,7 @@ describe("expanded content integrity", () => {
     expect(scrambleWordsExtended.every((item) => item[0].length >= 4 && item[1].length > 0)).toBe(true);
     expect(higherLowerPairs.every((item) => Number.isFinite(item.av) && Number.isFinite(item.bv))).toBe(true);
     for (const ladder of wordLadders) {
+      expect(ladder.path.every((word) => ladderDictionary.has(word)), ladder.path.join(" → ")).toBe(true);
       expect(ladder.path[0]).toBe(ladder.start);
       expect(ladder.path[ladder.path.length - 1]).toBe(ladder.end);
       expect(new Set(ladder.path).size).toBe(ladder.path.length);
