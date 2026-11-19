@@ -35,3 +35,10 @@ describe("pre-answer text never contains the answer", () => {
     expect(bad).toEqual([]);
   });
 });
+
+describe("Deep Scan answer lists", () => {
+  it("only list valid answers: no 'for contrast' counter-examples", () => {
+    const bad = deepDivePromptsExpanded.flatMap((p) => p.answers.filter((a) => /for contrast|not a cause|incorrect/i.test(a.answer)).map((a) => p.id + ": " + a.answer));
+    expect(bad).toEqual([]);
+  });
+});
