@@ -91,7 +91,8 @@ function SectionLabel({ children }: { children: ReactNode }) { return <div class
 const DIVE_POINTS = deepDivePointsByTier;
 const DIVE_TIERS = ["Skin deep", "Subcutaneous", "Fascia", "Muscle", "Bone", "Marrow"];
 const DIVE_SECONDS = 25;
-interface DiveResult { answer: string | null; tier: number | null; points: number }
+interface DiveResult { answer: string | null; tier: number | null; points: number; gamble?: "won" | "lost" }
+const DIVE_GAMBLE_SECONDS = 10;
 
 /** Deep Scan: seven open questions, 25 seconds each, one typed answer per question. Rarer (less obvious) valid answers scan deeper into the tissue. */
 function DeepDive({ seed, onDone }: Props) {
@@ -104,6 +105,7 @@ function DeepDive({ seed, onDone }: Props) {
   const [message, setMessage] = useState("Type one answer. The less obvious (but valid) it is, the deeper the scan reaches.");
   const [finished, setFinished] = useState(false);
   const [shake, setShake] = useState(0);
+  const [gambling, setGambling] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const done = useRef(false);
   const item = prompts[round];
@@ -121,11 +123,25 @@ function DeepDive({ seed, onDone }: Props) {
     if (seconds > 0 && seconds <= 5) sfx("tick");
     if (seconds === 0) {
       sfx("whoosh");
+      if (gambling) { loseGamble("Time ran out on the deeper scan. "); return; }
       setResults((all) => [...all.slice(0, round), { answer: null, tier: null, points: 0 }]);
       setLocked(true);
       setMessage("Scan timed out on this one.");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seconds, locked, finished, round]);
+  /** A failed gamble costs half of the points already banked on this scan. */
+  const loseGamble = (lead: string) => {
+    setResults((all) => all.map((r, i) => i === round ? { ...r, points: Math.floor(r.points / 2), gamble: "lost" as const } : r));
+    setGambling(false); setLocked(true);
+    setMessage(lead + "Half of this scan's points were lost.");
+  };
+  const goDeeper = () => {
+    if (!locked || !current?.answer || (current.tier ?? 0) >= 6 || current.gamble) return;
+    setGambling(true); setLocked(false); setEntry(""); setSeconds(DIVE_GAMBLE_SECONDS);
+    sfx("whoosh");
+    setMessage("Go deeper: find a rarer answer in " + DIVE_GAMBLE_SECONDS + " seconds, or lose half of this scan's points.");
+  };
 
   const submit = () => {
     if (locked || finished || !entry.trim()) return;
@@ -137,6 +153,20 @@ function DeepDive({ seed, onDone }: Props) {
       setMessage("Not on our list yet. It may still be right, but we can't score it. Try another answer while time remains.");
       return;
     }
+    if (gambling) {
+      if (found.match.tier > (current?.tier ?? 0)) {
+        const upgraded = deepDiveAnswerAward(found.match.tier, 0);
+        setResults((all) => all.map((r, i) => i === round ? { answer: found.match.answer, tier: found.match.tier, points: upgraded, gamble: "won" as const } : r));
+        setGambling(false); setLocked(true);
+        reward(true, null, "+" + (upgraded - (current?.points ?? 0)));
+        sfx("badge");
+        setMessage("Deeper! Gamble won.");
+      } else {
+        reward(false);
+        loseGamble(found.match.answer === current?.answer ? "Same layer. " : "That one is no deeper. ");
+      }
+      return;
+    }
     const points = deepDiveAnswerAward(found.match.tier, 0);
     setResults((all) => [...all.slice(0, round), { answer: found.match.answer, tier: found.match.tier, points }]);
     setLocked(true);
@@ -146,6 +176,7 @@ function DeepDive({ seed, onDone }: Props) {
   };
   const surface = () => {
     if (locked || finished) return;
+    if (gambling) { setGambling(false); setLocked(true); setMessage("You kept your answer."); return; }
     setResults((all) => [...all.slice(0, round), { answer: null, tier: null, points: 0 }]);
     setLocked(true);
     setMessage("You skipped this scan.");
@@ -161,6 +192,7 @@ function DeepDive({ seed, onDone }: Props) {
       return;
     }
     setRound((v) => v + 1);
+    setGambling(false);
     setSeconds(DIVE_SECONDS);
     setEntry("");
     setLocked(false);
@@ -175,8 +207,9 @@ function DeepDive({ seed, onDone }: Props) {
       <div><span className="eyebrow">SCAN</span><strong>{Math.min(round + 1, prompts.length)}<small> / 7</small></strong></div>
     </div>
     {!finished ? <>
-      <div className="dive-stage">
+      <div className={"dive-stage" + (current?.tier ? " tier-hit-" + current.tier : "")} style={{ "--depth": Math.min(1, total / 700) } as React.CSSProperties}>
         <div className="dive-sea" aria-hidden="true">
+          {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => <i key={n} className="dive-cell" style={{ left: (8 + n * 11) + "%", animationDelay: (-n * 1.7) + "s", animationDuration: (9 + (n % 4) * 2) + "s" }} />)}
           {[1, 2, 3, 4, 5, 6].map((t) => <i key={t} className={"dive-line" + (current?.tier === t ? " hit" : "")} style={{ top: depthPct(t) + "%" }}><span>{DIVE_POINTS[t - 1]}</span></i>)}
           <b className="dive-diver" style={{ top: depthPct(locked ? current?.tier ?? null : null) + "%" }}>💊</b>
         </div>
@@ -186,13 +219,14 @@ function DeepDive({ seed, onDone }: Props) {
           <p>One answer. Common answers stop at the skin; unusual ones that are still correct reach bone and marrow. Tiers are editorial, not live player data.</p>
         </div>
       </div>
-      {!locked ? <form key={shake} className={"dive-answer-row" + (shake ? " shake" : "")} onSubmit={(e) => { e.preventDefault(); submit(); }}>
+      {!locked ? <form key={shake} className={"dive-answer-row" + (shake ? " shake" : "") + (gambling ? " gambling" : "")} onSubmit={(e) => { e.preventDefault(); submit(); }}>
         <input ref={input} value={entry} onChange={(e) => setEntry(e.target.value)} autoComplete="off" autoCapitalize="off" spellCheck={false} placeholder="Type your answer…" aria-label="Your answer" />
         <button className="button button-primary" type="submit" disabled={!entry.trim()}>Scan ↓</button>
-        <button className="button button-quiet" type="button" onClick={surface}>Skip</button>
+        <button className="button button-quiet" type="button" onClick={surface}>{gambling ? "Keep it" : "Skip"}</button>
       </form> : <div className="dive-result-card">
         {current?.answer ? <>
-          <span className={"dive-tier tier-" + current.tier}>{DIVE_TIERS[(current.tier ?? 1) - 1]} · +{current.points}</span>
+          {(current.tier ?? 0) >= 5 && <div className={"dive-stinger tier-" + current.tier} key={round + "-" + current.tier}>{current.tier === 6 ? "ONE IN A MARROW" : "DEEP CUT"}</div>}
+          <span className={"dive-tier tier-" + current.tier}>{DIVE_TIERS[(current.tier ?? 1) - 1]} · +{current.points}{current.gamble === "won" ? " · gamble won" : current.gamble === "lost" ? " · gamble lost" : ""}</span>
           <h3>{current.answer}</h3>
           {(current.tier ?? 0) < 6 && <p className="dive-deeper">Deeper layers existed: {item.answers.filter((a) => a.tier > (current.tier ?? 0)).sort((a, b) => b.tier - a.tier).slice(0, 4).map((a) => a.answer).join(" · ")}</p>}
         </> : <>
@@ -201,6 +235,7 @@ function DeepDive({ seed, onDone }: Props) {
           <p className="dive-deeper">Some answers: {item.answers.slice().sort((a, b) => a.tier - b.tier).slice(0, 3).map((a) => a.answer).join(" · ")} … and deeper: {item.answers.slice().sort((a, b) => b.tier - a.tier).slice(0, 2).map((a) => a.answer).join(" · ")}</p>
         </>}
         <p>{item.explanation}</p>
+        {current?.answer && (current.tier ?? 0) < 6 && !current.gamble && <button className="button button-quiet full-button dive-gamble" onClick={goDeeper}>⬇ Go deeper · risk half for a rarer layer</button>}
         <button className="button button-primary full-button" onClick={next}>{round === prompts.length - 1 ? "Finish scan" : "Next scan ↓"}</button>
       </div>}
       <p className="game-feedback" aria-live="polite">{message}</p>

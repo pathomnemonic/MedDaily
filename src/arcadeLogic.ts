@@ -78,22 +78,64 @@ export function editDistance(a: string, b: string, limit = 3): number {
 export interface AnswerLike { answer: string; aliases?: string[] }
 export interface AnswerMatch<T extends AnswerLike> { match: T; fuzzy: boolean }
 
+/** Edit distance where swapping two neighbouring letters counts as one edit (the most common typing slip). */
+function typoDistance(a: string, b: string, limit: number): number {
+  if (Math.abs(a.length - b.length) > limit) return limit + 1;
+  const rows: number[][] = [];
+  for (let i = 0; i <= a.length; i++) {
+    rows[i] = [i];
+    for (let j = 1; j <= b.length; j++) {
+      if (i === 0) { rows[i][j] = j; continue; }
+      let d = Math.min(rows[i - 1][j] + 1, rows[i][j - 1] + 1, rows[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d = Math.min(d, rows[i - 2][j - 2] + 1);
+      rows[i][j] = d;
+    }
+  }
+  return rows[a.length][b.length];
+}
+
+const GENERIC_TAIL = / (syndrome|disease|disorder|infection|deficiency|poisoning|toxicity|cancer|carcinoma|sign|test)$/;
+/** British/American and Greek-root spelling variants collapse to one form, and doubled letters are forgiven. */
+const canon = (text: string) => text.replace(/ /g, "").replace(/ae/g, "e").replace(/oe/g, "e").replace(/ph/g, "f").replace(/ou(?=r|s)/g, "o").replace(/([a-z])\1+/g, "$1");
+/** Each accepted spelling of a text: with and without a generic tail word like "syndrome", leading articles removed. */
+const spellings = (text: string): string[] => {
+  const bare = normalize(text.replace(/\([^)]*\)/g, " ")).replace(/^(the|a|an) /, "");
+  const full = normalize(text).replace(/^(the|a|an) /, "");
+  const stripped = bare.replace(GENERIC_TAIL, "");
+  return [...new Set([full, bare, stripped.length >= 5 ? stripped : bare].map(canon))].filter(Boolean);
+};
+
 /**
- * Match free text against a curated answer list. Exact (normalized) matches win; otherwise a
- * single-typo (≤1 edit for 5–9 letters, ≤2 for longer) match is accepted only when exactly one
- * answer is that close, so a typo can never be resolved to the wrong answer.
+ * Match free text against a curated answer list, generously. Order of preference:
+ *  1. exact match after normalising spelling variants (anaemia/anemia), spacing, hyphens and doubled letters;
+ *  2. a typo-tolerant match (swapped letters count as one edit; the allowance grows with word length);
+ *  3. the player's text containing a listed answer ("I think it's hyperkalemia").
+ * A fuzzy match is only accepted when one answer is strictly closest, so a typo can never be resolved to
+ * a sibling answer (hypokalemia vs hyperkalemia).
  */
 export function matchAnswer<T extends AnswerLike>(input: string, answers: readonly T[]): AnswerMatch<T> | null {
-  const squash = (text: string) => normalize(text).replace(/ /g, "");
-  const value = squash(input);
-  if (!value) return null;
-  const forms = (item: T) => [item.answer, ...(item.aliases ?? [])].map(squash);
-  const exact = answers.find((item) => forms(item).includes(value));
+  const typed = spellings(input);
+  if (!typed.length || !typed[0]) return null;
+  const formsOf = (item: T) => [item.answer, ...(item.aliases ?? [])].flatMap(spellings);
+  const exact = answers.find((item) => formsOf(item).some((form) => typed.includes(form)));
   if (exact) return { match: exact, fuzzy: false };
-  if (value.length < 5) return null;
-  const allowed = value.length >= 10 ? 2 : 1;
-  const close = answers.filter((item) => forms(item).some((form) => form.length >= 5 && editDistance(value, form, allowed) <= allowed));
-  return close.length === 1 ? { match: close[0], fuzzy: true } : null;
+  const value = typed[typed.length - 1];
+  if (value.length < 4) return null;
+  let best = Infinity, winners: T[] = [];
+  for (const item of answers) {
+    let distance = Infinity;
+    for (const form of formsOf(item)) {
+      if (form.length < 4) continue;
+      const allowed = Math.min(form.length >= 12 ? 3 : form.length >= 8 ? 2 : form.length >= 5 ? 1 : 0, value.length >= 12 ? 3 : value.length >= 8 ? 2 : value.length >= 5 ? 1 : 0);
+      for (const t of typed) { const d = typoDistance(t, form, allowed); if (d <= allowed) distance = Math.min(distance, d); }
+    }
+    if (distance < best) { best = distance; winners = [item]; } else if (distance === best && distance < Infinity) winners.push(item);
+  }
+  if (winners.length === 1) return { match: winners[0], fuzzy: true };
+  if (winners.length > 1) return null;
+  const inside = answers.map((item) => ({ item, longest: Math.max(0, ...formsOf(item).filter((f) => f.length >= 6 && value.includes(f)).map((f) => f.length)) })).filter((x) => x.longest > 0).sort((x, y) => y.longest - x.longest);
+  if (inside.length && (inside.length === 1 || inside[0].longest > inside[1].longest)) return { match: inside[0].item, fuzzy: true };
+  return null;
 }
 
 export interface RumbleTurnState { turn: number; playerCount: number; correct: boolean }

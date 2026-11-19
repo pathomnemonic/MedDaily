@@ -1777,3 +1777,19 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .bodymap-pin{fill:#ff3b6b;stroke:#fff;stroke-width:1.2;pointer-events:none;animation:pinDrop .3s cubic-bezier(.2,1.6,.4,1)}
 @keyframes pinDrop{from{transform:scale(0);transform-box:fill-box;transform-origin:center}to{transform:scale(1);transform-box:fill-box;transform-origin:center}}
 .higher-note{display:block;margin-top:4px;font-weight:500;opacity:.8;font-size:10px}
+
+/* Deep Scan descent: drifting cells, depth darkening, rarity stinger, gamble row */
+.dive-stage{--depth:0}
+.dive-sea::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 30%,rgba(10,0,30,calc(var(--depth) * .55)));transition:background 1.2s}
+.dive-cell{position:absolute;bottom:-14px;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.55);box-shadow:inset -2px -2px 0 rgba(0,0,0,.12);animation:diveRise 10s linear infinite;pointer-events:none}
+.dive-cell:nth-child(3n){width:7px;height:7px;background:rgba(255,120,150,.6)}
+.dive-cell:nth-child(4n){width:13px;height:13px;background:rgba(255,255,255,.35)}
+@keyframes diveRise{from{transform:translateY(0) translateX(0)}50%{transform:translateY(-110px) translateX(6px)}to{transform:translateY(-230px) translateX(-4px);opacity:0}}
+.dive-diver{animation:diverBob 2.4s ease-in-out infinite}
+@keyframes diverBob{0%,100%{margin-left:-3px}50%{margin-left:3px}}
+.dive-stinger{display:block;text-align:center;margin:0 0 6px;font:400 clamp(22px,6vw,32px) var(--font-display);letter-spacing:1px;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.35);animation:stingerIn .7s cubic-bezier(.2,1.6,.4,1) both,stingerShine 2.2s .7s ease-in-out infinite}
+.dive-stinger.tier-5{color:#ffd54a}.dive-stinger.tier-6{color:#ff6b8a}
+@keyframes stingerIn{from{transform:scale(.2) rotate(-6deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes stingerShine{50%{filter:brightness(1.35) drop-shadow(0 0 10px currentColor)}}
+.dive-gamble{margin-bottom:8px;border:2px dashed hsl(calc(var(--hue) + 160) 90% 70% / .7)}
+.dive-answer-row.gambling input{box-shadow:0 0 0 3px #ff6b8a,0 0 18px #ff6b8a}

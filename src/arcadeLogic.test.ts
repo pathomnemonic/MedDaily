@@ -219,3 +219,38 @@ describe("Body Map Blitz proximity scoring", () => {
     expect(bodyTapPoints(false, Infinity, 1)).toBe(0);
   });
 });
+
+describe("Deep Scan generous matching", () => {
+  const answers = [
+    { answer: "Iron deficiency anemia", aliases: ["IDA"] },
+    { answer: "Cushing syndrome" },
+    { answer: "Hypokalemia" },
+    { answer: "Hyperkalemia" },
+    { answer: "Esophageal varices" },
+    { answer: "Pheochromocytoma" }
+  ];
+  it("forgives swapped letters, longer-word slips and British spellings", () => {
+    expect(matchAnswer("hyperkalemai", answers)?.match.answer).toBe("Hyperkalemia");
+    expect(matchAnswer("pheochromocytomma", answers)?.match.answer).toBe("Pheochromocytoma");
+    expect(matchAnswer("pheocromocitoma", answers)?.match.answer).toBe("Pheochromocytoma");
+    expect(matchAnswer("iron deficiency anaemia", answers)).toMatchObject({ fuzzy: false });
+    expect(matchAnswer("oesophageal varices", answers)?.match.answer).toBe("Esophageal varices");
+  });
+  it("accepts the short form of a syndrome and answers buried in a sentence", () => {
+    expect(matchAnswer("Cushing", answers)?.match.answer).toBe("Cushing syndrome");
+    expect(matchAnswer("i think it is hyperkalemia", answers)?.match.answer).toBe("Hyperkalemia");
+  });
+  it("still refuses to guess between siblings or accept unrelated text", () => {
+    expect(matchAnswer("hypekalemia", answers)).toBeNull();
+    expect(matchAnswer("potassium", answers)).toBeNull();
+    expect(matchAnswer("abc", answers)).toBeNull();
+  });
+});
+
+describe("Deep Scan matching with parenthetical answers", () => {
+  it("accepts the name without the qualifier in brackets", () => {
+    const answers = [{ answer: "Cushing syndrome (cortisol saturating renal 11β-HSD2)" }, { answer: "Hypercalcemia (nephrogenic DI)" }];
+    expect(matchAnswer("cushing syndrome", answers)?.match.answer).toContain("Cushing");
+    expect(matchAnswer("hypercalcemia", answers)).toMatchObject({ fuzzy: false });
+  });
+});
