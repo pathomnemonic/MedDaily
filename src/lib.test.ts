@@ -57,7 +57,8 @@ describe("daily puzzle primitives", () => {
 
 describe("content bank sanity", () => {
   it("keeps Medle answers five letters long and unique", () => {
-    expect(new Set(medleWords).size).toBe(medleWords.length);
+    expect(medleWords).toHaveLength(365);
+    expect(new Set(medleWords).size).toBe(365);
     expect(medleWords.every((word) => /^[A-Z]{5}$/.test(word))).toBe(true);
   });
 
@@ -165,7 +166,7 @@ describe("expanded content integrity", () => {
     expect(pairsBank.length).toBeGreaterThanOrEqual(200);
     expect(microbePacks.length).toBeGreaterThanOrEqual(68);
     expect(triageCases.length).toBeGreaterThanOrEqual(42);
-    expect(medleWords.length).toBeGreaterThanOrEqual(140);
+    expect(medleWords.length).toBeGreaterThanOrEqual(365);
     expect(scrambleWordsExtended.length).toBeGreaterThanOrEqual(110);
     expect(higherLowerPairs.length).toBeGreaterThanOrEqual(110);
     expect(higherLowerPairs.filter((item) => "fun" in item)).toHaveLength(50);
