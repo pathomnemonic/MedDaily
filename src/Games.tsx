@@ -5,11 +5,12 @@ import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended 
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
 import { letterWordPoints, makeLetterGrid, traceGridWord } from "./arcadeLogic";
+import { generateDeductionCase } from "./logicGenerator";
 
 type Done = (score: number, maxScore: number, perfect: boolean) => void;
 type Specialty = "general" | "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
 interface Props { seed: number; onDone: Done; specialty?: Specialty }
-export function GameBoard({ game, seed, onDone, specialty = "general" }: Props & { game: GameId }) {
+export function GameBoard({ game, seed, onDone, specialty = "general", practice = false }: Props & { game: GameId; practice?: boolean }) {
   switch (game) {
     case "medle": return <Medle seed={seed} onDone={onDone} specialty={specialty} />;
     case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} />;
@@ -23,7 +24,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general" }: Props &
     case "higher": return <HigherLower seed={seed} onDone={onDone} specialty={specialty} />;
     case "ladder": return <WordLadder seed={seed} onDone={onDone} />;
     case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
-    case "casefile": return <CasefileLogic seed={seed} onDone={onDone} />;
+    case "casefile": return <CasefileLogic seed={seed} onDone={onDone} practice={practice} />;
     case "dive": return <DeepDive seed={seed} onDone={onDone} />;
     case "trivia": return <TriviaRumble seed={seed} onDone={onDone} />;
     case "lettergrid": return <LetterGridGame seed={seed} onDone={onDone} />;
@@ -1085,8 +1086,8 @@ function wordPoints(word: string, puzzle: { pangram:string }): number {
   return base + pangram;
 }
 
-function CasefileLogic({ seed, onDone }: Props) {
-  const item = deductionCases[seed % deductionCases.length];
+function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
+  const item = useMemo(() => practice ? generateDeductionCase(seed) : deductionCases[seed % deductionCases.length], [seed, practice]);
   const blank = () => Object.fromEntries(item.suspects.map((suspect) => [suspect, { location:"", object:"" }]));
   const [assignments, setAssignments] = useState(blank);
   const [pencilMarks, setPencilMarks] = useState<Record<string, "possible" | "excluded">>({});
