@@ -257,7 +257,7 @@ export const deductionCases: DeductionCase[] = [
 
 // Batch 2: strengthen the smallest word and deduction banks.
 spellingHivePuzzles.push(
-{title:"Therapy Garden",letters:["T","H","E","R","A","P","Y"],center:"R",words:["THERAPY","HEART","EARTH","HATER","PARTY","PRAY","TRAP","RATE","TARE","PEAR","REAP","HARP","TAPER","RAPT","TARP","RATHER"],pangram:"THERAPY",hint:"The pangram names a broad process of care."},
+{title:"Therapeutic Practice",letters:["T","H","E","R","A","P","Y"],center:"R",words:["THERAPY","HEART","EARTH","HATER","PARTY","PRAY","TRAP","RATE","TARE","PEAR","REAP","HARP","TAPER","RAPT","TARP","RATHER"],pangram:"THERAPY",hint:"The pangram names a broad process of care."},
 {title:"Organic Chemistry",letters:["O","R","G","A","N","I","C"],center:"R",words:["ORGANIC","ORGAN","GRAIN","GROAN","CIGAR","RACING","CARGO","RING","RANG","ROAN","RAIN","IRON","CORN","ROAR","CARING"],pangram:"ORGANIC",hint:"The pangram describes a broad class of compounds."},
 {title:"Nuclear Medicine",letters:["N","U","C","L","E","A","R"],center:"E",words:["NUCLEAR","UNCLEAR","CLEAN","CLEAR","CRANE","LEARN","LANCE","UNCLE","EARN","NEAR","CARE","CURE","REAL","LACE","RACE","REEL"],pangram:"NUCLEAR",hint:"The pangram relates to the atom's central structure."},
 {title:"Stainer's Bench",letters:["S","T","A","I","N","E","R"],center:"R",words:["STAINER","RETAINS","RETAIN","TRAIN","RAISE","TEARS","TARES","RATES","STARE","STARS","RANT","RENT","EARN","NEAR","RAIN","RISE","TIRE","SIRE","TERN"],pangram:"STAINER",hint:"The pangram is someone or something that leaves a mark."},
