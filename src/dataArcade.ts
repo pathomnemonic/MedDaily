@@ -312,7 +312,7 @@ const associationTrivia: TriviaQuestion[] = pairsBank.map(([term, definition], i
     question: "Which description best matches " + term + "?",
     options,
     answer: options.indexOf(correct),
-    explanation: String(term) + ": " + correct,
+    explanation: "Term: " + String(term) + ". Association: " + correct,
     difficulty: 1
   };
 });
