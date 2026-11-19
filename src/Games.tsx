@@ -911,18 +911,22 @@ function AnagramSprint({ seed, onDone }: Props) {
 
 function CellSketch({ seed, onDone }: Props) {
   const item = glyphPatterns[seed % glyphPatterns.length];
-  const [cells, setCells] = useState<boolean[][]>(() => item.pattern.map((row) => row.map(() => false)));
+  const [cells, setCells] = useState<number[][]>(() => item.pattern.map((row) => row.map(() => 0)));
   const [checked, setChecked] = useState(false);
   const rowClues = item.pattern.map((row) => nonogramRuns(row));
   const colClues = item.pattern[0].map((_, c) => nonogramRuns(item.pattern.map((row) => row[c])));
+  const lineSolved = (line: number[], clue: number[]) => line.every((value) => value !== 0) && JSON.stringify(nonogramRuns(line.map((value) => value === 1 ? 1 : 0))) === JSON.stringify(clue);
   const check = () => {
-    const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, value, c) => m + (Boolean(value) === cells[r][c] ? 1 : 0), 0), 0);
-    setChecked(true); onDone(Math.round(correct / 25 * 100), 100, correct === 25);
+    const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, value, c) => m + (Boolean(value) === (cells[r][c] === 1) ? 1 : 0), 0), 0);
+    setChecked(true);
+    onDone(Math.round(correct / 25 * 100), 100, correct === 25);
   };
   return <div className="game-layout">
-    <div className="game-instructions"><span className="instruction-dot lilac" /> Fill the 5×5 grid using the row and column counts. A number tells you how many cells in that line are filled. This is a tiny nonogram.</div>
-    <div className="nonogram-wrap"><div className="nonogram-col-clues">{colClues.map((n, i) => <span key={i}>{n.length ? n.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className="nonogram-clue">{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1)} className={"nonogram-cell" + (value ? " filled-cell" : "") + (checked && value !== Boolean(item.pattern[r][c]) ? " error-cell" : "")} onClick={() => setCells((all) => all.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? !v : v) : x))}>{value ? "•" : ""}</button>)}</div>)}</div></div>
-    {!checked ? <button className="button button-primary full-button" onClick={check}>Check pattern</button> : <Finish title="Pattern revealed" detail={"The hidden shape was " + item.name + ". " + item.hint + ". Your cells are marked for comparison."} score={Math.round(item.pattern.reduce((n, row, r) => n + row.reduce((m, v, c) => m + (Boolean(v) === cells[r][c] ? 1 : 0), 0), 0) / 25 * 100) + " / 100"} />}
+    <div className="game-instructions"><span className="instruction-dot lilac" /> Solve the 5×5 nonogram. Each clue gives the length of consecutive filled runs. Cycle each cell through unknown, filled, and marked empty to keep track without paper.</div>
+    <div className="nonogram-legend"><span><b>●</b> Filled</span><span><b>×</b> Empty</span><span><b>·</b> Unknown</span></div>
+    <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue)?"clue-complete":""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue"+(lineSolved(row,rowClues[r])?" clue-complete":"")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1) + ": " + (value===1?"filled":value===2?"marked empty":"unknown")} className={"nonogram-cell" + (value===1 ? " filled-cell" : "") + (value===2 ? " empty-marked" : "") + (checked && (value===1) !== Boolean(item.pattern[r][c]) ? " error-cell" : "")} onClick={() => setCells((all) => all.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? (v + 1) % 3 : v) : x))}>{value===1?"●":value===2?"×":""}</button>)}</div>)}</div></div>
+    <div className="nonogram-actions"><span>{cells.flat().filter((value)=>value!==0).length} / 25 cells marked</span><button className="button button-quiet" onClick={()=>setCells(item.pattern.map((row)=>row.map(()=>0)))} disabled={checked}>Reset grid</button></div>
+    {!checked ? <button className="button button-primary full-button" onClick={check}>Check pattern</button> : <Finish title="Pattern revealed" detail={"The hidden shape was " + item.name + ". " + item.hint + ". Filled cells are compared with the solution."} score={Math.round(item.pattern.reduce((n, row, r) => n + row.reduce((m, v, c) => m + (Boolean(v) === (cells[r][c]===1) ? 1 : 0), 0), 0) / 25 * 100) + " / 100"} />}
   </div>;
 }
 
