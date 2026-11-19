@@ -51,7 +51,7 @@ export const connectionPuzzlesExpansion3: ConnectionGroup[][] = [
 {category:"Arrhythmia syndromes",words:["Brugada syndrome","Long QT syndrome","WPW syndrome","Catecholaminergic polymorphic VT"],hint:"Inherited or congenital arrhythmia syndromes."},
 {category:"Dynamic cardiac murmurs",words:["HOCM","Aortic stenosis","Mitral regurgitation","Mitral valve prolapse"],hint:"Common structural causes of systolic murmurs."},
 {category:"Pulse abnormalities",words:["Pulsus paradoxus","Pulsus alternans","Pulsus bisferiens","Water-hammer pulse"],hint:"Named arterial pulse patterns."},
-{category:"Cardiac tamponade findings",words:["JVD","Hypotension","Muffled heart sounds","Pulsus paradoxus"],hint:"Classic hemodynamic and examination findings."}
+{category:"Cardiac tamponade findings",words:["JVD","Hypotension","Muffled heart sounds","Tachycardia"],hint:"Classic hemodynamic and examination findings."}
 ],
 [
 {category:"Obstructive sleep apnea",words:["Snoring","Witnessed apneas","Daytime sleepiness","Loud inspiratory efforts"],hint:"Common symptoms or observed features."},
