@@ -1,5 +1,38 @@
 import type { DeepPrompt } from "./dataArcade";
 
+const LONG_DIVE_ALIASES: Record<string, string[]> = {
+  "Amoxicillin-clavulanate": ["Augmentin"],
+  "Ampicillin-sulbactam": ["Unasyn"],
+  "Piperacillin-tazobactam": ["Zosyn"],
+  "Trimethoprim-sulfamethoxazole": ["TMP-SMX", "Bactrim", "Septra"],
+  "Ceftolozane-tazobactam": ["Zerbaxa"],
+  "Ceftazidime-avibactam": ["Avycaz"],
+  "Cytomegalovirus": ["CMV"],
+  "Epstein-Barr virus": ["EBV"],
+  "Respiratory syncytial virus": ["RSV"],
+  "Human immunodeficiency virus": ["HIV"],
+  "Staphylococcus aureus": ["S aureus", "Staph aureus"],
+  "Streptococcus pneumoniae": ["S pneumoniae", "Pneumococcus"],
+  "Escherichia coli": ["E coli"],
+  "Neisseria meningitidis": ["Meningococcus"],
+  "Atorvastatin": ["Lipitor"],
+  "Apixaban": ["Eliquis"],
+  "Rivaroxaban": ["Xarelto"],
+  "Warfarin": ["Coumadin"],
+  "Clopidogrel": ["Plavix"],
+  "Ticagrelor": ["Brilinta"],
+  "Amlodipine": ["Norvasc"],
+  "Lisinopril": ["Zestril", "Prinivil"],
+  "Losartan": ["Cozaar"],
+  "Metoprolol": ["Lopressor", "Toprol XL"],
+  "Furosemide": ["Lasix"],
+  "Spironolactone": ["Aldactone"],
+  "Sacubitril-valsartan": ["Entresto"],
+  "Empagliflozin": ["Jardiance"],
+  "Dapagliflozin": ["Farxiga"],
+  "Nitroglycerin": ["NTG"]
+};
+
 const longDive = (
   id: string,
   prompt: string,
@@ -8,7 +41,9 @@ const longDive = (
   tiers: [string[], string[], string[], string[], string[], string[]]
 ): DeepPrompt => ({
   id, prompt, scope, explanation, longTail: true,
-  answers: tiers.flatMap((answers, index) => answers.map((answer) => ({ answer, tier: (index + 1) as 1|2|3|4|5|6 })))
+  answers: tiers.flatMap((answers, index) => answers.map((answer) => ({
+    answer, tier: (index + 1) as 1|2|3|4|5|6, aliases: LONG_DIVE_ALIASES[answer]
+  })))
 });
 
 export const deepDiveLongTailExpansion: DeepPrompt[] = [
