@@ -82,6 +82,7 @@ export function mergePlayerData(local: PlayerData, remote: PlayerData): PlayerDa
     sound: local.sound,
     music: local.music,
     xp: Math.max(local.xp ?? 0, remote.xp ?? 0),
+    theme: local.theme ?? remote.theme,
     reducedMotion: local.reducedMotion,
     hideStreaks: local.hideStreaks
   };

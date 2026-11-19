@@ -1,5 +1,6 @@
 import type { GameId } from "./lib";
 import { dailyDateKey } from "./lib";
+import type { ThemeSettings } from "./theme";
 
 export interface GameResult {
   date: string;
@@ -16,6 +17,7 @@ export interface PlayerData {
   sound: boolean;
   music: boolean;
   xp: number;
+  theme?: ThemeSettings;
   reducedMotion: boolean;
   hideStreaks: boolean;
 }

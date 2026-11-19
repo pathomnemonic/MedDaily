@@ -72,3 +72,7 @@ Medical material is for education and entertainment, not patient care or a clini
 ## Game feel
 
 Title screen with the mascot Pip (also unlocks audio), a player level and XP bar, 1–3 star ratings with confetti on every finish, synthesized music and sound effects per game, chunky tile and key styling, and per-game cover art. See `docs/ADDING_A_GAME.md` to add a game.
+
+## Look & feel options
+
+The default palette is Scrub Teal. Options > Look & feel offers seven palettes (Scrub Teal, Deep Ocean, Midnight Violet, Berry Crush, Forest Ward, Ember, Graphite), a base-color slider, a vibrancy slider, chunky or soft depth, round or sharp corners, three interface sizes, and toggles for floating icons, twinkling stars, and the mascot. A palette button in the top bar cycles presets. Colors are driven by two CSS variables (`--hue`, `--sat`) in `src/styles.css`, so new presets are one line in `src/theme.ts`. Fonts (Fredoka, Lilita One, Manrope, Space Grotesk, DM Mono, all SIL OFL) are self-hosted and precached for offline use.

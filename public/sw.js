@@ -1,4 +1,4 @@
-const CACHE = "meddaily-shell-v2";
+const CACHE = "meddaily-shell-v3";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./meddaily-icon.svg", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 const shellUrl = new URL("./index.html", self.registration.scope).toString();
 const rootUrl = new URL("./", self.registration.scope).toString();
@@ -13,6 +13,12 @@ self.addEventListener("install", (event) => {
           const html = await (await fetch(shellUrl, { cache: "reload" })).text();
           const assets = [...html.matchAll(/(?:src|href)="(\.\/assets\/[^"]+)"/g)].map((m) => new URL(m[1], self.registration.scope).toString());
           await Promise.all(assets.map((asset) => cache.add(asset).catch(() => undefined)));
+          // Fonts and images referenced from the built CSS.
+          for (const asset of assets.filter((a) => a.endsWith(".css"))) {
+            const css = await (await fetch(asset)).text();
+            const refs = [...css.matchAll(/url\(\s*["']?([^)"']+\.(?:woff2|woff|png|svg|jpg|webp))["']?\s*\)/g)].map((m) => new URL(m[1], asset).toString());
+            await Promise.all(refs.map((ref) => cache.add(ref).catch(() => undefined)));
+          }
         } catch { /* offline during install: runtime caching still fills in */ }
       })
       .then(() => self.skipWaiting())

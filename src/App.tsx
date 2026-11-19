@@ -3,8 +3,10 @@ import { GameBoard } from "./Games";
 import GameArt, { DxArt } from "./components/GameArt";
 import { computeTrophies } from "./achievements";
 import Mascot from "./components/Mascot";
+import Icon, { type IconName } from "./components/Icon";
 import Splash from "./components/Splash";
 import { levelFor, starsFor, xpForResult } from "./levels";
+import { DEFAULT_THEME, PRESETS, applyTheme, normalizeTheme, swatch, type ThemeSettings } from "./theme";
 import { watchStage } from "./juice";
 import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } from "./audio";
 import type { GameId } from "./lib";
@@ -41,8 +43,8 @@ const GAMES: GameMeta[] = [
   {id:"lettergrid",title:"Letter Lab",subtitle:"Find words in the grid",description:"Connect neighboring letters to uncover as many hidden words as possible before time runs out.",icon:"🔤",wash:"mint",time:"2 min",category:"Word hunt",level:"Fast & fun"},
 ];
 type Shelf = "all" | "quick" | "brain" | "word" | "clinical" | "party";
-const SHELVES: { id: Shelf; label: string; icon: string }[] = [
-  {id:"all",label:"All",icon:"🎮"},{id:"quick",label:"Quick",icon:"⚡"},{id:"brain",label:"Brain",icon:"🧠"},{id:"word",label:"Words",icon:"🔤"},{id:"clinical",label:"Clinical",icon:"🩺"},{id:"party",label:"Party",icon:"🎉"}
+const SHELVES: { id: Shelf; label: string; icon: IconName }[] = [
+  {id:"all",label:"All",icon:"all"},{id:"quick",label:"Quick",icon:"bolt"},{id:"brain",label:"Brain",icon:"brain"},{id:"word",label:"Words",icon:"letters"},{id:"clinical",label:"Clinical",icon:"steth"},{id:"party",label:"Party",icon:"party"}
 ];
 const SHELF_OF: Record<Shelf, GameId[]> = {
   all:[],
@@ -136,6 +138,7 @@ export default function App() {
     document.addEventListener("pointerdown",onDown,{passive:true});
     return ()=>document.removeEventListener("pointerdown",onDown);
   },[]);
+  useEffect(()=>{applyTheme(player.theme);},[player.theme]);
   useEffect(()=>{setSfxEnabled(player.sound);},[player.sound]);
   useEffect(()=>{setMusicEnabled(player.music);},[player.music]);
   useEffect(()=>{setScene(activeGame??"menu");},[activeGame]);
@@ -195,6 +198,13 @@ export default function App() {
     if(navigator.share){try{await navigator.share({text:completion.text});return;}catch{/* fall through to copy */}}
     try{await navigator.clipboard?.writeText(completion.text);setCopied(true);}catch{setNotice("Copy was blocked by the browser. Select the preview text instead.");}
   };
+  const updateTheme=(patch:Partial<ThemeSettings>)=>{
+    setPlayer(current=>{const next={...current,theme:normalizeTheme({...(current.theme??DEFAULT_THEME),...patch})};savePlayer(next);return next;});
+  };
+  const cyclePalette=()=>{
+    const cur=normalizeTheme(player.theme);const i=PRESETS.findIndex(p=>p.id===cur.preset);const nxt=PRESETS[(i+1)%PRESETS.length];
+    updateTheme({preset:nxt.id,hue:nxt.hue,sat:nxt.sat});sfx("pop");
+  };
   const updateSetting=(key:"sound"|"music"|"reducedMotion"|"hideStreaks",value:boolean)=>{
     setPlayer(current=>{const next={...current,[key]:value};savePlayer(next);return next;});
   };
@@ -248,14 +258,14 @@ export default function App() {
         <button className={screen==="stats"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}>Trophies</button>
         <button className={screen==="settings"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}>Options</button>
       </nav>
-      <div className="top-actions"><button className={"sound-toggle"+(player.music?" on":"")} aria-pressed={player.music} aria-label={player.music?"Mute music":"Turn music on"} onClick={()=>updateSetting("music",!player.music)}>{player.music?"🎵":"🔇"}</button><button className={"sound-toggle"+(player.sound?" on":"")} aria-pressed={player.sound} aria-label={player.sound?"Mute sound effects":"Turn sound effects on"} onClick={()=>updateSetting("sound",!player.sound)}>{player.sound?"🔊":"🔈"}</button>{installPrompt&&<button className="install-button" onClick={install}>＋ Install</button>}<div className="avatar-chip">MD</div></div>
+      <div className="top-actions"><button className="sound-toggle" aria-label="Next color palette" title="Change palette" onClick={cyclePalette}><Icon name="palette" size={22}/></button><button className={"sound-toggle"+(player.music?" on":"")} aria-pressed={player.music} aria-label={player.music?"Mute music":"Turn music on"} onClick={()=>updateSetting("music",!player.music)}><Icon name={player.music?"music":"musicOff"} size={22}/></button><button className={"sound-toggle"+(player.sound?" on":"")} aria-pressed={player.sound} aria-label={player.sound?"Mute sound effects":"Turn sound effects on"} onClick={()=>updateSetting("sound",!player.sound)}><Icon name={player.sound?"speaker":"speakerOff"} size={22}/></button>{installPrompt&&<button className="install-button" onClick={install}>＋ Install</button>}<div className="avatar-chip">MD</div></div>
     </header>
 
     <nav className="mobile-nav" aria-label="Mobile navigation">
-      <button className={!activeGame&&screen==="home"?"active":""} onClick={()=>{setActiveGame(null);setScreen("home");}}><span>⌂</span>Arcade</button>
-      <button className={screen==="friends"?"active":""} onClick={()=>{setActiveGame(null);setScreen("friends");}}><span>✳</span>Party</button>
-      <button className={screen==="stats"?"active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}><span>▤</span>Trophies</button>
-      <button className={screen==="settings"?"active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}><span>⚙</span>Options</button>
+      <button className={!activeGame&&screen==="home"?"active":""} onClick={()=>{setActiveGame(null);setScreen("home");}}><span><Icon name="home" size={22}/></span>Arcade</button>
+      <button className={screen==="friends"?"active":""} onClick={()=>{setActiveGame(null);setScreen("friends");}}><span><Icon name="party" size={22}/></span>Party</button>
+      <button className={screen==="stats"?"active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}><span><Icon name="trophy" size={22}/></span>Trophies</button>
+      <button className={screen==="settings"?"active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}><span><Icon name="gear" size={22}/></span>Options</button>
     </nav>
     {notice&&<button className="notice" onClick={()=>setNotice("")} aria-label="Dismiss message">{notice}<span>×</span></button>}
     {room&&<div className="room-strip"><span className="room-dot" /> <b>ROOM {room.code}</b><span>{room.players.length} players · {room.players.filter(p=>p.finished).length} finished</span><button onClick={()=>setScreen("friends")}>Room details</button><button onClick={closeRoom}>Leave</button></div>}
@@ -271,7 +281,7 @@ export default function App() {
         {room&&<RoomScores room={room}/>}
         {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"MedDaily result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
         <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode"}</span></div>
-      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak}/>:screen==="settings"?<SettingsPage player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} today={date} doneToday={doneToday} openGame={openGame} freePlay={homeFreePlay} setFreePlay={setHomeFreePlay}/>}
+      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak}/>:screen==="settings"?<SettingsPage updateTheme={updateTheme} player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} today={date} doneToday={doneToday} openGame={openGame} freePlay={homeFreePlay} setFreePlay={setHomeFreePlay}/>}
     </main>
     {completion&&<div className="complete-overlay" role="dialog" aria-modal="true" aria-label="Round complete" onClick={()=>setCompletion(null)}>
       <div className={"complete-card"+(completion.perfect?" perfect":"")} onClick={e=>e.stopPropagation()}>
@@ -315,15 +325,15 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
         <div className="home-play-mode" role="group" aria-label="Choose daily or free play"><button className={!freePlay?"selected":""} onClick={()=>setFreePlay(false)}>Daily</button><button className={freePlay?"selected":""} onClick={()=>setFreePlay(true)}>Free Play ∞</button></div>
         <div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialties</button></div>
       </div>
-      <button className="button button-soft surprise-btn" onClick={()=>{const left=GAMES.filter(g=>!player.results.some(r=>r.date===today&&r.game===g.id&&r.scope===scope));const pool=(freePlay||left.length===0)?GAMES:left;openGame(pool[Math.floor(Math.random()*pool.length)].id,freePlay);}}>🎲 Surprise me</button>
+      <button className="button button-soft surprise-btn" onClick={()=>{const left=GAMES.filter(g=>!player.results.some(r=>r.date===today&&r.game===g.id&&r.scope===scope));const pool=(freePlay||left.length===0)?GAMES:left;openGame(pool[Math.floor(Math.random()*pool.length)].id,freePlay);}}><Icon name="dice" size={20}/> Surprise me</button>
       <div className="hud-stats">
-        <div className="hud-chip"><span>🔥</span><b>{streakNow}</b></div>
-        <div className="hud-chip"><span>⭐</span><b>{freePlay?"∞":done+"/"+GAMES.length}</b></div>
+        <div className="hud-chip"><span><Icon name="flame" size={24}/></span><b>{streakNow}</b></div>
+        <div className="hud-chip"><span><Icon name="star" size={24}/></span><b>{freePlay?"∞":done+"/"+GAMES.length}</b></div>
       </div>
       {mode==="specialty"&&<div className="specialty-picker"><div className="specialty-chips">{SPECIALTIES.map(s=><button key={s.id} onClick={()=>setSpecialty(s.id)} className={specialty===s.id?"selected":""}><span>{s.icon}</span>{s.short}</button>)}</div><div className="specialty-selected"><b>{specialtyName}</b><span>{SPECIALTIES.find(s=>s.id===specialty)?.blurb}</span></div></div>}
     </section>
 
-        <div className="shelf-chips" role="tablist" aria-label="Filter games">{SHELVES.map(sh=><button key={sh.id} role="tab" aria-selected={shelf===sh.id} className={shelf===sh.id?"selected":""} onClick={()=>setShelf(sh.id)}><span>{sh.icon}</span>{sh.label}</button>)}</div>
+        <div className="shelf-chips" role="tablist" aria-label="Filter games">{SHELVES.map(sh=><button key={sh.id} role="tab" aria-selected={shelf===sh.id} className={shelf===sh.id?"selected":""} onClick={()=>setShelf(sh.id)}><Icon name={sh.icon} size={20}/>{sh.label}</button>)}</div>
     <div className="game-grid">
       {(shelf==="all"||shelf==="clinical")&&<a className="game-card dx-card" href="https://pathomnemonic.github.io/buzzword-dash-v2/" target="_blank" rel="noreferrer"><div className="game-cover"><DxArt/><span className="card-status">★ FEATURED</span></div><div className="game-card-body"><span className="game-category">Companion game</span><h3>Dx Dash</h3><span className="game-subtitle">Run the list. Learn the diagnosis.</span></div><div className="game-card-footer"><span>↗ opens Dx Dash</span><span className="card-play">PLAY ▶</span></div></a>}
       {ordered.map((game,index)=>{
@@ -381,12 +391,24 @@ function StatsPage({player,scope,streak}:{player:PlayerData;scope:string;streak:
   </div>;
 }
 
-function SettingsPage({player,driveConnected,updateSetting,exportData,importData,onDriveSync}:{
-  player:PlayerData;driveConnected:boolean;updateSetting:(k:"sound"|"music"|"reducedMotion"|"hideStreaks",v:boolean)=>void;exportData:()=>void;importData:(file:File|undefined)=>void;onDriveSync:()=>Promise<void>;
+function SettingsPage({updateTheme,player,driveConnected,updateSetting,exportData,importData,onDriveSync}:{
+  updateTheme:(p:Partial<ThemeSettings>)=>void;player:PlayerData;driveConnected:boolean;updateSetting:(k:"sound"|"music"|"reducedMotion"|"hideStreaks",v:boolean)=>void;exportData:()=>void;importData:(file:File|undefined)=>void;onDriveSync:()=>Promise<void>;
 }){
   const [syncing,setSyncing]=useState(false);
   const sync=async()=>{setSyncing(true);try{await onDriveSync();}finally{setSyncing(false);}};
   return <div className="settings-page"><span className="eyebrow">MAKE IT YOURS</span><h1>Preferences & backup</h1>
+    <section className="settings-card look-card"><h2>Look &amp; feel</h2>{(()=>{const t=normalizeTheme(player.theme);return <>
+      <p>Pick a palette, or tune your own. Changes apply instantly.</p>
+      <div className="preset-grid" role="radiogroup" aria-label="Color palette">{PRESETS.map(p=><button key={p.id} role="radio" aria-checked={t.preset===p.id} className={"preset"+(t.preset===p.id?" on":"")} onClick={()=>updateTheme({preset:p.id,hue:p.hue,sat:p.sat})}><span className="preset-swatch" style={{background:swatch(p.hue,p.sat)}}><i/><i/><i/></span><b>{p.name}</b></button>)}</div>
+      <label className="slider-row"><span>Base color <small>{Math.round(t.hue)}°</small></span><input className="hue-slider" type="range" min={0} max={360} value={t.hue} onChange={e=>updateTheme({preset:"custom",hue:Number(e.target.value)})}/></label>
+      <label className="slider-row"><span>Vibrancy <small>{Math.round(t.sat*100)}%</small></span><input type="range" min={15} max={140} value={Math.round(t.sat*100)} onChange={e=>updateTheme({preset:"custom",sat:Number(e.target.value)/100})}/></label>
+      <div className="choice-row"><span>Depth</span><div role="radiogroup" aria-label="Depth">{(["chunky","soft"] as const).map(v=><button key={v} role="radio" aria-checked={t.depth===v} className={t.depth===v?"on":""} onClick={()=>updateTheme({depth:v})}>{v==="chunky"?"Chunky 3D":"Soft"}</button>)}</div></div>
+      <div className="choice-row"><span>Corners</span><div role="radiogroup" aria-label="Corners">{(["round","sharp"] as const).map(v=><button key={v} role="radio" aria-checked={t.corners===v} className={t.corners===v?"on":""} onClick={()=>updateTheme({corners:v})}>{v==="round"?"Round":"Sharp"}</button>)}</div></div>
+      <div className="choice-row"><span>Interface size</span><div role="radiogroup" aria-label="Interface size">{([[0.9,"Compact"],[1,"Normal"],[1.12,"Large"]] as const).map(([v,l])=><button key={v} role="radio" aria-checked={t.scale===v} className={t.scale===v?"on":""} onClick={()=>updateTheme({scale:v})}>{l}</button>)}</div></div>
+      <Setting label="Floating medical icons" detail="Drifting pills, cells, and organs in the background." checked={t.particles} onChange={v=>updateTheme({particles:v})}/>
+      <Setting label="Twinkling stars" detail="Tiny sparkles in the background." checked={t.stars} onChange={v=>updateTheme({stars:v})}/>
+      <Setting label="Show Pip the mascot" detail="Pip on the title screen, level bar, and results." checked={t.mascot} onChange={v=>updateTheme({mascot:v})}/>
+      <button className="button button-quiet" onClick={()=>updateTheme({...DEFAULT_THEME})}>Reset look &amp; feel</button></>;})()}</section>
     <section className="settings-card"><h2>Arcade feel</h2><Setting label="Sound effects" detail="Taps, rights and wrongs, fanfares, and wheel spins." checked={player.sound} onChange={v=>updateSetting("sound",v)}/><Setting label="Music" detail="A different looping tune for the arcade and every game." checked={player.music} onChange={v=>updateSetting("music",v)}/><Setting label="Reduced motion" detail="Use quieter transitions and fewer animations." checked={player.reducedMotion} onChange={v=>updateSetting("reducedMotion",v)}/><Setting label="Hide streaks" detail="Keep the focus on playing, not maintaining a streak." checked={player.hideStreaks} onChange={v=>updateSetting("hideStreaks",v)}/></section>
     <section className="settings-card"><h2>Google Drive backup</h2><p>Sign in only when you want your progress backed up to your private Google Drive app-data folder. MedDaily cannot read your other Drive files. You can keep playing without Google login.</p>
       <button className="button button-primary" onClick={sync} disabled={syncing||!googleDriveConfigured()}>{syncing?"Syncing…":driveConnected?"Reconnect & sync Google Drive":"Sign in with Google & sync"}</button>
