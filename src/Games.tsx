@@ -6,6 +6,7 @@ import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord
 import { triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
 import { letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
+import { mimeDeck } from "./dataMime";
 import { generateDeductionCase } from "./logicGenerator";
 
 type Done = (score: number, maxScore: number, perfect: boolean, share?: string) => void;
@@ -28,6 +29,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "casefile": return <CasefileLogic seed={seed} onDone={onDone} practice={practice} />;
     case "dive": return <DeepDive seed={seed} onDone={onDone} />;
     case "trivia": return <TriviaRumble seed={seed} onDone={onDone} />;
+    case "mime": return <MimeTime seed={seed} onDone={onDone} />;
     case "lettergrid": return <LetterGridGame seed={seed} onDone={onDone} />;
   }
 }
@@ -1178,5 +1180,87 @@ function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: 
     </div>
     {!submitted ? <button className="button button-primary full-button" onClick={check}>Submit deduction</button> : <Finish title={score===100?"Case cracked":"The solution revealed"} detail={"You got " + score + "% of the assignments correct. " + item.title + " is a fictional deduction puzzle."} score={score+" / 100"}><div className="reveal-groups">{item.solution.map((solution)=><span key={solution.suspect}><b>{solution.suspect}</b>{solution.location} · {solution.object}</span>)}</div></Finish>}
     <p className="game-feedback" aria-live="polite">{note}</p>
+  </div>;
+}
+
+
+const MIME_SECONDS = 45;
+type MimeStage = "setup" | "ready" | "play" | "between" | "done";
+function MimeTime({ seed, onDone }: Props) {
+  const [count, setCount] = useState(2);
+  const [names, setNames] = useState(["Player 1", "Player 2", "Player 3", "Player 4", "Player 5", "Player 6"]);
+  const [stage, setStage] = useState<MimeStage>("setup");
+  const [turn, setTurn] = useState(0);
+  const [scores, setScores] = useState<number[]>([]);
+  const [cardIndex, setCardIndex] = useState(0);
+  const [seconds, setSeconds] = useState(MIME_SECONDS);
+  const [gotThisTurn, setGotThisTurn] = useState(0);
+  const [skipsThisTurn, setSkipsThisTurn] = useState(0);
+  const done = useRef(false);
+  const deck = useMemo(() => shuffle(mimeDeck, seeded(seed + 4242)), [seed]);
+  const rounds = count === 1 ? 3 : 2;
+  const totalTurns = count * rounds;
+  const player = turn % count;
+  const card = deck[cardIndex % deck.length];
+
+  const begin = () => { setScores(Array(count).fill(0)); setTurn(0); setCardIndex(0); setStage("ready"); done.current = false; };
+  const startTurn = () => { setSeconds(MIME_SECONDS); setGotThisTurn(0); setSkipsThisTurn(0); setStage("play"); };
+  useEffect(() => {
+    if (stage !== "play") return;
+    const id = window.setInterval(() => setSeconds((v) => Math.max(0, v - 1)), 1000);
+    return () => window.clearInterval(id);
+  }, [stage]);
+  useEffect(() => { if (stage === "play" && seconds === 0) endTurn(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [seconds, stage]);
+  const endTurn = () => {
+    setScores((all) => all.map((v, i) => i === player ? v + gotThisTurn : v));
+    setStage("between");
+  };
+  const got = () => { setGotThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
+  const skip = () => { setSkipsThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
+  const nextTurn = () => {
+    if (turn + 1 >= totalTurns) {
+      setStage("done");
+      if (!done.current) {
+        done.current = true;
+        const ranked = names.slice(0, count).map((name, i) => ({ name: name.trim() || "Player " + (i + 1), score: scores[i] })).sort((a, b) => b.score - a.score);
+        const top = ranked[0].score;
+        const medals = ["🥇", "🥈", "🥉"];
+        onDone(top, Math.max(12, top), false, "Mime Time · " + count + (count === 1 ? " player" : " players") + "\n" + ranked.map((r, i) => (medals[i] ?? "▫️") + " " + r.name + " " + r.score).join("\n"));
+      }
+      return;
+    }
+    setTurn((v) => v + 1);
+    setStage("ready");
+  };
+  const ranked = names.slice(0, count).map((name, i) => ({ name: name.trim() || "Player " + (i + 1), score: scores[i] ?? 0 })).sort((a, b) => b.score - a.score);
+
+  return <div className="game-layout mime-game">
+    {stage === "setup" && <div className="mime-setup">
+      <div className="mime-mask" aria-hidden="true">🎭</div>
+      <h2>Act it out. No talking!</h2>
+      <p>One person acts the card on screen. Everyone else shouts guesses. Tap <b>Got it</b> when someone nails it. {MIME_SECONDS} seconds per turn.</p>
+      <div className="mime-count" role="group" aria-label="Number of players">{[1, 2, 3, 4, 5, 6].map((n) => <button key={n} className={count === n ? "chosen" : ""} onClick={() => setCount(n)}>{n === 1 ? "Solo" : n}</button>)}</div>
+      <div className="mime-names">{names.slice(0, count).map((name, i) => <input key={i} value={name} maxLength={14} aria-label={"Player " + (i + 1) + " name"} onChange={(e) => setNames((all) => all.map((v, j) => j === i ? e.target.value : v))} />)}</div>
+      <button className="button button-primary full-button" onClick={begin}>Start the show ▶</button>
+    </div>}
+    {stage === "ready" && <div className="mime-ready">
+      <span className="eyebrow">TURN {turn + 1} OF {totalTurns}</span>
+      <h2>{names[player].trim() || "Player " + (player + 1)}, you're up!</h2>
+      <p>{count > 1 ? "Take the phone, hide the screen from the others, then start." : "Act each card out loud-free and count your own wins."}</p>
+      <button className="button button-primary full-button" onClick={startTurn}>I'm ready ▶</button>
+    </div>}
+    {stage === "play" && <div className="mime-play">
+      <div className={"mime-clock" + (seconds <= 10 ? " urgent" : "")}><i style={{ width: seconds / MIME_SECONDS * 100 + "%" }} /><b>{seconds}</b></div>
+      <div className="mime-card" key={cardIndex}><span className="mime-kind">{card.kind}</span><h2>{card.term}</h2></div>
+      <div className="mime-buttons"><button className="mime-skip" onClick={skip}>↷ Skip</button><button className="mime-got" onClick={got}>✓ Got it!</button></div>
+      <p className="mime-tally">{gotThisTurn} guessed this turn · {skipsThisTurn} skipped</p>
+    </div>}
+    {stage === "between" && <div className="mime-ready">
+      <span className="eyebrow">TIME'S UP</span>
+      <h2>{gotThisTurn} {gotThisTurn === 1 ? "card" : "cards"}!</h2>
+      <div className="mime-scoreline">{names.slice(0, count).map((name, i) => <span key={i} className={i === player ? "active" : ""}>{name.trim() || "Player " + (i + 1)} <b>{scores[i]}</b></span>)}</div>
+      <button className="button button-primary full-button" onClick={nextTurn}>{turn + 1 >= totalTurns ? "See final scores" : "Pass the phone ▶"}</button>
+    </div>}
+    {stage === "done" && <Finish title={count === 1 ? "Show's over!" : ranked[0].name + " steals the show!"} detail={ranked.map((r, i) => (["🥇", "🥈", "🥉"][i] ?? "▫️") + " " + r.name + ": " + r.score).join("  ·  ")} />}
   </div>;
 }

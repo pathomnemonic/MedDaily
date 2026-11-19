@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { GameBoard } from "./Games";
 import GameArt, { DxArt } from "./components/GameArt";
+import { computeTrophies } from "./achievements";
 import type { GameId } from "./lib";
 import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, PARTY_GAMES } from "./lib";
 import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
@@ -27,8 +28,24 @@ const GAMES: GameMeta[] = [
   {id:"casefile",title:"Casefile Logic",subtitle:"The clues don't lie",description:"Solve a fictional three-person deduction grid using rooms, objects, and clues.",icon:"⌕",wash:"lilac",time:"4 min",category:"Logic puzzle",level:"Moderate"},
   {id:"dive",title:"Deep Dive",subtitle:"Rare finds go deeper",description:"Seven timed open-answer prompts. Less obvious accepted answers earn more points.",icon:"🌊",wash:"blue",time:"4 min",category:"Open-answer trivia",level:"Think sideways"},
   {id:"trivia",title:"Trivia Rumble",subtitle:"Spin. Answer. Collect badges.",description:"A six-category trivia wheel with solo and pass-and-play modes.",icon:"🎡",wash:"orange",time:"8–12 min",category:"Party quiz",level:"All levels"},
+  {id:"mime",title:"Mime Time",subtitle:"Act it out. No talking.",description:"Pass the phone and act out medical scenes, symptoms, and instruments while your friends guess. Beat the clock.",icon:"🎭",wash:"pink",time:"5–10 min",category:"Party charades",level:"Silly"},
   {id:"lettergrid",title:"Letter Lab",subtitle:"Find words in the grid",description:"Connect neighboring letters to uncover as many hidden words as possible before time runs out.",icon:"🔤",wash:"mint",time:"2 min",category:"Word hunt",level:"Fast & fun"},
 ];
+type Shelf = "all" | "quick" | "brain" | "word" | "clinical" | "party";
+const SHELVES: { id: Shelf; label: string; icon: string }[] = [
+  {id:"all",label:"All",icon:"🎮"},{id:"quick",label:"Quick",icon:"⚡"},{id:"brain",label:"Brain",icon:"🧠"},{id:"word",label:"Words",icon:"🔤"},{id:"clinical",label:"Clinical",icon:"🩺"},{id:"party",label:"Party",icon:"🎉"}
+];
+const SHELF_OF: Record<Shelf, GameId[]> = {
+  all:[],
+  quick:["splice","labline","higher","medle","dive","glyph","mime"],
+  brain:["connections","glyph","casefile","ladder","pairs","hive"],
+  word:["medle","microbe","splice","ladder","hive","lettergrid","diagnosis"],
+  clinical:["diagnosis","triage","labline","dive"],
+  party:[...PARTY_GAMES,"trivia","mime"]
+};
+/** Rotating spotlight: the open-answer and trivia games trade the featured slot each UTC day. */
+const FEATURE_ROTATION: GameId[] = ["dive","trivia"];
+const featuredToday = (date: string): GameId => FEATURE_ROTATION[hashSeed("feature|"+date)%FEATURE_ROTATION.length];
 const SPECIALTIES: { id: Specialty; name: string; short: string; icon: string; blurb: string }[] = [
   {id:"internal",name:"Internal Medicine",short:"IM",icon:"✚",blurb:"The broad medical wards: physiology, diagnosis, and management."},
   {id:"familymed",name:"Family Medicine",short:"Family",icon:"⌂",blurb:"Lifespan care, prevention, primary care, and common presentations."},
@@ -123,7 +140,7 @@ export default function App() {
     const filled=Math.max(0,Math.min(10,Math.round(score/Math.max(1,maxScore)*10)));
     const fallback="🟩".repeat(filled)+"⬜".repeat(10-filled)+(perfect?"\n✨ Perfect run":"");
     const where=partyRun?" · Room "+roomCode:practice?" · Free Play":" · "+date;
-    const text="MedDaily · "+gameTitle+where+"\n"+(share??fallback)+"\nhttps://pathomnemonic.github.io/MedDaily/"+(partyRun?"?room="+roomCode:"");
+    const text=share?"MedDaily"+where+"\n"+share:"MedDaily · "+gameTitle+where+"\n"+fallback+"\nhttps://pathomnemonic.github.io/MedDaily/"+(partyRun?"?room="+roomCode:"");
     setLastShare(text);setCopied(false);
     setCompletion({title:gameTitle,score,maxScore,perfect,text,party:partyRun});
     if(player.sound)playChime();
@@ -248,8 +265,12 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
 }){
   const done=doneToday;
   const [freePlay,setFreePlay]=useState(false);
+  const [shelf,setShelf]=useState<Shelf>("all");
   
   const streakNow=playStreak(player,scope);
+  const featuredId=featuredToday(today);
+  const visible=shelf==="all"?GAMES:GAMES.filter(g=>SHELF_OF[shelf].includes(g.id));
+  const ordered=[...visible.filter(g=>g.id===featuredId),...visible.filter(g=>g.id!==featuredId)];
   const specialtyName=SPECIALTIES.find(s=>s.id===specialty)?.name;
   return <div className="home-page">
     <section className="arcade-hud">
@@ -257,6 +278,7 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
         <div className="home-play-mode" role="group" aria-label="Choose daily or free play"><button className={!freePlay?"selected":""} onClick={()=>setFreePlay(false)}>Daily</button><button className={freePlay?"selected":""} onClick={()=>setFreePlay(true)}>Free Play ∞</button></div>
         <div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialties</button></div>
       </div>
+      <button className="button button-soft surprise-btn" onClick={()=>{const left=GAMES.filter(g=>!player.results.some(r=>r.date===today&&r.game===g.id&&r.scope===scope));const pool=(freePlay||left.length===0)?GAMES:left;openGame(pool[Math.floor(Math.random()*pool.length)].id,freePlay);}}>🎲 Surprise me</button>
       <div className="hud-stats">
         <div className="hud-chip"><span>🔥</span><b>{streakNow}</b></div>
         <div className="hud-chip"><span>⭐</span><b>{freePlay?"∞":done+"/"+GAMES.length}</b></div>
@@ -264,13 +286,15 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
       {mode==="specialty"&&<div className="specialty-picker"><div className="specialty-chips">{SPECIALTIES.map(s=><button key={s.id} onClick={()=>setSpecialty(s.id)} className={specialty===s.id?"selected":""}><span>{s.icon}</span>{s.short}</button>)}</div><div className="specialty-selected"><b>{specialtyName}</b><span>{SPECIALTIES.find(s=>s.id===specialty)?.blurb}</span></div></div>}
     </section>
 
-        <div className="game-grid">
-      <a className="game-card dx-card" href="https://pathomnemonic.github.io/buzzword-dash-v2/" target="_blank" rel="noreferrer"><div className="game-cover"><DxArt/><span className="card-status">★ FEATURED</span></div><div className="game-card-body"><span className="game-category">Companion game</span><h3>Dx Dash</h3><span className="game-subtitle">Run the list. Learn the diagnosis.</span></div><div className="game-card-footer"><span>↗ opens Dx Dash</span><span className="card-play">PLAY ▶</span></div></a>
-      {GAMES.map((game,index)=>{
+        <div className="shelf-chips" role="tablist" aria-label="Filter games">{SHELVES.map(sh=><button key={sh.id} role="tab" aria-selected={shelf===sh.id} className={shelf===sh.id?"selected":""} onClick={()=>setShelf(sh.id)}><span>{sh.icon}</span>{sh.label}</button>)}</div>
+    <div className="game-grid">
+      {(shelf==="all"||shelf==="clinical")&&<a className="game-card dx-card" href="https://pathomnemonic.github.io/buzzword-dash-v2/" target="_blank" rel="noreferrer"><div className="game-cover"><DxArt/><span className="card-status">★ FEATURED</span></div><div className="game-card-body"><span className="game-category">Companion game</span><h3>Dx Dash</h3><span className="game-subtitle">Run the list. Learn the diagnosis.</span></div><div className="game-card-footer"><span>↗ opens Dx Dash</span><span className="card-play">PLAY ▶</span></div></a>}
+      {ordered.map((game,index)=>{
+      const spotlight=game.id===featuredId;
       const result=player.results.find(r=>r.date===today&&r.game===game.id&&r.scope===scope);
       const cleared=!!result&&!freePlay;
-      return <button key={game.id} className={"game-card "+game.wash+(cleared?" card-done":"")} onClick={()=>openGame(game.id,freePlay)} style={{animationDelay:(index*40)+"ms"}}>
-        <div className="game-cover"><GameArt game={game.id}/><span className={"card-status"+(cleared?" status-done":"")}>{freePlay?"∞":cleared?"★ CLEARED":"DAILY"}</span></div>
+      return <button key={game.id} className={"game-card "+game.wash+(cleared?" card-done":"")+(spotlight?" card-spotlight":"")} onClick={()=>openGame(game.id,freePlay)} style={{animationDelay:(index*40)+"ms"}}>
+        <div className="game-cover"><GameArt game={game.id}/><span className={"card-status"+(cleared?" status-done":"")}>{cleared?"★ CLEARED":spotlight?"★ FEATURED TODAY":freePlay?"∞":"DAILY"}</span></div>
         <div className="game-card-body"><span className="game-category">{game.category}</span><h3>{game.title}</h3><span className="game-subtitle">{game.subtitle}</span></div>
         <div className="game-card-footer"><span>⏱ {game.time}</span><span className="card-play">PLAY ▶</span></div>
       </button>;
@@ -309,9 +333,11 @@ function RoomScores({room}:{room:RoomState}){
 }
 
 function StatsPage({player,scope,streak}:{player:PlayerData;scope:string;streak:number}){
+  const trophies=computeTrophies(player,GAMES.length);
   const results=player.results.filter(r=>r.scope===scope);
   const perfect=results.filter(r=>r.perfect).length;
   return <div className="stats-page"><span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div></div>
+    <section className="trophy-cabinet"><h2>Trophy cabinet <small>{trophies.filter(t=>t.earned).length} / {trophies.length}</small></h2><div className="trophy-grid">{trophies.map(t=><div key={t.id} className={"trophy"+(t.earned?" earned":"")}><span className="trophy-icon">{t.earned?t.icon:"🔒"}</span><b>{t.name}</b><small>{t.hint}</small></div>)}</div></section>
     <section className="stats-table"><h2>Game shelf</h2>{GAMES.map(g=>{const played=results.filter(r=>r.game===g.id);return <div key={g.id}><span>{g.title}</span><span>{played.length} played</span><b>Best run {Math.max(0,...played.map(r=>r.score))}</b></div>;})}</section>
     <p className="privacy-note">Progress shown here is for the current arcade mode. Your records are stored locally unless you choose Google Drive sync in Settings.</p>
   </div>;

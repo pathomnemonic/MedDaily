@@ -127,6 +127,16 @@ const ART: Record<GameId, () => ReactNode> = {
     <text x={32} y={100} fontSize={22} fontFamily="Lilita One, sans-serif" fill="#ffd54a" stroke={INK} strokeWidth={2.5} paintOrder="stroke" transform="rotate(-12 32 100)">?</text>
     <text x={172} y={38} fontSize={22} fontFamily="Lilita One, sans-serif" fill="#7dffd0" stroke={INK} strokeWidth={2.5} paintOrder="stroke" transform="rotate(12 172 38)">!</text>
   </g>,
+  mime: () => <g>
+    <ellipse cx={100} cy={96} rx={52} ry={7} fill="#2a165855" />
+    <path d="M62 30c0-18 20-24 38-24s38 6 38 24c0 26-14 52-38 52S62 56 62 30z" fill="#fff7ea" {...S} />
+    <path d="M70 12q30-14 60 0l-8 10q-22-8-44 0z" fill="#2a1658" />
+    <circle cx={84} cy={38} r={5} fill={INK} /><circle cx={116} cy={38} r={5} fill={INK} />
+    <path d="M82 58q18 14 36 0" fill="none" stroke="#ff4f86" strokeWidth={4} strokeLinecap="round" />
+    <path d="M54 84l-24-18m116 18l24-18" stroke="#fff" strokeWidth={9} strokeLinecap="round" />
+    <circle cx={26} cy={62} r={8} fill="#fff" {...S} /><circle cx={174} cy={62} r={8} fill="#fff" {...S} />
+    <text x={176} y={22} fontSize={24} fontFamily="Lilita One, sans-serif" fill="#ffd54a" stroke={INK} strokeWidth={2.5} paintOrder="stroke" transform="rotate(12 176 22)">?!</text>
+  </g>,
   lettergrid: () => <g>
     {Array.from({ length: 16 }, (_, i) => {
       const r = Math.floor(i / 4), c = i % 4, on = [4, 5, 10, 11].includes(i) || i === 1;

@@ -2,7 +2,7 @@
 
 **Snapshot:** November 19, 2026 (gameplay parity iteration)
 
-MedDaily exposes sixteen playable game formats. The retired Next Best Step bank remains in the repository for reference but is not presented as a standalone game. The current banks are not yet a 365-day set of unique puzzles for every game.
+MedDaily exposes seventeen playable game formats. The retired Next Best Step bank remains in the repository for reference but is not presented as a standalone game. The current banks are not yet a 365-day set of unique puzzles for every game.
 
 ## Curated content currently included
 
@@ -21,8 +21,9 @@ MedDaily exposes sixteen playable game formats. The retired Next Best Step bank 
 | Letter Rungs | 26 ladders | Each intended solution path uses real words and one-letter changes |
 | Hexicon | 42 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
 | Casefile Logic | 15 cases | Fictional deduction puzzles with tri-state pencil marks, one-to-one assignments, and scored progressive hints |
-| Deep Dive | 70 prompts | Timed open-answer prompts with curated long-tail rarity tiers; typo-tolerant matching (a typo is forgiven only when it identifies exactly one accepted answer). The accepted set is closed, so valid but unlisted answers are rejected; widening each prompt's answer list is the main remaining gap |
+| Deep Dive | 70 prompts | Timed open-answer prompts with curated long-tail rarity tiers; typo-tolerant matching (a typo is forgiven only when it identifies exactly one accepted answer). Accepted answers per prompt were roughly doubled (every prompt has 12+ answers) with synonyms and abbreviations (`src/dataDeepDiveExtra.ts`); the set is still curated and closed, and rarity tiers are editorial, not measured |
 | Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes; 20-second question timer; in pass-and-play a correct answer keeps the wheel and a miss or timeout passes it |
+| Mime Time | 135 act-it-out prompts (procedures, symptoms, ward life, instruments, specialties, patients) | Pass-the-phone charades for 1–6 players; 45-second turns, skip/got-it scoring; every prompt can be acted without props or speech |
 | Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |
 
 ## What this means for daily longevity

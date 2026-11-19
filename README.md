@@ -59,3 +59,9 @@ See [Daily-game format research](docs/DLE_RESEARCH.md) for the directory scan, m
 ## Medical content note
 
 Medical material is for education and entertainment, not patient care or a clinical decision tool. Clinical questions include short explanations and source notes, but some source notes are reference signposts rather than live guideline verification. Verify clinical decisions against current authoritative guidance. Content should receive ongoing specialist review before formal teaching or clinical use.
+
+## Home screen and rewards
+
+- Filter shelves (All, Quick, Brain, Words, Clinical, Party), a Surprise me button, and a rotating featured slot that alternates Deep Dive and Trivia Rumble each UTC day. Dx Dash is always featured.
+- A 14-trophy cabinet computed from saved results (`src/achievements.ts`).
+- Mime Time is a pass-the-phone charades game with a 135-prompt deck.
