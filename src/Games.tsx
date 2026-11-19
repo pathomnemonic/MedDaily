@@ -803,7 +803,7 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
   };
 
   return <div className="game-layout association-game">
-    <div className="game-instructions"><span className="instruction-dot peach" /> Twelve pairs are hidden in a 4 × 6 memory board. Match terms to their clinical associations, build a streak, and beat the 75-second clock.</div>
+    <div className="game-instructions"><span className="instruction-dot peach" /> Twelve pairs are hidden in a 4 × 6 memory board. Match terms to their clinical associations, build a streak, and beat the 90-second clock.</div>
     <div className="association-hud">
       <div><b>{seconds}</b><span>SECONDS</span></div>
       <div><b>{matched.length}/{pairSet.length}</b><span>PAIRS</span></div>
