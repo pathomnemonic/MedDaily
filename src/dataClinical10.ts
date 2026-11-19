@@ -67,7 +67,7 @@ export const connectionPuzzlesExpansion10: ConnectionGroup[][] = [
 ],
 [
 {category:"Deep venous thrombosis",words:["Unilateral leg swelling","Noncompressible vein","Venous ultrasound","Anticoagulation"],hint:"Diagnosis and treatment of DVT."},
-{category:"Pulmonary embolism",words:["Pleuritic chest pain","CTPA filling defect","Tachycardia","Anticoagulation"],hint:"Common PE findings and treatment."},
+{category:"Pulmonary embolism",words:["Pleuritic chest pain","CTPA filling defect","Tachycardia","Right-heart strain"],hint:"Common PE findings and treatment."},
 {category:"Antiphospholipid syndrome",words:["Lupus anticoagulant","Anticardiolipin","Recurrent pregnancy loss","Warfarin"],hint:"Autoimmune thrombophilia."},
 {category:"Heparin-induced thrombocytopenia",words:["PF4 antibody","Platelet fall","New thrombosis","Non-heparin anticoagulant"],hint:"Immune-mediated prothrombotic drug reaction."}
 ],
