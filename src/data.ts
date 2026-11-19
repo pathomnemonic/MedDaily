@@ -250,6 +250,11 @@ export const triageCases = [
 
 medleWords.push(...medleWordsExpansion.filter((word) => !medleWords.includes(word)));
 medleWords.push(...medleWordsExpansion3.filter((word) => !medleWords.includes(word)));
+const uniqueMedleWords = [...new Set(medleWords)];
+medleWords.splice(0, medleWords.length, ...uniqueMedleWords);
+for (const word of ["BOLUS", "CLOTS", "ULNAR", "VIRAL"]) {
+  if (!medleWords.includes(word)) medleWords.push(word);
+}
 
 labPrompts.push(...labPromptsExpansion2, ...labPromptsExpansion3);
 pairsBank.push(...pairsBankExpansion2);
@@ -261,6 +266,14 @@ diagnosisCases.push(...diagnosisCasesExpansion, ...diagnosisCasesExpansion2, ...
 nextStepCases.push(...nextStepCasesExpansion, ...nextStepCasesExpansion2, ...nextStepCasesExpansion3, ...nextStepCasesExpansion4, ...nextStepCasesExpansion5, ...nextStepCasesExpansion6, ...nextStepCasesExpansion7, ...nextStepCasesExpansion8, ...nextStepCasesExpansion9, ...nextStepCasesExpansion10);
 labPrompts.push(...labPromptsExpansion);
 pairsBank.push(...pairsBankExpansion);
+const seenPairTerms = new Set<string>();
+const uniquePairs = pairsBank.filter(([term]) => {
+  const key = term.trim().toLocaleLowerCase();
+  if (seenPairTerms.has(key)) return false;
+  seenPairTerms.add(key);
+  return true;
+});
+pairsBank.splice(0, pairsBank.length, ...uniquePairs);
 microbePacks.push(...microbePacksExpansion, ...microbePacksExpansion2, ...microbePacksExpansion3);
 
 // Rotate correct options deterministically across the entire clinical bank.
