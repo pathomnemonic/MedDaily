@@ -64,7 +64,7 @@ The tracks are intentionally broad and balanced. Neurology is represented as one
 15. Trivia Rumble — category-wheel party trivia.
 16. Letter Lab — timed adjacent-letter word hunt.
 
-The first eight are medical-knowledge-forward. The latter four are deliberately lighter puzzle formats. The list is intentionally mixed: a medical game collection should contain games that are simply fun.
+The lineup intentionally mixes medical knowledge with wordplay, visual logic, estimation, deduction, and party formats; not every game needs to be a clinical question.
 
 ## Guardrails for future additions
 
