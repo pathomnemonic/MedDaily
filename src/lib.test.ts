@@ -150,7 +150,7 @@ describe("Cell Sketch nonogram clues", () => {
 
 describe("expanded content integrity", () => {
   it("keeps the expanded daily banks large and distributes answer positions", () => {
-    expect(connectionPuzzles.length).toBeGreaterThanOrEqual(120);
+    expect(connectionPuzzles.length).toBeGreaterThanOrEqual(130);
     expect(spellingHivePuzzles.length).toBeGreaterThanOrEqual(24);
     expect(wordLadders.length).toBeGreaterThanOrEqual(26);
     expect(deductionCases.length).toBeGreaterThanOrEqual(15);
@@ -170,8 +170,8 @@ describe("expanded content integrity", () => {
     expect(new Set(medleWords).size).toBe(medleWords.length);
     expect(new Set(scrambleWordsExtended.map(([word]) => word)).size).toBe(scrambleWordsExtended.length);
     expect(triageCases.every((item) => item.steps.length === 4)).toBe(true);
-    expect(diagnosisCases.length).toBeGreaterThanOrEqual(220);
-    expect(nextStepCases.length).toBeGreaterThanOrEqual(220);
+    expect(diagnosisCases.length).toBeGreaterThanOrEqual(240);
+    expect(nextStepCases.length).toBeGreaterThanOrEqual(240);
     const latestAnswers = nextStepCases.slice(-20).map((item) => item.answer);
     expect([0, 1, 2, 3].map((position) => latestAnswers.filter((answer) => answer === position).length)).toEqual([5, 5, 5, 5]);
     const latestDiagnosis = diagnosisCases.slice(-20).map((item) => item.options.indexOf(item.answer));
