@@ -49,18 +49,20 @@ The tracks are intentionally broad and balanced. Neurology is represented as one
 
 1. Medle — five-letter guessing.
 2. Connections — four hidden groups of four.
-3. Mystery Case — progressive diagnosis clues.
-4. Next Best Step — clinical decision selection.
+3. DoctorDle — six typed diagnosis guesses with progressive clues.
 4. Word Hunt — themed word-search grid.
 5. Labline — numeric estimation.
-6. Association Blitz — association matching.
+6. Association Blitz — an expanded eight-pair association board.
 7. Triage Order — sequence reconstruction.
 8. Anagram Sprint — letter unscrambling.
 9. Cell Sketch — nonogram.
-10. What Has More? — comparative estimation.
+10. What Has More? — surprising clinical, food, drug, and everyday comparisons.
 11. Word Ladder — one-letter transformations.
-12. Medical Spelling Hive — seven-letter word puzzle with a center-letter rule and pangram bonus.
-13. Casefile Logic — fictional deduction grid using people, locations, objects, and clues.
+12. Medical Spelling Hive — medical-themed seven-letter word puzzle with a center-letter rule and pangram bonus.
+13. Casefile Logic — fictional deduction grid with in-game pencil marks.
+14. Deep Dive — long-tail open-answer recall.
+15. Trivia Rumble — category-wheel party trivia.
+16. Letter Lab — timed adjacent-letter word hunt.
 
 The first eight are medical-knowledge-forward. The latter four are deliberately lighter puzzle formats. The list is intentionally mixed: a medical game collection should contain games that are simply fun.
 
