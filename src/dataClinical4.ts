@@ -73,7 +73,7 @@ export const connectionPuzzlesExpansion4: ConnectionGroup[][] = [
 ],
 [
 {category:"Hemolytic uremic syndrome",words:["Shiga toxin","Bloody diarrhea","Acute kidney injury","Thrombocytopenia"],hint:"Typical post-diarrheal HUS."},
-{category:"Immune thrombocytopenia",words:["Isolated thrombocytopenia","Large platelets","Normal coagulation","Mucosal bleeding"],hint:"Typical ITP presentation."},
+{category:"Immune thrombocytopenia",words:["Isolated thrombocytopenia","Large platelets","Normal coagulation","Petechiae and purpura"],hint:"Typical ITP presentation."},
 {category:"Hemophilia",words:["Hemarthrosis","Prolonged aPTT","Normal platelet count","Deep tissue bleeding"],hint:"Clues to coagulation factor deficiency."},
 {category:"Von Willebrand disease",words:["Mucosal bleeding","Menorrhagia","Reduced platelet adhesion","Low vWF"],hint:"Common clinical and laboratory clues."}
 ],
