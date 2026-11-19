@@ -256,7 +256,7 @@ wordLadders.push(
 {start:"CARE",end:"LAST",path:["CARE","CASE","CASH","WASH","WISH","FISH","FIST","LIST","LAST"],note:"A multi-step path from care to last."},
 {start:"COST",end:"PATH",path:["COST","LOST","LAST","PAST","FAST","FATE","LATE","MATE","MATH","PATH"],note:"A word ladder with several turns."},
 {start:"EARS",end:"PAST",path:["EARS","EARN","BARN","BARK","DARK","DART","PART","PARK","MARK","MARS","MASS","PASS","PAST"],note:"Change exactly one letter at every rung."},
-{start:"SEAT",end:"SHELF",path:["SEAT","MEAT","MELT","BELT","BELL","CELL","SELL","SELF","SHELF"],note:"The path ends at a household object."},
+{start:"SEAT",end:"SELF",path:["SEAT","MEAT","MELT","BELT","BELL","CELL","SELL","SELF"],note:"The path ends at a household object."},
 {start:"GAME",end:"RARE",path:["GAME","NAME","SAME","SAVE","SAFE","SAGE","PAGE","PACE","RACE","RARE"],note:"Each intermediate word differs by one letter."},
 {start:"RING",end:"LUNG",path:["RING","SING","SONG","LONG","LUNG"],note:"A short ladder with a changing vowel."},
 {start:"DATA",end:"GAME",path:["DATA","DATE","GATE","GAME"],note:"A compact ladder using familiar words."}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { connectionPuzzles, medleWords } from "./data";
-import { deductionCases, glyphPatterns, spellingHivePuzzles } from "./dataExtra";
+import { connectionPuzzles, medleWords, diagnosisCases, nextStepCases, labPrompts, triageCases, pairsBank, microbePacks } from "./data";
+import { deductionCases, glyphPatterns, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
 import { hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
 
 describe("daily puzzle primitives", () => {
@@ -141,6 +141,45 @@ describe("Cell Sketch nonogram clues", () => {
       };
       visit(0);
       expect(solutions, puzzle.name).toBe(1);
+    }
+  });
+});
+
+
+describe("expanded content integrity", () => {
+  it("keeps clinical case IDs unique and answer keys valid", () => {
+    expect(new Set(diagnosisCases.map((item) => item.id)).size).toBe(diagnosisCases.length);
+    expect(new Set(nextStepCases.map((item) => item.id)).size).toBe(nextStepCases.length);
+    for (const item of diagnosisCases) {
+      expect(item.clues.length).toBeGreaterThanOrEqual(2);
+      expect(item.options).toContain(item.answer);
+      expect(item.source.length).toBeGreaterThan(0);
+    }
+    for (const item of nextStepCases) {
+      expect(item.options[item.answer]).toBeDefined();
+      expect(item.source.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps lab, triage, memory, and microbe records usable", () => {
+    expect(new Set(labPrompts.map((item) => item.id)).size).toBe(labPrompts.length);
+    expect(labPrompts.every((item) => Number.isFinite(item.value) && item.tolerance >= 0)).toBe(true);
+    expect(new Set(triageCases.map((item) => item.id)).size).toBe(triageCases.length);
+    expect(triageCases.every((item) => item.steps.length >= 3)).toBe(true);
+    expect(new Set(pairsBank.map((item) => item[0])).size).toBe(pairsBank.length);
+    expect(new Set(microbePacks.map((item) => item.name)).size).toBe(microbePacks.length);
+  });
+
+  it("keeps added word and comparison banks structurally valid", () => {
+    expect(new Set(scrambleWordsExtended.map((item) => item[0])).size).toBe(scrambleWordsExtended.length);
+    expect(scrambleWordsExtended.every((item) => item[0].length >= 4 && item[1].length > 0)).toBe(true);
+    expect(higherLowerPairs.every((item) => Number.isFinite(item.av) && Number.isFinite(item.bv))).toBe(true);
+    for (const ladder of wordLadders) {
+      expect(ladder.path[0]).toBe(ladder.start);
+      expect(ladder.path[ladder.path.length - 1]).toBe(ladder.end);
+      for (let i = 1; i < ladder.path.length; i++) {
+        expect([...ladder.path[i - 1]].filter((letter, index) => letter !== ladder.path[i][index])).toHaveLength(1);
+      }
     }
   });
 });

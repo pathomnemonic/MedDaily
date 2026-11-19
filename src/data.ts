@@ -1,3 +1,4 @@
+import { diagnosisCasesExpansion2, nextStepCasesExpansion2, connectionPuzzlesExpansion2, labPromptsExpansion2, pairsBankExpansion2 } from "./dataClinical2";
 import { connectionPuzzlesExpansion, diagnosisCasesExpansion, nextStepCasesExpansion, labPromptsExpansion, pairsBankExpansion, microbePacksExpansion, medleWordsExpansion, triageCasesExpansion, microbePacksExpansion2 } from "./dataExpansion";
 
 export interface ConnectionGroup {
@@ -239,6 +240,11 @@ export const triageCases = [
 ];
 
 medleWords.push(...medleWordsExpansion.filter((word) => !medleWords.includes(word)));
+connectionPuzzles.push(...connectionPuzzlesExpansion2);
+diagnosisCases.push(...diagnosisCasesExpansion2);
+nextStepCases.push(...nextStepCasesExpansion2);
+labPrompts.push(...labPromptsExpansion2);
+pairsBank.push(...pairsBankExpansion2);
 triageCases.push(...triageCasesExpansion);
 connectionPuzzles.push(...connectionPuzzlesExpansion);
 diagnosisCases.push(...diagnosisCasesExpansion);
