@@ -13,7 +13,7 @@ MedDaily exposes sixteen playable game formats. The retired Next Best Step bank 
 | DoctorDle | 220 cases | Six-guess typed diagnosis puzzle with progressive clues, common clinical aliases, explanations, and source notes |
 | Word Hunt | 71 unique medical theme packs | 8×10 Strands-style adjacent-path grids with a top-to-bottom spangram and earned hints; themes span organisms, anatomy, organ systems, and pharmacology |
 | Labline | 100 prompts | Five-round estimation challenge with cumulative scoring and reference explanations |
-| Association Blitz | 208 unique pairs | 20-card, ten-pair timed memory board with combo streaks and a time bonus |
+| Association Blitz | 208 unique pairs | Standard 12-pair and Expert 15-pair timed memory modes with combo streaks and a time bonus |
 | Triage Order | 42 sequences | Clinical sequence reconstruction with optional scored position hints |
 | Anagram Sprint | 111 terms | Five-word, 75-second timed scramble with hints and attempt-based scoring |
 | Cell Sketch | 31 curated 5×5 patterns + 8 seeded transformations each in Free Play | Row and column run clues; CI verifies one valid solution per board |
@@ -21,7 +21,7 @@ MedDaily exposes sixteen playable game formats. The retired Next Best Step bank 
 | Word Ladder | 26 curated ladders + procedural Free Play | Each intended solution path uses real words and one-letter changes |
 | Medical Spelling Hive | 42 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
 | Casefile Logic | 30 curated cases + procedural Free Play | Curated daily logic puzzles; unlimited Free Play generates seeded, uniquely solvable 3×3 deduction grids with pencil marks and scored hints |
-| Deep Dive | 70 prompts | Timed open-answer prompts with curated long-tail rarity tiers |
+| Deep Dive | 70 prompts | Timed multi-answer prompts with curated long-tail rarity tiers; accepted answers earn tiered points |
 | Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes |
 | Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |
 
