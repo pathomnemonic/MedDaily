@@ -384,7 +384,7 @@ function LetterGridGame({ seed, onDone }: Props) {
     if (!done.current) {
       done.current = true;
       const points = words.reduce((total, word) => total + letterWordPoints(word), 0);
-      onDone(points, maximum, points === maximum, "Letter Lab · " + words.length + " words\\n" + words.map((word) => "🟩".repeat(Math.min(6, word.length))).join("\\n"));
+      onDone(points, maximum, points === maximum, "Letter Lab · " + words.length + " words\n" + words.map((word) => "🟩".repeat(Math.min(6, word.length))).join("\n"));
     }
   };
 
@@ -999,7 +999,7 @@ function AnagramSprint({ seed, onDone }: Props) {
     done.current = true;
     setEnded(true);
     setNote("Time. The remaining words are revealed below.");
-    onDone(score, 100, score === 100, "Anagram Sprint · " + roundResults.length + "/5 rounds\\n" + roundResults.map((result) => result ? "🟩" : "⬛").join(""));
+    onDone(score, 100, score === 100, "Anagram Sprint · " + roundResults.length + "/5 rounds\n" + roundResults.map((result) => result ? "🟩" : "⬛").join(""));
   }, [seconds, ended, score, onDone]);
 
   const check = () => {
@@ -1029,7 +1029,7 @@ function AnagramSprint({ seed, onDone }: Props) {
     if (round === rounds.length - 1) {
       const finalScore = score;
       setEnded(true);
-      if (!done.current) { done.current = true; onDone(finalScore, 100, finalScore === 100, "Anagram Sprint · 5/5 rounds\\n" + roundResults.map((result) => result ? "🟩" : "⬛").join("")); }
+      if (!done.current) { done.current = true; onDone(finalScore, 100, finalScore === 100, "Anagram Sprint · 5/5 rounds\n" + roundResults.map((result) => result ? "🟩" : "⬛").join("")); }
       return;
     }
     setRound((current) => current + 1);
@@ -1067,7 +1067,7 @@ function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boo
   const check = () => {
     const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, value, c) => m + ((value === 1 && cells[r][c] === 1) || (value === 0 && cells[r][c] === 2) ? 1 : 0), 0), 0);
     setChecked(true);
-    onDone(Math.round(correct / 25 * 100), 100, correct === 25, "Cell Sketch · " + correct + "/25 cells\\n" + cells.map((row, r) => row.map((value, c) => item.pattern[r][c] ? (value === 1 ? "🟩" : "🟥") : value === 2 ? "⬛" : value === 0 ? "⬜" : "🟥").join("")).join("\\n"));
+    onDone(Math.round(correct / 25 * 100), 100, correct === 25, "Cell Sketch · " + correct + "/25 cells\n" + cells.map((row, r) => row.map((value, c) => item.pattern[r][c] ? (value === 1 ? "🟩" : "🟥") : value === 2 ? "⬛" : value === 0 ? "⬜" : "🟥").join("")).join("\n"));
   };
   return <div className="game-layout">
     <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY PATTERN" : "CURATED DAILY PATTERN"}</div>
@@ -1097,7 +1097,7 @@ function HigherLower({ seed, onDone }: Props) {
     setResults(nextResults);
     setPicked(v); setScore(next); setReveal(true);
     window.setTimeout(() => {
-      if (round + 1 === list.length) { setFinished(true); onDone(Math.round(next / list.length * 100), 100, next === list.length, "What Has More? · " + next + "/5 correct\\n" + nextResults.map((result) => result ? "🟩" : "⬛").join("")); }
+      if (round + 1 === list.length) { setFinished(true); onDone(Math.round(next / list.length * 100), 100, next === list.length, "What Has More? · " + next + "/5 correct\n" + nextResults.map((result) => result ? "🟩" : "⬛").join("")); }
       else { setRound((r) => r + 1); setPicked(null); setReveal(false); }
     }, 900);
   };
@@ -1126,8 +1126,8 @@ function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boo
     if (!LADDER_WORDS.has(word)) { setNote("That word is not in the ladder dictionary. Try another one-letter neighbor."); return; }
     if (entered.includes(word)) { setNote("You've already used that word."); return; }
     const next = [...entered, word]; setEntered(next); setText("");
-    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (showPath ? 20 : 0))), 100, next.length === item.path.length && !showPath, "Word Ladder · solved\\n" + next.join(" → ") + (showPath ? "\\nHint used" : "")); }
-    else if (next.length >= maxMoves) { setEnded(true); onDone(0, 100, false, "Word Ladder · no solution\\n" + next.join(" → ")); }
+    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (showPath ? 20 : 0))), 100, next.length === item.path.length && !showPath, "Word Ladder · solved\n" + next.join(" → ") + (showPath ? "\nHint used" : "")); }
+    else if (next.length >= maxMoves) { setEnded(true); onDone(0, 100, false, "Word Ladder · no solution\n" + next.join(" → ")); }
     else setNote("Good step. Keep going.");
   };
   return <div className="game-layout">
@@ -1307,7 +1307,7 @@ function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: 
     setSubmitted(true);
     setNote(matches === 6 ? "Every clue fits. Mystery solved." : matches + " of 6 assignments are in the right place. Review the clues and solution.");
     const shareRows = item.solution.map((solution) => { const current = assignments[solution.suspect]; return (current.location === solution.location ? "🟩" : "⬛") + (current.object === solution.object ? "🟩" : "⬛"); }).join("");
-    onDone(points, 100, matches === 6 && hintsUsed === 0, "Casefile Logic · " + matches + "/6 matches\\n" + shareRows + "\\n" + hintsUsed + " hints used");
+    onDone(points, 100, matches === 6 && hintsUsed === 0, "Casefile Logic · " + matches + "/6 matches\n" + shareRows + "\n" + hintsUsed + " hints used");
   };
   return <div className="game-layout">
     <div className="case-banner logic-banner"><span>{practice?"GENERATED FREE-PLAY CASE":"CURATED DAILY CASE"}</span><strong>{item.title}</strong><small>Deduction, not diagnosis · 3×3 logic grid</small></div>
