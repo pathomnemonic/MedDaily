@@ -1,6 +1,6 @@
 # Content inventory and expansion priorities
 
-**Snapshot:** November 19, 2026 (content expansion batch 14)
+**Snapshot:** November 19, 2026 (content expansion batch 15)
 
 MedDaily has fourteen playable game formats. This is a functioning first release with a broad specialty structure, not yet a 365-day set of unique content for every game.
 
@@ -8,17 +8,17 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 
 | Game | Current bank | Notes |
 |---|---:|---|
-| Medle | 117 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
+| Medle | 140 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
 | Connections | 122 boards | Four groups of four per board; 20 new cross-specialty boards |
 | Mystery Case | 220 cases | Progressive clinical-diagnosis clues with explanations and source notes |
 | Next Best Step | 220 cases | Original clinical decision vignettes with explanations and source notes |
-| Microbe Hunt | 48 organism packs | Each pack generates a deterministic word-search grid |
-| Labline | 70 prompts | Reference values, thresholds, and a few vital-sign estimates; normal ranges vary by laboratory and patient |
-| Memory Match | 168 pairs | Medication, mechanism, anatomy, finding, and diagnosis associations |
-| Triage Order | 32 sequences | Clinical and emergency sequence-reconstruction puzzles |
-| Anagram Sprint | 81 terms | Three-guess word scramble |
+| Microbe Hunt | 68 organism packs | Each pack generates a deterministic word-search grid |
+| Labline | 100 prompts | Reference values, thresholds, and a few vital-sign estimates; normal ranges vary by laboratory and patient |
+| Memory Match | 208 pairs | Medication, mechanism, anatomy, finding, and diagnosis associations |
+| Triage Order | 42 sequences | Clinical and emergency sequence-reconstruction puzzles |
+| Anagram Sprint | 111 terms | Three-guess word scramble |
 | Cell Sketch | 31 unique-named 5×5 nonograms (19 original patterns plus 12 rotations/reflections) | Row and column run clues; CI verifies one valid solution per board |
-| Higher or Lower | 46 comparisons | Quantitative comparisons, including ties |
+| Higher or Lower | 66 comparisons | Quantitative comparisons, including ties |
 | Word Ladder | 26 ladders | Each intended solution path uses real words and one-letter changes |
 | Spelling Hive | 24 seven-letter boards | Curated answer sets, center-letter rule, and pangram bonus |
 | Casefile Logic | 15 cases | Fictional deduction puzzles; one-to-one assignment rules |
