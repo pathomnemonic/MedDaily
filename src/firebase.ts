@@ -75,6 +75,14 @@ export async function joinOrCreateRoom(codeInput: string, input: Omit<RoomInfo, 
       return;
     }
     const room = snap.data() as RoomDocument;
+    const compatible = room.gameId === roomInput.gameId &&
+      room.scope === roomInput.scope &&
+      room.specialty === roomInput.specialty &&
+      room.date === roomInput.date &&
+      room.seed === roomInput.seed;
+    if (!compatible) {
+      throw new Error("That room belongs to a different game, date, or study track. Check the game and mode before joining.");
+    }
     const members = room.memberUids ?? [];
     if (!members.includes(uid) && members.length >= 8) throw new Error("This room is full (maximum eight players).");
     if (!members.includes(uid)) {
