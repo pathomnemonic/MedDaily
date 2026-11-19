@@ -1119,3 +1119,5 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .freeplay-status b{font:700 18px "Space Grotesk";color:var(--mint)}
 .freeplay-status span{font:500 8px "DM Mono";color:#91a2c8}
 @media(max-width:640px){.arcade-intro{align-items:flex-start}.arcade-intro-actions{justify-items:start}.arcade-intro-actions .arcade-game-count{display:none}.home-play-mode button{padding:7px 9px}}
+
+.ladder-mode-label{margin:0 0 8px;color:#a7b6d5;font-size:8px;letter-spacing:1.2px}
