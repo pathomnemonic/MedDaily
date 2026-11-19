@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { letterWordPoints, makeLetterGrid, traceGridWord } from "./arcadeLogic";
+import { generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord } from "./arcadeLogic";
 
 describe("Letter Lab grid rules", () => {
   const grid = [
