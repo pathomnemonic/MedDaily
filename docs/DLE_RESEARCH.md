@@ -60,7 +60,7 @@ Sixteen playable formats are currently exposed in the arcade:
 9. Cell Sketch — nonogram.
 10. What Has More? — surprising clinical, food, drug, and everyday comparisons.
 11. Word Ladder — one-letter transformations.
-12. Medical Spelling Hive — 38 curated medical-themed seven-letter boards with a center-letter rule and pangram bonus.
+12. Medical Spelling Hive — 46 curated medical-themed seven-letter boards with a center-letter rule and pangram bonus.
 13. Casefile Logic — fictional deduction grid with pencil marks, automatic one-to-one elimination, and forced-assignment propagation.
 14. Deep Dive — timed multi-answer long-tail recall with curated rarity tiers.
 15. Trivia Rumble — category-wheel party trivia.
