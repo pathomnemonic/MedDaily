@@ -67,3 +67,113 @@ export const gameFormatResearch = {
     { format:"Jigsaw / spatial / path puzzles", decision:"Anatomy assembly, nerve-path tracing, instrument-path puzzles; excellent touchscreen potential.", fit:"high" }
   ]
 };
+
+export interface HivePuzzle {
+  title: string;
+  letters: string[];
+  center: string;
+  words: string[];
+  pangram: string;
+  hint: string;
+}
+export const spellingHivePuzzles: HivePuzzle[] = [
+  {
+    title:"Triage Garden",
+    letters:["T","R","I","A","G","E","S"],center:"A",
+    words:["AIRS","ASTER","ARISE","ASTIR","EAST","GAIT","GATE","GATES","GRATE","GREAT","RAGE","RAGES","RAISE","RARE","RAGS","RATES","SAGE","SAGAS","SARI","SEAT","STAG","STAGE","STAGES","STAIR","STAR","STARE","STARS","STATE","STATES","TARES","TARS","TASTE","TEAR","TEARS","TRIAGE","TRIAGES"],
+    pangram:"TRIAGES",hint:"A first-response word is hidden among the letters."
+  },
+  {
+    title:"Healing Letters",
+    letters:["H","E","A","L","I","N","G"],center:"E",
+    words:["ALIEN","ALINE","ANGEL","ANGLE","EAGLE","ELAN","GENE","GLEE","GLEAN","HEAL","HEALING","HEEL","HEELING","HINGE","LANE","LEAN","LIEN","LIEGE","LINE"],
+    pangram:"HEALING",hint:"The pangram is something people hope to do after an injury."
+  },
+  {
+    title:"Medical Mix",
+    letters:["M","E","D","I","C","A","L"],center:"I",
+    words:["DIME","MICE","MILE","LIME","MILD","MAIL","IDEA","IDEAL","MEDIA","ACID","AMID","DIAL","LAID","LIED","CLIME","CLAIM","MICA","DICE","MIDI","EMAIL","MEDIC","MEDICAL","DECIMAL","IMIDE"],
+    pangram:"MEDICAL",hint:"Find a word that describes this whole playground."
+  },
+  {
+    title:"Stomach Set",
+    letters:["S","T","O","M","A","C","H"],center:"O",
+    words:["ATOM","COAST","COAT","COST","COTS","HOST","MACHO","MOAT","MOST","MOTS","OATH","SHOT","SOOT","STOAT","STOMA","STOMACH","TACO","TOMS","TOAST"],
+    pangram:"STOMACH",hint:"The pangram is an organ found in the digestive tract."
+  },
+  {
+    title:"Practice Round",
+    letters:["P","R","A","C","T","I","E"],center:"R",
+    words:["ACRE","CAPER","CARE","CARP","CART","CATER","CIRCA","CRATE","CRATER","CREPT","IRATE","PAIR","PARE","PART","PEAR","PIRATE","PRACTICE","PRATE","PRICE","RACE","RACER","RAPT","REACT","REAP","RECAP","RICE","RIPE","RITE","TIER","TIRE","TRACE","TRACT","TRAP","TRICE","TRIP"],
+    pangram:"PRACTICE",hint:"The pangram is a useful habit for any skill."
+  }
+];
+
+export interface DeductionCase {
+  title: string;
+  briefing: string;
+  suspects: [string,string,string];
+  locations: [string,string,string];
+  objects: [string,string,string];
+  clues: string[];
+  solution: { suspect:string; location:string; object:string }[];
+}
+export const deductionCases: DeductionCase[] = [
+  {
+    title:"The Vanishing Slide",
+    briefing:"A labeled slide, a keycard, and a stethoscope were found in three different rooms after a fictional late-night mix-up. Match each staff member to a room and an item.",
+    suspects:["Dr. Chen","Dr. Reyes","Dr. Nair"],
+    locations:["Laboratory","Imaging","Pharmacy"],
+    objects:["Glass slide","Keycard","Stethoscope"],
+    clues:[
+      "Dr. Chen was in neither Imaging nor the Pharmacy.",
+      "The Keycard was found in Imaging.",
+      "Dr. Reyes was not in the Pharmacy.",
+      "The Stethoscope was not in the Laboratory.",
+      "Dr. Nair did not have the Glass slide."
+    ],
+    solution:[
+      {suspect:"Dr. Chen",location:"Laboratory",object:"Glass slide"},
+      {suspect:"Dr. Reyes",location:"Imaging",object:"Keycard"},
+      {suspect:"Dr. Nair",location:"Pharmacy",object:"Stethoscope"}
+    ]
+  },
+  {
+    title:"The Night-Shift Mix-Up",
+    briefing:"Three items were left in different parts of a fictional hospital after a shift change. Determine who was where and what they were carrying.",
+    suspects:["Dr. Moss","Dr. Silva","Dr. Park"],
+    locations:["Intensive Care","Operating Room","General Ward"],
+    objects:["Pager","Scalpel","Clipboard"],
+    clues:[
+      "Dr. Moss was not in the Operating Room or the General Ward.",
+      "The Scalpel was in the Operating Room.",
+      "Dr. Silva was not in the General Ward.",
+      "The Clipboard was not in Intensive Care.",
+      "Dr. Park did not carry the Scalpel."
+    ],
+    solution:[
+      {suspect:"Dr. Moss",location:"Intensive Care",object:"Pager"},
+      {suspect:"Dr. Silva",location:"Operating Room",object:"Scalpel"},
+      {suspect:"Dr. Park",location:"General Ward",object:"Clipboard"}
+    ]
+  },
+  {
+    title:"The Specimen Relay",
+    briefing:"A microscope, a thermos, and a notebook were delivered to three different campus locations. Use the clues to reconstruct the fictional handoff.",
+    suspects:["Dr. Bell","Dr. Young","Dr. Ali"],
+    locations:["Research Lab","Garden","Cafeteria"],
+    objects:["Microscope","Thermos","Notebook"],
+    clues:[
+      "Dr. Bell went to neither the Garden nor the Cafeteria.",
+      "The Thermos was delivered to the Garden.",
+      "Dr. Young did not go to the Cafeteria.",
+      "The Notebook was not left in the Research Lab.",
+      "Dr. Ali did not carry the Microscope."
+    ],
+    solution:[
+      {suspect:"Dr. Bell",location:"Research Lab",object:"Microscope"},
+      {suspect:"Dr. Young",location:"Garden",object:"Thermos"},
+      {suspect:"Dr. Ali",location:"Cafeteria",object:"Notebook"}
+    ]
+  }
+];

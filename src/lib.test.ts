@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { connectionPuzzles, medleWords } from "./data";
+import { deductionCases, spellingHivePuzzles } from "./dataExtra";
 import { hashSeed, lineCells, dailyDateKey, makeWordSearch, scoreWord, seeded, shuffle } from "./lib";
 
 describe("daily puzzle primitives", () => {
@@ -59,6 +60,40 @@ describe("content bank sanity", () => {
       const words = board.flatMap((group) => group.words);
       expect(words).toHaveLength(16);
       expect(new Set(words.map((word) => word.toLowerCase())).size).toBe(16);
+    }
+  });
+});
+
+describe("additional daily puzzle packs", () => {
+  it("keeps every Spelling Hive bank internally valid", () => {
+    for (const puzzle of spellingHivePuzzles) {
+      expect(puzzle.letters).toHaveLength(7);
+      expect(new Set(puzzle.letters).size).toBe(7);
+      expect(puzzle.letters).toContain(puzzle.center);
+      expect(new Set(puzzle.words).size).toBe(puzzle.words.length);
+      expect(puzzle.words.every((word) =>
+        word.length >= 4 &&
+        word.includes(puzzle.center) &&
+        [...word].every((letter) => puzzle.letters.includes(letter))
+      )).toBe(true);
+      expect(puzzle.words).toContain(puzzle.pangram);
+    }
+  });
+
+  it("keeps every Casefile solution one-to-one", () => {
+    for (const puzzle of deductionCases) {
+      expect(puzzle.suspects).toHaveLength(3);
+      expect(puzzle.locations).toHaveLength(3);
+      expect(puzzle.objects).toHaveLength(3);
+      expect(puzzle.solution).toHaveLength(3);
+      expect(new Set(puzzle.solution.map((s) => s.suspect)).size).toBe(3);
+      expect(new Set(puzzle.solution.map((s) => s.location)).size).toBe(3);
+      expect(new Set(puzzle.solution.map((s) => s.object)).size).toBe(3);
+      expect(puzzle.solution.every((s) =>
+        puzzle.suspects.includes(s.suspect as never) &&
+        puzzle.locations.includes(s.location as never) &&
+        puzzle.objects.includes(s.object as never)
+      )).toBe(true);
     }
   });
 });

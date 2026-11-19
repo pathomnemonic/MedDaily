@@ -22,7 +22,9 @@ const GAMES: GameMeta[] = [
   {id:"splice",title:"Anagram Sprint",subtitle:"Unscramble the specimen",description:"Rebuild a medical word from its shuffled letters.",icon:"↝",wash:"mint",time:"1 min",category:"Word play",level:"Easy"},
   {id:"glyph",title:"Cell Sketch",subtitle:"Tiny picture logic",description:"Solve a tiny nonogram to reveal a scientific shape.",icon:"▦",wash:"lilac",time:"2 min",category:"Visual logic",level:"Easy → tricky"},
   {id:"higher",title:"Higher or Lower",subtitle:"Trust your intuition",description:"Make quick comparisons: quantities, anatomy, and the occasional tie.",icon:"↕",wash:"gold",time:"2 min",category:"Estimation",level:"Easy"},
-  {id:"ladder",title:"Word Ladder",subtitle:"One letter at a time",description:"Climb from one word to another with tiny changes.",icon:"⌁",wash:"peach",time:"3 min",category:"Word play",level:"Moderate"}
+  {id:"ladder",title:"Word Ladder",subtitle:"One letter at a time",description:"Climb from one word to another with tiny changes.",icon:"⌁",wash:"peach",time:"3 min",category:"Word play",level:"Moderate"},
+  {id:"hive",title:"Spelling Hive",subtitle:"Seven letters, a swarm of words",description:"Find as many words as you can from seven letters and the center tile.",icon:"✿",wash:"gold",time:"3 min",category:"Word play",level:"Easy → tricky"},
+  {id:"casefile",title:"Casefile Logic",subtitle:"The clues don't lie",description:"Solve a fictional three-person deduction grid using rooms, objects, and clues.",icon:"⌕",wash:"lilac",time:"4 min",category:"Logic puzzle",level:"Moderate"},
 ];
 const SPECIALTIES: { id: Specialty; name: string; short: string; icon: string; blurb: string }[] = [
   {id:"internal",name:"Internal Medicine",short:"IM",icon:"✚",blurb:"The broad medical wards: physiology, diagnosis, and management."},
@@ -222,7 +224,7 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
       <h1>A little curiosity.<br/><em>A lot of medicine.</em></h1>
       <p>A rotating collection of medical puzzles, word games, visual challenges, and estimation rounds. Learn something, spot a pattern, or simply play for the fun of it.</p>
       <div className="hero-buttons"><button className="button button-primary hero-cta" onClick={()=>openGame(firstTodo)}>Start today's rounds <span>↗</span></button><span className="no-account-note">No account needed</span></div>
-      <div className="hero-stats"><span><b>12</b> games</span><i/><span><b>{done}</b> played today</span><i/><span><b>{player.hideStreaks?"—":streak}</b> day streak</span></div>
+      <div className="hero-stats"><span><b>{GAMES.length}</b> games</span><i/><span><b>{done}</b> played today</span><i/><span><b>{player.hideStreaks?"—":streak}</b> day streak</span></div>
     </div>
     <div className="hero-art" aria-hidden="true"><div className="hero-orbit hero-orbit-a"/><div className="hero-orbit hero-orbit-b"/><div className="hero-cross">+</div>
       <div className="float-card float-card-one"><span>ECG</span><svg viewBox="0 0 120 42"><path d="M2 23h20l9-15 12 29 13-23 8 9h54"/></svg></div>
@@ -234,8 +236,8 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
       {mode==="specialty"?<div className="specialty-picker"><div className="specialty-intro"><b>Play with your people.</b><p>Choose a specialty or subject. Everyone in the same track gets the same daily set. Subspecialty topics live inside their parent specialty, so the arcade stays balanced across fields.</p></div><div className="specialty-chips">{SPECIALTIES.map(s=><button key={s.id} onClick={()=>setSpecialty(s.id)} className={specialty===s.id?"selected":""}><span>{s.icon}</span>{s.short}</button>)}</div><div className="specialty-selected"><b>{SPECIALTIES.find(s=>s.id===specialty)?.name}</b><span>{SPECIALTIES.find(s=>s.id===specialty)?.blurb}</span></div></div>:<p className="mode-description">The same broad daily set for everyone: medicine, wordplay, estimation, and pure puzzle fun.</p>}
     </section>
 
-    <section className="daily-strip"><div className="daily-strip-main"><div className="daily-icon">☀</div><div><span className="eyebrow">{mode==="general"?"THE DAILY ROUNDS":"SPECIALTY DAILY ROUNDS"}</span><h2>{done===12?"Your rounds are complete.":done===0?"Twelve games. One fresh day.":"You're on your way."}</h2><p>{mode==="general"?"Same puzzles for everyone today. Play in any order, or jump straight into a favorite.":"A shared specialty-specific daily set. Invite friends from your field to compare how you did."}</p></div></div>
-      <div className="progress-box"><div className="progress-numbers"><b>{done}<small>/12</small></b><span>completed</span></div><div className="progress-track"><i style={{width:(done/12*100)+"%"}}/></div><div className="progress-caption">{Math.round(done/12*100)}% of today's arcade</div></div></section>
+    <section className="daily-strip"><div className="daily-strip-main"><div className="daily-icon">☀</div><div><span className="eyebrow">{mode==="general"?"THE DAILY ROUNDS":"SPECIALTY DAILY ROUNDS"}</span><h2>{done===GAMES.length?"Your rounds are complete.":done===0?GAMES.length+" games. One fresh day.":"You're on your way."}</h2><p>{mode==="general"?"Same puzzles for everyone today. Play in any order, or jump straight into a favorite.":"A shared specialty-specific daily set. Invite friends from your field to compare how you did."}</p></div></div>
+      <div className="progress-box"><div className="progress-numbers"><b>{done}<small>/{GAMES.length}</small></b><span>completed</span></div><div className="progress-track"><i style={{width:(done/GAMES.length*100)+"%"}}/></div><div className="progress-caption">{Math.round(done/GAMES.length*100)}% of today's arcade</div></div></section>
 
     <section className="section-head"><div><span className="eyebrow">PICK YOUR PRESCRIPTION</span><h2>Step into the arcade</h2><p>Different puzzles, different parts of your brain.</p></div><span className="section-aside">TODAY · {today}</span></section>
     <div className="game-grid">{GAMES.map((game,index)=>{

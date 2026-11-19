@@ -5,10 +5,10 @@ A mobile-first medical mini-game arcade built with React, TypeScript, and Vite.
 
 ## What is here
 
-Twelve distinct game formats span both educational and just-for-fun play:
+Fourteen distinct game formats span both educational and just-for-fun play:
 
 - **Medical knowledge:** Medle, Connections, Mystery Case, Next Best Step, Microbe Hunt, Labline, Memory Match, and Triage Order.
-- **Pure puzzle fun:** Anagram Sprint, Cell Sketch (nonogram), Higher or Lower, and Word Ladder.
+- **Pure puzzle fun:** Anagram Sprint, Cell Sketch (nonogram), Higher or Lower, Word Ladder, Spelling Hive, and Casefile Logic.
 
 The same UTC date + mode + specialty + game key yields the same daily seed, so groups in different time zones share the same puzzle. Open Arcade is the shared, balanced general mode and the default starting point. Specialty Dailies add shared daily sets across 26 clinical specialties and four foundational subjects. Neurology is one track like the other specialties; subspecialty topics belong inside the Neurology track rather than taking up multiple top-level slots.
 

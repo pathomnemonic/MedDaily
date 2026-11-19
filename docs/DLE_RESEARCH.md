@@ -59,6 +59,8 @@ The tracks are intentionally broad and balanced. Neurology is represented as one
 10. Cell Sketch — nonogram.
 11. Higher or Lower — comparative estimation.
 12. Word Ladder — one-letter transformations.
+13. Spelling Hive — seven-letter word puzzle with a center-letter rule and pangram bonus.
+14. Casefile Logic — fictional deduction grid using people, locations, objects, and clues.
 
 The first eight are medical-knowledge-forward. The latter four are deliberately lighter puzzle formats. The list is intentionally mixed: a medical game collection should contain games that are simply fun.
 

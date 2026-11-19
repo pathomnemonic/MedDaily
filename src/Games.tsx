@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, nextStepCases, pairsBank, triageCases } from "./data";
-import { glyphPatterns, higherLowerPairs, scrambleWords, wordLadders } from "./dataExtra";
+import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, scoreWord, seeded, shuffle, type GameId } from "./lib";
 
 type Done = (score: number, maxScore: number, perfect: boolean) => void;
@@ -21,6 +21,8 @@ export function GameBoard({ game, seed, onDone, specialty = "general" }: Props &
     case "glyph": return <CellSketch seed={seed} onDone={onDone} />;
     case "higher": return <HigherLower seed={seed} onDone={onDone} specialty={specialty} />;
     case "ladder": return <WordLadder seed={seed} onDone={onDone} />;
+    case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
+    case "casefile": return <CasefileLogic seed={seed} onDone={onDone} />;
   }
 }
 
@@ -385,5 +387,110 @@ function WordLadder({ seed, onDone }: Props) {
     <div className="ladder-rungs">{entered.map((w, i) => <span key={i}>{w}</span>)}{!ended && <i>?</i>}</div>
     {!ended ? <form className="word-entry" onSubmit={(e) => { e.preventDefault(); add(); }}><input value={text} maxLength={item.start.length} onChange={(e) => setText(e.target.value.replace(/[^a-z]/gi,"").toUpperCase())} placeholder="Next word" /><button className="button button-primary">Add step</button></form> : <Finish title={entered[entered.length-1] === item.end ? "Ladder climbed" : "The ladder revealed"} detail={"One possible path: " + item.path.join(" → ")} score={entered[entered.length-1] === item.end ? "Solved" : "Try another tomorrow"} />}
     <p className="game-feedback">{note}</p>
+  </div>;
+}
+
+
+function SpellingHive({ seed, onDone }: Props) {
+  const puzzle = spellingHivePuzzles[seed % spellingHivePuzzles.length];
+  const letters = useMemo(() => shuffle(puzzle.letters, seeded(seed + 83)), [puzzle, seed]);
+  const [entry, setEntry] = useState("");
+  const [found, setFound] = useState<string[]>([]);
+  const [note, setNote] = useState("Make words of four or more letters. Every word must use the center letter.");
+  const [hint, setHint] = useState(false);
+  const [ended, setEnded] = useState(false);
+  const maximum = useMemo(() => puzzle.words.reduce((n, word) => n + wordPoints(word, puzzle), 0), [puzzle]);
+  const score = found.reduce((n, word) => n + wordPoints(word, puzzle), 0);
+  const points = (word: string) => wordPoints(word, puzzle);
+  const submit = () => {
+    const word = entry.toUpperCase().trim();
+    if (ended || !word) return;
+    if (word.length < 4) { setNote("Use at least four letters."); return; }
+    if (!word.includes(puzzle.center)) { setNote("Every word needs the center letter."); return; }
+    if ([...word].some((letter) => !puzzle.letters.includes(letter))) { setNote("That word uses a letter outside the hive."); return; }
+    if (!puzzle.words.includes(word)) { setNote("Not in today's word list. Try another combination."); return; }
+    if (found.includes(word)) { setNote("Already found. Find a new word."); return; }
+    const next = [...found, word];
+    setFound(next);
+    setEntry("");
+    setNote(word === puzzle.pangram ? "Pangram! You used all seven letters." : "+" + points(word) + " points. Keep exploring.");
+    if (next.length === puzzle.words.length) {
+      setEnded(true);
+      onDone(maximum, maximum, true);
+    }
+  };
+  const finish = () => {
+    if (ended) return;
+    setEnded(true);
+    onDone(score, maximum, found.length === puzzle.words.length);
+  };
+  return <div className="game-layout">
+    <div className="game-instructions"><span className="instruction-dot mint" /> Find as many words as you can using the seven hive letters. Words need at least four letters and must include the center letter. Use all seven for a pangram bonus.</div>
+    <div className="hive-header"><span className="eyebrow">TODAY'S HIVE</span><strong>{puzzle.title}</strong><small>{found.length} / {puzzle.words.length} words found · {score} points</small></div>
+    <div className="hive-board" aria-label="Seven letter spelling hive">
+      <button className="hive-letter center-letter" onClick={() => setEntry((v) => v + puzzle.center)}>{puzzle.center}</button>
+      {letters.filter((letter) => letter !== puzzle.center).map((letter, i) => <button key={letter} className={"hive-letter hive-position-" + i} onClick={() => setEntry((v) => v + letter)}>{letter}</button>)}
+    </div>
+    <div className="hive-entry-row">
+      <input value={entry} onChange={(e) => setEntry(e.target.value.toUpperCase().replace(/[^A-Z]/g,""))} onKeyDown={(e) => { if (e.key === "Enter") submit(); }} aria-label="Build a word" placeholder="Build a word…" disabled={ended} />
+      <button className="button button-primary" onClick={submit} disabled={ended}>Enter</button>
+      <button className="button button-soft" onClick={() => setEntry((v) => v.slice(0,-1))} disabled={ended || !entry}>⌫</button>
+      <button className="button button-quiet" onClick={() => setEntry("")} disabled={ended}>Clear</button>
+    </div>
+    <div className="hive-tools"><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Need a hint?</button><button className="text-button" onClick={finish} disabled={ended}>Finish for today</button></div>
+    {hint && <p className="game-feedback">{puzzle.hint}</p>}
+    <p className="game-feedback" aria-live="polite">{note}</p>
+    {found.length>0&&<div className="hive-found"><SectionLabel>FOUND WORDS</SectionLabel>{found.map((word) => <span key={word} className={word===puzzle.pangram?"pangram-word":""}>{word}<b>+{points(word)}</b></span>)}</div>}
+    {ended && <Finish title={found.includes(puzzle.pangram) ? "Pangram found" : "Hive closed"} detail={found.length + " of " + puzzle.words.length + " words found. The longest word is " + puzzle.pangram + "."} score={score + " / " + maximum}><div className="hive-reveal">{puzzle.words.filter((word)=>!found.includes(word)).map((word)=><span key={word}>{word}</span>)}</div></Finish>}
+  </div>;
+}
+function wordPoints(word: string, puzzle: { pangram:string }): number {
+  const base = Math.max(1, word.length - 3);
+  const pangram = [...new Set(word)].length === 7 && word === puzzle.pangram ? 7 : 0;
+  return base + pangram;
+}
+
+function CasefileLogic({ seed, onDone }: Props) {
+  const item = deductionCases[seed % deductionCases.length];
+  const blank = () => Object.fromEntries(item.suspects.map((suspect) => [suspect, { location:"", object:"" }]));
+  const [assignments, setAssignments] = useState(blank);
+  const [submitted, setSubmitted] = useState(false);
+  const [score, setScore] = useState(0);
+  const [note, setNote] = useState("Use the clues to assign one unique room and one unique item to each person.");
+  const update = (suspect: string, field: "location"|"object", value: string) => {
+    if (submitted) return;
+    setAssignments((current) => ({ ...current, [suspect]: { ...current[suspect], [field]: value } }));
+  };
+  const check = () => {
+    if (submitted) return;
+    const complete = item.suspects.every((suspect) => assignments[suspect].location && assignments[suspect].object);
+    if (!complete) { setNote("Complete both assignments for all three people first."); return; }
+    const matches = item.solution.reduce((n, solution) => {
+      const current = assignments[solution.suspect];
+      return n + Number(current.location === solution.location) + Number(current.object === solution.object);
+    }, 0);
+    const points = Math.round(matches / 6 * 100);
+    setScore(points);
+    setSubmitted(true);
+    setNote(matches === 6 ? "Every clue fits. Mystery solved." : matches + " of 6 assignments are in the right place. Review the clues and solution.");
+    onDone(points, 100, matches === 6);
+  };
+  return <div className="game-layout">
+    <div className="case-banner logic-banner"><span>FICTIONAL LOGIC PUZZLE</span><strong>{item.title}</strong><small>Deduction, not diagnosis</small></div>
+    <p className="logic-briefing">{item.briefing}</p>
+    <div className="logic-clues"><SectionLabel>CLUE BOARD</SectionLabel>{item.clues.map((clue,i)=><div key={i}><span>{String(i+1).padStart(2,"0")}</span>{clue}</div>)}</div>
+    <div className="logic-table"><div className="logic-table-head"><span>PERSON</span><span>LOCATION</span><span>OBJECT</span></div>
+      {item.suspects.map((suspect) => <div className="logic-table-row" key={suspect}>
+        <strong>{suspect}</strong>
+        <select aria-label={suspect+" location"} disabled={submitted} value={assignments[suspect].location} onChange={(e)=>update(suspect,"location",e.target.value)}>
+          <option value="">Choose…</option>{item.locations.map((v)=><option key={v} value={v}>{v}</option>)}
+        </select>
+        <select aria-label={suspect+" object"} disabled={submitted} value={assignments[suspect].object} onChange={(e)=>update(suspect,"object",e.target.value)}>
+          <option value="">Choose…</option>{item.objects.map((v)=><option key={v} value={v}>{v}</option>)}
+        </select>
+      </div>)}
+    </div>
+    {!submitted ? <button className="button button-primary full-button" onClick={check}>Submit deduction</button> : <Finish title={score===100?"Case cracked":"The solution revealed"} detail={"You got " + score + "% of the assignments correct. " + item.title + " is a fictional deduction puzzle."} score={score+" / 100"}><div className="reveal-groups">{item.solution.map((solution)=><span key={solution.suspect}><b>{solution.suspect}</b>{solution.location} · {solution.object}</span>)}</div></Finish>}
+    <p className="game-feedback" aria-live="polite">{note}</p>
   </div>;
 }
