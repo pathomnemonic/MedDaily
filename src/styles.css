@@ -1019,3 +1019,18 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .result-share-row>span{color:#ffe17a;font:700 9px var(--font-game);letter-spacing:1px}
 .result-share-row .button{min-width:125px}
 .finish-share{margin-top:12px}
+
+.association-hud{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:13px 0}
+.association-hud>div{display:grid;gap:4px;justify-items:center;padding:10px 6px;border:1px solid rgba(190,202,255,.13);border-radius:12px;background:rgba(8,15,35,.45)}
+.association-hud b{font:700 20px "Space Grotesk";color:var(--mint);font-variant-numeric:tabular-nums}
+.association-hud span{font:500 8px "DM Mono";letter-spacing:1px;color:#91a3c9}
+.association-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:15px auto;max-width:720px}
+.association-card{min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:9px 7px;border:1px solid rgba(190,202,255,.18);border-radius:13px;background:linear-gradient(145deg,#303d68,#202c4e);color:#f0f3ff;cursor:pointer;box-shadow:0 4px 0 rgba(4,9,28,.5);transition:transform .15s,border-color .15s,background .15s}
+.association-card:not(:disabled):hover{transform:translateY(-2px);border-color:var(--gold)}
+.association-card>b{font-size:25px;color:var(--gold)}
+.association-card small{font:500 7px "DM Mono";letter-spacing:1px;color:#9eadd0}
+.association-card span{font-size:10px;font-weight:750;line-height:1.35;text-align:center;overflow-wrap:anywhere}
+.association-card.revealed{background:linear-gradient(145deg,rgba(149,118,213,.36),rgba(58,69,120,.8));border-color:#b9a4ff}
+.association-card.matched{background:linear-gradient(145deg,rgba(45,139,117,.4),rgba(30,82,82,.65));border-color:var(--mint);color:#d9fff1}
+.association-footer{display:flex;justify-content:space-between;gap:8px;color:#8798bb;font:500 8px "DM Mono";letter-spacing:.3px}
+@media(max-width:520px){.association-grid{gap:5px}.association-card{min-height:88px;padding:7px 4px}.association-card span{font-size:8px}.association-card small{font-size:6px}.association-hud>div{padding:8px 3px}.association-hud b{font-size:17px}}
