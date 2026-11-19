@@ -1168,3 +1168,6 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .logic-pencil-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px;padding-top:8px;border-top:1px solid rgba(194,208,255,.1)}
 .logic-pencil-actions .text-button{font-size:10px}
 .logic-pencil-actions .text-button:disabled{opacity:.45;cursor:not-allowed}
+
+.result-share-row>div{display:flex;gap:8px;align-items:center}
+@media(max-width:420px){.result-share-row{align-items:flex-start;flex-direction:column}.result-share-row>div{width:100%}.result-share-row .button{flex:1}}
