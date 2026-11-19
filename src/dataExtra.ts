@@ -1,5 +1,6 @@
 import { higherLowerPairsExpansion } from "./dataExpansion";
 import { spellingHiveExpansion, wordLaddersExpansion, deductionCasesExpansion } from "./dataExtraExpansion";
+import { glyphPatternsExpansion } from "./dataGlyphExpansion";
 
 export const glyphPatterns: { name: string; pattern: number[][]; hint: string }[] = [
   { name:"Neuron", hint:"A cell that carries signals", pattern:[[0,0,1,0,0],[0,1,1,1,0],[1,1,1,1,1],[0,0,1,0,0],[0,1,0,1,0]] },
@@ -266,6 +267,7 @@ wordLadders.push(
 // Rotations and reflections preserve each original nonogram's unique row/column solution.
 const rotateGlyph = (pattern: number[][]) => pattern[0].map((_, c) => pattern.map((row) => row[c]).reverse());
 const mirrorGlyph = (pattern: number[][]) => pattern.map((row) => [...row].reverse());
+glyphPatterns.push(...glyphPatternsExpansion);
 const originalGlyphs = glyphPatterns.slice(0, 6);
 glyphPatterns.push(
   ...originalGlyphs.map((item) => ({...item, name:item.name+" · rotated", pattern:rotateGlyph(item.pattern)})),
