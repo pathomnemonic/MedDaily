@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
+import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
 
 describe("Letter Lab grid rules", () => {
   const grid = [
