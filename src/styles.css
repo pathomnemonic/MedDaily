@@ -1011,7 +1011,7 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .pencil-row>strong{padding:7px 3px;color:#fff;font-size:11px}
 .pencil-row>div{display:flex;flex-wrap:wrap;gap:4px}
 .pencil-row button{padding:5px 7px;border:1px solid rgba(218,211,255,.14);border-radius:7px;background:rgba(255,255,255,.04);color:#c7c0e6;font-size:9px}
-.pencil-row button.marked{border-color:#ffe17a;background:rgba(255,225,122,.16);color:#ffeaa8;text-decoration:line-through}
+.pencil-row button.marked{border-color:#72edbf;background:rgba(114,240,197,.14);color:#baffdf}.pencil-row button.excluded{border-color:#ff9aa9;background:rgba(255,130,155,.13);color:#ffc0ca;text-decoration:line-through}.pencil-legend{display:flex;gap:12px;flex-wrap:wrap;margin:9px 0;color:#9fafd0;font-size:9px}.pencil-legend span{display:flex;align-items:center;gap:4px}.pencil-legend b{font:700 13px var(--font-game);color:#ffe17a}
 .share-actions{display:flex;gap:7px;flex-wrap:wrap}
 @media(max-width:600px){.arcade-intro{align-items:flex-start}.arcade-intro h1{font-size:32px}.dx-dash-feature{padding:17px}.dx-dash-mark{font-size:54px}.doctordle-attempts span{font-size:8px}.doctordle-entry>div{flex-wrap:wrap}.doctordle-entry input{flex-basis:100%}.pencil-head,.pencil-row{grid-template-columns:1fr}.pencil-head{display:none}.pencil-row{padding:8px 0;border-bottom:1px solid rgba(220,215,255,.1)}.pencil-row>strong{padding:0}.pencil-row>div:before{content:"Candidates";width:100%;color:#a99fd2;font:700 8px var(--font-game)}}
 
