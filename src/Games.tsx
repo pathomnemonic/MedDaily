@@ -1134,13 +1134,29 @@ function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: 
     }
     setAssignments((current) => ({ ...current, [suspect]: { ...current[suspect], [field]: value } }));
   };
+  const pencilState = (suspect: string, field: "location" | "object", value: string): "" | "possible" | "excluded" => {
+    const key = suspect + "|" + field + "|" + value;
+    const assigned = assignments[suspect][field];
+    if (assigned && assigned !== value) return "excluded";
+    if (item.suspects.some((other) => other !== suspect && assignments[other][field] === value)) return "excluded";
+    if (pencilMarks[key]) return pencilMarks[key];
+    const rowPossible = (field === "location" ? item.locations : item.objects)
+      .some((candidate) => pencilMarks[suspect + "|" + field + "|" + candidate] === "possible");
+    if (rowPossible && pencilMarks[key] !== "possible") return "excluded";
+    const columnPossible = item.suspects.some((other) => other !== suspect && pencilMarks[other + "|" + field + "|" + value] === "possible");
+    if (columnPossible) return "excluded";
+    return "";
+  };
   const togglePencil = (suspect: string, field: "location" | "object", value: string) => {
     const key = suspect + "|" + field + "|" + value;
+    if (pencilState(suspect, field, value) === "excluded") {
+      setNote("That candidate is already ruled out by another assignment or pencil mark.");
+      return;
+    }
     setPencilMarks((current) => {
       const next = { ...current };
-      if (!current[key]) next[key] = "possible";
-      else if (current[key] === "possible") next[key] = "excluded";
-      else delete next[key];
+      if (current[key] === "possible") next[key] = "excluded";
+      else next[key] = "possible";
       return next;
     });
   };
@@ -1174,7 +1190,7 @@ function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: 
     <div className="logic-clues"><SectionLabel>CLUE BOARD</SectionLabel>{item.clues.map((clue,i)=><div key={i}><span>{String(i+1).padStart(2,"0")}</span>{clue}</div>)}</div>
     <div className="logic-hint-tools"><button className="text-button" onClick={revealHint} disabled={submitted || hintsUsed >= 3}>Reveal a confirmed relationship · −10 pts</button><span>{hintsUsed} / 3 hints used</span></div>
     {hints.length > 0 && <div className="logic-hints">{hints.map((hint,index)=><p key={index}><b>HINT {index+1}</b>{hint}</p>)}</div>}
-    <details className="logic-pencil-board"><summary>Open deduction grid <span>Use pencil marks instead of paper</span></summary><p>Tap a candidate to cycle through unknown, possible, and ruled out. Use these marks to track deductions across both categories; they never change your final assignments.</p><div className="pencil-legend"><span><b>✓</b> Possible</span><span><b>×</b> Ruled out</span><span><b>·</b> Unknown</span></div><div className="pencil-grid"><div className="pencil-head"><b>PERSON</b><b>LOCATION CANDIDATES</b><b>OBJECT CANDIDATES</b></div>{item.suspects.map((suspect)=><div className="pencil-row" key={suspect}><strong>{suspect}</strong><div>{item.locations.map((value)=><button type="button" key={value} className={pencilMarks[suspect+"|location|"+value]??""} onClick={()=>togglePencil(suspect,"location",value)} aria-pressed={Boolean(pencilMarks[suspect+"|location|"+value])} aria-label={suspect+" location "+value+": "+(pencilMarks[suspect+"|location|"+value]??"unknown")}>{pencilMarks[suspect+"|location|"+value]==="possible"?"✓ ":pencilMarks[suspect+"|location|"+value]==="excluded"?"× ":"· "}{value}</button>)}</div><div>{item.objects.map((value)=><button type="button" key={value} className={pencilMarks[suspect+"|object|"+value]??""} onClick={()=>togglePencil(suspect,"object",value)} aria-pressed={Boolean(pencilMarks[suspect+"|object|"+value])} aria-label={suspect+" object "+value+": "+(pencilMarks[suspect+"|object|"+value]??"unknown")}>{pencilMarks[suspect+"|object|"+value]==="possible"?"✓ ":pencilMarks[suspect+"|object|"+value]==="excluded"?"× ":"· "}{value}</button>)}</div></div>)}</div><button type="button" className="text-button" onClick={()=>setPencilMarks({})}>Clear pencil marks</button></details>
+    <details className="logic-pencil-board" open><summary>Deduction grid <span>Auto-eliminates conflicting candidates as you assign or mark possibilities</span></summary><p>Mark a candidate possible or ruled out. Assignments and one-to-one constraints automatically eliminate impossible candidates across each row and column.</p><div className="pencil-legend"><span><b>✓</b> Possible</span><span><b>×</b> Ruled out</span><span><b>·</b> Unknown</span></div><div className="pencil-grid"><div className="pencil-head"><b>PERSON</b><b>LOCATION CANDIDATES</b><b>OBJECT CANDIDATES</b></div>{item.suspects.map((suspect)=><div className="pencil-row" key={suspect}><strong>{suspect}</strong><div>{item.locations.map((value)=><button type="button" key={value} className={pencilState(suspect,"location",value)} onClick={()=>togglePencil(suspect,"location",value)} aria-pressed={pencilState(suspect,"location",value)!==""} aria-label={suspect+" location "+value+": "+(pencilState(suspect,"location",value)||"unknown")}>{pencilState(suspect,"location",value)==="possible"?"✓ ":pencilState(suspect,"location",value)==="excluded"?"× ":"· "}{value}</button>)}</div><div>{item.objects.map((value)=><button type="button" key={value} className={pencilState(suspect,"object",value)} onClick={()=>togglePencil(suspect,"object",value)} aria-pressed={pencilState(suspect,"object",value)!==""} aria-label={suspect+" object "+value+": "+(pencilState(suspect,"object",value)||"unknown")}>{pencilState(suspect,"object",value)==="possible"?"✓ ":pencilState(suspect,"object",value)==="excluded"?"× ":"· "}{value}</button>)}</div></div>)}</div><button type="button" className="text-button" onClick={()=>setPencilMarks({})}>Clear pencil marks</button></details>
     <div className="logic-table"><div className="logic-table-head"><span>PERSON</span><span>LOCATION</span><span>OBJECT</span></div>
       {item.suspects.map((suspect) => <div className="logic-table-row" key={suspect}>
         <strong>{suspect}</strong>
