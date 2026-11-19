@@ -145,6 +145,6 @@ export const deepDivePointsByTier = [10, 15, 30, 60, 85, 100] as const;
 
 /** Award editorial rarity points without allowing a prompt to exceed 100 points. */
 export function deepDiveAnswerAward(tier: number, currentRoundScore: number): number {
-  const base = deepDivePointsByTier[tier - 1 as keyof typeof deepDivePointsByTier] ?? 0;
+  const base = Number.isInteger(tier) && tier >= 1 && tier <= 6 ? deepDivePointsByTier[tier - 1] : 0;
   return Math.max(0, Math.min(base, 100 - Math.max(0, currentRoundScore)));
 }
