@@ -1067,7 +1067,7 @@ function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boo
   const check = () => {
     const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, value, c) => m + ((value === 1 && cells[r][c] === 1) || (value === 0 && cells[r][c] === 2) ? 1 : 0), 0), 0);
     setChecked(true);
-    onDone(Math.round(correct / 25 * 100), 100, correct === 25);
+    onDone(Math.round(correct / 25 * 100), 100, correct === 25, "Cell Sketch · " + correct + "/25 cells\\n" + cells.map((row, r) => row.map((value, c) => item.pattern[r][c] ? (value === 1 ? "🟩" : "🟥") : value === 2 ? "⬛" : value === 0 ? "⬜" : "🟥").join("")).join("\\n"));
   };
   return <div className="game-layout">
     <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY PATTERN" : "CURATED DAILY PATTERN"}</div>
