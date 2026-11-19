@@ -63,7 +63,7 @@ export const connectionPuzzlesExpansion8: ConnectionGroup[][] = [
 {category:"Hepatocellular carcinoma",words:["Arterial enhancement","Portal washout","AFP","Cirrhosis"],hint:"Classic imaging and risk context."},
 {category:"Chronic hepatitis B",words:["Persistent HBsAg","HBV DNA","Anti-HBc","HCC surveillance"],hint:"Chronic viral hepatitis markers and follow-up."},
 {category:"Acute liver failure",words:["Encephalopathy","INR elevation","No chronic liver disease","N-acetylcysteine"],hint:"Acute hepatic dysfunction with coagulopathy."},
-{category:"Spontaneous bacterial peritonitis",words:["Ascitic PMN ≥250","Cirrhosis","Third-generation cephalosporin","Albumin in selected patients"],hint:"Infected ascites without a surgical source."}
+{category:"Spontaneous bacterial peritonitis",words:["Ascitic PMN ≥250","Portal hypertension","Third-generation cephalosporin","Albumin in selected patients"],hint:"Infected ascites without a surgical source."}
 ],
 [
 {category:"Acute tubular necrosis",words:["Muddy brown casts","Tubular epithelial cells","Ischemic injury","Granular casts"],hint:"Intrinsic renal injury."},
