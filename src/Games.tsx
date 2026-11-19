@@ -845,16 +845,16 @@ function AnagramSprint({ seed, onDone }: Props) {
   }, [seed, word, round]);
 
   useEffect(() => {
-    if (ended || roundFinished) return;
+    if (ended) return;
     const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
     return () => window.clearInterval(timer);
-  }, [ended, roundFinished]);
+  }, [ended]);
   useEffect(() => {
     if (seconds !== 0 || ended || done.current) return;
     done.current = true;
     setEnded(true);
     setNote("Time. The remaining words are revealed below.");
-    onDone(score, 100, false);
+    onDone(score, 100, score === 100);
   }, [seconds, ended, score, onDone]);
 
   const check = () => {
@@ -905,7 +905,7 @@ function AnagramSprint({ seed, onDone }: Props) {
         <div className="anagram-tools"><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Reveal definition hint</button><span>{tries} / 3 attempts</span></div>
       </> : <div className="anagram-round-result"><b>{won ? "Correct" : "Answer revealed"} · {won ? "Points added" : "No points"}</b><h3>{word[0]}</h3><p>{word[1]}</p><button className="button button-primary full-button" onClick={next}>{round === 4 ? "Finish sprint" : "Next specimen →"}</button></div>}
       <p className="game-feedback" aria-live="polite">{note}</p>
-    </> : <Finish title="Sprint complete" detail={"You solved " + (round + 1) + " of five specimens before the clock ran out."} score={score + " / 100"}><div className="reveal-groups">{rounds.map(([answer, clue], index) => <span key={answer}><b>{index + 1}. {answer}</b>{clue}</span>)}</div></Finish>}
+    </> : <Finish title="Sprint complete" detail={"You solved " + (round + Number(roundFinished)) + " of five specimens before the clock ran out."} score={score + " / 100"}><div className="reveal-groups">{rounds.map(([answer, clue], index) => <span key={answer}><b>{index + 1}. {answer}</b>{clue}</span>)}</div></Finish>}
   </div>;
 }
 
