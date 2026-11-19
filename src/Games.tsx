@@ -1097,7 +1097,7 @@ function wordPoints(word: string, puzzle: { pangram:string }): number {
 }
 
 function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
-  const item = useMemo(() => practice ? generateDeductionCase(seed) : deductionCases[seed % deductionCases.length], [seed, practice]);
+  const item = useMemo(() => practice || seed % 2 === 1 ? generateDeductionCase(seed) : deductionCases[seed % deductionCases.length], [seed, practice]);
   const blank = () => Object.fromEntries(item.suspects.map((suspect) => [suspect, { location:"", object:"" }]));
   const [assignments, setAssignments] = useState(blank);
   const [pencilMarks, setPencilMarks] = useState<Record<string, "possible" | "excluded">>({});
@@ -1150,7 +1150,7 @@ function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: 
     onDone(points, 100, matches === 6 && hintsUsed === 0);
   };
   return <div className="game-layout">
-    <div className="case-banner logic-banner"><span>{practice?"GENERATED FREE-PLAY CASE":"CURATED DAILY CASE"}</span><strong>{item.title}</strong><small>Deduction, not diagnosis · 3×3 logic grid</small></div>
+    <div className="case-banner logic-banner"><span>{practice?"GENERATED FREE-PLAY CASE":seed % 2 === 1 ? "GENERATED DAILY CASE" : "CURATED DAILY CASE"}</span><strong>{item.title}</strong><small>Deduction, not diagnosis · 3×3 logic grid</small></div>
     <p className="logic-briefing">{item.briefing}</p>
     <div className="logic-clues"><SectionLabel>CLUE BOARD</SectionLabel>{item.clues.map((clue,i)=><div key={i}><span>{String(i+1).padStart(2,"0")}</span>{clue}</div>)}</div>
     <div className="logic-hint-tools"><button className="text-button" onClick={revealHint} disabled={submitted || hintsUsed >= 3}>Reveal a confirmed relationship · −10 pts</button><span>{hintsUsed} / 3 hints used</span></div>
