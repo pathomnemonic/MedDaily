@@ -39,7 +39,7 @@ A particularly useful design principle from the current daily-puzzle guides is t
 | Framed / image reveal | Reveal an original anatomy illustration, ECG, radiograph, or histology image progressively | Strong fit; requires original/licensed imagery and specialist review |
 | Worldle / Globle / map games | Locate structures, dermatomes, vascular territories, or organs on original diagrams | Strong fit; requires accurate diagrams |
 | Contexto / Semantle | Find a target concept by semantic similarity | Medium fit; requires a reliable local synonym/embedding bank |
-| Krillion / Echomost / long-tail recall | Name many valid answers and score rare responses | Strong fit for specialty groups; requires curated answer lists and transparent rarity bands |
+| Krillion / Echomost / long-tail recall | Name many valid answers and score rare responses | **Live: Deep Dive** — timed multi-answer rounds, nine 60-answer long-tail banks, editorial rarity tiers, and capped scoring |
 | Bandle / Heardle | Identify original heart/lung sounds or clinical audio | Medium fit; audio sourcing and recording quality must be addressed |
 | Sudoku / Queens / Pips / Sumplete | Pure logic puzzles with medical visual dressing | Strong fit; no medical facts need be asserted |
 
