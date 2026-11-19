@@ -11,7 +11,6 @@ MedDaily has fourteen playable game formats. This is a functioning first release
 | Medle | 140 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
 | Connections | 122 boards | Four groups of four per board; 20 new cross-specialty boards |
 | DoctorDle | 220 cases | Six-guess typed diagnosis puzzle with progressive clues, explanations, and source notes |
-| Next Best Step | 220 cases | Original clinical decision vignettes with explanations and source notes |
 | Word Hunt | 68 organism packs | Each pack generates a deterministic word-search grid |
 | Labline | 100 prompts | Reference values, thresholds, and a few vital-sign estimates; normal ranges vary by laboratory and patient |
 | Association Blitz | 208 pairs | Expanded eight-pair association board; still needs more varied mechanics and timed/combo modes |
