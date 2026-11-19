@@ -1793,3 +1793,26 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 @keyframes stingerShine{50%{filter:brightness(1.35) drop-shadow(0 0 10px currentColor)}}
 .dive-gamble{margin-bottom:8px;border:2px dashed hsl(calc(var(--hue) + 160) 90% 70% / .7)}
 .dive-answer-row.gambling input{box-shadow:0 0 0 3px #ff6b8a,0 0 18px #ff6b8a}
+
+/* Deep Scan descent scene (pixel-bevel HUD, scrolling tissue layers, landmark captions) */
+.dive-stage{display:block!important;margin:6px 0 10px}
+.dive-scene{position:relative;height:210px;overflow:hidden;border:4px solid #0d0720;border-radius:6px;box-shadow:0 0 0 3px rgba(255,255,255,.85),0 7px 0 rgba(0,0,0,.4);margin-bottom:10px;image-rendering:pixelated;--layer:120px}
+.dive-world{position:absolute;left:0;right:0;top:0;transform:translateY(calc(var(--cam) * var(--layer) * -1));transition:transform 2.2s cubic-bezier(.3,.7,.3,1)}
+.dive-layer{position:relative;height:var(--layer);display:flex;align-items:flex-start;justify-content:space-between;padding:6px 10px;font:700 10px var(--font-game);letter-spacing:1px;text-transform:uppercase;color:rgba(40,10,30,.75);border-bottom:4px solid rgba(0,0,0,.25)}
+.dive-layer b{font-size:11px;opacity:.85}
+.dive-layer.hit{box-shadow:inset 0 0 0 3px rgba(255,255,255,.8)}
+.layer-1{background:repeating-linear-gradient(0deg,rgba(255,255,255,.12) 0 4px,transparent 4px 8px),linear-gradient(#ffd7bd,#ffc7a3)}
+.layer-2{background:radial-gradient(circle,rgba(255,255,255,.45) 0 4px,transparent 5px) 0 0/16px 16px,#ffd85e}
+.layer-3{background:repeating-linear-gradient(100deg,rgba(0,0,0,.07) 0 3px,transparent 3px 9px),#fbf1df}
+.layer-4{background:repeating-linear-gradient(115deg,rgba(0,0,0,.18) 0 4px,transparent 4px 10px),#c9342d}
+.layer-5{background:radial-gradient(circle,rgba(120,90,50,.35) 0 2px,transparent 3px) 0 0/10px 10px,#f0e6cf}
+.layer-6{background:radial-gradient(circle,rgba(255,255,255,.35) 0 4px,transparent 5px) 0 0/18px 18px,#ee7440}
+.layer-7{background:linear-gradient(#a94a2a,#4a1d3b);height:110px}
+.dive-scene .dive-diver{top:34%!important;left:50%;z-index:3;font-size:34px;filter:drop-shadow(0 3px 0 rgba(0,0,0,.45)) drop-shadow(0 0 10px rgba(255,255,255,.8))}
+.dive-scene .dive-cell{z-index:2}
+.dive-landmark{position:absolute;left:8px;right:8px;bottom:6px;z-index:4;text-align:center;padding:5px 8px;font:700 10px var(--font-game);letter-spacing:.5px;color:#fff;background:rgba(13,7,32,.78);border:2px solid rgba(255,255,255,.35);animation:landmarkIn .5s ease-out both}
+@keyframes landmarkIn{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.dive-scan{position:absolute;inset:0;z-index:5;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.12) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+.dive-hud>div:not(.dive-timer){padding:6px 10px;background:rgba(13,7,32,.7);border:3px solid rgba(255,255,255,.28);border-radius:4px;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.dive-answer-row input{border-width:3px!important;border-radius:4px!important}
+.dive-answer-row .button-primary{border-radius:4px;letter-spacing:2px;text-transform:uppercase}
