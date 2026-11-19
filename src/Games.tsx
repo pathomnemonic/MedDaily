@@ -1126,8 +1126,8 @@ function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boo
     if (!LADDER_WORDS.has(word)) { setNote("That word is not in the ladder dictionary. Try another one-letter neighbor."); return; }
     if (entered.includes(word)) { setNote("You've already used that word."); return; }
     const next = [...entered, word]; setEntered(next); setText("");
-    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (showPath ? 20 : 0))), 100, next.length === item.path.length && !showPath); }
-    else if (next.length >= maxMoves) { setEnded(true); onDone(0, 100, false); }
+    if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (showPath ? 20 : 0))), 100, next.length === item.path.length && !showPath, "Word Ladder · solved\\n" + next.join(" → ") + (showPath ? "\\nHint used" : "")); }
+    else if (next.length >= maxMoves) { setEnded(true); onDone(0, 100, false, "Word Ladder · no solution\\n" + next.join(" → ")); }
     else setNote("Good step. Keep going.");
   };
   return <div className="game-layout">
