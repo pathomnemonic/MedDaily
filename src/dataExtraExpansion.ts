@@ -8,7 +8,7 @@ export const spellingHiveExpansion = [
 {title:"Stapler Station",letters:["S","T","A","P","L","E","R"],center:"A",words:["STAPLER","PLASTER","PASTEL","STAPLE","PLATE","ALERT","ALTER","LATER","TAPER","PEARL","SPARE","SPEAR","STARE","TEARS","PEARS","PAST","PALE","SALE","SEAL","STAR","TARS","RATE","TARE","REAL","EARL","RATS","PART","TRAP","TARP","RAPT","PEAT"],pangram:"STAPLER",hint:"The pangram is a common item on a clinic desk."},
 {title:"Gastric Garden",letters:["G","A","S","T","R","I","C"],center:"A",words:["GASTRIC","TRAGIC","CIGAR","CART","CAST","CATS","RATS","STAR","TARS","SCAR","RAGS","TAGS","ARCS","SARI","CIGARS"],pangram:"GASTRIC",hint:"The pangram refers to the stomach."},
 {title:"Neutral Balance",letters:["N","E","U","T","R","A","L"],center:"A",words:["NEUTRAL","ULTRA","LEARN","LATER","ALTER","ALERT","LUNAR","NEAR","EARN","REAL","TALE","TEAL","TUNA","ULNA","AUNT","ANTE","TARE","RATE","TARN","RENAL","LEANT"],pangram:"NEUTRAL",hint:"The pangram describes a state without a strong charge or bias."},
-{title:"Clinical Circuit",letters:["C","I","R","U","T","E","L"],center:"I",words:["CIRCUIT","RICE","RITE","TIRE","TIER","TILE","TILT","LICE","LIRE","LITE","LILT","RILE","CITE","CITER","CUTIE","ICIER"],pangram:"CIRCUIT",hint:"The pangram is a closed path for current."}
+{title:"Tricone Terms",letters:["T","R","I","C","O","N","E"],center:"I",words:["TRICONE","TONIC","INTRO","IRON","TIRE","TIER","RITE","RICE","CITE","CITER","ICON","INERT","INTER","TRIO","RIOT","NICER","NICE","NITRE","TRICE","TINE"],pangram:"TRICONE",hint:"The pangram is a three-cone drill bit."}
 ];
 
 export const wordLaddersExpansion = [
