@@ -44,11 +44,7 @@ export const nextStepCasesExpansion7: NextStepCase[] = [
 { id:"nx158",specialty:"Geriatrics",vignette:"An older adult has gait apraxia, cognitive slowing, urinary incontinence, ventriculomegaly, and gait improvement after a large-volume tap.",question:"What is the next step?",options:["Refer for neurosurgical evaluation for possible CSF shunting after appropriate assessment","Start antipsychotic therapy","Treat with levodopa as the only intervention","Discharge without follow-up"],answer:0,explanation:"A supportive tap test in suspected NPH warrants evaluation for shunt candidacy and expected benefit/risk.",source:"AAN idiopathic normal pressure hydrocephalus guideline."},
 { id:"nx159",specialty:"Rheumatology",vignette:"An older adult has new temporal headache, jaw claudication, elevated ESR/CRP, and transient visual symptoms concerning for giant cell arteritis.",question:"What should be done immediately?",options:["Start high-dose glucocorticoids without waiting for biopsy","Wait for temporal artery biopsy before treatment","Give triptan therapy","Start anticoagulation"],answer:0,explanation:"Suspected GCA with visual symptoms requires immediate glucocorticoids to prevent irreversible vision loss; arrange confirmatory testing promptly.",source:"ACR/Vasculitis Foundation giant cell arteritis guideline."},
 { id:"nx160",specialty:"Ophthalmology",vignette:"A patient has sudden severe eye pain, halos, a mid-dilated fixed pupil, corneal edema, and markedly elevated intraocular pressure.",question:"What is the next step?",options:["Urgent pressure-lowering treatment and emergent ophthalmology consultation for definitive laser iridotomy","Routine outpatient follow-up in one month","Topical antibiotic alone","Patch the eye and discharge"],answer:0,explanation:"Acute angle closure is an ophthalmic emergency requiring immediate IOP reduction and definitive ophthalmologic treatment.",source:"AAO primary angle-closure disease guidance."}
-].map((item, index) => {
-  const shift = (index + 1) % item.options.length;
-  const options = [...item.options.slice(shift), ...item.options.slice(0, shift)];
-  return { ...item, options, answer: options.indexOf(item.options[item.answer]) };
-});
+];
 
 export const connectionPuzzlesExpansion7: ConnectionGroup[][] = [
 [
