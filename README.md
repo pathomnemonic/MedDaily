@@ -26,7 +26,7 @@ The same UTC date + mode + specialty + game key yields the same daily seed, so g
 - Solo play, practice, and local progress work without an account.
 - Progress is saved locally by default.
 - Optional Google sign-in can back up and merge progress in the user's private Google Drive app-data folder.
-- Optional multiplayer rooms use Firebase anonymous guest sessions; no Google login is required to join.
+- Party rooms need no setup: a six-character code deterministically picks a group-friendly game and its puzzle, so everyone typing the same code plays the same thing, and results are compared with Wordle-style share text. Optional Firebase adds a live scoreboard.
 - Do not enter patient-identifiable information.
 
 ## Run locally

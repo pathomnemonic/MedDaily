@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { connectionPuzzles, medleWords, diagnosisCases, nextStepCases, labPrompts, triageCases, pairsBank, microbePacks } from "./data";
 import { deductionCases, glyphPatterns, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
-import { hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
+import { PARTY_GAMES, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
 import { deepDivePrompts, triviaCategories, triviaQuestions } from "./dataArcade";
 
 describe("daily puzzle primitives", () => {
@@ -244,5 +244,21 @@ describe("new arcade content banks", () => {
       expect(question.answer, question.id).toBeLessThan(4);
       expect(question.explanation.length, question.id).toBeGreaterThan(15);
     }
+  });
+});
+
+
+describe("party room codes", () => {
+  it("maps the same code to the same party-friendly game and puzzle on every device", () => {
+    expect(roomGame("abc 123")).toBe(roomGame("ABC123"));
+    expect(roomSeed("abc123")).toBe(roomSeed("ABC-123"));
+    expect(PARTY_GAMES).toContain(roomGame("K7MQ2X"));
+    expect(PARTY_GAMES).not.toContain("trivia");
+    expect(PARTY_GAMES).not.toContain("casefile");
+  });
+  it("spreads codes across several games and generates valid codes", () => {
+    const games = new Set(Array.from({ length: 200 }, (_, i) => roomGame(randomRoomCode(seeded(i + 1)))));
+    expect(games.size).toBeGreaterThanOrEqual(8);
+    expect(normalizeRoomCode(randomRoomCode())).toHaveLength(6);
   });
 });

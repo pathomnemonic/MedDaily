@@ -7,7 +7,7 @@ import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, ty
 import { letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord } from "./arcadeLogic";
 import { generateDeductionCase } from "./logicGenerator";
 
-type Done = (score: number, maxScore: number, perfect: boolean) => void;
+type Done = (score: number, maxScore: number, perfect: boolean, share?: string) => void;
 type Specialty = "general" | "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
 interface Props { seed: number; onDone: Done; specialty?: Specialty }
 export function GameBoard({ game, seed, onDone, specialty = "general", practice = false }: Props & { game: GameId; practice?: boolean }) {
@@ -134,7 +134,8 @@ function DeepDive({ seed, onDone }: Props) {
       setFinished(true);
       if (!done.current) {
         done.current = true;
-        onDone(score, 700, score === 700);
+        const tierSquare = ["⬛", "🟦", "🟦", "🟩", "🟨", "🟧", "🟥"];
+        onDone(score, 700, score === 700, "Deep Dive · " + score * 10 + " m deep\n" + currentResults.map((r) => tierSquare[r.tier ?? 0]).join("") + "\n🟦 surface → 🟥 hidden gem");
       }
       return;
     }
@@ -289,7 +290,8 @@ function TriviaRumble({ seed, onDone }: Props) {
     setStage("done");
     if (!done.current) {
       done.current = true;
-      onDone(best * 100, limit * 100, best === limit);
+      const top = [...players].sort((a, b) => b.crowns.length - a.crowns.length || b.correct - a.correct)[0];
+      onDone(best * 100, limit * 100, best === limit, "Trivia Rumble · " + top.crowns.length + "/6 badges\n" + triviaCategories.map((cat) => top.crowns.includes(cat.id) ? cat.icon : "▫️").join(" ") + "\n" + top.correct + " correct" + (mode === "pass" ? " · " + players.length + "-player game" : ""));
     }
   };
 
@@ -466,7 +468,7 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
     const next = [...rows, word]; setRows(next); setGuess("");
     const correct = word === answer, finished = correct || next.length >= 6;
     setMessage(correct ? "Exactly right. Nice diagnosis of a word." : finished ? "The word was " + answer + "." : "Not quite. Use the tile clues to narrow it down.");
-    if (finished) { setEnded(true); setWon(correct); if (!done.current) { done.current = true; onDone(correct ? 100 - (next.length - 1) * 12 : 0, 100, correct && next.length === 1); } }
+    if (finished) { setEnded(true); setWon(correct); if (!done.current) { done.current = true; onDone(correct ? 100 - (next.length - 1) * 12 : 0, 100, correct && next.length === 1, "Medle " + (correct ? next.length : "X") + "/6\n" + next.map((row) => scoreWord(row, answer).map((mark) => mark === "correct" ? "🟩" : mark === "present" ? "🟨" : "⬛").join("")).join("\n")); } }
   };
   const keyboardRows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
   const keyboardMarks: Record<string, "correct" | "present" | "absent"> = {};
@@ -506,6 +508,8 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
   const [note, setNote] = useState("Find four groups of four related medical terms.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
+  const guessLog = useRef<string[]>([]);
+  const shareText = () => "Connections\n" + guessLog.current.join("\n");
   const choose = (word: string) => {
     if (ended || solved.some((n) => board[n].words.includes(word))) return;
     setSelected((s) => s.includes(word) ? s.filter((x) => x !== word) : s.length < 4 ? [...s, word] : s);
@@ -513,13 +517,14 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
   const submit = () => {
     if (selected.length !== 4 || ended) return;
     const group = tiles.find((t) => selected.includes(t.word))?.group;
+    guessLog.current.push(selected.map((word) => ["🟨", "🟩", "🟦", "🟪"][tiles.find((t) => t.word === word)?.group ?? 0]).join(""));
     if (group !== undefined && selected.every((word) => board[group].words.includes(word))) {
       const next = [...solved, group]; setSolved(next); setSelected([]); setNote(board[group].category + " — " + board[group].hint);
-      if (next.length === 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 100 - mistakes * 15), 100, mistakes === 0); } }
+      if (next.length === 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 100 - mistakes * 15), 100, mistakes === 0, shareText()); } }
     } else {
       const nearMiss = group !== undefined && selected.filter((word) => board[group].words.includes(word)).length === 3;
       const next = mistakes + 1; setMistakes(next); setNote(next >= 4 ? "No mistakes left. The remaining groups are shown below." : nearMiss ? "One away… Three of those terms belong together, but one is from another group." : "Not a set. Look for a different connection."); setSelected([]);
-      if (next >= 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 40 - next * 5), 100, false); } }
+      if (next >= 4) { setEnded(true); if (!done.current) { done.current = true; onDone(Math.max(0, 40 - next * 5), 100, false, shareText()); } }
     }
   };
   const shuffleTiles = () => {
@@ -581,7 +586,7 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
     if (correct || next.length >= 6) {
       setEnded(true); setWon(correct);
       setNote(correct ? "Diagnosis confirmed." : "No guesses remaining. Review the case.");
-      if (!done.current) { done.current = true; onDone(correct ? Math.max(0, 100 - (next.length - 1) * 15 - manualHints * 5) : 0, 100, correct && next.length === 1 && manualHints === 0); }
+      if (!done.current) { done.current = true; onDone(correct ? Math.max(0, 100 - (next.length - 1) * 15 - manualHints * 5) : 0, 100, correct && next.length === 1 && manualHints === 0, "DoctorDle " + (correct ? next.length : "X") + "/6\n" + "🟥".repeat(correct ? next.length - 1 : 6) + (correct ? "🟩" : "") + (manualHints ? "\n💡 " + manualHints + (manualHints === 1 ? " hint" : " hints") : "")); }
     } else {
       setClueCount((n) => Math.min(item.clues.length, n + 1));
       setNote("Not quite. A new clue has been added.");

@@ -139,3 +139,12 @@ const ART: Record<GameId, () => ReactNode> = {
 export default function GameArt({ game }: { game: GameId }) {
   return <svg className="game-art-svg" viewBox="0 0 200 110" role="img" aria-hidden="true" focusable="false">{ART[game]()}</svg>;
 }
+
+export function DxArt() {
+  return <svg className="game-art-svg" viewBox="0 0 200 110" aria-hidden="true" focusable="false">
+    <path d="M10 92h180" stroke={INK} strokeWidth={4} strokeLinecap="round" strokeDasharray="2 10" />
+    <text x={100} y={74} textAnchor="middle" fontFamily="Lilita One, Fredoka, sans-serif" fontSize={68} fill="#ffd54a" stroke={INK} strokeWidth={4} paintOrder="stroke" transform="rotate(-5 100 60)">DX</text>
+    <path d="M150 28l18-14m0 0h-14m14 0v14" fill="none" stroke="#fff" strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M20 40h20l6-14 8 28 6-14h12" fill="none" stroke="#ff4f86" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
+  </svg>;
+}

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { GameBoard } from "./Games";
-import GameArt from "./components/GameArt";
+import GameArt, { DxArt } from "./components/GameArt";
 import type { GameId } from "./lib";
-import { hashSeed, dailyDateKey } from "./lib";
+import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, PARTY_GAMES } from "./lib";
 import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
 import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, submitRoomScore, watchRoom, type RoomState } from "./firebase";
 import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnected } from "./googleDrive";
@@ -81,6 +81,9 @@ export default function App() {
   const [joinCode,setJoinCode] = useState("");
   const [roomBusy,setRoomBusy] = useState(false);
   const [lastShare,setLastShare] = useState("");
+  const [partyRun,setPartyRun] = useState(false);
+  const [completion,setCompletion] = useState<{title:string;score:number;maxScore:number;perfect:boolean;text:string;party:boolean}|null>(null);
+  const [copied,setCopied] = useState(false);
 
   const date = dailyDateKey();
   const scope = mode === "general" ? "general" : "specialty:" + specialty;
@@ -89,7 +92,7 @@ export default function App() {
 
   useEffect(()=>{
     const sharedRoom = new URLSearchParams(window.location.search).get("room");
-    if (sharedRoom) { setJoinCode(sharedRoom.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6)); setScreen("friends"); }
+    if (sharedRoom) { setJoinCode(normalizeRoomCode(sharedRoom)); setScreen("friends"); }
   },[]);
   useEffect(()=>{
     const handler=(event:Event)=>{event.preventDefault();setInstallPrompt(event as InstallPrompt);};
@@ -101,29 +104,35 @@ export default function App() {
   },[]);
   useEffect(()=>{document.documentElement.dataset.motion=player.reducedMotion?"reduced":"full";},[player.reducedMotion]);
   useEffect(()=>{
-    if(!roomCode)return;
-    const stop=watchRoom(roomCode,(value)=>{
-      setRoom(value);
-      if(value){setMode(value.scope==="general"?"general":"specialty");if(value.specialty&&value.specialty!=="general")setSpecialty(value.specialty as Specialty);}
-    });
+    if(!roomCode||!multiplayerConfigured())return;
+    let stop=()=>{};
+    try{stop=watchRoom(roomCode,(value)=>{ if(value) setRoom((current)=>current?{...current,...value,players:value.players.length?value.players:current.players}:value); });}catch{/* live scoreboard unavailable; the shared puzzle still works */}
     return ()=>stop();
   },[roomCode]);
 
   const doneToday=completedToday(player,scope);
   const streak=playStreak(player,scope);
-  const firstTodo=GAMES.find(g=>!player.results.some(r=>r.date===date&&r.game===g.id&&r.scope===scope))?.id??"medle";
   const seedFor=(game:GameId)=>hashSeed(date+"|"+scope+"|"+game);
 
-  const openGame=(id:GameId,isPractice=false,forcedSeed?:number)=>{
-    setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??(isPractice?hashSeed(id+"-free-"+Date.now()):seedFor(id)));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
+  const openGame=(id:GameId,isPractice=false,forcedSeed?:number,party=false)=>{
+    setPartyRun(party);setCompletion(null);setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??(isPractice?hashSeed(id+"-free-"+Date.now()):seedFor(id)));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
     window.scrollTo({top:0,behavior:player.reducedMotion?"auto":"smooth"});
   };
-  const finishGame=(score:number,maxScore:number,perfect:boolean)=>{
+  const finishGame=(score:number,maxScore:number,perfect:boolean,share?:string)=>{
     const gameTitle=GAMES.find(g=>g.id===activeGame)?.title??"MedDaily game";
-    const filled=Math.max(0,Math.min(9,Math.round(score/Math.max(1,maxScore)*9)));
-    const shareGrid=Array.from({length:3},(_,row)=>Array.from({length:3},(_,col)=>(row*3+col)<filled?"🟩":"⬜").join("")).join("\n");
-    setLastShare("MedDaily · "+gameTitle+"\n"+shareGrid+"\n"+(perfect?"Perfect run":score+" / "+maxScore+" points")+"\nPlay: https://pathomnemonic.github.io/MedDaily/");
-    if(practice){setNotice("Free-play round complete. It did not affect your daily record.");return;}
+    const filled=Math.max(0,Math.min(10,Math.round(score/Math.max(1,maxScore)*10)));
+    const fallback="🟩".repeat(filled)+"⬜".repeat(10-filled)+(perfect?"\n✨ Perfect run":"");
+    const where=partyRun?" · Room "+roomCode:practice?" · Free Play":" · "+date;
+    const text="MedDaily · "+gameTitle+where+"\n"+(share??fallback)+"\nhttps://pathomnemonic.github.io/MedDaily/"+(partyRun?"?room="+roomCode:"");
+    setLastShare(text);setCopied(false);
+    setCompletion({title:gameTitle,score,maxScore,perfect,text,party:partyRun});
+    if(player.sound)playChime();
+    if(partyRun){
+      setRoom(current=>current?{...current,players:current.players.map(p=>p.uid==="me"?{...p,score,maxScore,perfect,finished:true}:p)}:current);
+      if(multiplayerConfigured()&&roomCode) void submitRoomScore(roomCode,score,maxScore,perfect).catch(()=>{/* local result still shown */});
+      return;
+    }
+    if(practice){return;}
     const result={date,game:activeGame!,scope,score,maxScore,perfect,durationSeconds:Math.max(0,Math.round((Date.now()-gameStartedAt)/1000))};
     const nextPlayer = recordResult(player,result);
     setPlayer(nextPlayer);
@@ -131,8 +140,11 @@ export default function App() {
     if (hasDriveConnection()) {
       void syncIfConnected(nextPlayer).then((merged: PlayerData | null)=>{ if (merged) { savePlayer(merged); setPlayer(merged); setNotice("Daily result saved and synced to your private Google Drive data."); } }).catch((error: unknown)=>setNotice("Saved locally; Google Drive needs reconnecting: "+(error instanceof Error ? error.message : "Unknown sync error")));
     }
-    if(player.sound)playChime();
-    if(roomCode) void submitRoomScore(roomCode,score,maxScore,perfect).catch(e=>setNotice((e as Error).message));
+  };
+  const shareResult=async()=>{
+    if(!completion)return;
+    if(navigator.share){try{await navigator.share({text:completion.text});return;}catch{/* fall through to copy */}}
+    try{await navigator.clipboard?.writeText(completion.text);setCopied(true);}catch{setNotice("Copy was blocked by the browser. Select the preview text instead.");}
   };
   const updateSetting=(key:"sound"|"reducedMotion"|"hideStreaks",value:boolean)=>{
     setPlayer(current=>{const next={...current,[key]:value};savePlayer(next);return next;});
@@ -157,19 +169,22 @@ export default function App() {
       }catch{setNotice("That file does not look like a MedDaily progress export.");}
     };reader.readAsText(file);
   };
-  const joinFriendsRoom=async(game:GameId)=>{
+  const joinFriendsRoom=async()=>{
+    const code=normalizeRoomCode(joinCode);
+    if(code.length!==6){setNotice("Room codes are six letters or numbers.");return;}
+    const game=roomGame(code),seed=roomSeed(code);
     setRoomBusy(true);setNotice("");
-    try{
-      const joined=await joinOrCreateRoom(joinCode,{gameId:game,scope,specialty:mode==="specialty"?specialty:"general",date,seed:seedFor(game),name:roomName||"Guest"});
-      setRoomCode(joined.code);setRoom(joined);setMode(joined.scope==="general"?"general":"specialty");
-      if(joined.specialty&&joined.specialty!=="general")setSpecialty(joined.specialty as Specialty);
-      setNotice("Connected to room "+joined.code+". If the code was new, you started the room; everyone entering it gets the same game.");
-    }catch(e){setNotice((e as Error).message);}
-    finally{setRoomBusy(false);}
+    const local:RoomState={code,gameId:game,scope:"party",specialty:"general",date,seed,hostUid:"local",players:[{uid:"me",name:roomName.trim()||"You",score:null,maxScore:null,finished:false,perfect:false}],status:"waiting"};
+    setRoomCode(code);setRoom(local);
+    if(multiplayerConfigured()){
+      try{const joined=await joinOrCreateRoom(code,{gameId:game,scope:"party",specialty:"general",date,seed,name:roomName||"Guest"});setRoom(joined);}
+      catch{setNotice("Live scoreboard is unavailable right now. You can still play the same puzzle and compare shared results.");}
+    }
+    setRoomBusy(false);
   };
   const closeRoom=async()=>{
-    if(roomCode){try{await leaveRoom(roomCode);}catch{/* no network */}}
-    setRoomCode("");setRoom(null);setActiveGame(null);setScreen("home");setNotice("Left the room.");
+    if(roomCode&&multiplayerConfigured()){try{await leaveRoom(roomCode);}catch{/* no network */}}
+    setRoomCode("");setRoom(null);setActiveGame(null);setPartyRun(false);setScreen("home");setNotice("Left the room.");
   };
   const title=activeGame?GAMES.find(g=>g.id===activeGame)?.title??"Game":screen==="stats"?"Your progress":screen==="settings"?"Preferences":screen==="friends"?"Play with friends":selectedTitle;
 
@@ -199,16 +214,31 @@ export default function App() {
     <main>
       {activeGame?<div className={"play-page tone-"+(GAMES.find(g=>g.id===activeGame)?.wash??"lilac")}>
         <div className="breadcrumb"><button onClick={()=>{setActiveGame(null);setPractice(false);}}>← All games</button><span>/</span><span>{title}</span></div>
-        <div className="play-heading"><div className="play-badge" aria-hidden="true"><GameArt game={activeGame}/></div><div className="play-heading-text"><span className="eyebrow">{practice?"FREE PLAY":selectedTitle.toUpperCase()+" · "+date}</span><h1>{title}</h1><p>{GAMES.find(g=>g.id===activeGame)?.description}</p></div>
-          <div className="mode-switch" role="group" aria-label="Game mode"><button className={!practice?"selected":""} onClick={()=>{if(practice)openGame(activeGame,false,room?.seed);}}>Daily</button><button className={practice?"selected":""} onClick={()=>{if(!practice)openGame(activeGame,true,hashSeed(activeGame+"-practice-"+Date.now()));}}>Free Play</button></div></div>
+        <div className="play-heading"><div className="play-badge" aria-hidden="true"><GameArt game={activeGame}/></div><div className="play-heading-text"><span className="eyebrow">{partyRun?"PARTY ROOM · "+roomCode:practice?"FREE PLAY":selectedTitle.toUpperCase()+" · "+date}</span><h1>{title}</h1><p>{GAMES.find(g=>g.id===activeGame)?.description}</p></div>
+          {!partyRun&&<div className="mode-switch" role="group" aria-label="Game mode"><button className={!practice?"selected":""} onClick={()=>{if(practice)openGame(activeGame,false,room?.seed);}}>Daily</button><button className={practice?"selected":""} onClick={()=>{if(!practice)openGame(activeGame,true,hashSeed(activeGame+"-practice-"+Date.now()));}}>Free Play</button></div>}</div>
         <section className="game-stage"><div className="stage-orbit orbit-one"/><div className="stage-orbit orbit-two"/>
-          <GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(mode==="general"?"general":specialty) as never} practice={practice} onDone={finishGame}/>
+          <GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onDone={finishGame}/>
         </section>
         {room&&<RoomScores room={room}/>}
         {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"MedDaily result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
         <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode"}</span></div>
-      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak}/>:screen==="settings"?<SettingsPage player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} configured={multiplayerConfigured()} game={firstTodo} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,false,r.seed)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} today={date} doneToday={doneToday} openGame={openGame}/>}
+      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak}/>:screen==="settings"?<SettingsPage player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} today={date} doneToday={doneToday} openGame={openGame}/>}
     </main>
+    {completion&&<div className="complete-overlay" role="dialog" aria-modal="true" aria-label="Round complete" onClick={()=>setCompletion(null)}>
+      <div className={"complete-card"+(completion.perfect?" perfect":"")} onClick={e=>e.stopPropagation()}>
+        {!player.reducedMotion&&<div className="confetti" aria-hidden="true">{Array.from({length:26},(_,i)=><i key={i} style={{left:((i*37)%100)+"%",animationDelay:((i%9)*0.12)+"s",background:["#ffd54a","#ff5d9e","#52e3b0","#36bdf5","#a99aff"][i%5]}}/>)}</div>}
+        <span className="complete-stamp">{completion.perfect?"PERFECT":"COMPLETE"}</span>
+        <h2>{completion.title}</h2>
+        <p className="complete-sub">{completion.party?"Room "+roomCode+" · send this to your group":practice?"Free Play round finished":"Daily saved · come back tomorrow"}</p>
+        <pre className="share-preview">{completion.text.split("\n").filter(l=>!l.startsWith("http")).join("\n")}</pre>
+        <div className="complete-actions">
+          <button className="button button-primary" onClick={()=>void shareResult()}>{copied?"✓ Copied!":"Share result ↗"}</button>
+          {!completion.party&&<button className="button button-soft" onClick={()=>openGame(activeGame!,true,hashSeed(activeGame+"-again-"+Date.now()))}>Play again ∞</button>}
+          <button className="button button-quiet" onClick={()=>{setCompletion(null);setActiveGame(null);setScreen(completion.party?"friends":"home");}}>{completion.party?"Back to party":"All games"}</button>
+        </div>
+        <button className="complete-close" aria-label="Close" onClick={()=>setCompletion(null)}>×</button>
+      </div>
+    </div>}
     <footer className="site-footer"><div><span className="footer-mark">✳</span><b>meddaily.</b><span>PRESS START · FIND YOUR NEXT FAVORITE</span></div><p>For education only · Not a clinical decision tool · Verify care decisions against current guidance.</p><span className="version">v1.1 · Local-first · Optional Drive sync</span></footer>
   </div>;
 }
@@ -219,31 +249,24 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
   const done=doneToday;
   const [freePlay,setFreePlay]=useState(false);
   
-  const next=GAMES.find(g=>!player.results.some(r=>r.date===today&&r.game===g.id&&r.scope===scope))??GAMES[0];
   const streakNow=playStreak(player,scope);
   const specialtyName=SPECIALTIES.find(s=>s.id===specialty)?.name;
   return <div className="home-page">
     <section className="arcade-hud">
-      <div className="hud-title"><span className="eyebrow">{freePlay?"FREE PLAY · UNLIMITED":mode==="general"?"OPEN ARCADE · "+today:(specialtyName??"").toUpperCase()+" · "+today}</span><h1>Press <b>start</b>.</h1></div>
-      <div className="hud-stats">
-        <div className="hud-chip"><span>🔥</span><b>{streakNow}</b><small>day streak</small></div>
-        <div className="hud-chip"><span>⭐</span><b>{freePlay?"∞":done+"/"+GAMES.length}</b><small>{freePlay?"free play":"cleared today"}</small></div>
-      </div>
       <div className="hud-controls">
         <div className="home-play-mode" role="group" aria-label="Choose daily or free play"><button className={!freePlay?"selected":""} onClick={()=>setFreePlay(false)}>Daily</button><button className={freePlay?"selected":""} onClick={()=>setFreePlay(true)}>Free Play ∞</button></div>
         <div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialties</button></div>
       </div>
-      {!freePlay&&<div className="hud-progress" aria-label={done+" of "+GAMES.length+" daily games complete"}><i style={{width:(done/GAMES.length*100)+"%"}}/></div>}
+      <div className="hud-stats">
+        <div className="hud-chip"><span>🔥</span><b>{streakNow}</b></div>
+        <div className="hud-chip"><span>⭐</span><b>{freePlay?"∞":done+"/"+GAMES.length}</b></div>
+      </div>
       {mode==="specialty"&&<div className="specialty-picker"><div className="specialty-chips">{SPECIALTIES.map(s=><button key={s.id} onClick={()=>setSpecialty(s.id)} className={specialty===s.id?"selected":""}><span>{s.icon}</span>{s.short}</button>)}</div><div className="specialty-selected"><b>{specialtyName}</b><span>{SPECIALTIES.find(s=>s.id===specialty)?.blurb}</span></div></div>}
     </section>
 
-    <section className={"featured-game "+next.wash}>
-      <div className="featured-art"><GameArt game={next.id}/></div>
-      <div className="featured-copy"><span className="featured-ribbon">{freePlay?"PICK OF THE ARCADE":done===GAMES.length?"ALL CLEAR · REPLAY ANY":"UP NEXT"}</span><h2>{next.title}</h2><p>{next.description}</p><div className="featured-meta"><span>⏱ {next.time}</span><span>{next.category}</span></div><button className="button button-primary" onClick={()=>openGame(next.id,freePlay)}>▶ PLAY{freePlay?" FREE":" NOW"}</button></div>
-    </section>
-
-    <section className="section-head"><div><h2>All games</h2></div><span className="section-aside">{GAMES.length} GAMES · {freePlay?"UNLIMITED":"TODAY"}</span></section>
-    <div className="game-grid">{GAMES.map((game,index)=>{
+        <div className="game-grid">
+      <a className="game-card dx-card" href="https://pathomnemonic.github.io/buzzword-dash-v2/" target="_blank" rel="noreferrer"><div className="game-cover"><DxArt/><span className="card-status">★ FEATURED</span></div><div className="game-card-body"><span className="game-category">Companion game</span><h3>Dx Dash</h3><span className="game-subtitle">Run the list. Learn the diagnosis.</span></div><div className="game-card-footer"><span>↗ opens Dx Dash</span><span className="card-play">PLAY ▶</span></div></a>
+      {GAMES.map((game,index)=>{
       const result=player.results.find(r=>r.date===today&&r.game===game.id&&r.scope===scope);
       const cleared=!!result&&!freePlay;
       return <button key={game.id} className={"game-card "+game.wash+(cleared?" card-done":"")} onClick={()=>openGame(game.id,freePlay)} style={{animationDelay:(index*40)+"ms"}}>
@@ -253,33 +276,31 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
       </button>;
     })}</div>
 
-    <section className="dx-dash-feature"><div className="feature-copy"><span className="eyebrow">COMPANION GAME</span><h2>Dx Dash</h2><p>Run the list. Learn the diagnosis.</p><a className="button button-primary" href="https://pathomnemonic.github.io/buzzword-dash-v2/" target="_blank" rel="noreferrer">PLAY DX DASH ↗</a></div><div className="dx-dash-mark" aria-hidden="true">DX<span>↗</span></div></section>
   </div>;
 }
 
-const PARTY_GAME_IDS = new Set<GameId>(["connections","microbe","pairs","triage","splice","labline","higher","casefile","dive","trivia","lettergrid"]);
-function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,configured,game,games,onJoin,onPlay,onLeave}:{
-  room:RoomState|null;roomName:string;setRoomName:(s:string)=>void;joinCode:string;setJoinCode:(s:string)=>void;busy:boolean;configured:boolean;game:GameId;games:GameMeta[];
-  onJoin:(g:GameId)=>void;onPlay:(r:RoomState)=>void;onLeave:()=>void;
+function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,live,games,onJoin,onPlay,onLeave}:{
+  room:RoomState|null;roomName:string;setRoomName:(s:string)=>void;joinCode:string;setJoinCode:(s:string)=>void;busy:boolean;live:boolean;games:GameMeta[];
+  onJoin:()=>void;onPlay:(r:RoomState)=>void;onLeave:()=>void;
 }){
-  const partyGames=games.filter(g=>PARTY_GAME_IDS.has(g.id));
-  const [selected,setSelected]=useState<GameId>(PARTY_GAME_IDS.has(game)?game:"connections");
-  return <div className="friends-page"><div className="friends-hero"><span className="eyebrow">THE PARTY LOBBY</span><h1>Bring your crew.</h1><p>Choose a shared game and enter the same six-character code. The first player starts it; everyone else joins by typing that code. Each player keeps their own progress while the lobby tracks the round.</p></div>
-    {!configured&&<div className="setup-warning"><b>Online rooms need Firebase enabled.</b><p>Solo and free-play modes work without setup. Real-time shared rooms require the Firebase project settings in the deployment environment; the room-code workflow is ready once connected.</p></div>}
-    {room?<div className="room-card"><div className="room-code-head"><div><span className="eyebrow">YOUR SHARED GAME CODE</span><strong>{room.code}</strong></div><div className="share-actions"><button className="button button-soft" onClick={()=>void navigator.clipboard?.writeText(room.code)}>Copy code</button><button className="button button-primary" onClick={()=>{const url=location.origin+location.pathname+"?room="+room.code;const text="Join my MedDaily "+(games.find(g=>g.id===room.gameId)?.title??"game")+" room: "+room.code;if(navigator.share)void navigator.share({title:"MedDaily room",text,url}).catch(()=>{});else void navigator.clipboard?.writeText(text+" "+url);}}>Share invite ↗</button></div></div>
-      <p className="room-message">{room.specialty==="general"?"Open Arcade":"Specialty daily"} · {games.find(g=>g.id===room.gameId)?.title} · {room.date}</p>
-      <div className="room-players">{room.players.map((p,i)=><div key={p.uid} className="room-player"><span className="player-number">{i+1}</span><b>{p.name}</b><span>{p.finished?(p.score??0)+" pts":"Ready to play"}</span>{p.perfect&&<i>✦</i>}</div>)}</div>
-      <div className="room-actions"><button className="button button-primary" onClick={()=>onPlay(room)}>Play this game <span>↗</span></button><button className="button button-quiet" onClick={onLeave}>Leave room</button></div>
-      <small>Up to eight players. Everyone who enters the same code joins the same game; scores appear here when submitted.</small>
+  const [copied,setCopied]=useState(false);
+  const meta=room?games.find(g=>g.id===room.gameId):undefined;
+  const invite=room?location.origin+location.pathname+"?room="+room.code:"";
+  return <div className="friends-page"><div className="friends-hero"><span className="eyebrow">PARTY ROOMS</span><h1>Same code, same game.</h1><p>Everyone who types the same code plays the same game and the same puzzle. No sign-up, no host. Pick any six letters or numbers, tell your friends, and compare results.</p></div>
+    {room&&meta?<div className="room-card"><div className="room-code-head"><div><span className="eyebrow">ROOM CODE</span><strong>{room.code}</strong></div><div className="share-actions"><button className="button button-soft" onClick={()=>{void navigator.clipboard?.writeText(invite);setCopied(true);}}>{copied?"✓ Link copied":"Copy invite link"}</button></div></div>
+      <div className="room-game"><div className="room-game-art"><GameArt game={meta.id}/></div><div><span className="eyebrow">THIS ROOM PLAYS</span><h2>{meta.title}</h2><p>{meta.description}</p></div></div>
+      <div className="room-players">{room.players.map((p,i)=><div key={p.uid} className="room-player"><span className="player-number">{i+1}</span><b>{p.name}</b><span>{p.finished?"Finished":"Ready"}</span>{p.perfect&&<i>✦</i>}</div>)}</div>
+      <div className="room-actions"><button className="button button-primary" onClick={()=>onPlay(room)}>▶ Play this puzzle</button><button className="button button-quiet" onClick={onLeave}>Leave room</button></div>
+      <small>{live?"Live scores appear above as friends finish. You can also share your result from the finish screen.":"When you finish, tap Share result and paste it into your group chat to compare."}</small>
     </div>:<div className="friends-grid single-room-entry">
-      <section className="friends-card"><div className="friends-card-icon">⌁</div><span className="eyebrow">SAME CODE · SAME GAME</span><h2>Enter a room code</h2><p>Use a code your group has agreed on. The first person to enter a new code starts the room; everyone else types that exact code to join.</p>
-        <label>Your nickname<input maxLength={20} value={roomName} onChange={e=>setRoomName(e.target.value)} placeholder="What should we call you?"/></label>
-        <label>Shared game<select value={selected} onChange={e=>setSelected(e.target.value as GameId)}>{partyGames.map(g=><option value={g.id} key={g.id}>{g.title}</option>)}</select></label>
-        <label>Six-character code<input className="room-code-input" maxLength={6} value={joinCode} onChange={e=>setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,""))} placeholder="ABC123"/></label>
-        <button className="button button-primary full-button" onClick={()=>onJoin(selected)} disabled={busy||!configured||joinCode.length!==6}>{busy?"Connecting…":"Join / start game"}</button>
+      <section className="friends-card"><span className="eyebrow">ENTER A CODE</span><h2>Join a room</h2>
+        <label>Nickname (optional)<input maxLength={20} value={roomName} onChange={e=>setRoomName(e.target.value)} placeholder="What should we call you?"/></label>
+        <label>Six-character code<input className="room-code-input" maxLength={6} value={joinCode} onChange={e=>setJoinCode(normalizeRoomCode(e.target.value))} placeholder="ABC123" autoCapitalize="characters" autoComplete="off"/></label>
+        <div className="room-entry-actions"><button className="button button-primary" onClick={onJoin} disabled={busy||joinCode.length!==6}>{busy?"Joining…":"Join room ↗"}</button><button className="button button-soft" onClick={()=>setJoinCode(randomRoomCode())}>🎲 Random code</button></div>
+        <p className="room-hint">Group rooms use games where racing the same puzzle makes sense: {PARTY_GAMES.map(id=>games.find(g=>g.id===id)?.title).filter(Boolean).join(", ")}. Trivia Rumble has its own pass-and-play mode.</p>
       </section>
     </div>}
-    <div className="privacy-note"><b>Private by default.</b> Solo play never requires an account. Friends rooms use temporary anonymous guest identities and contain only nicknames, game metadata, and scores. Do not enter patient information or other sensitive data.</div>
+    <div className="privacy-note"><b>Private by default.</b> No account needed. Nothing is sent anywhere unless live scoreboards are enabled, and then only a nickname, the room code, and scores. Never enter patient information.</div>
   </div>;
 }
 
