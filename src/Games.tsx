@@ -216,7 +216,6 @@ function TriviaRumble({ seed, onDone }: Props) {
   const [category, setCategory] = useState<TriviaCategory | null>(null);
   const [question, setQuestion] = useState<(typeof triviaQuestions)[number] | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
-  const [message, setMessage] = useState("");
   const [winner, setWinner] = useState<string | null>(null);
   const [used, setUsed] = useState<Partial<Record<TriviaCategoryId, string[]>>>({});
   const done = useRef(false);
@@ -269,9 +268,6 @@ function TriviaRumble({ seed, onDone }: Props) {
     setPlayers(nextPlayers);
     const newWinner = nextPlayers.find((player) => player.crowns.length === triviaCategories.length);
     if (newWinner) setWinner(newWinner.name);
-    setMessage(correct
-      ? (nextPlayers[turn].crowns.includes(category.id) && !players[turn].crowns.includes(category.id) ? "Badge unlocked! " + category.name + " mastered." : "Correct! One step closer to the " + category.name + " badge.")
-      : "Not quite. Read the explanation, then spin again.");
     setStage("reveal");
   };
 
@@ -288,11 +284,9 @@ function TriviaRumble({ seed, onDone }: Props) {
     if (winner || round + 1 >= limit) { finish(); return; }
     setTurn((value) => mode === "solo" ? 0 : (value + 1) % players.length);
     setRound((value) => value + 1);
-    setCategory(null); setQuestion(null); setPicked(null); setMessage("");
+    setCategory(null); setQuestion(null); setPicked(null);
     setStage("spin");
   };
-
-  const crownsOpen = currentPlayer?.crowns.length ?? 0;
 
   return <div className="game-layout trivia-rumble">
     {stage === "setup" ? <div className="rumble-setup">
