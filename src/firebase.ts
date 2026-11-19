@@ -79,7 +79,7 @@ export async function joinOrCreateRoom(codeInput: string, input: Omit<RoomInfo, 
     if (!members.includes(uid) && members.length >= 8) throw new Error("This room is full (maximum eight players).");
     if (!members.includes(uid)) {
       tx.update(ref, { memberUids: [...members, uid], updatedAt: serverTimestamp() });
-      tx.set(member, { uid, name: input.name.trim().slice(0, 20) || "Guest", score: null, maxScore: null, finished: false, perfect: false });
+      tx.set(member, { uid, name: name.trim().slice(0, 20) || "Guest", score: null, maxScore: null, finished: false, perfect: false });
     }
   });
   const [snap, playerSnap] = await Promise.all([getDoc(ref), getDoc(member)]);
