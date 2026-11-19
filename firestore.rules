@@ -16,6 +16,7 @@ service cloud.firestore {
           && request.resource.data.memberUids.hasAll(resource.data.memberUids)
           && request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1
           && request.resource.data.memberUids.size() <= 8
+          && request.resource.data.memberUids.size() <= 8
           && request.auth.uid in request.resource.data.memberUids
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["memberUids", "updatedAt"]);
       }
