@@ -1362,3 +1362,30 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .xw-clue{display:block;width:100%;margin:3px 0;padding:6px 8px;border:0;border-radius:10px;background:rgba(0,0,0,.22);color:#e6defa;font:600 12px/1.35 var(--font-game);text-align:left;cursor:pointer}
 .xw-clue.on{background:#ffd54a;color:#3b2200}.xw-clue b{color:#ff8dbd}.xw-clue.on b{color:#7a2cc9}.xw-clue small{opacity:.7}
 @media(max-width:560px){.crossword-clues{grid-template-columns:1fr}}
+
+/* ===== Deep Dive descent scene ===== */
+.dive-stage{position:relative;display:grid;grid-template-columns:78px 1fr;gap:12px;align-items:stretch;margin:10px 0}
+.dive-sea{position:relative;min-height:190px;border:3px solid #fff;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#ffcfb0 0%,#ffcfb0 12%,#ffe08a 14%,#ffe08a 27%,#fff3ec 29%,#fff3ec 38%,#d9433a 40%,#b8322b 62%,#f7f1e3 64%,#f7f1e3 76%,#ff9b5b 78%,#e0703a 100%);box-shadow:0 5px 0 rgba(5,5,30,.5)}
+.dive-line{position:absolute;left:0;right:0;height:0;border-top:1px dashed rgba(60,20,40,.35)}
+.dive-line span{position:absolute;right:4px;top:-9px;font:700 10px var(--font-game);color:rgba(60,20,40,.75)}
+.dive-line.hit{border-top:2px solid #2a1658}.dive-line.hit span{color:#2a1658}
+.dive-diver{position:absolute;left:50%;font-size:30px;font-weight:400;transform:translate(-50%,-50%);transition:top 2.2s cubic-bezier(.3,.7,.3,1);filter:drop-shadow(0 4px 0 rgba(0,0,0,.35))}
+.dive-bubble{position:absolute;bottom:-10px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);animation:bubbleUp 5s linear infinite}
+.dive-bubble.b1{left:18%;animation-delay:0s}.dive-bubble.b2{left:70%;animation-delay:1.6s;width:6px;height:6px}.dive-bubble.b3{left:45%;animation-delay:3.1s}
+@keyframes bubbleUp{to{transform:translateY(-210px);opacity:0}}
+.dive-stage .dive-prompt-card{margin:0}
+.dive-deeper{color:#9fd8ff;font:600 12px/1.5 var(--font-game)}
+[data-motion="reduced"] .dive-bubble{animation:none}[data-motion="reduced"] .dive-diver{transition:none}
+@media(max-width:560px){.dive-stage{grid-template-columns:58px 1fr}.dive-sea{min-height:170px}}
+
+/* ===== Theme Trail ===== */
+.trail-theme{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;padding:10px 14px;border-radius:14px;background:linear-gradient(120deg,rgba(47,207,159,.28),rgba(54,189,245,.2));border:2px solid rgba(255,255,255,.18)}
+.trail-theme strong{font:400 22px var(--font-display);color:#fff}.trail-theme small{color:#c3f1ff;font:600 12px var(--font-game)}
+.trail-word-live{min-height:34px;text-align:center;font:400 26px var(--font-display);letter-spacing:4px;color:#ffd54a;text-shadow:0 3px 0 rgba(0,0,0,.4)}
+.trail-board{display:grid;gap:4px;width:min(100%,520px);margin:0 auto;touch-action:none;user-select:none}
+.trail-cell{aspect-ratio:1;display:grid;place-items:center;padding:0;border:2px solid rgba(255,255,255,.28);border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.05));color:#fff;font:400 clamp(14px,4.4vw,22px) var(--font-display);cursor:pointer;touch-action:none;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.trail-cell.in-path{background:#ffd54a;color:#3b2200;border-color:#fff;transform:scale(1.1)}
+.trail-cell.is-found{background:#36bdf5;border-color:#fff;color:#04243a}.trail-cell.is-trail{background:#ff63a9;border-color:#fff;color:#fff}
+.trail-cell.hint{outline:3px dashed #52e3b0;outline-offset:1px}
+.trail-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
+.trail-found{display:flex;flex-wrap:wrap;gap:6px}.trail-found span{padding:4px 12px;border-radius:99px;background:#36bdf5;color:#04243a;font:700 12px var(--font-game)}.trail-found span.is-trail{background:#ff63a9;color:#fff}

@@ -59,3 +59,38 @@ describe("Mini Crossword", () => {
     expect(JSON.stringify(makeCrossword(5))).toBe(JSON.stringify(makeCrossword(5)));
   });
 });
+
+import { microbePacks } from "./data";
+import { makeTrailPuzzle, trailPackOk } from "./trailLogic";
+
+describe("Theme Trail boards", () => {
+  it("lays out every word pack with adjacent, non-overlapping paths and a board-spanning trail word", () => {
+    const packs = microbePacks.filter(trailPackOk);
+    expect(packs.length).toBeGreaterThanOrEqual(25);
+    for (const pack of packs) {
+      for (const seed of [1, 2, 3]) {
+        const puzzle = makeTrailPuzzle(pack, seed);
+        const used = new Set<number>();
+        for (const word of puzzle.words) {
+          const path = puzzle.paths[word];
+          expect(path, pack.name + " " + word).toBeDefined();
+          expect(path).toHaveLength(word.length);
+          path.forEach((cell, i) => {
+            expect(used.has(cell), pack.name + " overlap " + word).toBe(false);
+            used.add(cell);
+            expect(puzzle.grid[Math.floor(cell / puzzle.columns)][cell % puzzle.columns]).toBe(word[i]);
+            if (i > 0) {
+              const prev = path[i - 1];
+              expect(Math.abs(Math.floor(cell / puzzle.columns) - Math.floor(prev / puzzle.columns))).toBeLessThanOrEqual(1);
+              expect(Math.abs((cell % puzzle.columns) - (prev % puzzle.columns))).toBeLessThanOrEqual(1);
+            }
+          });
+        }
+        const rows = puzzle.paths[puzzle.trail].map((c) => Math.floor(c / puzzle.columns));
+        expect(rows).toContain(0);
+        expect(rows).toContain(puzzle.rows - 1);
+        expect(makeTrailPuzzle(pack, seed).grid).toEqual(puzzle.grid);
+      }
+    }
+  });
+});

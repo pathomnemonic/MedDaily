@@ -194,3 +194,42 @@ export function deepDiveAnswerAward(tier: number, currentRoundScore: number): nu
   const base = Number.isInteger(tier) && tier >= 1 && tier <= 6 ? deepDivePointsByTier[tier - 1] : 0;
   return Math.max(0, Math.min(base, 100 - Math.max(0, currentRoundScore)));
 }
+
+
+/**
+ * A ladder whose two ends are medical words: BFS over the one-letter-neighbour graph from a medical start
+ * to another medical word 3–5 steps away. Intermediate words are ordinary dictionary words.
+ */
+export function generateMedicalLadder(seed: number, dictionary: readonly string[], medical: readonly string[]): GeneratedWordLadder | null {
+  const words = new Set(dictionary.map((w) => w.toUpperCase()).filter((w) => /^[A-Z]{4}$/.test(w)));
+  const ends = [...new Set(medical.map((w) => w.toUpperCase()))].filter((w) => words.has(w));
+  const neighbours = (word: string): string[] => {
+    const out: string[] = [];
+    for (let i = 0; i < word.length; i++) for (let c = 65; c < 91; c++) {
+      const next = word.slice(0, i) + String.fromCharCode(c) + word.slice(i + 1);
+      if (next !== word && words.has(next)) out.push(next);
+    }
+    return out;
+  };
+  const random = seeded((seed + 0x2545f491) >>> 0);
+  const found: string[][] = [];
+  for (const start of shuffle(ends, random)) {
+    const previous = new Map<string, string | null>([[start, null]]);
+    const depth = new Map<string, number>([[start, 0]]);
+    const queue = [start];
+    for (let i = 0; i < queue.length; i++) {
+      const word = queue[i], d = depth.get(word) ?? 0;
+      if (d >= 3 && d <= 5 && ends.includes(word)) {
+        const path: string[] = [];
+        for (let at: string | null = word; at !== null; at = previous.get(at) ?? null) path.push(at);
+        found.push(path.reverse());
+      }
+      if (d >= 5) continue;
+      for (const next of neighbours(word)) if (!previous.has(next)) { previous.set(next, word); depth.set(next, d + 1); queue.push(next); }
+    }
+    if (found.length >= 12) break;
+  }
+  if (!found.length) return null;
+  const path = shuffle(found, random)[0];
+  return { start: path[0], end: path[path.length - 1], path, note: "Medical ladder: both ends are medical words." };
+}

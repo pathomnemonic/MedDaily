@@ -9,13 +9,14 @@ This is a quick web check, not legal clearance. Before a public launch, search t
 | Medle | One letter from **Meddle**, an existing medical Wordle (AusDoc). "-dle" names also invite takedowns: the New York Times has sent notices to Wordle clones. | **Stat Word** |
 | DoctorDle | **Doctordle** is an existing free daily diagnosis game with an active audience. | **Differential** |
 | Hexicon | **Hexicon** is a published word-game app (Spiralburst Studios), with a spin-off named Honeycomb. | **Seven Cells** |
+| Deep Dive | Re-themed (a non-medical ocean descent) and renamed. | **Deep Scan** |
 | Connections | The New York Times' game name. | **Quad Squad** |
 | Word Hunt | Name in use by other word-game apps. | **Specimen Search** |
 | Word Ladder / Medical Spelling Hive | Generic puzzle name / too close to Spelling Bee. | **Letter Rungs** / **Seven Cells** |
 
 ## Kept (no matches found, but not cleared)
 
-Quad Squad, Trivia Rumble, Deep Dive, Cell Sketch, Specimen Search, Letter Rungs, Seven Cells, Association Blitz, Triage Order, Anagram Sprint, Casefile Logic, Mime Time, Riddle Lab, Body Map Blitz, Crossword Clinic, Letter Lab, What Has More?.
+Quad Squad, Trivia Rumble, Deep Scan, Theme Trail ("Strands" and "spangram" are NYT terms, so they are not used), Cell Sketch, Specimen Search, Letter Rungs, Seven Cells, Association Blitz, Triage Order, Anagram Sprint, Casefile Logic, Mime Time, Riddle Lab, Body Map Blitz, Crossword Clinic, Letter Lab, What Has More?.
 
 Watch list:
 - **Labline** is also the name of a laboratory-equipment brand (Lab-Line). Different field, low risk; alternatives: **Lab Guess**, **Number Needle**.

@@ -33,7 +33,7 @@ export function computeTrophies(data: PlayerData, totalGames: number): Trophy[] 
     t("streak30", "☄️", "Unstoppable", "30-day streak", streak >= 30),
     t("rounds25", "🎲", "Regular", "Finish 25 daily rounds", results.length >= 25),
     t("rounds100", "👑", "High Roller", "Finish 100 daily rounds", results.length >= 100),
-    t("diver", "🌊", "Deep Sea Legend", "Score 400+ in Deep Dive", best("dive") >= 400),
+    t("diver", "🩻", "Marrow Master", "Score 400+ in Deep Scan", best("dive") >= 400),
     t("wordsmith", "🔤", "Quick Study", "Solve Stat Word in three guesses or fewer", results.some((r) => r.game === "medle" && r.score >= 76)),
     t("sleuth", "🕵️", "Case Closed", "Crack a Casefile with no hints", results.some((r) => r.game === "casefile" && r.perfect)),
     t("specialist", "🩺", "Specialist", "Finish a daily in a specialty track", results.some((r) => r.scope.startsWith("specialty:")))

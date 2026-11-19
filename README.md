@@ -8,7 +8,7 @@ A mobile-first medical mini-game arcade built with React, TypeScript, and Vite.
 Sixteen playable formats span clinical deduction, word games, estimation, spatial logic, trivia, and party play. Every game has a daily round and an unlimited Free Play mode, selectable directly from the home screen:
 
 - **Medical and clinical:** Stat Word, Differential, Quad Squad, Specimen Search, Labline, Association Blitz, and Triage Order.
-- **Puzzle and party:** Anagram Sprint, Cell Sketch, What Has More?, Letter Rungs, Seven Cells, Casefile Logic, Deep Dive, Trivia Rumble, and Letter Lab.
+- **Puzzle and party:** Anagram Sprint, Cell Sketch, What Has More?, Letter Rungs, Seven Cells, Casefile Logic, Deep Scan, Trivia Rumble, and Letter Lab.
 
 The same UTC date + mode + specialty + game key yields the same daily seed, so groups in different time zones share the same puzzle. Open Arcade is the shared, balanced general mode and the default starting point. Specialty Dailies add shared daily sets across 26 clinical specialties and four foundational subjects. Neurology is one track like the other specialties; subspecialty topics belong inside the Neurology track rather than taking up multiple top-level slots.
 
@@ -17,7 +17,7 @@ The same UTC date + mode + specialty + game key yields the same daily seed, so g
 - Differential is a six-guess diagnosis puzzle with progressive clues; clinical multiple-choice drills are not presented as standalone games. Stat Word includes an on-screen Wordle-style keyboard.
 - Specimen Search is a 14×14 drag-to-select word search with persistent found-word highlighting. Casefile Logic and Cell Sketch include in-game pencil-mark systems. Casefile rotates between curated daily cases and seeded procedural daily puzzles; Free Play also procedurally generates puzzles with a verified unique solution. Cell Sketch and Letter Rungs also generate new Free Play variants.
 - Association Blitz is a timed 24-card memory game with twelve pairs, combo streaks, and a 75-second clock. Seven Cells now includes 50 playable seven-letter boards with validated center-letter rules and pangrams. What Has More? draws from 116 comparisons, including 50 fun-first matchups such as propofol lipid calories versus bacon fat.
-- Labline and Anagram Sprint now use multi-round progression; Letter Lab is a playable Boggle-style adjacent-letter hunt; Quad Squad adds one-away feedback and reliable reshuffling. Shared-code rooms are offered only for formats that support same-puzzle score competition: Quad Squad, Specimen Search, Association Blitz, Triage Order, Anagram Sprint, Labline, What Has More?, Casefile Logic, Deep Dive, Trivia Rumble, and Letter Lab. One person enters a six-character code to start a room; everyone else enters the same code to join. Firebase credentials are still required for live cross-device multiplayer.
+- Labline and Anagram Sprint now use multi-round progression; Letter Lab is a playable Boggle-style adjacent-letter hunt; Quad Squad adds one-away feedback and reliable reshuffling. Shared-code rooms are offered only for formats that support same-puzzle score competition: Quad Squad, Specimen Search, Association Blitz, Triage Order, Anagram Sprint, Labline, What Has More?, Casefile Logic, Deep Scan, Trivia Rumble, and Letter Lab. One person enters a six-character code to start a room; everyone else enters the same code to join. Firebase credentials are still required for live cross-device multiplayer.
 - The Trophies page has a 14-trophy cabinet calculated from saved results; room codes need no setup, and an optional Firebase scoreboard adds live ranking.
 - Completion is shown per game. MedDaily does not calculate a combined arcade score across games of different difficulty.
 - Dx Dash is permanently featured in the arcade and remains a separate game.
@@ -63,6 +63,8 @@ Medical material is for education and entertainment, not patient care or a clini
 
 ## Home screen and rewards
 
-- Filter shelves (All, Quick, Brain, Words, Clinical, Party), a Surprise me button, and a rotating featured slot that alternates Deep Dive and Trivia Rumble each UTC day. Dx Dash is always featured.
+- Filter shelves (All, Quick, Brain, Words, Clinical, Party), a Surprise me button, and a rotating featured slot that alternates Deep Scan and Trivia Rumble each UTC day. Dx Dash is always featured.
 - A 14-trophy cabinet computed from saved results (`src/achievements.ts`).
 - Mime Time is a pass-the-phone charades game with a 135-prompt deck.
+
+- Every game is medical-themed: Deep Scan descends through tissue layers, Letter Rungs ladders start and end on medical words, and Theme Trail packs are medical word themes.

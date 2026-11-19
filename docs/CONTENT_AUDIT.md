@@ -18,12 +18,13 @@ MedDaily exposes twenty playable game formats. The retired Next Best Step bank r
 | Anagram Sprint | 111 terms | Five-word, 75-second timed scramble with hints and attempt-based scoring |
 | Cell Sketch | 36 curated 5×5 patterns + 8 seeded transformations each in Free Play | Row and column run clues; CI verifies one valid solution per board |
 | What Has More? | 116 comparisons (50 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
-| Letter Rungs | 36 curated ladders + procedural Free Play | Each intended solution path uses real words and one-letter changes |
+| Letter Rungs | Generated medical ladders (both ends are medical words, 3–5 steps, verified across 120 seeds) | Curated everyday-word ladders were replaced; intermediate steps still use ordinary dictionary words |
 | Seven Cells | 50 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
 | Casefile Logic | 30 curated cases + seeded procedural daily rotation and Free Play | Alternates curated cases with generated, uniquely solvable 3×3 deduction grids; both modes include pencil marks and scored hints |
-| Deep Dive | 73 prompts, including 3 long-tail prompts with 60 accepted answers each | Timed multi-answer recall with capped round scoring and editorial rarity tiers; typo-tolerant, space/hyphen-insensitive matching; synonym and abbreviation aliases (`src/dataDeepDiveExtra.ts`) |
+| Deep Scan | 73 prompts; long-tail answer banks (60+ answers on the deepest prompts) plus synonym/abbreviation aliases (`src/dataDeepDiveExtra.ts`) | Modeled on the one-answer-per-question rarity-dive format (see the Krillion clones): seven questions, 25 seconds each, one typed answer; typo-tolerant and space/hyphen-insensitive matching; unlisted answers are retried, not called wrong; tiers are named for tissue layers (skin to marrow) and are editorial, not measured |
 | Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes; 20-second timer; a correct answer keeps the wheel in pass-and-play |
 
+| Theme Trail | 30 themed word packs, each laid out as a bending adjacent-letter board with a board-spanning trail word | Drag or tap to trace terms; bonus words earn hints; generator ported from ChatGPT's Strands-style prototype and tested on every qualifying pack |
 | Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |
 
 ## What this means for daily longevity
@@ -45,7 +46,7 @@ Remaining content priorities:
 2. Expand Cell Sketch and Letter Rungs while preserving one-solution and valid-path checks (Cell Sketch now has 24 original patterns plus 12 transformed variants; Letter Rungs now has 36 curated paths).
 3. Add specialty-reviewed Quad Squad boards and clinical cases for tracks whose current content falls back to general banks.
 4. Add original/licensed visual material for ECG, imaging, histology, gross pathology, and anatomy recognition.
-5. Continue expanding Deep Dive's long-tail answer sets with clinically defensible aliases and explicit editorial rarity weights—not fabricated player-population statistics.
+5. Continue expanding Deep Scan's long-tail answer sets with clinically defensible aliases and explicit editorial rarity weights—not fabricated player-population statistics.
 
 ## Accuracy and review standard
 

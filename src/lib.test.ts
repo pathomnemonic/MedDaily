@@ -242,7 +242,7 @@ describe("new arcade content banks", () => {
     }
   });
 
-  it("keeps dedicated Deep Dive long-tail prompts genuinely open-ended", () => {
+  it("keeps dedicated Deep Scan long-tail prompts genuinely open-ended", () => {
     const longTail = deepDivePrompts.filter((prompt) => prompt.longTail);
     expect(longTail.length).toBeGreaterThanOrEqual(3);
     for (const prompt of longTail) {
@@ -272,6 +272,27 @@ describe("new arcade content banks", () => {
 });
 
 
+import { generateMedicalLadder } from "./arcadeLogic";
+import { medicalRungWords } from "./dataRungs";
+describe("medical Letter Rungs", () => {
+  it("builds valid ladders with medical words at both ends for many seeds", () => {
+    const dictionary = [...ladderDictionary];
+    for (let seed = 0; seed < 120; seed++) {
+      const puzzle = generateMedicalLadder(seed, dictionary, medicalRungWords);
+      expect(puzzle, "seed " + seed).not.toBeNull();
+      expect(medicalRungWords).toContain(puzzle!.start);
+      expect(medicalRungWords).toContain(puzzle!.end);
+      expect(puzzle!.path.length).toBeGreaterThanOrEqual(4);
+      expect(puzzle!.path.length).toBeLessThanOrEqual(6);
+      puzzle!.path.forEach((word, i) => {
+        expect(ladderDictionary.has(word), word).toBe(true);
+        if (i > 0) expect([...word].filter((c, k) => c !== puzzle!.path[i - 1][k])).toHaveLength(1);
+      });
+    }
+    expect(generateMedicalLadder(7, dictionary, medicalRungWords)).toEqual(generateMedicalLadder(7, dictionary, medicalRungWords));
+  });
+});
+
 describe("party room codes", () => {
   it("maps the same code to the same party-friendly game and puzzle on every device", () => {
     expect(roomGame("abc 123")).toBe(roomGame("ABC123"));
@@ -288,7 +309,7 @@ describe("party room codes", () => {
 });
 
 
-describe("Deep Dive supplement", () => {
+describe("Deep Scan supplement", () => {
   it("targets only real prompts and answers, and merges without collisions", () => {
     for (const [id, extra] of Object.entries(deepDiveExtras)) {
       const base = deepDivePrompts.find((p) => p.id === id);

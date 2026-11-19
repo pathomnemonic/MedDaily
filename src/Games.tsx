@@ -3,12 +3,15 @@ import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank, triageCases } from "./data";
 import { deductionCases, glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
-import { triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateWordLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram } from "./arcadeLogic";
+import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
+import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
 import { mimeDeck } from "./dataMime";
+import { medicalRungWords } from "./dataRungs";
 import { riddles, riddleOptions } from "./dataRiddles";
 import { makeCrossword } from "./crosswordGen";
+import { makeTrailPuzzle, trailPackOk } from "./trailLogic";
+import { extendStrandsPath, readStrandsPath } from "./strandsLogic";
 import { reward } from "./juice";
 import { sfx } from "./audio";
 import { generateDeductionCase } from "./logicGenerator";
@@ -28,11 +31,12 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "splice": return <AnagramSprint seed={seed} onDone={onDone} specialty={specialty} />;
     case "glyph": return <CellSketch seed={seed} onDone={onDone} practice={practice} />;
     case "higher": return <HigherLower seed={seed} onDone={onDone} specialty={specialty} />;
-    case "ladder": return <WordLadder seed={seed} onDone={onDone} practice={practice} />;
+    case "ladder": return <WordLadder seed={seed} onDone={onDone} />;
     case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
     case "casefile": return <CasefileLogic seed={seed} onDone={onDone} practice={practice} />;
     case "dive": return <DeepDive seed={seed} onDone={onDone} />;
     case "trivia": return <TriviaRumble seed={seed} onDone={onDone} />;
+    case "trail": return <ThemeTrail seed={seed} onDone={onDone} specialty={specialty} />;
     case "crossword": return <CrosswordClinic seed={seed} onDone={onDone} />;
     case "riddle": return <RiddleLab seed={seed} onDone={onDone} />;
     case "bodymap": return <BodyMapBlitz seed={seed} onDone={onDone} />;
@@ -84,130 +88,126 @@ function Finish({ title, detail, score, children }: { title: string; detail: str
 function SectionLabel({ children }: { children: ReactNode }) { return <div className="section-label">{children}</div>; }
 
 const DIVE_POINTS = deepDivePointsByTier;
-const DIVE_TIERS = ["Surface find", "Familiar current", "Reef discovery", "Rare specimen", "Abyssal find", "Hidden gem"];
-type ScoredDeepAnswer = DeepAnswer & { earned: number };
-const diveRoundScore = (answers: ScoredDeepAnswer[]) => answers.reduce((sum, answer) => sum + answer.earned, 0);
+const DIVE_TIERS = ["Skin deep", "Subcutaneous", "Fascia", "Muscle", "Bone", "Marrow"];
+const DIVE_SECONDS = 25;
+interface DiveResult { answer: string | null; tier: number | null; points: number }
 
+/** Deep Scan: seven open questions, 25 seconds each, one typed answer per question. Rarer (less obvious) valid answers scan deeper into the tissue. */
 function DeepDive({ seed, onDone }: Props) {
-  const prompts = useMemo(() => {
-    const random = seeded(seed + 811);
-    const longTail = shuffle(deepDivePrompts.filter((prompt) => prompt.longTail), random).slice(0, 3);
-    const standard = shuffle(deepDivePrompts.filter((prompt) => !prompt.longTail), random).slice(0, 4);
-    return shuffle([...longTail, ...standard], random);
-  }, [seed]);
+  const prompts = useMemo(() => shuffle(deepDivePrompts, seeded(seed + 811)).slice(0, 7), [seed]);
   const [round, setRound] = useState(0);
-  const [seconds, setSeconds] = useState(25);
+  const [seconds, setSeconds] = useState(DIVE_SECONDS);
   const [entry, setEntry] = useState("");
-  const [revealed, setRevealed] = useState(false);
-  const [results, setResults] = useState<ScoredDeepAnswer[][]>([]);
-  const [accepted, setAccepted] = useState<ScoredDeepAnswer[]>([]);
-  const [message, setMessage] = useState("List as many valid answers as you can. Less-obvious answers score more.");
+  const [locked, setLocked] = useState(false);
+  const [results, setResults] = useState<DiveResult[]>([]);
+  const [message, setMessage] = useState("Type one answer. The less obvious (but valid) it is, the deeper the scan reaches.");
   const [finished, setFinished] = useState(false);
+  const [shake, setShake] = useState(0);
+  const input = useRef<HTMLInputElement>(null);
   const done = useRef(false);
   const item = prompts[round];
-  const roundScore = diveRoundScore(accepted);
-  const total = results.reduce((sum, answers) => sum + diveRoundScore(answers), 0) + roundScore;
+  const current = results[round];
+  const total = results.reduce((sum, r) => sum + r.points, 0);
 
+  useEffect(() => { if (!locked && !finished) input.current?.focus({ preventScroll: true }); }, [round, locked, finished]);
   useEffect(() => {
-    if (revealed || finished) return;
-    const interval = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    if (locked || finished) return;
+    const interval = window.setInterval(() => setSeconds((v) => Math.max(0, v - 1)), 1000);
     return () => window.clearInterval(interval);
-  }, [round, revealed, finished]);
-
+  }, [round, locked, finished]);
   useEffect(() => {
-    if (seconds !== 0 || revealed || finished) return;
-    setRevealed(true);
-    setMessage("Time. Review the accepted answers and their editorial rarity tiers.");
-  }, [seconds, revealed, finished]);
+    if (locked || finished) return;
+    if (seconds > 0 && seconds <= 5) sfx("tick");
+    if (seconds === 0) {
+      sfx("whoosh");
+      setResults((all) => [...all.slice(0, round), { answer: null, tier: null, points: 0 }]);
+      setLocked(true);
+      setMessage("Scan timed out on this one.");
+    }
+  }, [seconds, locked, finished, round]);
 
   const submit = () => {
-    if (revealed || finished || !entry.trim()) return;
+    if (locked || finished || !entry.trim()) return;
     const found = matchAnswer(entry, item.answers);
-    const match = found?.match;
-    if (!match) {
+    if (!found) {
+      // An open question: an answer we do not list is not called wrong, it just cannot be scored.
       reward(false);
-      setMessage("Not in this prompt's accepted set. Try a different answer.");
+      setShake((n) => n + 1);
+      setMessage("Not on our list yet. It may still be right, but we can't score it. Try another answer while time remains.");
       return;
     }
-    if (accepted.some((answer) => answer.answer === match.answer)) {
-      setMessage("Already accepted. Find another answer.");
-      setEntry("");
-      return;
-    }
-    const earned = deepDiveAnswerAward(match.tier, roundScore);
-    reward(true, null, "+" + earned);
-    const next = [...accepted, { ...match, earned }];
-    setAccepted(next);
-    setEntry("");
-    if (diveRoundScore(next) >= 100) {
-      setRevealed(true);
-      setMessage("Round maximum reached. You found " + next.length + " accepted answers.");
-    } else {
-      setMessage((found?.fuzzy ? "Counted as “" + match.answer + "” (typo forgiven). " : "") + "+" + earned + " points · " + DIVE_TIERS[match.tier - 1] + ". Keep going.");
-    }
+    const points = deepDiveAnswerAward(found.match.tier, 0);
+    setResults((all) => [...all.slice(0, round), { answer: found.match.answer, tier: found.match.tier, points }]);
+    setLocked(true);
+    reward(true, null, "+" + points);
+    if (found.match.tier >= 5) window.setTimeout(() => sfx("badge"), 400);
+    setMessage(found.fuzzy ? "Counted as “" + found.match.answer + "” (typo forgiven)." : "");
   };
-
-  const pass = () => {
-    if (revealed || finished) return;
-    setRevealed(true);
-    setMessage(accepted.length ? "Round locked. Your accepted answers are scored." : "Round passed. No depth gained.");
+  const surface = () => {
+    if (locked || finished) return;
+    setResults((all) => [...all.slice(0, round), { answer: null, tier: null, points: 0 }]);
+    setLocked(true);
+    setMessage("You skipped this scan.");
   };
-
   const next = () => {
-    const completed = [...results.slice(0, round), accepted];
     if (round === prompts.length - 1) {
-      const score = completed.reduce((sum, answers) => sum + diveRoundScore(answers), 0);
-      setResults(completed);
       setFinished(true);
       if (!done.current) {
         done.current = true;
-        const tierSquare = ["⬛", "🟦", "🟦", "🟩", "🟨", "🟧", "🟥"];
-        onDone(score, 700, score === 700, "Deep Dive · " + score * 10 + " m deep\n" + completed.map((answers) => { const v = diveRoundScore(answers); return v === 0 ? tierSquare[0] : v < 30 ? tierSquare[1] : v < 60 ? tierSquare[3] : v < 90 ? tierSquare[4] : v < 100 ? tierSquare[5] : tierSquare[6]; }).join("") + "\n🟦 surface → 🟥 hidden gem");
+        const square = ["⬛", "🟦", "🟦", "🟩", "🟨", "🟧", "🟥"];
+        onDone(total, 700, total === 700, "Deep Scan · " + Math.round(total / 5) + " mm deep\n" + results.map((r) => square[r.tier ?? 0]).join("") + "\n🟦 skin → 🟥 marrow");
       }
       return;
     }
-    setResults(completed);
-    setRound((value) => value + 1);
-    setSeconds(25);
+    setRound((v) => v + 1);
+    setSeconds(DIVE_SECONDS);
     setEntry("");
-    setAccepted([]);
-    setRevealed(false);
-    setMessage("New category. Keep the answers coming.");
+    setLocked(false);
+    setMessage("Next scan. Think past the first obvious answer.");
   };
+  const depthPct = (tier: number | null) => tier ? [6, 21, 34, 51, 70, 89][tier - 1] : 3;
 
   return <div className="game-layout dive-game" data-own-sfx="true">
     <div className="dive-hud">
-      <div><span className="eyebrow">DAILY DEEP DIVE</span><strong>{total * 10}<small> m</small></strong><span>depth reached</span></div>
-      <div className={"dive-timer" + (seconds <= 5 && !revealed ? " urgent" : "")}><b>{revealed ? "✓" : seconds}</b><span>{revealed ? "LOCKED" : "SECONDS"}</span></div>
-      <div><span className="eyebrow">EXPEDITION</span><strong>{round + 1}<small> / 7</small></strong><span>prompts</span></div>
+      <div><span className="eyebrow">DEPTH SO FAR</span><strong>{Math.round(total / 5)}<small> mm</small></strong></div>
+      <div className={"dive-timer" + (seconds <= 5 && !locked ? " urgent" : "")}><b>{locked ? "✓" : seconds}</b><span>{locked ? "LOCKED" : "SECONDS"}</span></div>
+      <div><span className="eyebrow">SCAN</span><strong>{Math.min(round + 1, prompts.length)}<small> / 7</small></strong></div>
     </div>
-    <div className="dive-depth-track"><i style={{ width: Math.min(100, total / 7) + "%" }} /></div>
     {!finished ? <>
-      <div className="dive-prompt-card">
-        <div className="dive-surface-art" aria-hidden="true"><span>◉</span><i>✦</i><b>≈</b></div>
-        <span className="eyebrow">{item.scope.toUpperCase()} · PROMPT {round + 1}</span>
-        <h2>{item.prompt}</h2>
-        <p>25 seconds. Submit as many distinct accepted answers as you can. Each answer has an editorial rarity tier; this is not live population data.</p>
+      <div className="dive-stage">
+        <div className="dive-sea" aria-hidden="true">
+          {[1, 2, 3, 4, 5, 6].map((t) => <i key={t} className={"dive-line" + (current?.tier === t ? " hit" : "")} style={{ top: depthPct(t) + "%" }}><span>{DIVE_POINTS[t - 1]}</span></i>)}
+          <b className="dive-diver" style={{ top: depthPct(locked ? current?.tier ?? null : null) + "%" }}>💊</b>
+        </div>
+        <div className="dive-prompt-card" key={round}>
+          <span className="eyebrow">{item.scope.toUpperCase()}</span>
+          <h2>{item.prompt}</h2>
+          <p>One answer. Common answers stop at the skin; unusual ones that are still correct reach bone and marrow. Tiers are editorial, not live player data.</p>
+        </div>
       </div>
-      {!revealed ? <form className="dive-answer-row" onSubmit={(event) => { event.preventDefault(); submit(); }}>
-        <input value={entry} onChange={(event) => setEntry(event.target.value)} autoComplete="off" placeholder="Enter another answer…" aria-label="Your answer" />
-        <button className="button button-primary" type="submit" disabled={!entry.trim()}>Submit ↗</button>
-        <button className="button button-quiet" type="button" onClick={pass}>Lock round</button>
+      {!locked ? <form key={shake} className={"dive-answer-row" + (shake ? " shake" : "")} onSubmit={(e) => { e.preventDefault(); submit(); }}>
+        <input ref={input} value={entry} onChange={(e) => setEntry(e.target.value)} autoComplete="off" autoCapitalize="off" spellCheck={false} placeholder="Type your answer…" aria-label="Your answer" />
+        <button className="button button-primary" type="submit" disabled={!entry.trim()}>Scan ↓</button>
+        <button className="button button-quiet" type="button" onClick={surface}>Skip</button>
       </form> : <div className="dive-result-card">
-        <span className="dive-tier tier-0">{roundScore} / 100 points · {accepted.length} accepted</span>
-        <h3>{accepted.length ? "Your discoveries" : "Keep moving."}</h3>
-        <div className="dive-answer-examples">{accepted.map((answer) => <span key={answer.answer}>{answer.answer}<b>+{answer.earned}</b></span>)}</div>
+        {current?.answer ? <>
+          <span className={"dive-tier tier-" + current.tier}>{DIVE_TIERS[(current.tier ?? 1) - 1]} · +{current.points}</span>
+          <h3>{current.answer}</h3>
+          {(current.tier ?? 0) < 6 && <p className="dive-deeper">Deeper layers existed: {item.answers.filter((a) => a.tier > (current.tier ?? 0)).sort((a, b) => b.tier - a.tier).slice(0, 4).map((a) => a.answer).join(" · ")}</p>}
+        </> : <>
+          <span className="dive-tier tier-0">No score this round</span>
+          <h3>Keep moving.</h3>
+          <p className="dive-deeper">Some answers: {item.answers.slice().sort((a, b) => a.tier - b.tier).slice(0, 3).map((a) => a.answer).join(" · ")} … and deeper: {item.answers.slice().sort((a, b) => b.tier - a.tier).slice(0, 2).map((a) => a.answer).join(" · ")}</p>
+        </>}
         <p>{item.explanation}</p>
-        <div className="dive-answer-examples">{item.answers.filter((answer) => !accepted.some((found) => found.answer === answer.answer)).slice().sort((a, b) => b.tier - a.tier).slice(0, 12).map((answer) => <span key={answer.answer}>{answer.answer}<b>{DIVE_POINTS[answer.tier - 1]}</b></span>)}</div>
-        <button className="button button-primary full-button" onClick={next}>{round === 6 ? "Surface & see score" : "Next prompt ↓"}</button>
+        <button className="button button-primary full-button" onClick={next}>{round === prompts.length - 1 ? "Finish scan" : "Next scan ↓"}</button>
       </div>}
-      <div className="dive-live-score"><span>{accepted.length} answers found</span><b>{roundScore} / 100 points this round</b></div>
       <p className="game-feedback" aria-live="polite">{message}</p>
       <div className="dive-progress-dots">{prompts.map((_, i) => <i key={i} className={i < results.length ? "complete" : i === round ? "current" : ""} />)}</div>
     </> : <div className="dive-finale">
-      <div className="dive-medal">✦</div><span className="eyebrow">EXPEDITION COMPLETE</span>
-      <h2>{total} / 700</h2><p>{total * 10} metres below the surface. {total >= 500 ? "A deep and impressive run." : "Every dive teaches you a new part of the map."}</p>
-      <div className="dive-log">{prompts.map((prompt, i) => <div key={prompt.id}><span>{i + 1}</span><b>{results[i]?.length ? results[i].map((answer) => answer.answer).join(", ") : "—"}</b><strong>+{diveRoundScore(results[i] ?? [])}</strong></div>)}</div>
+      <div className="dive-medal">🩻</div><span className="eyebrow">SCAN COMPLETE</span>
+      <h2>{total} / 700</h2><p>{Math.round(total / 5)} mm below the skin. {total >= 450 ? "Straight through to the marrow." : "Every scan teaches you another layer."}</p>
+      <div className="dive-log">{prompts.map((prompt, i) => <div key={prompt.id}><span>{i + 1}</span><b>{results[i]?.answer ?? "—"}</b><strong>+{results[i]?.points ?? 0}</strong></div>)}</div>
     </div>}
   </div>;
 }
@@ -1079,8 +1079,8 @@ function HigherLower({ seed, onDone }: Props) {
 }
 
 
-function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
-  const item = useMemo(() => practice ? (generateWordLadder(seed, [...ladderDictionary]) ?? wordLadders[seed % wordLadders.length]) : wordLadders[seed % wordLadders.length], [seed, practice]);
+function WordLadder({ seed, onDone }: Props) {
+  const item = useMemo(() => generateMedicalLadder(seed, [...ladderDictionary], medicalRungWords) ?? wordLadders[seed % wordLadders.length], [seed]);
   const [entered, setEntered] = useState<string[]>([item.start]);
   const [text, setText] = useState("");
   const [note, setNote] = useState("Change one letter at a time. Every step must be a real word.");
@@ -1101,7 +1101,7 @@ function WordLadder({ seed, onDone, practice = false }: Props & { practice?: boo
     else setNote("Good step. Keep going.");
   };
   return <div className="game-layout">
-    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY LADDER" : "CURATED DAILY LADDER"}</div>
+    <div className="eyebrow ladder-mode-label">MEDICAL LADDER · TURN {item.start} INTO {item.end}</div>
     <div className="game-instructions"><span className="instruction-dot peach" /> Build a word ladder from the start word to the end word. Change one letter at a time; all intermediate steps must be words.</div>
     <div className="ladder-ends"><span>START <b>{item.start}</b></span><span>FINISH <b>{item.end}</b></span></div>
     <div className="ladder-rungs">{entered.map((w, i) => <span key={i}>{[...w].map((ch, k) => <em key={k} className={i > 0 && ch !== entered[i - 1][k] ? "changed" : ""}>{ch}</em>)}</span>)}{!ended && <i>?</i>}</div>
@@ -1584,5 +1584,114 @@ function CrosswordClinic({ seed, onDone }: Props) {
       {[true, false].map((isAcross) => <div key={String(isAcross)}><SectionLabel>{isAcross ? "ACROSS" : "DOWN"}</SectionLabel>{clueList(isAcross).map((w) => <button key={w.number + String(isAcross)} className={"xw-clue" + (active === w ? " on" : "")} onClick={() => { setAcross(w.across); setSel({ r: w.row, c: w.col }); input.current?.focus({ preventScroll: true }); }}><b>{w.number}</b> {w.clue} <small>({w.word.length})</small></button>)}</div>)}
     </div>
     {finished && <Finish title="Grid complete!" detail={reveals ? reveals + " letter" + (reveals > 1 ? "s" : "") + " revealed." : "Solved without a single reveal."} score={Math.max(0, 100 - reveals * 5) + " / 100"} />}
+  </div>;
+}
+
+
+const TRAIL_PACKS = microbePacks.filter(trailPackOk);
+function ThemeTrail({ seed, onDone, specialty = "general" }: Props) {
+  const pack = pick(TRAIL_PACKS, seed, specialty, "microbe");
+  const puzzle = useMemo(() => makeTrailPuzzle(pack, seed), [pack, seed]);
+  const { grid, rows, columns } = puzzle;
+  const [found, setFound] = useState<string[]>([]);
+  const [bonus, setBonus] = useState<string[]>([]);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [hintCells, setHintCells] = useState<number[]>([]);
+  const [path, setPath] = useState<number[]>([]);
+  const [note, setNote] = useState("Drag through touching letters (any direction) to spell a hidden term. Or tap letters one by one, then Submit.");
+  const [ended, setEnded] = useState(false);
+  const drag = useRef(false);
+  const moved = useRef(false);
+  const done = useRef(false);
+  const ownerOf = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const word of found) puzzle.paths[word].forEach((cell) => map.set(cell, word));
+    return map;
+  }, [found, puzzle]);
+  const earnedHints = Math.floor(bonus.length / 3);
+  const hintsAvailable = earnedHints - hintsUsed;
+  const currentWord = readStrandsPath(grid, path, columns);
+
+  const finishGame = (all: string[]) => {
+    setEnded(true);
+    if (done.current) return;
+    done.current = true;
+    const score = Math.round(all.length / puzzle.words.length * 100);
+    const squares = puzzle.words.map((w) => all.includes(w) ? (w === puzzle.trail ? "🟪" : "🟦") : "⬛").join("");
+    onDone(score, 100, all.length === puzzle.words.length && hintsUsed === 0, "Theme Trail · " + puzzle.theme + "\n" + squares + (hintsUsed ? "\n💡 " + hintsUsed + " hint" + (hintsUsed > 1 ? "s" : "") : ""));
+  };
+  const submit = () => {
+    if (ended || path.length < 3) { setPath([]); return; }
+    const word = currentWord;
+    const match = puzzle.words.find((w) => w === word && !found.includes(w));
+    if (match) {
+      // Any path that spells the word counts; remember its cells so the board shows where it lives.
+      puzzle.paths[match] = [...path];
+      const next = [...found, match];
+      setFound(next);
+      setHintCells([]);
+      reward(true, null, match === puzzle.trail ? "TRAIL!" : "+1");
+      setNote(match === puzzle.trail ? "You found the trail word, stretching across the whole board!" : "Theme term found: " + match + ".");
+      if (next.length === puzzle.words.length) finishGame(next);
+    } else if (found.includes(word)) setNote("You already found " + word + ".");
+    else if (word.length >= 4 && LETTER_DICTIONARY.includes(word) && !bonus.includes(word)) {
+      setBonus((b) => [...b, word]);
+      sfx("badge");
+      setNote("Bonus word: " + word + ". Every three bonus words earn a hint (" + ((bonus.length + 1) % 3 === 0 ? "hint earned!" : (3 - ((bonus.length + 1) % 3)) + " more to go") + ").");
+    } else { sfx("wrong"); setNote("Not a theme term. Keep tracing."); }
+    setPath([]);
+  };
+  const useHint = () => {
+    if (hintsAvailable <= 0 || ended) return;
+    const left = puzzle.words.filter((w) => !found.includes(w) && w !== puzzle.trail);
+    const target = left[0] ?? puzzle.trail;
+    setHintsUsed((n) => n + 1);
+    setHintCells(puzzle.paths[target]);
+    setNote("Hint: these highlighted letters spell a theme term (in order along a trail).");
+  };
+  const cellAt = (e: React.PointerEvent): number | null => {
+    const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+    const raw = el?.closest("[data-cell]")?.getAttribute("data-cell");
+    return raw === null || raw === undefined ? null : Number(raw);
+  };
+  const onDown = (e: React.PointerEvent, cell: number) => {
+    if (ended) return;
+    e.preventDefault();
+    if (path.length && path[path.length - 1] === cell) { submit(); return; }
+    drag.current = true; moved.current = false;
+    const extended = path.length ? extendStrandsPath(path, cell, rows, columns) : [cell];
+    setPath(extended.length === path.length && path.length ? [cell] : extended);
+    sfx("tap");
+  };
+  const onMove = (e: React.PointerEvent) => {
+    if (!drag.current || ended) return;
+    const cell = cellAt(e);
+    if (cell === null) return;
+    setPath((p) => { const next = extendStrandsPath(p, cell, rows, columns); if (next.length !== p.length) { moved.current = true; sfx("pop"); } return next; });
+  };
+  const onUp = () => {
+    if (!drag.current) return;
+    drag.current = false;
+    if (moved.current) submit();
+  };
+  const accent = (cell: number) => ownerOf.get(cell);
+  return <div className="game-layout trail-game" data-own-sfx="true" onPointerUp={onUp} onPointerLeave={() => { if (drag.current) { drag.current = false; if (moved.current) submit(); } }}>
+    <div className="trail-theme"><span className="eyebrow">TODAY'S THEME</span><strong>{puzzle.theme}</strong><small>{found.length} / {puzzle.words.length} terms · {bonus.length} bonus {bonus.length === 1 ? "word" : "words"}</small></div>
+    <div className="trail-word-live" aria-live="polite">{currentWord || "\u00a0"}</div>
+    <div className="trail-board" style={{ gridTemplateColumns: "repeat(" + columns + ", 1fr)" }} onPointerMove={onMove}>
+      {grid.flat().map((letter, cell) => {
+        const owner = accent(cell), inPath = path.includes(cell);
+        return <button key={cell} data-cell={cell} className={"trail-cell" + (owner ? (owner === puzzle.trail ? " is-trail" : " is-found") : "") + (inPath ? " in-path" : "") + (hintCells.includes(cell) ? " hint" : "")} onPointerDown={(e) => onDown(e, cell)} aria-label={"Letter " + letter}>{letter}</button>;
+      })}
+    </div>
+    <div className="trail-actions">
+      <button className="button button-primary" onClick={submit} disabled={ended || path.length < 3}>Submit</button>
+      <button className="button button-quiet" onClick={() => setPath([])} disabled={!path.length}>Clear</button>
+      <button className="button button-soft" onClick={useHint} disabled={hintsAvailable <= 0 || ended}>💡 Hint ({Math.max(0, hintsAvailable)})</button>
+      <button className="button button-quiet" onClick={() => finishGame(found)} disabled={ended}>Give up</button>
+    </div>
+    <p className="game-feedback" aria-live="polite">{note}</p>
+    {found.length > 0 && <div className="trail-found">{found.map((w) => <span key={w} className={w === puzzle.trail ? "is-trail" : ""}>{w}</span>)}</div>}
+    {ended && <Finish title={found.length === puzzle.words.length ? "Trail complete!" : "Trail revealed"} detail={"The theme was " + puzzle.theme + ". Terms: " + puzzle.words.join(", ") + ". The long trail word was " + puzzle.trail + "."} score={Math.round(found.length / puzzle.words.length * 100) + " / 100"} />}
   </div>;
 }

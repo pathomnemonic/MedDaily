@@ -110,12 +110,16 @@ const ART: Record<GameId, () => ReactNode> = {
     <path d="M165 82l22 22" stroke={INK} strokeWidth={9} strokeLinecap="round" /><path d="M165 82l22 22" stroke="#ffb347" strokeWidth={4} strokeLinecap="round" />
   </g>,
   dive: () => <g>
-    <path d="M0 16q25-12 50 0t50 0 50 0 50 0V0H0z" fill="#fff" opacity={0.85} />
-    {[[40, 50, 6], [58, 74, 4], [150, 44, 7], [168, 78, 5], [128, 94, 3]].map(([x, y, r], i) => <circle key={i} cx={x} cy={y} r={r} fill="#d7f6ff" fillOpacity={0.65} stroke="#fff" strokeWidth={2} />)}
-    <ellipse cx={100} cy={64} rx={34} ry={21} fill="#ffb347" {...S} />
-    <path d="M132 64l24-16v32z" fill="#ff8f3d" {...S} /><circle cx={84} cy={58} r={5} fill="#fff" {...S} strokeWidth={2.5} /><circle cx={85} cy={58} r={2} fill={INK} />
-    <path d="M100 46q8 10 0 36" fill="none" stroke="#ff8f3d" strokeWidth={3} />
-    <text x={178} y={106} fontFamily="Lilita One, sans-serif" fontSize={13} fill="#fff" textAnchor="end">1000 m</text>
+    <rect x={24} y={6} width={152} height={18} fill="#ffcfb0" {...S} strokeWidth={2.5} />
+    <rect x={24} y={24} width={152} height={16} fill="#ffe08a" {...S} strokeWidth={2.5} />
+    <rect x={24} y={40} width={152} height={10} fill="#fff3ec" {...S} strokeWidth={2.5} />
+    <rect x={24} y={50} width={152} height={24} fill="#d9433a" {...S} strokeWidth={2.5} />
+    <path d="M40 58q20-6 40 0t40 0 40 0M40 66q20-6 40 0t40 0 40 0" fill="none" stroke="#9c2a24" strokeWidth={2} />
+    <rect x={24} y={74} width={152} height={14} fill="#f7f1e3" {...S} strokeWidth={2.5} />
+    <rect x={24} y={88} width={152} height={18} rx={4} fill="#ff9b5b" {...S} strokeWidth={2.5} />
+    <rect x={92} y={20} width={22} height={40} rx={11} transform="rotate(8 103 40)" fill="#ff6aa2" {...S} />
+    <rect x={92} y={20} width={22} height={20} rx={11} transform="rotate(8 103 40)" fill="#fff" {...S} />
+    <path d="M150 12v70M144 76l6 8 6-8" fill="none" stroke="#fff" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
   </g>,
   trivia: () => <g>
     {["#4fc3f7", "#8d70ff", "#ff628d", "#ffb547", "#35cf9c", "#ff7d45"].map((fill, i) => {
@@ -153,6 +157,12 @@ const ART: Record<GameId, () => ReactNode> = {
       return on ? <g key={r + "-" + c}><rect x={22 + c * 17} y={4 + r * 15} width={16} height={14} rx={2.5} fill={c === 2 && r === 3 ? "#ffd54a" : "#fff7ea"} stroke={INK} strokeWidth={2} />{(r === 3 && c % 3 === 0) && <text x={30 + c * 17} y={15 + r * 15} textAnchor="middle" fontFamily="Lilita One, sans-serif" fontSize={10} fill={INK}>{"MEDICAL"[c % 7]}</text>}</g> : null;
     }))}
     <path d="M168 92l18-18 6 6-18 18-9 3z" fill="#ff6aa2" {...S} strokeWidth={2.5} />
+  </g>,
+  trail: () => <g>
+    {Array.from({ length: 5 }, (_, r) => Array.from({ length: 8 }, (_, c) => <rect key={r + "-" + c} x={20 + c * 20} y={8 + r * 19} width={17} height={16} rx={4} fill="#fff7ea" {...S} strokeWidth={2} />))}
+    <path d="M29 16L49 35L69 54L89 35L109 54L129 73L149 92" fill="none" stroke="#ff4f94" strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" opacity={0.9} />
+    <path d="M29 16L49 35L69 54L89 35L109 54L129 73L149 92" fill="none" stroke="#ffd54a" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+    {[[29, 16, "S"], [49, 35, "P"], [69, 54, "I"], [89, 35, "N"], [109, 54, "A"], [129, 73, "L"], [149, 92, "S"]].map(([x, y, l]) => <text key={String(x)} x={Number(x)} y={Number(y) + 5} textAnchor="middle" fontFamily="Lilita One, sans-serif" fontSize={13} fill={INK}>{String(l)}</text>)}
   </g>,
   mime: () => <g>
     <ellipse cx={100} cy={96} rx={52} ry={7} fill="#2a165855" />
