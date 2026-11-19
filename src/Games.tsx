@@ -4,7 +4,7 @@ import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks
 import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord } from "./arcadeLogic";
+import { generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
 import { generateDeductionCase } from "./logicGenerator";
 
 type Done = (score: number, maxScore: number, perfect: boolean) => void;
@@ -20,7 +20,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "pairs": return <MemoryMatch seed={seed} onDone={onDone} specialty={specialty} />;
     case "triage": return <TriageOrder seed={seed} onDone={onDone} specialty={specialty} />;
     case "splice": return <AnagramSprint seed={seed} onDone={onDone} specialty={specialty} />;
-    case "glyph": return <CellSketch seed={seed} onDone={onDone} />;
+    case "glyph": return <CellSketch seed={seed} onDone={onDone} practice={practice} />;
     case "higher": return <HigherLower seed={seed} onDone={onDone} specialty={specialty} />;
     case "ladder": return <WordLadder seed={seed} onDone={onDone} practice={practice} />;
     case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
@@ -943,8 +943,9 @@ function AnagramSprint({ seed, onDone }: Props) {
   </div>;
 }
 
-function CellSketch({ seed, onDone }: Props) {
-  const item = glyphPatterns[seed % glyphPatterns.length];
+function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
+  const base = glyphPatterns[seed % glyphPatterns.length];
+  const item = useMemo(() => practice ? { ...base, name: base.name + " · Variant", pattern: transformNonogram(base.pattern, seed) } : base, [base, seed, practice]);
   const [cells, setCells] = useState<number[][]>(() => item.pattern.map((row) => row.map(() => 0)));
   const [checked, setChecked] = useState(false);
   const rowClues = item.pattern.map((row) => nonogramRuns(row));
@@ -956,6 +957,7 @@ function CellSketch({ seed, onDone }: Props) {
     onDone(Math.round(correct / 25 * 100), 100, correct === 25);
   };
   return <div className="game-layout">
+    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY PATTERN" : "CURATED DAILY PATTERN"}</div>
     <div className="game-instructions"><span className="instruction-dot lilac" /> Solve the 5×5 nonogram. Each clue gives the length of consecutive filled runs. Cycle each cell through unknown, filled, and marked empty to keep track without paper.</div>
     <div className="nonogram-legend"><span><b>●</b> Filled</span><span><b>×</b> Empty</span><span><b>·</b> Unknown</span></div>
     <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue)?"clue-complete":""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue"+(lineSolved(row,rowClues[r])?" clue-complete":"")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1) + ": " + (value===1?"filled":value===2?"marked empty":"unknown")} className={"nonogram-cell" + (value===1 ? " filled-cell" : "") + (value===2 ? " empty-marked" : "") + (checked && (item.pattern[r][c] ? value!==1 : value!==2) ? " error-cell" : "")} onClick={() => setCells((all) => all.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? (v + 1) % 3 : v) : x))}>{value===1?"●":value===2?"×":""}</button>)}</div>)}</div></div>
