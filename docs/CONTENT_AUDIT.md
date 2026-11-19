@@ -9,7 +9,7 @@ MedDaily exposes sixteen playable game formats. The retired Next Best Step bank 
 | Game | Current bank | Notes |
 |---|---:|---|
 | Medle | 365 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
-| Connections | 122 boards | Four groups of four per board; 20 new cross-specialty boards |
+| Connections | 148 curated boards | Four groups of four per board; every board has 16 unique tiles and four unique categories |
 | DoctorDle | 220 cases | Six-guess typed diagnosis puzzle with progressive clues, common clinical aliases, explanations, and source notes |
 | Word Hunt | 71 unique medical theme packs | 14×14 drag-to-select word-search grids; themes span organisms, anatomy, organ systems, and pharmacology |
 | Labline | 100 prompts | Five-round estimation challenge with cumulative scoring and reference explanations |
