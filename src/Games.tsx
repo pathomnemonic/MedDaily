@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank, triageCases } from "./data";
 import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
-import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
+import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
+import { extendStrandsPath, makeStrandsBoard, readStrandsPath } from "./strandsLogic";
 import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
 import { generateWordLadder, letterWordPoints, makeLetterGrid, traceGridWord, transformNonogram } from "./arcadeLogic";
 import { generateDeductionCase } from "./logicGenerator";
@@ -598,78 +599,103 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
 
 function MicrobeHunt({ seed, onDone, specialty = "general" }: Props) {
   const pack = pick(microbePacks, seed, specialty, "microbe");
-  const board = useMemo(() => makeWordSearch(pack.words, 14, seed + 99), [pack, seed]);
-  const words = board.placed;
+  const board = useMemo(() => makeStrandsBoard(pack.words, seed + 99), [pack, seed]);
   const [found, setFound] = useState<string[]>([]);
-  const [foundPaths, setFoundPaths] = useState<number[][]>([]);
-  const [start, setStart] = useState<number | null>(null);
   const [path, setPath] = useState<number[]>([]);
-  const [note, setNote] = useState("Drag across a word in any straight direction. You can also tap its first and last letters.");
+  const [hintedWord, setHintedWord] = useState<string | null>(null);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [note, setNote] = useState("Trace adjacent letters to find every theme word. The spangram touches both edges.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
+  const currentWord = readStrandsPath(board.grid, path, board.columns);
+  const nonSpangramFound = found.filter((word) => word !== board.spangram).length;
+  const hintReady = nonSpangramFound >= (hintsUsed + 1) * 3;
+  const foundPaths = found.map((word) => board.paths[word]);
 
   const begin = (index: number) => {
     if (ended || foundPaths.some((cells) => cells.includes(index))) return;
-    if (start === null) { setStart(index); setPath([index]); }
+    setPath([index]);
   };
-  const preview = (index: number) => {
-    if (ended || start === null) return;
-    const cells = lineCells(start, index, 14);
-    if (cells.length) setPath(cells);
+  const extend = (index: number) => {
+    if (ended || !path.length) return;
+    setPath((current) => extendStrandsPath(current, index, board.rows, board.columns));
   };
-  const resolve = (cells: number[]) => {
-    if (cells.length < 2) return;
-    const word = cells.map((i) => board.grid[Math.floor(i / 14)][i % 14]).join("");
-    const match = words.find((candidate) => !found.includes(candidate) && (candidate === word || candidate === [...word].reverse().join("")));
+  const submitPath = (candidatePath = path) => {
+    if (ended || candidatePath.length < 3) return;
+    const word = readStrandsPath(board.grid, candidatePath, board.columns);
+    const match = board.words.find((target) => !found.includes(target) &&
+      (target === word || target === [...word].reverse().join("")));
     if (!match) {
-      setNote("That line is not a remaining word. Try another direction or clear your selection.");
-      setStart(null); setPath([]);
+      setNote("Not a theme word. Try another adjacent path; you can backtrack one letter at a time.");
+      setPath([]);
       return;
     }
     const next = [...found, match];
     setFound(next);
-    setFoundPaths((current) => [...current, cells]);
-    setStart(null); setPath([]);
-    setNote(match + " found. " + (words.length - next.length) + " remaining.");
-    if (next.length === words.length) {
+    setPath([]);
+    setHintedWord(null);
+    setNote(match === board.spangram ? "SPANGRAM! You found the theme word connecting both sides." : match + " found. " + (board.words.length - next.length) + " words remain.");
+    if (next.length === board.words.length) {
       setEnded(true);
       if (!done.current) { done.current = true; onDone(100, 100, true); }
     }
   };
-  const finish = (index: number) => {
-    if (ended || start === null) return;
-    const cells = lineCells(start, index, 14);
-    if (!cells.length) {
-      setNote("Words run horizontally, vertically, or diagonally in a straight line.");
-      setStart(null); setPath([]);
-      return;
-    }
-    if (cells.length > 1) resolve(cells);
+  const revealHint = () => {
+    if (!hintReady || ended) return;
+    const remaining = board.words.filter((word) => word !== board.spangram && !found.includes(word));
+    const target = remaining[(seed + hintsUsed * 13) % remaining.length];
+    setHintedWord(target);
+    setHintsUsed((value) => value + 1);
+    setNote("Hint: look for a " + target.length + "-letter word beginning with " + target[0] + ".");
   };
-  const clear = () => { setStart(null); setPath([]); };
+  const clear = () => setPath([]);
 
-  return <div className="game-layout wordhunt-game">
-    <div className="case-banner microbe-banner"><span>WORD HUNT · THEMED SEARCH</span><strong>{pack.name}</strong><small>Find every hidden word. Words may run forwards, backwards, vertically, horizontally, or diagonally.</small></div>
-    <div className="wordhunt-layout">
-      <div className="wordsearch-board" role="group" aria-label="Letter grid" onPointerMove={(event) => {
-        const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-cell-index]") as HTMLElement | null;
-        if (tile) preview(Number(tile.dataset.cellIndex));
+  return <div className="game-layout wordhunt-game strands-game">
+    <div className="case-banner microbe-banner"><span>WORD HUNT · STRANDS MODE</span><strong>{pack.name}</strong><small>Find the theme words hidden in the grid. Words can bend in any direction; the spangram connects opposite edges.</small></div>
+    <div className="strands-hud">
+      <div><span>THEME WORDS</span><b>{found.length} / {board.words.length}</b></div>
+      <div className="strands-spangram-status"><span>SPANGRAM</span><b>{found.includes(board.spangram) ? "FOUND" : "HIDDEN"}</b></div>
+      <div><span>HINTS</span><b>{Math.max(0, Math.floor(nonSpangramFound / 3) - hintsUsed)} READY</b></div>
+    </div>
+    <div className="strands-board-wrap">
+      <div className="strands-board" role="group" aria-label="Strands letter grid" onPointerMove={(event) => {
+        const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-strands-cell]") as HTMLElement | null;
+        if (tile) extend(Number(tile.dataset.strandsCell));
       }} onPointerUp={(event) => {
-        const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-cell-index]") as HTMLElement | null;
-        if (tile) finish(Number(tile.dataset.cellIndex));
+        const tile = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-strands-cell]") as HTMLElement | null;
+        if (tile && path.length) {
+          const nextPath = extendStrandsPath(path, Number(tile.dataset.strandsCell), board.rows, board.columns);
+          submitPath(nextPath);
+        } else submitPath();
       }} onPointerCancel={clear}>
-        {board.grid.flat().map((letter, i) => {
-          const isFound = foundPaths.some((cells) => cells.includes(i));
-          return <button key={i} data-cell-index={i} type="button" className={"letter-tile" + (path.includes(i) ? " path-cell" : "") + (isFound ? " found-cell" : "")} onPointerDown={() => begin(i)} onClick={(event) => { if (event.detail === 0) { if (start === null) begin(i); else finish(i); } }} disabled={ended} aria-label={"Row " + (Math.floor(i / 14) + 1) + ", column " + (i % 14 + 1) + ", " + letter}>
+        {board.grid.flat().map((letter, index) => {
+          const isFound = foundPaths.some((cells) => cells.includes(index));
+          const isSpangram = found.includes(board.spangram) && board.paths[board.spangram].includes(index);
+          const isHint = hintedWord !== null && board.paths[hintedWord][0] === index;
+          return <button key={index} data-strands-cell={index} type="button"
+            className={"letter-tile strands-tile" + (path.includes(index) ? " path-cell" : "") + (isFound ? " found-cell" : "") + (isSpangram ? " spangram-cell" : "") + (isHint ? " hinted-cell" : "")}
+            onPointerDown={(event) => { event.preventDefault(); begin(index); }}
+            onClick={(event) => { if (event.detail === 0) { if (!path.length) begin(index); else extend(index); } }}
+            disabled={ended} aria-label={"Row " + (Math.floor(index / board.columns) + 1) + ", column " + (index % board.columns + 1) + ", " + letter}>
             {letter}
           </button>;
         })}
       </div>
-      <aside className="target-words"><SectionLabel>WORDS TO FIND</SectionLabel><div>{words.map((word) => <span key={word} className={found.includes(word) ? "target-found" : ""}>{word}</span>)}</div></aside>
+      <div className="strands-word-tools">
+        <div className="strands-current"><span>CURRENT WORD</span><b>{currentWord || "—"}</b></div>
+        <div className="strands-actions">
+          <button className="button button-soft" onClick={clear} disabled={!path.length || ended}>Undo / clear</button>
+          <button className="button button-primary" onClick={() => submitPath()} disabled={path.length < 3 || ended}>Submit word</button>
+        </div>
+      </div>
     </div>
-    <div className="connection-controls"><span className="mistake-count">{found.length} / {words.length} found</span><button className="button button-soft" onClick={clear} disabled={ended || start === null}>Clear selection</button><span className="wordhunt-progress">{words.length - found.length} left</span></div>
+    <div className="strands-footer">
+      <div className="strands-found-list"><span>FOUND WORDS</span>{found.length ? found.map((word) => <b key={word} className={word === board.spangram ? "found-spangram" : ""}>{word}{word === board.spangram ? " ✦" : ""}</b>) : <small>Your discoveries will appear here.</small>}</div>
+      <button className="text-button" onClick={revealHint} disabled={!hintReady || ended}>Reveal hint {hintReady ? "↗" : "(" + Math.max(0, 3 - nonSpangramFound % 3) + " more words)"}</button>
+    </div>
+    {hintedWord && <p className="game-feedback">Hint target: {hintedWord.length} letters, starts with {hintedWord[0]}. Its first tile is highlighted.</p>}
     <p className="game-feedback" aria-live="polite">{note}</p>
-    {ended && <Finish title="Grid cleared!" detail={"Every hidden word in " + pack.name + " found."} score="100 / 100" />}
+    {ended && <Finish title="Theme complete!" detail={"You found all " + board.words.length + " words, including the spangram " + board.spangram + "."} />}
   </div>;
 }
 
