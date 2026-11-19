@@ -5,7 +5,7 @@ A mobile-first medical mini-game arcade built with React, TypeScript, and Vite.
 
 ## What is here
 
-Sixteen playable formats span clinical deduction, word games, estimation, spatial logic, trivia, and party play. Every game has a daily round and an unlimited Free Play mode:
+Sixteen playable formats span clinical deduction, word games, estimation, spatial logic, trivia, and party play. Every game has a daily round and an unlimited Free Play mode, selectable directly from the home screen:
 
 - **Medical and clinical:** Medle, DoctorDle, Connections, Word Hunt, Labline, Association Blitz, and Triage Order.
 - **Puzzle and party:** Anagram Sprint, Cell Sketch, What Has More?, Word Ladder, Medical Spelling Hive, Casefile Logic, Deep Dive, Trivia Rumble, and Letter Lab.
