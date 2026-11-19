@@ -69,12 +69,7 @@ function pick<T>(items: readonly T[], seed: number, specialty: Specialty, key: s
   return pool[Math.abs(seed) % pool.length];
 }
 function Finish({ title, detail, score, children }: { title: string; detail: string; score?: string; children?: ReactNode }) {
-  const share = () => {
-    const text = "MedDaily · " + title + "\n" + detail + (score ? "\n" + score : "") + "\nPlay: https://pathomnemonic.github.io/MedDaily/";
-    if (navigator.share) void navigator.share({ title: "MedDaily result", text }).catch(() => {});
-    else void navigator.clipboard?.writeText(text);
-  };
-  return <div className="finish-panel"><div className="finish-spark">✦</div><h3>{title}</h3><p>{detail}</p>{score && <strong className="finish-score">{score}</strong>}{children}<button className="button button-soft finish-share" onClick={share}>Share result ↗</button></div>;
+  return <div className="finish-panel"><div className="finish-spark">✦</div><h3>{title}</h3><p>{detail}</p>{score && <strong className="finish-score">{score}</strong>}{children}</div>;
 }
 function SectionLabel({ children }: { children: ReactNode }) { return <div className="section-label">{children}</div>; }
 
