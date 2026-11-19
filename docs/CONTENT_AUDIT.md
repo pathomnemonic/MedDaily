@@ -16,11 +16,11 @@ MedDaily exposes sixteen playable game formats. The retired Next Best Step bank 
 | Association Blitz | 208 unique pairs | 20-card, ten-pair timed memory board with combo streaks and a time bonus |
 | Triage Order | 42 sequences | Clinical sequence reconstruction with optional scored position hints |
 | Anagram Sprint | 111 terms | Five-word, 75-second timed scramble with hints and attempt-based scoring |
-| Cell Sketch | 31 unique-named 5×5 nonograms (19 original patterns plus 12 rotations/reflections) | Row and column run clues; CI verifies one valid solution per board |
+| Cell Sketch | 31 curated 5×5 patterns + 8 seeded transformations each in Free Play | Row and column run clues; CI verifies one valid solution per board |
 | What Has More? | 90 comparisons (24 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
 | Word Ladder | 26 curated ladders + procedural Free Play | Each intended solution path uses real words and one-letter changes |
 | Medical Spelling Hive | 51 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
-| Casefile Logic | 15 cases | Fictional deduction puzzles with tri-state pencil marks, one-to-one assignments, and scored progressive hints |
+| Casefile Logic | 30 curated cases + procedural Free Play | Curated daily logic puzzles; unlimited Free Play generates seeded, uniquely solvable 3×3 deduction grids with pencil marks and scored hints |
 | Deep Dive | 70 prompts | Timed open-answer prompts with curated long-tail rarity tiers |
 | Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes |
 | Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |
