@@ -72,7 +72,80 @@ export const connectionPuzzlesExpansion11: ConnectionGroup[][] = [
 {category:"Anticholinergic toxicity",words:["Dry skin","Decreased bowel sounds","Urinary retention","Delirium"],hint:"Muscarinic blockade."},
 {category:"Sympathomimetic toxicity",words:["Diaphoresis","Mydriasis","Tachycardia","Agitation"],hint:"Excess catecholaminergic activity."},
 {category:"Serotonin syndrome",words:["Clonus","Hyperreflexia","Hyperthermia","Recent serotonergic exposure"],hint:"Neuromuscular excitation after serotonergic medication exposure."}
+],
+[
+{category:"High-anion-gap metabolic acidosis",words:["Lactic acidosis","Ketoacidosis","Uremia","Toxic alcohol ingestion"],hint:"Major causes of an increased anion gap."},
+{category:"Normal-anion-gap metabolic acidosis",words:["Diarrhea","Distal renal tubular acidosis","Proximal renal tubular acidosis","Large-volume saline"],hint:"Bicarbonate loss or impaired renal acid handling."},
+{category:"Respiratory acidosis",words:["Hypoventilation","COPD exacerbation","Opioid intoxication","Neuromuscular weakness"],hint:"Alveolar hypoventilation raises PaCO2."},
+{category:"Respiratory alkalosis",words:["Pregnancy","Pulmonary embolism","High altitude","Early sepsis"],hint:"Increased alveolar ventilation lowers PaCO2."}
+],
+[
+{category:"Hyperkalemia",words:["Peaked T waves","Widened QRS","Muscle weakness","Calcium gluconate"],hint:"ECG changes and membrane stabilization."},
+{category:"Hypokalemia",words:["U waves","Flattened T waves","Metabolic alkalosis","Muscle cramps"],hint:"Low potassium causes characteristic repolarization changes."},
+{category:"Hypercalcemia",words:["Shortened QT interval","Constipation","Nephrolithiasis","Confusion"],hint:"Classic manifestations of elevated calcium."},
+{category:"Hypocalcemia",words:["Chvostek sign","Trousseau sign","Prolonged QT interval","Perioral paresthesias"],hint:"Neuromuscular irritability and delayed repolarization."}
+],
+[
+{category:"Factor Xa inhibitors",words:["Apixaban","Rivaroxaban","Edoxaban","Betrixaban"],hint:"Direct oral inhibitors of activated factor X."},
+{category:"Direct thrombin inhibitors",words:["Dabigatran","Argatroban","Bivalirudin","Desirudin"],hint:"Agents that inhibit thrombin directly."},
+{category:"P2Y12 inhibitors",words:["Clopidogrel","Prasugrel","Ticagrelor","Cangrelor"],hint:"Antiplatelet drugs that block ADP signaling."},
+{category:"Vitamin K antagonists",words:["Warfarin","Acenocoumarol","Phenprocoumon","Fluindione"],hint:"Reduce synthesis of vitamin K-dependent clotting factors."}
+],
+[
+{category:"Hypovolemic shock",words:["Hemorrhage","Severe dehydration","Low central venous pressure","Narrow pulse pressure"],hint:"Reduced circulating intravascular volume."},
+{category:"Cardiogenic shock",words:["Pulmonary edema","Elevated filling pressures","Low cardiac output","Cool extremities"],hint:"Pump failure with inadequate tissue perfusion."},
+{category:"Distributive shock",words:["Low systemic vascular resistance","Warm extremities","Bounding pulses","Wide pulse pressure"],hint:"Pathologic vasodilation lowers effective vascular tone."},
+{category:"Obstructive shock",words:["Cardiac tamponade","Tension pneumothorax","Massive pulmonary embolism","Impaired venous return"],hint:"Mechanical impediment to cardiac filling or outflow."}
+],
+[
+{category:"GLP-1 receptor agonists",words:["Semaglutide","Liraglutide","Dulaglutide","Exenatide"],hint:"Incretin mimetics used in type 2 diabetes and selected obesity care."},
+{category:"SGLT2 inhibitors",words:["Empagliflozin","Dapagliflozin","Canagliflozin","Ertugliflozin"],hint:"Promote urinary glucose excretion."},
+{category:"DPP-4 inhibitors",words:["Sitagliptin","Saxagliptin","Linagliptin","Alogliptin"],hint:"Prolong endogenous incretin activity."},
+{category:"Sulfonylureas",words:["Glipizide","Glyburide","Glimepiride","Chlorpropamide"],hint:"Stimulate pancreatic insulin release."}
+],
+[
+{category:"Placenta previa",words:["Painless vaginal bleeding","Soft nontender uterus","Avoid digital cervical examination","Transvaginal ultrasound"],hint:"Placental implantation over or near the internal os."},
+{category:"Placental abruption",words:["Painful vaginal bleeding","Tender hypertonic uterus","Retroplacental clot","Consumptive coagulopathy"],hint:"Premature placental separation."},
+{category:"Ectopic pregnancy",words:["Positive pregnancy test","Adnexal mass","No intrauterine pregnancy","Shoulder-tip pain"],hint:"Extrauterine implantation with risk of rupture."},
+{category:"Preeclampsia with severe features",words:["Severe-range blood pressure","Thrombocytopenia","Elevated liver enzymes","Pulmonary edema"],hint:"Maternal end-organ involvement after 20 weeks."}
+],
+[
+{category:"Intravascular hemolysis",words:["Hemoglobinuria","Very low haptoglobin","Schistocytes","Marked LDH elevation"],hint:"Red-cell destruction within the circulation."},
+{category:"Extravascular hemolysis",words:["Splenic macrophage clearance","Indirect hyperbilirubinemia","Reticulocytosis","Pigment gallstones"],hint:"Removal of damaged erythrocytes by the reticuloendothelial system."},
+{category:"G6PD deficiency",words:["Heinz bodies","Bite cells","Oxidative stress trigger","Episodic jaundice"],hint:"Oxidant-induced hemolysis."},
+{category:"Hereditary spherocytosis",words:["Spherocytes","Increased MCHC","Autosomal dominant inheritance","Osmotic fragility"],hint:"Membrane-cytoskeleton defect causing splenic destruction."}
+],
+[
+{category:"Systemic lupus erythematosus",words:["Anti-dsDNA","Anti-Smith","Low complement","Malar rash"],hint:"Highly characteristic autoantibodies and clinical finding."},
+{category:"Sjögren syndrome",words:["Anti-SSA","Anti-SSB","Xerophthalmia","Xerostomia"],hint:"Autoimmune exocrinopathy."},
+{category:"Systemic sclerosis",words:["Anti-centromere","Anti-Scl-70","Anti-RNA polymerase III","Sclerodactyly"],hint:"Autoantibodies associated with limited and diffuse disease."},
+{category:"Dermatomyositis",words:["Anti-Mi-2","Gottron papules","Heliotrope rash","Proximal muscle weakness"],hint:"Inflammatory myopathy with characteristic skin findings."}
+],
+[
+{category:"Middle cerebral artery syndrome",words:["Face and arm weakness","Dominant-hemisphere aphasia","Nondominant neglect","Gaze preference toward lesion"],hint:"Lateral hemispheric stroke findings."},
+{category:"Anterior cerebral artery syndrome",words:["Contralateral leg weakness","Abulia","Urinary incontinence","Grasp reflex"],hint:"Medial frontal and parietal infarction."},
+{category:"Posterior cerebral artery syndrome",words:["Contralateral homonymous hemianopia","Alexia without agraphia","Visual agnosia","Thalamic pain"],hint:"Occipital and inferomedial temporal involvement."},
+{category:"Basilar artery syndrome",words:["Locked-in syndrome","Quadriparesis","Bilateral pontine infarction","Impaired horizontal gaze"],hint:"Ventral pontine ischemia."}
+],
+[
+{category:"Early fetal heart-rate decelerations",words:["Fetal head compression","Gradual onset","Mirror contraction timing","Usually benign"],hint:"Early decelerations track uterine contractions."},
+{category:"Late fetal heart-rate decelerations",words:["Uteroplacental insufficiency","Gradual onset after contraction","Absent variability is concerning","Maternal repositioning"],hint:"Delayed deceleration after the contraction peak."},
+{category:"Variable fetal heart-rate decelerations",words:["Umbilical cord compression","Abrupt onset","Variable timing","Amnioinfusion in selected cases"],hint:"Abrupt drops with variable relation to contractions."},
+{category:"Sinusoidal fetal heart-rate pattern",words:["Smooth sine-wave baseline","Severe fetal anemia","Fetomaternal hemorrhage","Fetal compromise"],hint:"A true sinusoidal tracing is ominous."}
+],
+[
+{category:"Type 1 distal renal tubular acidosis",words:["Urine pH above 5.5","Nephrolithiasis","Hypokalemia","Alpha-intercalated cell defect"],hint:"Impaired distal hydrogen secretion."},
+{category:"Type 2 proximal renal tubular acidosis",words:["Bicarbonate wasting","Fanconi syndrome","Hypokalemia","Urine pH falls after steady state"],hint:"Reduced proximal bicarbonate reabsorption."},
+{category:"Type 4 renal tubular acidosis",words:["Hyperkalemia","Hypoaldosteronism","Diabetes mellitus association","Urine pH often below 5.5"],hint:"Reduced aldosterone effect or distal potassium secretion."},
+{category:"Bartter syndrome",words:["Hypokalemic metabolic alkalosis","Hypercalciuria","High renin and aldosterone","Loop-diuretic-like defect"],hint:"Thick ascending limb salt-wasting disorder."}
+],
+[
+{category:"Tetralogy of Fallot",words:["Ventricular septal defect","Pulmonary stenosis","Overriding aorta","Right ventricular hypertrophy"],hint:"Four structural components of the classic cyanotic defect."},
+{category:"Transposition of the great arteries",words:["Parallel circulations","Egg-on-a-string radiograph","Cyanosis soon after birth","Requires mixing"],hint:"Aorta arises from the right ventricle and pulmonary artery from the left."},
+{category:"Truncus arteriosus",words:["Single arterial trunk","Common semilunar valve","Ventricular septal defect","22q11 deletion association"],hint:"Failure of aorticopulmonary septation."},
+{category:"Total anomalous pulmonary venous return",words:["Pulmonary veins drain to systemic venous circulation","Snowman sign","Cyanosis","Obstructed pulmonary venous return"],hint:"Pulmonary venous return fails to reach the left atrium normally."}
 ]
+
 ];
 
 export const labPromptsExpansion4: LabPrompt[] = [
