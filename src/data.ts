@@ -1,3 +1,4 @@
+import { diagnosisCasesExpansion11, nextStepCasesExpansion11, connectionPuzzlesExpansion11 } from "./dataClinical11";
 import { diagnosisCasesExpansion10, nextStepCasesExpansion10, connectionPuzzlesExpansion10 } from "./dataClinical10";
 import { branchDiagnosisCases } from "./dataDiagnosisExpansion";
 import { diagnosisCasesExpansion9, nextStepCasesExpansion9, connectionPuzzlesExpansion9 } from "./dataClinical9";
@@ -268,9 +269,9 @@ pairsBank.push(...pairsBankExpansion2);
 const knownPairTerms = new Set(pairsBank.map(([term]) => term));
 pairsBank.push(...pairsBankExpansion3.filter(([term]) => !knownPairTerms.has(term)));
 triageCases.push(...triageCasesExpansion, ...triageCasesExpansion2);
-connectionPuzzles.push(...connectionPuzzlesExpansion, ...connectionPuzzlesExpansion2, ...connectionPuzzlesExpansion3, ...connectionPuzzlesExpansion4, ...connectionPuzzlesExpansion5, ...connectionPuzzlesExpansion6, ...connectionPuzzlesExpansion7, ...connectionPuzzlesExpansion8, ...connectionPuzzlesExpansion9, ...connectionPuzzlesExpansion10, ...connectionPuzzlesExpansion11, ...connectionPuzzlesExpansion12);
-diagnosisCases.push(...diagnosisCasesExpansion, ...diagnosisCasesExpansion2, ...diagnosisCasesExpansion3, ...diagnosisCasesExpansion4, ...diagnosisCasesExpansion5, ...diagnosisCasesExpansion6, ...diagnosisCasesExpansion7, ...diagnosisCasesExpansion8, ...diagnosisCasesExpansion9, ...diagnosisCasesExpansion10, ...branchDiagnosisCases);
-nextStepCases.push(...nextStepCasesExpansion, ...nextStepCasesExpansion2, ...nextStepCasesExpansion3, ...nextStepCasesExpansion4, ...nextStepCasesExpansion5, ...nextStepCasesExpansion6, ...nextStepCasesExpansion7, ...nextStepCasesExpansion8, ...nextStepCasesExpansion9, ...nextStepCasesExpansion10);
+connectionPuzzles.push(...connectionPuzzlesExpansion, ...connectionPuzzlesExpansion2, ...connectionPuzzlesExpansion3, ...connectionPuzzlesExpansion4, ...connectionPuzzlesExpansion5, ...connectionPuzzlesExpansion6, ...connectionPuzzlesExpansion7, ...connectionPuzzlesExpansion8, ...connectionPuzzlesExpansion9, ...connectionPuzzlesExpansion10, ...connectionPuzzlesExpansion11, ...connectionPuzzlesExpansion12, ...connectionPuzzlesExpansion11);
+diagnosisCases.push(...diagnosisCasesExpansion, ...diagnosisCasesExpansion2, ...diagnosisCasesExpansion3, ...diagnosisCasesExpansion4, ...diagnosisCasesExpansion5, ...diagnosisCasesExpansion6, ...diagnosisCasesExpansion7, ...diagnosisCasesExpansion8, ...diagnosisCasesExpansion9, ...diagnosisCasesExpansion10, ...branchDiagnosisCases, ...diagnosisCasesExpansion11);
+nextStepCases.push(...nextStepCasesExpansion, ...nextStepCasesExpansion2, ...nextStepCasesExpansion3, ...nextStepCasesExpansion4, ...nextStepCasesExpansion5, ...nextStepCasesExpansion6, ...nextStepCasesExpansion7, ...nextStepCasesExpansion8, ...nextStepCasesExpansion9, ...nextStepCasesExpansion10, ...nextStepCasesExpansion11);
 labPrompts.push(...labPromptsExpansion, ...labPromptsExpansion4, ...labPromptsYearExpansion);
 pairsBank.push(...pairsBankExpansion, ...pairsBankExpansionYear);
 const seenPairTerms = new Set<string>();
