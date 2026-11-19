@@ -29,7 +29,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general" }: Props &
 const SPECIALTY_INDEX: Partial<Record<Specialty, Partial<Record<string, number[]>>>> = {
   neurology: { diagnosis:[1,4,5,12,13,19,120,121,122,123,124,125], nextstep:[2,16,120,121,122,123,124], connections:[3,10,72,73,78], labline:[18,19,20], pairs:[12,13], microbe:[0,5], triage:[4] },
   cardiology: { diagnosis:[7,16,17,126,127,128,129], nextstep:[3,13,126,127,128,129], connections:[0,1,4,74,79], labline:[1,3,4,17], pairs:[0,1,2,3], triage:[10] },
-  emergency: { diagnosis:[0,4,5,7,10,16,17,18,19,125,126,130], nextstep:[0,1,2,4,7,8,10,11,12,13,14,18,19,125,130], connections:[4,5,7,8,9,73,75], triage:[0,1,2,4,5,6,7,9,10] },
+  emergency: { diagnosis:[0,4,5,7,10,16,17,18,19,125,126,130], nextstep:[0,1,2,4,7,8,10,11,12,13,14,18,19,125,126,130], connections:[4,5,7,8,9,73,75], triage:[0,1,2,4,5,6,7,9,10] },
   criticalcare: { diagnosis:[4,5,7,10,11,16,17,18,19], nextstep:[0,1,2,4,7,10,11,12,13,14,18,19], connections:[4,5,7,9,11], labline:[0,1,2,3,4,5,11,17,22], triage:[0,1,2,4,5,6,7,9,10,11] },
   anesthesia: { diagnosis:[5,16,17], nextstep:[0,2,4,12,14], connections:[0,1,7], labline:[0,1,2,4,17], pairs:[0,1,2,3,4,5], triage:[0,4,5,6,9,11] },
   surgery: { diagnosis:[0,5,17,18], nextstep:[8,9,14,17], connections:[4,8,9], triage:[3,8,9] },
