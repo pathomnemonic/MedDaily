@@ -202,7 +202,7 @@ export const connectionPuzzlesExpansion11: ConnectionGroup[][] = [
 ],
 [
 {category:"Anthracycline toxicities",words:["Cardiomyopathy","Doxorubicin","Free-radical injury","Dexrazoxane"],hint:"Dose-related cardiac injury and its protective agent."},
-{category:"Platinum chemotherapy toxicities",words:["Nephrotoxicity","Ototoxicity","Peripheral neuropathy","Cisplatin"],hint:"Classic adverse effects of platinum agents."},
+{category:"Platinum chemotherapy toxicities",words:["Nephrotoxicity","Ototoxicity","Salt-wasting nephropathy","Cisplatin"],hint:"Classic adverse effects of platinum agents."},
 {category:"Vinca alkaloid toxicities",words:["Peripheral neuropathy","Constipation","Microtubule inhibition","Vincristine"],hint:"Disruption of microtubule polymerization."},
 {category:"Taxane toxicities",words:["Neutropenia","Hypersensitivity reactions","Microtubule stabilization","Paclitaxel"],hint:"Microtubule-stabilizing chemotherapy agents."}
 ],
