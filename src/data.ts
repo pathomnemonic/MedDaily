@@ -281,7 +281,8 @@ const uniqueMicrobePacks = microbePacks.filter((pack) => {
   if (seenMicrobePackNames.has(key)) return false;
   seenMicrobePackNames.add(key);
   return true;
-});
+}).map((pack) => ({ ...pack, words: pack.words.filter((word) => word.length <= 14) }))
+  .filter((pack) => pack.words.length >= 4);
 microbePacks.splice(0, microbePacks.length, ...uniqueMicrobePacks);
 microbePacks.push(
   { name:"Cardiac anatomy", words:["AORTA","ATRIA","VENTRICLE","VALVE","SEPTUM","MYOCARDIUM","PERICARDIUM"] },
