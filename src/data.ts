@@ -1,3 +1,4 @@
+import { diagnosisCasesExpansion5, nextStepCasesExpansion5, connectionPuzzlesExpansion5 } from "./dataClinical5";
 import { diagnosisCasesExpansion4, nextStepCasesExpansion4, connectionPuzzlesExpansion4 } from "./dataClinical4";
 import { diagnosisCasesExpansion3, nextStepCasesExpansion3, connectionPuzzlesExpansion3 } from "./dataClinical3";
 import { diagnosisCasesExpansion2, nextStepCasesExpansion2, connectionPuzzlesExpansion2, labPromptsExpansion2, pairsBankExpansion2 } from "./dataClinical2";
@@ -242,19 +243,13 @@ export const triageCases = [
 ];
 
 medleWords.push(...medleWordsExpansion.filter((word) => !medleWords.includes(word)));
-connectionPuzzles.push(...connectionPuzzlesExpansion2, ...connectionPuzzlesExpansion3, ...connectionPuzzlesExpansion4);
-diagnosisCases.push(...diagnosisCasesExpansion4);
-nextStepCases.push(...nextStepCasesExpansion4);
-diagnosisCases.push(...diagnosisCasesExpansion3);
-nextStepCases.push(...nextStepCasesExpansion3);
-diagnosisCases.push(...diagnosisCasesExpansion2);
-nextStepCases.push(...nextStepCasesExpansion2);
+
 labPrompts.push(...labPromptsExpansion2);
 pairsBank.push(...pairsBankExpansion2);
 triageCases.push(...triageCasesExpansion);
-connectionPuzzles.push(...connectionPuzzlesExpansion);
-diagnosisCases.push(...diagnosisCasesExpansion);
-nextStepCases.push(...nextStepCasesExpansion);
+connectionPuzzles.push(...connectionPuzzlesExpansion, ...connectionPuzzlesExpansion2, ...connectionPuzzlesExpansion3, ...connectionPuzzlesExpansion4, ...connectionPuzzlesExpansion5);
+diagnosisCases.push(...diagnosisCasesExpansion, ...diagnosisCasesExpansion2, ...diagnosisCasesExpansion3, ...diagnosisCasesExpansion4, ...diagnosisCasesExpansion5);
+nextStepCases.push(...nextStepCasesExpansion, ...nextStepCasesExpansion2, ...nextStepCasesExpansion3, ...nextStepCasesExpansion4, ...nextStepCasesExpansion5);
 labPrompts.push(...labPromptsExpansion);
 pairsBank.push(...pairsBankExpansion);
 microbePacks.push(...microbePacksExpansion, ...microbePacksExpansion2);
