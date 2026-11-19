@@ -1108,3 +1108,5 @@ html[data-motion="reduced"] .rumble-wheel-note{animation:none!important}
 .logic-hints{display:grid;gap:6px;margin:8px 0 13px}
 .logic-hints p{display:flex;align-items:center;gap:10px;margin:0;padding:9px 11px;border:1px solid rgba(255,213,138,.18);border-radius:9px;background:rgba(255,213,138,.06);color:#e4d5ae;font-size:10px}
 .logic-hints b{color:#f1ca78;font:600 8px "DM Mono";letter-spacing:1px;white-space:nowrap}
+
+.triage-hint-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:8px 0;color:#899bbd;font:500 8px "DM Mono"}
