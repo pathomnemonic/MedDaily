@@ -826,25 +826,86 @@ function TriageOrder({ seed, onDone, specialty = "general" }: Props) {
 }
 
 function AnagramSprint({ seed, onDone }: Props) {
-  const word = scrambleWords[seed % scrambleWords.length];
+  const rounds = useMemo(() => shuffle(scrambleWords, seeded(seed + 51)).slice(0, 5), [seed]);
+  const [round, setRound] = useState(0);
   const [text, setText] = useState("");
   const [tries, setTries] = useState(0);
   const [hint, setHint] = useState(false);
-  const [done, setDone] = useState(false);
+  const [roundFinished, setRoundFinished] = useState(false);
   const [won, setWon] = useState(false);
+  const [score, setScore] = useState(0);
+  const [seconds, setSeconds] = useState(75);
+  const [note, setNote] = useState("Five words. Seventy-five seconds. Solve each specimen before moving on.");
+  const [ended, setEnded] = useState(false);
+  const done = useRef(false);
+  const word = rounds[round];
+  const scrambled = useMemo(() => {
+    const value = shuffle(word[0].split(""), seeded(seed + 51 + round * 73)).join("");
+    return value === word[0] ? value.slice(1) + value[0] : value;
+  }, [seed, word, round]);
+
+  useEffect(() => {
+    if (ended || roundFinished) return;
+    const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [ended, roundFinished]);
+  useEffect(() => {
+    if (seconds !== 0 || ended || done.current) return;
+    done.current = true;
+    setEnded(true);
+    setNote("Time. The remaining words are revealed below.");
+    onDone(score, 100, false);
+  }, [seconds, ended, score, onDone]);
+
   const check = () => {
-    if (done || !text.trim()) return;
-    const ok = text.trim().replace(/\s/g,"").toUpperCase() === word[0];
-    const n = tries + 1; setTries(n);
-    if (ok || n >= 3) { setDone(true); setWon(ok); onDone(ok ? (hint ? 80 : n === 1 ? 100 : 90) : 0, 100, ok && n === 1 && !hint); }
-    else setText("");
+    const answer = text.trim().replace(/\s/g, "").toUpperCase();
+    if (ended || roundFinished || !answer) return;
+    const nextTries = tries + 1;
+    setTries(nextTries);
+    if (answer === word[0]) {
+      const earned = hint ? 12 : nextTries === 1 ? 20 : nextTries === 2 ? 15 : 10;
+      setScore((current) => current + earned);
+      setWon(true);
+      setRoundFinished(true);
+      setNote("Unscrambled. +" + earned + " points.");
+    } else if (nextTries >= 3) {
+      setWon(false);
+      setRoundFinished(true);
+      setNote("Three attempts used. The answer is " + word[0] + ".");
+    } else {
+      setText("");
+      setNote("Not quite. " + (3 - nextTries) + " attempts left.");
+    }
   };
-  const scrambled = useMemo(() => shuffle(word[0].split(""), seeded(seed + 51)).join(""), [seed, word]);
-  return <div className="game-layout">
-    <div className="game-instructions"><span className="instruction-dot mint" /> Unscramble the letters. Three guesses; ask for a definition hint if you need one.</div>
-    <div className="anagram-board"><span className="eyebrow">SCRAMBLE THE SPECIMEN</span><div className="anagram-letters">{scrambled.split("").map((ch, i) => <b key={i}>{ch}</b>)}</div>{hint && <p>{word[1]}</p>}</div>
-    {!done ? <form className="word-entry" onSubmit={(e) => { e.preventDefault(); check(); }}><input value={text} onChange={(e) => setText(e.target.value)} placeholder="Your answer" autoComplete="off" /><button className="button button-primary">Submit</button></form> : <Finish title={won ? "Unscrambled!" : "The word was " + word[0]} detail={word[1]} score={won ? (hint ? 80 : tries === 1 ? 100 : 90) + " / 100" : "0 / 100"} />}
-    <button className="text-button" onClick={() => setHint(true)} disabled={hint || done}>Need a hint?</button>
+  const next = () => {
+    if (!roundFinished || ended) return;
+    if (round === rounds.length - 1) {
+      const finalScore = score;
+      setEnded(true);
+      if (!done.current) { done.current = true; onDone(finalScore, 100, finalScore === 100); }
+      return;
+    }
+    setRound((current) => current + 1);
+    setText("");
+    setTries(0);
+    setHint(false);
+    setWon(false);
+    setRoundFinished(false);
+    setNote("Next specimen. Keep the pace.");
+  };
+
+  return <div className="game-layout anagram-sprint">
+    <div className="anagram-hud"><div><span className="eyebrow">ANAGRAM SPRINT</span><b>{round + 1}<small> / 5</small></b></div><div className={"anagram-clock" + (seconds <= 10 ? " urgent" : "")}>{seconds}s</div><div><b>{score}<small> pts</small></b></div></div>
+    <div className="anagram-progress"><i style={{width:((round + Number(roundFinished))/5*100)+"%"}} /></div>
+    {!ended ? <>
+      <div className="game-instructions"><span className="instruction-dot mint" /> Unscramble the medical term. Three attempts per word; a hint reduces the maximum points.</div>
+      <div className="anagram-board"><span className="eyebrow">SPECIMEN {round + 1} · {word[0].length} LETTERS</span><div className="anagram-letters">{scrambled.split("").map((ch, i) => <b key={i}>{ch}</b>)}</div>{hint && <p>{word[1]}</p>}</div>
+      {!roundFinished ? <>
+        <form className="word-entry" onSubmit={(event) => { event.preventDefault(); check(); }}><input value={text} onChange={(event) => setText(event.target.value.replace(/[^a-z]/gi, "").toUpperCase())} maxLength={word[0].length} placeholder="Your answer" autoComplete="off" /><button className="button button-primary" type="submit" disabled={!text.trim()}>Submit</button></form>
+        <div className="anagram-tools"><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Reveal definition hint</button><span>{tries} / 3 attempts</span></div>
+      </> : <div className="anagram-round-result"><b>{won ? "Correct" : "Answer revealed"} · {won ? "Points added" : "No points"}</b><h3>{word[0]}</h3><p>{word[1]}</p><button className="button button-primary full-button" onClick={next}>{round === 4 ? "Finish sprint" : "Next specimen →"}</button></div>}
+      <p className="game-feedback" aria-live="polite">{note}</p>
+    </> : <Finish title="Sprint complete" detail={"You solved " + (round + 1) + " of five specimens before the clock ran out."} score={score + " / 100"}><div className="reveal-groups">{rounds.map(([answer, clue], index) => <span key={answer}><b>{index + 1}. {answer}</b>{clue}</span>)}</div></Finish>}
   </div>;
 }
 
