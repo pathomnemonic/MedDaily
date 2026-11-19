@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { connectionPuzzles, medleWords } from "./data";
-import { deductionCases, spellingHivePuzzles } from "./dataExtra";
-import { hashSeed, lineCells, dailyDateKey, makeWordSearch, scoreWord, seeded, shuffle } from "./lib";
+import { deductionCases, glyphPatterns, spellingHivePuzzles } from "./dataExtra";
+import { hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
 
 describe("daily puzzle primitives", () => {
   it("creates stable seeds for stable keys", () => {
@@ -25,6 +25,12 @@ describe("daily puzzle primitives", () => {
 
   it("scores repeated letters without awarding duplicate matches", () => {
     expect(scoreWord("SHEEP", "SLEEP")).toEqual(["correct", "absent", "correct", "correct", "correct"]);
+  });
+
+  it("converts nonogram lines into exact run clues", () => {
+    expect(nonogramRuns([0, 1, 1, 0, 1])).toEqual([2, 1]);
+    expect(nonogramRuns([1, 1, 1, 1, 1])).toEqual([5]);
+    expect(nonogramRuns([0, 0, 0, 0, 0])).toEqual([]);
   });
 
   it("returns horizontal, vertical and diagonal word-search paths", () => {
@@ -94,6 +100,47 @@ describe("additional daily puzzle packs", () => {
         puzzle.locations.includes(s.location as never) &&
         puzzle.objects.includes(s.object as never)
       )).toBe(true);
+    }
+  });
+});
+
+
+describe("Cell Sketch nonogram clues", () => {
+  const runs = (line: number[]) => {
+    const result: number[] = [];
+    let current = 0;
+    for (const cell of line) {
+      if (cell) current++;
+      else if (current) { result.push(current); current = 0; }
+    }
+    if (current) result.push(current);
+    return result;
+  };
+
+  it("gives each hidden 5x5 shape a unique solution from row and column runs", () => {
+    for (const puzzle of glyphPatterns) {
+      const pattern = puzzle.pattern;
+      const rowClues = pattern.map(runs);
+      const colClues = pattern[0].map((_, c) => runs(pattern.map((row) => row[c])));
+      const rowOptions = rowClues.map((clue) =>
+        Array.from({ length: 32 }, (_, mask) => Array.from({ length: 5 }, (_, c) => (mask >> c) & 1))
+          .filter((row) => JSON.stringify(runs(row)) === JSON.stringify(clue))
+      );
+      let solutions = 0;
+      const rows: number[][] = [];
+      const visit = (r: number) => {
+        if (solutions > 1) return;
+        if (r === 5) {
+          if (colClues.every((clue, c) => JSON.stringify(runs(rows.map((row) => row[c]))) === JSON.stringify(clue))) solutions++;
+          return;
+        }
+        for (const candidate of rowOptions[r]) {
+          rows[r] = candidate;
+          visit(r + 1);
+        }
+      };
+      visit(0);
+      expect(solutions, puzzle.name).toBe(1);
     }
   });
 });

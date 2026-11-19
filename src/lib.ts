@@ -48,3 +48,15 @@ export function lineCells(start:number,end:number,size:number):number[] {
   const rr=Math.sign(dr),cc=Math.sign(dc);
   return Array.from({length:n+1},(_,i)=>(sr+rr*i)*size+sc+cc*i);
 }
+
+/** Return standard nonogram run clues for a line of binary cells. Empty lines have no runs. */
+export function nonogramRuns(line: readonly number[]): number[] {
+  const runs: number[] = [];
+  let current = 0;
+  for (const value of line) {
+    if (value) current++;
+    else if (current) { runs.push(current); current = 0; }
+  }
+  if (current) runs.push(current);
+  return runs;
+}

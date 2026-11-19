@@ -259,7 +259,7 @@ main{max-width:1440px;margin:0 auto;padding:0 38px 54px;min-height:calc(100vh - 
 .nonogram-wrap{width:max-content;max-width:100%;margin:20px auto;overflow:auto;padding:8px}
 .nonogram-col-clues{display:grid;grid-template-columns:36px repeat(5,45px);gap:5px;margin-bottom:5px;text-align:center;color:#9facd0;font:500 11px "DM Mono"}
 .nonogram-row{display:grid;grid-template-columns:36px repeat(5,45px);gap:5px;align-items:center;margin-bottom:5px}
-.nonogram-clue{text-align:center;color:#9facd0;font:500 11px "DM Mono"}
+.nonogram-clue{text-align:center;color:#9facd0;font:500 9px "DM Mono"}
 .nonogram-cell{height:45px;width:45px;border:1px solid rgba(194,205,255,.17);border-radius:8px;background:rgba(6,12,31,.38);color:#fff;cursor:pointer}
 .nonogram-cell.filled-cell{background:linear-gradient(145deg,#83e8d1,#4f9cba);border-color:#a4ffe7;color:#173247}
 .nonogram-cell.error-cell{box-shadow:inset 0 0 0 2px #ff90a9}

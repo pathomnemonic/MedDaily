@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, nextStepCases, pairsBank, triageCases } from "./data";
 import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
-import { hashSeed, lineCells, makeWordSearch, scoreWord, seeded, shuffle, type GameId } from "./lib";
+import { hashSeed, lineCells, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle, type GameId } from "./lib";
 
 type Done = (score: number, maxScore: number, perfect: boolean) => void;
 type Specialty = "general" | "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
@@ -322,15 +322,15 @@ function CellSketch({ seed, onDone }: Props) {
   const item = glyphPatterns[seed % glyphPatterns.length];
   const [cells, setCells] = useState<boolean[][]>(() => item.pattern.map((row) => row.map(() => false)));
   const [checked, setChecked] = useState(false);
-  const rowClues = item.pattern.map((row) => row.reduce((n, v) => n + v, 0));
-  const colClues = item.pattern[0].map((_, c) => item.pattern.reduce((n, row) => n + row[c], 0));
+  const rowClues = item.pattern.map((row) => nonogramRuns(row));
+  const colClues = item.pattern[0].map((_, c) => nonogramRuns(item.pattern.map((row) => row[c])));
   const check = () => {
     const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, value, c) => m + (Boolean(value) === cells[r][c] ? 1 : 0), 0), 0);
     setChecked(true); onDone(Math.round(correct / 25 * 100), 100, correct === 25);
   };
   return <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot lilac" /> Fill the 5×5 grid using the row and column counts. A number tells you how many cells in that line are filled. This is a tiny nonogram.</div>
-    <div className="nonogram-wrap"><div className="nonogram-col-clues">{colClues.map((n, i) => <span key={i}>{n}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className="nonogram-clue">{rowClues[r]}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1)} className={"nonogram-cell" + (value ? " filled-cell" : "") + (checked && value !== Boolean(item.pattern[r][c]) ? " error-cell" : "")} onClick={() => setCells((all) => all.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? !v : v) : x))}>{value ? "•" : ""}</button>)}</div>)}</div></div>
+    <div className="nonogram-wrap"><div className="nonogram-col-clues">{colClues.map((n, i) => <span key={i}>{n.length ? n.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className="nonogram-clue">{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={checked} aria-label={"Row " + (r+1) + " column " + (c+1)} className={"nonogram-cell" + (value ? " filled-cell" : "") + (checked && value !== Boolean(item.pattern[r][c]) ? " error-cell" : "")} onClick={() => setCells((all) => all.map((x, ri) => ri === r ? x.map((v, ci) => ci === c ? !v : v) : x))}>{value ? "•" : ""}</button>)}</div>)}</div></div>
     {!checked ? <button className="button button-primary full-button" onClick={check}>Check pattern</button> : <Finish title="Pattern revealed" detail={"The hidden shape was " + item.name + ". " + item.hint + ". Your cells are marked for comparison."} score={Math.round(item.pattern.reduce((n, row, r) => n + row.reduce((m, v, c) => m + (Boolean(v) === cells[r][c] ? 1 : 0), 0), 0) / 25 * 100) + " / 100"} />}
   </div>;
 }
