@@ -206,6 +206,13 @@ describe("Labline scoring", () => {
       const { min, max } = labRange(v, seed);
       expect(min).toBeLessThanOrEqual(v); expect(max).toBeGreaterThanOrEqual(v); expect(max).toBeGreaterThan(min);
     }
+    // The answer's position in the range must vary widely, so the midpoint is no clue.
+    const fractions = Array.from({ length: 200 }, (_, seed) => { const { min, max } = labRange(14, seed, 1.5); return (14 - min) / (max - min); });
+    expect(Math.min(...fractions)).toBeLessThan(0.25);
+    expect(Math.max(...fractions)).toBeGreaterThan(0.75);
+    const mids = Array.from({ length: 200 }, (_, seed) => { const { min, max } = labRange(126, seed, 3); return (min + max) / 2 - 126; });
+    expect(Math.min(...mids)).toBeLessThan(-10);
+    expect(Math.max(...mids)).toBeGreaterThan(10);
     expect(labStreakBonus(0)).toBe(0); expect(labStreakBonus(2)).toBe(20); expect(labStreakBonus(9)).toBe(30);
   });
 });
