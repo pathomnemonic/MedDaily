@@ -13,17 +13,16 @@ interface GameMeta { id: GameId; title: string; subtitle: string; description: s
 const GAMES: GameMeta[] = [
   {id:"medle",title:"Medle",subtitle:"The five-letter rounds",description:"Find the hidden medical word in six guesses.",icon:"▦",wash:"mint",time:"2 min",category:"Word play",level:"Easy → tricky"},
   {id:"connections",title:"Connections",subtitle:"Think in fours",description:"Sort sixteen terms into four hidden medical families.",icon:"⊞",wash:"lilac",time:"4 min",category:"Pattern logic",level:"Moderate"},
-  {id:"diagnosis",title:"Mystery Case",subtitle:"A clue at a time",description:"Crack a clinical presentation before the clues run out.",icon:"⌕",wash:"peach",time:"3 min",category:"Clinical reasoning",level:"Step 2"},
-  {id:"nextstep",title:"Next Best Step",subtitle:"Make the call",description:"Choose the next move in a focused clinical vignette.",icon:"➜",wash:"gold",time:"3 min",category:"Clinical reasoning",level:"Step 2"},
-  {id:"microbe",title:"Microbe Hunt",subtitle:"The microscopic maze",description:"Trace hidden organism names through a letter grid.",icon:"✣",wash:"blue",time:"4 min",category:"Word search",level:"Moderate"},
+  {id:"diagnosis",title:"DoctorDle",subtitle:"Name the diagnosis",description:"Solve a clinical case in six guesses as clues unlock.",icon:"✚",wash:"peach",time:"3 min",category:"Diagnosis game",level:"Deduction"},
+  {id:"microbe",title:"Word Hunt",subtitle:"Find the hidden terms",description:"Search a themed letter grid and uncover every hidden word.",icon:"✣",wash:"blue",time:"4 min",category:"Word search",level:"Moderate"},
   {id:"labline",title:"Labline",subtitle:"Calibrate your eye",description:"Estimate classic lab values and clinical thresholds.",icon:"⌁",wash:"pink",time:"2 min",category:"Numbers",level:"Foundational"},
-  {id:"pairs",title:"Memory Match",subtitle:"Link the associations",description:"Pair medications, findings, mechanisms, and diagnoses.",icon:"◇",wash:"lime",time:"3 min",category:"Memory",level:"Moderate"},
+  {id:"pairs",title:"Association Blitz",subtitle:"Make the connections",description:"Match clinical terms to mechanisms, findings, and diagnoses under pressure.",icon:"◇",wash:"lime",time:"3 min",category:"Association",level:"Moderate"},
   {id:"triage",title:"Triage Order",subtitle:"What comes first?",description:"Put the priorities of an emergency response in order.",icon:"⇅",wash:"orange",time:"3 min",category:"Clinical reasoning",level:"Step 2"},
   {id:"splice",title:"Anagram Sprint",subtitle:"Unscramble the specimen",description:"Rebuild a medical word from its shuffled letters.",icon:"↝",wash:"mint",time:"1 min",category:"Word play",level:"Easy"},
   {id:"glyph",title:"Cell Sketch",subtitle:"Tiny picture logic",description:"Solve a tiny nonogram to reveal a scientific shape.",icon:"▦",wash:"lilac",time:"2 min",category:"Visual logic",level:"Easy → tricky"},
-  {id:"higher",title:"Higher or Lower",subtitle:"Trust your intuition",description:"Make quick comparisons: quantities, anatomy, and the occasional tie.",icon:"↕",wash:"gold",time:"2 min",category:"Estimation",level:"Easy"},
+  {id:"higher",title:"What Has More?",subtitle:"Ridiculous medical matchups",description:"Pick the bigger number in surprising food, drug, body, and everyday comparisons.",icon:"⚖",wash:"gold",time:"2 min",category:"Wild comparisons",level:"Quick-fire"},
   {id:"ladder",title:"Word Ladder",subtitle:"One letter at a time",description:"Climb from one word to another with tiny changes.",icon:"⌁",wash:"peach",time:"3 min",category:"Word play",level:"Moderate"},
-  {id:"hive",title:"Spelling Hive",subtitle:"Seven letters, a swarm of words",description:"Find as many words as you can from seven letters and the center tile.",icon:"✿",wash:"gold",time:"3 min",category:"Word play",level:"Easy → tricky"},
+  {id:"hive",title:"Medical Spelling Hive",subtitle:"Seven letters, a swarm of terms",description:"Build medical words from seven letters. Every word must use the center tile.",icon:"✿",wash:"gold",time:"3 min",category:"Medical wordplay",level:"Easy → tricky"},
   {id:"casefile",title:"Casefile Logic",subtitle:"The clues don't lie",description:"Solve a fictional three-person deduction grid using rooms, objects, and clues.",icon:"⌕",wash:"lilac",time:"4 min",category:"Logic puzzle",level:"Moderate"},
   {id:"dive",title:"Deep Dive",subtitle:"Rare finds go deeper",description:"Seven timed open-answer prompts. Less obvious accepted answers earn more points.",icon:"🌊",wash:"blue",time:"4 min",category:"Open-answer trivia",level:"Think sideways"},
   {id:"trivia",title:"Trivia Rumble",subtitle:"Spin. Answer. Collect badges.",description:"A six-category trivia wheel with solo and pass-and-play modes.",icon:"🎡",wash:"orange",time:"8–12 min",category:"Party quiz",level:"All levels"},
@@ -220,7 +219,7 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
 }){
   const done=doneToday;
   const perfect=player.results.filter(r=>r.scope===scope&&r.perfect).length;
-  const average=player.results.filter(r=>r.scope===scope).length?Math.round(player.results.filter(r=>r.scope===scope).reduce((n,r)=>n+r.score,0)/player.results.filter(r=>r.scope===scope).length):0;
+  
   return <div className="home-page">
     <section className="hero"><div className="hero-copy">
       <div className="hero-kicker"><span className="pulse-dot"/> WELCOME TO THE PLAYGROUND</div>
@@ -252,7 +251,7 @@ function HomePage({player,scope,mode,specialty,setMode,setSpecialty,today,doneTo
         <div className="game-card-footer"><span>{game.time} <i>·</i> {game.level}</span><span className="card-arrow">↗</span></div>
       </button>;
     })}</div>
-    <section className="bottom-feature"><div className="feature-copy"><span className="eyebrow">A SMALL HABIT, A SHARP MIND</span><h2>Good medicine starts<br/>with noticing.</h2><p>Play for the pattern, for the challenge, or simply because you have three minutes.</p></div><div className="feature-metrics"><div><b>{totalPlays(player,scope)}</b><span>rounds played</span></div><div><b>{average}%</b><span>average score</span></div><div><b>{perfect}</b><span>perfect rounds</span></div></div></section>
+    <section className="bottom-feature dx-dash-feature"><div className="feature-copy"><span className="eyebrow">PERMANENT FEATURE · FROM THE SAME ARCADE</span><h2>Dx Dash</h2><p>Run the list. Learn the diagnosis. A separate featured game, always one tap away.</p><a className="button button-primary" href="https://pathomnemonic.github.io/buzzword-dash-v2/" target="_blank" rel="noreferrer">PLAY DX DASH ↗</a></div><div className="dx-dash-mark" aria-hidden="true">DX<span>↗</span></div></section>
   </div>;
 }
 
@@ -291,7 +290,7 @@ function RoomScores({room}:{room:RoomState}){
 function StatsPage({player,scope,streak}:{player:PlayerData;scope:string;streak:number}){
   const results=player.results.filter(r=>r.scope===scope);
   const perfect=results.filter(r=>r.perfect).length;
-  return <div className="stats-page"><span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div><div><b>{results.length?Math.round(results.reduce((n,r)=>n+r.score,0)/results.length):0}%</b><span>average score</span></div></div>
+  return <div className="stats-page"><span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div></div>
     <section className="stats-table"><h2>Game shelf</h2>{GAMES.map(g=>{const played=results.filter(r=>r.game===g.id);return <div key={g.id}><span>{g.title}</span><span>{played.length} played</span><b>Best {Math.max(0,...played.map(r=>r.score))}%</b></div>;})}</section>
     <p className="privacy-note">Progress shown here is for the current arcade mode. Your records are stored locally unless you choose Google Drive sync in Settings.</p>
   </div>;
