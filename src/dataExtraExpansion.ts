@@ -14,7 +14,7 @@ export const spellingHiveExpansion = [
 export const wordLaddersExpansion = [
 {start:"BONE",end:"MATH",path:["BONE","BANE","LANE","LATE","MATE","MATH"],note:"Move from skeletal anatomy to a core science."},
 {start:"BILE",end:"WILT",path:["BILE","MILE","MILD","WILD","WILT"],note:"One letter changes at every rung."},
-{start:"LUNG",end:"MOAT",path:["LUNG","LONG","LOAN","MOAN","MOAT"],note:"Follow the vowel and consonant changes."},
+{start:"LUNG",end:"MATH",path:["LUNG","LONG","SONG","SANG","SAND","SANE","CANE","CONE","BONE","BANE","LANE","LATE","MATE","MATH"],note:"A long ladder through common words."},
 {start:"CURE",end:"CARE",path:["CURE","PURE","PARE","CARE"],note:"A short ladder with a clinical starting word."},
 {start:"RASH",end:"TALK",path:["RASH","CASH","CASK","TASK","TALK"],note:"Change exactly one letter at each step."},
 {start:"LATE",end:"NODE",path:["LATE","DATE","DOTE","NOTE","NODE"],note:"A sequence of common four-letter words."},

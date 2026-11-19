@@ -44,11 +44,7 @@ export const nextStepCasesExpansion5: NextStepCase[] = [
 { id:"nx118",specialty:"Gastroenterology",vignette:"A patient has positive tTG-IgA, normal total IgA, and duodenal villous atrophy consistent with celiac disease.",question:"What is the foundational treatment?",options:["Strict lifelong gluten-free diet with nutritional assessment and follow-up","Low-FODMAP diet as sole treatment","Routine antibiotics","Chronic systemic steroids for every patient"],answer:0,explanation:"Celiac disease requires a strict gluten-free diet and assessment/repletion of nutritional deficiencies with clinical and serologic follow-up.",source:"ACG celiac disease guideline."},
 { id:"nx119",specialty:"Infectious Disease",vignette:"A patient with advanced HIV has odynophagia and esophageal plaques with biopsy showing Candida pseudohyphae.",question:"What is the preferred treatment?",options:["Systemic fluconazole","Topical nystatin alone","Acyclovir","Ganciclovir"],answer:0,explanation:"Esophageal candidiasis requires systemic antifungal therapy; oral fluconazole is standard when tolerated.",source:"NIH HIV opportunistic infection guideline."},
 { id:"nx120",specialty:"Infectious Disease",vignette:"A hospitalized older adult has symptomatic toxigenic C. difficile infection after clindamycin exposure.",question:"Which treatment is generally preferred for an initial episode?",options:["Fidaxomicin when available; oral vancomycin is an acceptable alternative","IV vancomycin alone","Loperamide monotherapy","No treatment because symptoms are self-limited"],answer:0,explanation:"Fidaxomicin is preferred in current IDSA/SHEA guidance for an initial episode when feasible; oral vancomycin remains an acceptable alternative.",source:"IDSA/SHEA focused update for C. difficile infection."}
-].map((item, index) => {
-  const shift = (index + 1) % item.options.length;
-  const options = [...item.options.slice(shift), ...item.options.slice(0, shift)];
-  return { ...item, options, answer: options.indexOf(item.options[item.answer]) };
-});
+];
 
 export const connectionPuzzlesExpansion5: ConnectionGroup[][] = [
 [
