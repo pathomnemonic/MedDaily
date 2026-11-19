@@ -9,17 +9,17 @@ MedDaily exposes sixteen playable game formats. The retired Next Best Step bank 
 | Game | Current bank | Notes |
 |---|---:|---|
 | Medle | 142 unique five-letter answers | Medical terms and abbreviations; one answer per daily seed |
-| Connections | 122 boards | Four groups of four per board; 20 new cross-specialty boards |
+| Quad Squad | 122 boards | Four groups of four per board; 20 new cross-specialty boards |
 | DoctorDle | 220 cases | Six-guess typed diagnosis puzzle with progressive clues, common clinical aliases, explanations, and source notes |
-| Word Hunt | 71 unique medical theme packs | 14×14 drag-to-select word-search grids; themes span organisms, anatomy, organ systems, and pharmacology |
+| Specimen Search | 71 unique medical theme packs | 14×14 drag-to-select word-search grids; themes span organisms, anatomy, organ systems, and pharmacology |
 | Labline | 100 prompts | Five-round estimation challenge with cumulative scoring and reference explanations |
 | Association Blitz | 208 unique pairs | 20-card, ten-pair timed memory board with combo streaks and a time bonus |
 | Triage Order | 42 sequences | Clinical sequence reconstruction with optional scored position hints |
 | Anagram Sprint | 111 terms | Five-word, 75-second timed scramble with hints and attempt-based scoring |
 | Cell Sketch | 31 unique-named 5×5 nonograms (19 original patterns plus 12 rotations/reflections) | Row and column run clues; CI verifies one valid solution per board |
 | What Has More? | 90 comparisons (24 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
-| Word Ladder | 26 ladders | Each intended solution path uses real words and one-letter changes |
-| Medical Spelling Hive | 42 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
+| Letter Rungs | 26 ladders | Each intended solution path uses real words and one-letter changes |
+| Hexicon | 42 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
 | Casefile Logic | 15 cases | Fictional deduction puzzles with tri-state pencil marks, one-to-one assignments, and scored progressive hints |
 | Deep Dive | 70 prompts | Timed open-answer prompts with curated long-tail rarity tiers; typo-tolerant matching (a typo is forgiven only when it identifies exactly one accepted answer). The accepted set is closed, so valid but unlisted answers are rejected; widening each prompt's answer list is the main remaining gap |
 | Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes; 20-second question timer; in pass-and-play a correct answer keeps the wheel and a miss or timeout passes it |
@@ -40,9 +40,9 @@ Clinical cases are filtered toward specialties where curated mappings exist, inc
 ## Recommended next content work
 
 Prioritize the smallest banks first:
-1. Expand Casefile Logic and Medical Spelling Hive to at least 50 distinct daily sets each; continue replacing generic word boards with medically meaningful sets.
-2. Expand Cell Sketch and Word Ladder while preserving one-solution and valid-path checks (Cell Sketch now has 19 original patterns; Word Ladder has 26 paths).
-3. Add specialty-reviewed Connections boards and clinical cases for tracks whose current content falls back to general banks.
+1. Expand Casefile Logic and Hexicon to at least 50 distinct daily sets each; continue replacing generic word boards with medically meaningful sets.
+2. Expand Cell Sketch and Letter Rungs while preserving one-solution and valid-path checks (Cell Sketch now has 19 original patterns; Letter Rungs has 26 paths).
+3. Add specialty-reviewed Quad Squad boards and clinical cases for tracks whose current content falls back to general banks.
 4. Add original/licensed visual material for Framed-style ECG, imaging, histology, gross pathology, and anatomy recognition.
 5. Add a long-tail, open-answer party game where scoring rarity is based on an explicit curated weighting system—not a fabricated player-population statistic.
 

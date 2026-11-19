@@ -84,9 +84,10 @@ export interface AnswerMatch<T extends AnswerLike> { match: T; fuzzy: boolean }
  * answer is that close, so a typo can never be resolved to the wrong answer.
  */
 export function matchAnswer<T extends AnswerLike>(input: string, answers: readonly T[]): AnswerMatch<T> | null {
-  const value = normalize(input);
+  const squash = (text: string) => normalize(text).replace(/ /g, "");
+  const value = squash(input);
   if (!value) return null;
-  const forms = (item: T) => [item.answer, ...(item.aliases ?? [])].map(normalize);
+  const forms = (item: T) => [item.answer, ...(item.aliases ?? [])].map(squash);
   const exact = answers.find((item) => forms(item).includes(value));
   if (exact) return { match: exact, fuzzy: false };
   if (value.length < 5) return null;

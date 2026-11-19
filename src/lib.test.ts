@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { connectionPuzzles, medleWords, diagnosisCases, nextStepCases, labPrompts, triageCases, pairsBank, microbePacks } from "./data";
 import { deductionCases, glyphPatterns, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
 import { PARTY_GAMES, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
+import { deepDiveExtras, deepDivePromptsExpanded } from "./dataDeepDiveExtra";
 import { deepDivePrompts, triviaCategories, triviaQuestions } from "./dataArcade";
 
 describe("daily puzzle primitives", () => {
@@ -61,7 +62,7 @@ describe("content bank sanity", () => {
     expect(medleWords.every((word) => /^[A-Z]{5}$/.test(word))).toBe(true);
   });
 
-  it("keeps Connections boards at four groups of four unique tiles", () => {
+  it("keeps Quad Squad boards at four groups of four unique tiles", () => {
     for (const board of connectionPuzzles) {
       expect(board).toHaveLength(4);
       const words = board.flatMap((group) => group.words);
@@ -72,7 +73,7 @@ describe("content bank sanity", () => {
 });
 
 describe("additional daily puzzle packs", () => {
-  it("keeps every Spelling Hive bank internally valid", () => {
+  it("keeps every Hexicon bank internally valid", () => {
     for (const puzzle of spellingHivePuzzles) {
       expect(puzzle.letters).toHaveLength(7);
       expect(new Set(puzzle.letters).size).toBe(7);
@@ -260,5 +261,29 @@ describe("party room codes", () => {
     const games = new Set(Array.from({ length: 200 }, (_, i) => roomGame(randomRoomCode(seeded(i + 1)))));
     expect(games.size).toBeGreaterThanOrEqual(8);
     expect(normalizeRoomCode(randomRoomCode())).toHaveLength(6);
+  });
+});
+
+
+describe("Deep Dive supplement", () => {
+  it("targets only real prompts and answers, and merges without collisions", () => {
+    for (const [id, extra] of Object.entries(deepDiveExtras)) {
+      const base = deepDivePrompts.find((p) => p.id === id);
+      expect(base, id).toBeDefined();
+      for (const target of Object.keys(extra.alias ?? {})) {
+        expect(base!.answers.some((a) => a.answer.toLowerCase() === target.toLowerCase()), id + " alias target " + target).toBe(true);
+      }
+    }
+    for (const prompt of deepDivePromptsExpanded) {
+      const forms = prompt.answers.flatMap((a) => [a.answer, ...(a.aliases ?? [])].map((f) => f.toLowerCase().replace(/[^a-z0-9]/g, "")));
+      expect(new Set(forms).size, prompt.id + " has a duplicate accepted form").toBe(forms.length);
+      expect(prompt.answers.every((a) => a.tier >= 1 && a.tier <= 6), prompt.id).toBe(true);
+    }
+  });
+  it("widens every prompt's accepted set substantially", () => {
+    const base = deepDivePrompts.reduce((n, p) => n + p.answers.length, 0);
+    const grown = deepDivePromptsExpanded.reduce((n, p) => n + p.answers.length, 0);
+    expect(grown).toBeGreaterThan(base * 1.8);
+    expect(deepDivePromptsExpanded.every((p) => p.answers.length >= 12)).toBe(true);
   });
 });

@@ -54,6 +54,10 @@ describe("Deep Dive answer matching", () => {
     const twins = [{ answer: "Hypokalemia" }, { answer: "Hyperkalemia" }];
     expect(matchAnswer("hypekalemia", twins)).toBeNull(); // equidistant from both: refuse to guess
   });
+  it("ignores spaces and hyphens", () => {
+    expect(matchAnswer("beta thalassemia", answers)?.match.answer).toBe("Beta-thalassemia");
+    expect(matchAnswer("betathalassemia", answers)?.fuzzy).toBe(false);
+  });
   it("rejects short, unrelated, or empty input", () => {
     expect(matchAnswer("", answers)).toBeNull();
     expect(matchAnswer("lead", answers)).toBeNull();

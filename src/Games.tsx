@@ -3,8 +3,9 @@ import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank, triageCases } from "./data";
 import { deductionCases, glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, lineCells, makeWordSearch, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
-import { deepDivePrompts, triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
+import { triviaCategories, triviaQuestions, type DeepAnswer, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
 import { letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord } from "./arcadeLogic";
+import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
 import { generateDeductionCase } from "./logicGenerator";
 
 type Done = (score: number, maxScore: number, perfect: boolean, share?: string) => void;
@@ -509,7 +510,7 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
   const guessLog = useRef<string[]>([]);
-  const shareText = () => "Connections\n" + guessLog.current.join("\n");
+  const shareText = () => "Quad Squad\n" + guessLog.current.join("\n");
   const choose = (word: string) => {
     if (ended || solved.some((n) => board[n].words.includes(word))) return;
     setSelected((s) => s.includes(word) ? s.filter((x) => x !== word) : s.length < 4 ? [...s, word] : s);
