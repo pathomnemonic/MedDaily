@@ -202,7 +202,7 @@ describe("expanded content integrity", () => {
 
 describe("new arcade content banks", () => {
   it("keeps the daily deep-dive prompts broad, unique, and tiered", () => {
-    expect(deepDivePrompts.length).toBeGreaterThanOrEqual(30);
+    expect(deepDivePrompts.length).toBeGreaterThanOrEqual(70);
     expect(new Set(deepDivePrompts.map((prompt) => prompt.id)).size).toBe(deepDivePrompts.length);
     for (const prompt of deepDivePrompts) {
       expect(prompt.prompt.length, prompt.id).toBeGreaterThan(12);
@@ -215,6 +215,7 @@ describe("new arcade content banks", () => {
 
   it("keeps Trivia Rumble balanced across six categories with valid choices", () => {
     expect(triviaCategories).toHaveLength(6);
+    expect(triviaQuestions.length).toBeGreaterThanOrEqual(365);
     expect(new Set(triviaCategories.map((category) => category.id)).size).toBe(6);
     expect(new Set(triviaQuestions.map((question) => question.id)).size).toBe(triviaQuestions.length);
     for (const category of triviaCategories) {
