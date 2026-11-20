@@ -1,9 +1,11 @@
+import { generatedRiddles } from "./dataRiddlesExpansion";
+
 /** First-person riddles for Riddle Lab: four clues from cryptic to obvious. Distractors come from the same kind. */
-export type RiddleKind = "Microbe" | "Drug" | "Organ" | "Molecule" | "Syndrome";
+export type RiddleKind = "Microbe" | "Drug" | "Organ" | "Molecule" | "Syndrome" | "Diagnosis" | "Next step";
 export interface Riddle { id: string; kind: RiddleKind; answer: string; clues: [string, string, string, string] }
 const r = (kind: RiddleKind, answer: string, clues: [string, string, string, string]): Riddle => ({ id: (kind[0] + answer).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 24), kind, answer, clues });
 
-export const riddles: Riddle[] = [
+const originalRiddles: Riddle[] = [
   r("Microbe", "Pseudomonas aeruginosa", ["I smell like grapes and I'm famous for blue-green pus.", "I love moist places: hot tubs, burn wounds, and ventilator tubing.", "I'm an oxidase-positive gram-negative rod that makes pyocyanin.", "In cystic fibrosis lungs, my mucoid form takes over."]),
   r("Microbe", "Staphylococcus aureus", ["I form grape-like clusters of golden colonies.", "I make coagulase, so I clot plasma.", "Toxic shock and scalded skin are two of my tricks.", "Some of my family resist methicillin."]),
   r("Microbe", "Clostridioides difficile", ["Antibiotics are my best friend because they clear out my competition.", "I make toxins A and B and leave a pseudomembranous gut.", "My spores shrug off hand sanitizer, so soap and water wins.", "A fecal transplant can put me in my place."]),
@@ -58,9 +60,11 @@ export const riddles: Riddle[] = [
   r("Syndrome", "Tetralogy of Fallot", ["I'm the most common cyanotic congenital heart defect after infancy.", "Squatting relieves my spells.", "I include pulmonary stenosis and a ventricular septal defect.", "An overriding aorta and right ventricular hypertrophy complete my four parts."])
 ];
 
+export const riddles: Riddle[] = [...originalRiddles, ...generatedRiddles];
+
 /** Four options: the answer plus three same-kind distractors, in a seeded order. */
 export function riddleOptions(riddle: Riddle, rand: () => number): string[] {
-  const pool = riddles.filter((x) => x.kind === riddle.kind && x.answer !== riddle.answer).map((x) => x.answer);
+  const pool = [...new Set(riddles.filter((x) => x.kind === riddle.kind && x.answer !== riddle.answer).map((x) => x.answer))];
   const picks: string[] = [];
   const bag = [...pool];
   while (picks.length < 3 && bag.length) picks.push(bag.splice(Math.floor(rand() * bag.length), 1)[0]);
