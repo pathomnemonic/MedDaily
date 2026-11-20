@@ -62,9 +62,12 @@ let validatedTrailYearPacks: TrailPack[] | null = null;
 export const getThemeTrailYearPacks = (): TrailPack[] => (validatedTrailYearPacks ??= (() => {
   const valid: TrailPack[] = [];
   const names = new Set<string>();
+  const signatures = new Set<string>();
   for (const pack of [...microbePacks, ...themeTrailYearCandidates]) {
-    if (names.has(pack.name) || !trailPackOk(pack)) continue;
+    const signature = pack.words.map((word) => word.toUpperCase().replace(/[^A-Z]/g, "")).sort().join("|");
+    if (names.has(pack.name) || signatures.has(signature) || !trailPackOk(pack)) continue;
     names.add(pack.name);
+    signatures.add(signature);
     valid.push(pack);
     if (valid.length === 365) break;
   }
