@@ -1,4 +1,6 @@
 import { branchSets } from "./dataBranch";
+import { microbePacks } from "./data";
+import { trailPackOk } from "./trailLogic";
 import type { TrailPack } from "./trailLogic";
 import { hashSeed, seeded, shuffle } from "./lib";
 
@@ -53,4 +55,17 @@ export const themeTrailYearCandidates: TrailPack[] = (() => {
     }
   }
   return candidates;
+})();
+
+/** The published daily pool is validated up front and capped at 365 distinct themed boards. */
+export const themeTrailYearPacks: TrailPack[] = (() => {
+  const valid: TrailPack[] = [];
+  const names = new Set<string>();
+  for (const pack of [...microbePacks, ...themeTrailYearCandidates]) {
+    if (names.has(pack.name) || !trailPackOk(pack)) continue;
+    names.add(pack.name);
+    valid.push(pack);
+    if (valid.length === 365) break;
+  }
+  return valid;
 })();
