@@ -140,6 +140,13 @@ const ART: Record<GameId, () => ReactNode> = {
     <circle cx={140} cy={42} r={14} fill="#ff9fc2" {...S} /><text x={140} y={49} textAnchor="middle" fontSize={16}>🧠</text>
     <path d="M52 56v4M140 56v4" stroke={INK} strokeWidth={3} strokeLinecap="round" />
   </g>,
+  branch: () => <g>
+    <path d="M100 118V84M100 84L58 56M100 84L142 56M58 56L34 30M58 56L82 30M142 56L118 30M142 56L166 30" fill="none" stroke="#fff" strokeWidth={7} strokeLinecap="round" />
+    <path d="M100 118V84M100 84L142 56M142 56L166 30" fill="none" stroke="#7dffd0" strokeWidth={7} strokeLinecap="round" />
+    {[[34,30],[82,30],[118,30],[58,56],[142,56],[100,84]].map(([x,y],i)=><circle key={i} cx={x} cy={y} r={9} fill="#ffd54a" {...S} strokeWidth={3} />)}
+    <circle cx={166} cy={30} r={11} fill="#7dffd0" {...S} /><path d="M166 24v12M160 30h12" stroke={INK} strokeWidth={3} strokeLinecap="round" />
+    <ellipse cx={100} cy={124} rx={34} ry={8} fill="#3a2a6a" {...S} strokeWidth={3} />
+  </g>,
   bodymap: () => <g>
     <circle cx={100} cy={20} r={14} fill="#ffd9b8" {...S} />
     <path d="M70 38q30-8 60 0 8 4 8 20l-2 38q-2 14-36 14t-36-14l-2-38q0-16 8-20z" fill="#ffd9b8" {...S} />
