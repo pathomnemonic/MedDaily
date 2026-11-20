@@ -52,12 +52,15 @@ describe("Mini Crossword", () => {
     }
   });
   it("generates valid, deterministic grids for many seeds", () => {
-    for (let seed = 1; seed <= 120; seed++) {
+    const uniqueGrids = new Set<string>();
+    for (let seed = 1; seed <= 365; seed++) {
       const cw = makeCrossword(seed);
       expect(isValid(cw), "seed " + seed).toBe(true);
       expect(cw.words.length).toBeGreaterThanOrEqual(6);
       expect(new Set(cw.words.map((w) => w.word)).size).toBe(cw.words.length);
+      uniqueGrids.add(JSON.stringify(cw));
     }
+    expect(uniqueGrids.size).toBe(365);
     expect(JSON.stringify(makeCrossword(5))).toBe(JSON.stringify(makeCrossword(5)));
   });
 });
