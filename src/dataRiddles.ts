@@ -60,7 +60,16 @@ const originalRiddles: Riddle[] = [
   r("Syndrome", "Tetralogy of Fallot", ["I'm the most common cyanotic congenital heart defect after infancy.", "Squatting relieves my spells.", "I include pulmonary stenosis and a ventricular septal defect.", "An overriding aorta and right ventricular hypertrophy complete my four parts."])
 ];
 
-export const riddles: Riddle[] = [...originalRiddles, ...generatedRiddles];
+const seenRiddleAnswers = new Set(originalRiddles.map((item) => item.answer.trim().toLowerCase()));
+export const riddles: Riddle[] = [
+  ...originalRiddles,
+  ...generatedRiddles.filter((item) => {
+    const key = item.answer.trim().toLowerCase();
+    if (seenRiddleAnswers.has(key)) return false;
+    seenRiddleAnswers.add(key);
+    return true;
+  })
+];
 
 /** Four options: the answer plus three same-kind distractors, in a seeded order. */
 export function riddleOptions(riddle: Riddle, rand: () => number): string[] {
