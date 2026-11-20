@@ -402,7 +402,7 @@ function RoomScores({room}:{room:RoomState}){
 
 function StatsPage({player,scope,streak,done}:{player:PlayerData;scope:string;streak:number;done:number}){
   const lvl=levelFor(player.xp??0);
-  const trophies=computeTrophies(player,LISTED.length);
+  const trophies=computeTrophies(player,LISTED.map((game) => game.id));
   const results=player.results.filter(r=>r.scope===scope);
   const perfect=results.filter(r=>r.perfect).length;
   return <div className="stats-page"><section className="profile-card"><Mascot mood="happy" size={84}/><div className="profile-main"><span className="eyebrow">YOUR PROFILE</span><h1>Lv {lvl.level} · {lvl.title}</h1><i className="profile-bar" role="progressbar" aria-valuenow={lvl.pct} aria-valuemin={0} aria-valuemax={100}><span style={{width:lvl.pct+"%"}}/></i><small>{lvl.into} / {lvl.span} XP to the next level</small>
