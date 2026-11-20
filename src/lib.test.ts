@@ -128,13 +128,15 @@ describe("Cell Sketch nonogram clues", () => {
   };
 
   it("gives each hidden picture exactly one solution from its row and column runs", () => {
-    expect(glyphPatterns.length).toBeGreaterThanOrEqual(14);
+    expect(glyphPatterns.length).toBeGreaterThanOrEqual(15);
     expect(new Set(glyphPatterns.map((puzzle) => JSON.stringify(puzzle.pattern))).size).toBe(glyphPatterns.length);
     expect(new Set(glyphPatterns.map((puzzle) => puzzle.name)).size).toBe(glyphPatterns.length);
     for (const puzzle of glyphPatterns) {
       const pattern = puzzle.pattern;
       const width = pattern[0].length;
       expect(width).toBeGreaterThanOrEqual(10);
+      expect(width).toBeLessThanOrEqual(12);
+      expect(pattern.every((row) => row.length === width && row.every((cell) => cell === 0 || cell === 1)), puzzle.name).toBe(true);
       const rowClues = pattern.map(runs);
       const colClues = pattern[0].map((_, c) => runs(pattern.map((row) => row[c])));
       const rowOptions = rowClues.map((clue) =>
