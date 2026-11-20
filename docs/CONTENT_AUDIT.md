@@ -14,7 +14,7 @@ MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blit
 | Labline | 100 prompts | Five-round estimation challenge with cumulative scoring and reference explanations |
 | Association Blitz | 208 unique pairs | 24-card, twelve-pair timed memory board with combo streaks, a 75-second clock, and a time bonus |
 | Anagram Sprint | 111 terms | Five-word, 75-second timed scramble with hints and attempt-based scoring |
-| Cell Sketch | 44 named 5×5 boards (36 distinct shapes, including symmetry variants) + seeded generated daily and Free Play transforms | Row and column run clues; CI verifies one valid solution per board |
+| Cell Sketch | 15 hand-drawn 10–12-cell boards, with seeded rotations/reflections for generated daily and Free Play sets | Row and column run clues; tests verify one valid solution per curated board and that all seven non-identity transforms preserve each board's filled-cell count |
 | What Has More? | 116 comparisons (50 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
 | Letter Rungs | Generated medical ladders (both ends are medical words, 3–5 steps, verified across 120 seeds) | Curated everyday-word ladders were replaced; intermediate steps still use ordinary dictionary words |
 | Seven Cells | 50 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
@@ -27,7 +27,7 @@ MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blit
 | Hoofbeats | 53 clinical prompts, each with 6 to 16 valid answers weighted by approximate real-world prevalence (ten points per percent) | A separate game from Deep Scan: name the most common answer. Weights are editorial teaching estimates of typical epidemiology, not a poll or live player data, and cover most but not all causes. Tests check that shares add to 100 or less, every prompt has a clear leader and a long tail, answers and aliases never collide, and no prompt contains an answer. Needs specialty review. |
 | Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes; 20-second timer; a correct answer keeps the wheel in pass-and-play |
 
-| Theme Trail | 30 themed word packs, each laid out as a bending adjacent-letter board with a board-spanning trail word | Drag or tap to trace terms; bonus words earn hints; generator ported from ChatGPT's Strands-style prototype and tested on every qualifying pack |
+| Theme Trail | 60+ qualifying themed word packs, each laid out as a bending adjacent-letter board with a board-spanning trail word | Drag or tap to trace terms; bonus words earn hints; generator ported from ChatGPT's Strands-style prototype and tested on every qualifying pack |
 | Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |
 | Crossword Clinic | 100+ clue-and-answer entries | Procedurally generated mini-crosswords; tests validate clue hygiene, unique entries, and deterministic valid grids across 120 seeds |
 | Riddle Lab | 50+ riddles | Four-stage progressive clues with four answer choices; tests check clue leakage, unique answers, and distractor availability |
