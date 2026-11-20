@@ -1,3 +1,5 @@
+import { generatedBlackoutCases } from "./dataBlackoutExpansion";
+
 /**
  * Blackout Chart content: short original case reports with the diagnosis hidden. The text never contains the diagnosis's
  * most distinctive word, so the player must work it out from findings, tests and treatment.
@@ -5,7 +7,7 @@
 export interface BlackoutCase { title: string; aliases: string[]; text: string }
 const b = (title: string, aliases: string[], text: string): BlackoutCase => ({ title, aliases, text });
 
-export const blackoutCases: BlackoutCase[] = [
+const originalBlackoutCases: BlackoutCase[] = [
   b("Pulmonary tuberculosis", ["TB", "Tuberculosis"], "A 52-year-old man from a shelter presented with three months of cough, night sweats and a 9 kg weight loss. He had coughed up streaks of blood twice. Chest radiography showed a right upper lobe cavity. Sputum smear revealed acid-fast bacilli, and a nucleic acid test confirmed the organism and showed no rifampin resistance. He was placed in airborne isolation and started on four-drug therapy with rifampin, isoniazid, pyrazinamide and ethambutol. Pyridoxine was added to prevent neuropathy. Contacts were screened."),
   b("Pneumocystis pneumonia", ["PCP", "Pneumocystis jirovecii pneumonia"], "A 34-year-old man with a CD4 count of 40 had two weeks of dry cough and exertional dyspnea. Oxygen saturation fell from 94% at rest to 84% after walking. Lactate dehydrogenase was elevated, and chest imaging showed bilateral ground-glass opacities. Silver stain of bronchoalveolar lavage fluid revealed cysts. He received high-dose trimethoprim-sulfamethoxazole and a steroid taper because his arterial oxygen was low. Antiretroviral therapy was started within two weeks."),
   b("Infective endocarditis", ["Bacterial endocarditis", "Endocarditis"], "A 29-year-old man who injects drugs presented with fever and chills for a week. He had a new holosystolic murmur at the left lower sternal border, splinter hemorrhages and painless nodules on his palms. Three sets of blood cultures grew Staphylococcus aureus. Transthoracic echocardiography showed a vegetation on the tricuspid valve. Septic emboli were visible in both lungs. He was treated with six weeks of intravenous antibiotics and offered addiction treatment."),
@@ -50,3 +52,5 @@ export const blackoutCases: BlackoutCase[] = [
   b("Hemophilia A", ["Hemophilia", "Haemophilia"], "A 3-year-old boy had a swollen, painful knee after minor play, along with large bruises and prolonged bleeding after a dental extraction. His maternal uncle had similar bleeding problems. The prothrombin time and platelet count were normal, while the activated partial thromboplastin time was prolonged and corrected on mixing. Factor VIII activity was below 1%. He started prophylactic infusions of recombinant factor, and joint damage was prevented."),
   b("Anaphylaxis", ["Anaphylactic shock"], "A 22-year-old man developed hives, lip swelling, wheeze and lightheadedness within ten minutes of eating a dessert containing peanuts. His blood pressure was 78/40, and he was tachycardic with stridor. He received intramuscular epinephrine into the lateral thigh, intravenous fluids and oxygen, with repeated dosing for persistent symptoms. He was observed for several hours and discharged with an auto-injector and an allergy referral."),
 ];
+
+export const blackoutCases: BlackoutCase[] = [...originalBlackoutCases, ...generatedBlackoutCases];
