@@ -241,5 +241,5 @@ const rows: Row[] = [
 
 export const labPromptsYearExpansion: LabPrompt[] = rows.map(([id, prompt, value, tolerance, unit, context, source]) => ({
   id, prompt, value, tolerance, unit, context,
-  source: source ?? "Standard adult laboratory reference intervals; ranges vary by assay and laboratory."
+  source: source ?? "Tietz Textbook of Clinical Chemistry and Molecular Diagnostics; reference intervals vary by assay and laboratory."
 }));
