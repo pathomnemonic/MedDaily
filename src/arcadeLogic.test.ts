@@ -261,3 +261,13 @@ describe("Deep Scan matching with parenthetical answers", () => {
     expect(matchAnswer("hypercalcemia", answers)).toMatchObject({ fuzzy: false });
   });
 });
+
+import { deepDiveHorseAward, deepDiveHorsePointsByTier } from "./arcadeLogic";
+describe("Deep Scan horse day scoring", () => {
+  it("mirrors the rarity scoring", () => {
+    expect([1, 2, 3, 4, 5, 6].map(deepDiveHorseAward)).toEqual([100, 85, 60, 30, 15, 10]);
+    expect(deepDiveHorseAward(0)).toBe(0);
+    expect(deepDiveHorseAward(7)).toBe(0);
+    expect([...deepDiveHorsePointsByTier].reverse()).toEqual([10, 15, 30, 60, 85, 100]);
+  });
+});

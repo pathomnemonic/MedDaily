@@ -4,13 +4,15 @@ import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks
 import { glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
+import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDiveHorseAward, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
 import { anteriorMuscles, posteriorMuscles } from "./dataBodyMuscles";
 import { mimeDeck } from "./dataMime";
 import ScaleLab from "./ScaleLab";
 import BranchLab from "./BranchLab";
 import CasefileClinical from "./CasefileClinical";
+import Crossmatch from "./Crossmatch";
+import BlackoutChart from "./BlackoutChart";
 import { fiveLetterWords } from "./dataFiveLetter";
 import { medicalRungWords } from "./dataRungs";
 import { riddles, riddleOptions } from "./dataRiddles";
@@ -43,6 +45,8 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "ladder": return <WordLadder seed={seed} onDone={onDone} />;
     case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
     case "casefile": return <CasefileClinical seed={seed} onDone={onDone} onExit={onExit} practice={practice} />;
+    case "blackout": return <BlackoutChart seed={seed} onDone={onDone} onExit={onExit} />;
+    case "cross": return <Crossmatch seed={seed} onDone={onDone} onExit={onExit} />;
     case "branch": return <BranchLab seed={seed} onDone={onDone} onExit={onExit} />;
     case "scale": return <ScaleLab seed={seed} onDone={onDone} onExit={onExit} />;
     case "dive": return <DeepDive seed={seed} onDone={onDone} onExit={onExit} />;
@@ -100,6 +104,7 @@ function SectionLabel({ children }: { children: ReactNode }) { return <div class
 
 const DIVE_TIERS = ["Skin deep", "Subcutaneous", "Fascia", "Muscle", "Bone", "Marrow"];
 const DIVE_SECONDS = 25;
+const HORSE_FLAVOR = ["The obvious answer. When you hear hoofbeats, think horses.", "Common and correct.", "Reasonable, but not the first thought.", "Getting exotic for a horse day.", "A zebra. Fun, but it scores low today.", "A true zebra. Impressive, but today rewards the obvious."];
 const DIVE_FLAVOR = ["Everyone's first thought.", "A little off the beaten path.", "Past the obvious.", "Not many reach for that one.", "A deep cut. Respect.", "One in a marrow. Almost nobody gets here."];
 interface DiveResult { answer: string | null; tier: number | null; points: number; gamble?: "won" | "lost" }
 const DIVE_GAMBLE_SECONDS = 10;
@@ -120,6 +125,10 @@ function DeepDive({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
   const done = useRef(false);
   const item = prompts[round];
   const current = results[round];
+  /** On horse days (about one day in three) the most common answer scores highest and the capsule rises instead of diving. */
+  const horse = useMemo(() => hashSeed("horse|" + seed) % 3 === 0, [seed]);
+  const award = (tier: number) => (horse ? deepDiveHorseAward(tier) : deepDiveAnswerAward(tier, 0));
+  const better = (candidate: number, existing: number) => (horse ? candidate < existing : candidate > existing);
   const total = results.reduce((sum, r) => sum + r.points, 0);
 
   useEffect(() => { if (!locked && !finished) input.current?.focus({ preventScroll: true }); }, [round, locked, finished]);
@@ -147,10 +156,10 @@ function DeepDive({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
     setMessage(lead + "Half of this scan's points were lost.");
   };
   const goDeeper = () => {
-    if (!locked || !current?.answer || (current.tier ?? 0) >= 6 || current.gamble) return;
+    if (!locked || !current?.answer || (horse ? (current.tier ?? 7) <= 1 : (current.tier ?? 0) >= 6) || current.gamble) return;
     setGambling(true); setLocked(false); setEntry(""); setSeconds(DIVE_GAMBLE_SECONDS);
     sfx("whoosh");
-    setMessage("Go deeper: find a rarer answer in " + DIVE_GAMBLE_SECONDS + " seconds, or lose half of this scan's points.");
+    setMessage((horse ? "Play it safer: find a more common answer in " : "Go deeper: find a rarer answer in ") + DIVE_GAMBLE_SECONDS + " seconds, or lose half of this scan's points.");
   };
 
   const submit = () => {
@@ -164,20 +173,20 @@ function DeepDive({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
       return;
     }
     if (gambling) {
-      if (found.match.tier > (current?.tier ?? 0)) {
-        const upgraded = deepDiveAnswerAward(found.match.tier, 0);
+      if (better(found.match.tier, current?.tier ?? (horse ? 7 : 0))) {
+        const upgraded = award(found.match.tier);
         setResults((all) => all.map((r, i) => i === round ? { answer: found.match.answer, tier: found.match.tier, points: upgraded, gamble: "won" as const } : r));
         setGambling(false); setLocked(true);
         reward(true, null, "+" + (upgraded - (current?.points ?? 0)));
         sfx("badge");
-        setMessage("Deeper! Gamble won.");
+        setMessage(horse ? "More common! Gamble won." : "Deeper! Gamble won.");
       } else {
         reward(false);
-        loseGamble(found.match.answer === current?.answer ? "Same layer. " : "That one is no deeper. ");
+        loseGamble(found.match.answer === current?.answer ? "Same layer. " : horse ? "That one is no more common. " : "That one is no deeper. ");
       }
       return;
     }
-    const points = deepDiveAnswerAward(found.match.tier, 0);
+    const points = award(found.match.tier);
     setResults((all) => [...all.slice(0, round), { answer: found.match.answer, tier: found.match.tier, points }]);
     setLocked(true);
     reward(true, null, "+" + points);
@@ -197,7 +206,7 @@ function DeepDive({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
       if (!done.current) {
         done.current = true;
         const square = ["⬛", "🟦", "🟦", "🟩", "🟨", "🟧", "🟥"];
-        onDone(total, 700, total === 700, "Deep Scan · " + Math.round(total / 5) + " mm deep\n" + results.map((r) => square[r.tier ?? 0]).join("") + "\n🟦 skin → 🟥 marrow");
+        onDone(total, 700, total === 700, "Deep Scan" + (horse ? " · horse day · " : " · ") + Math.round(total / 5) + (horse ? " mm high\n" : " mm deep\n") + results.map((r) => square[r.tier ?? 0]).join("") + "\n🟦 skin → 🟥 marrow");
       }
       return;
     }
@@ -206,16 +215,16 @@ function DeepDive({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
     setSeconds(DIVE_SECONDS);
     setEntry("");
     setLocked(false);
-    setMessage("Next scan. Think past the first obvious answer.");
+    setMessage(horse ? "Next scan. Think of the most common answer." : "Next scan. Think past the first obvious answer.");
   };
 
   const tierNow = locked && current?.tier ? current.tier : null;
   const mmNow = Math.round(total / 5);
   const ui = <div className={"dv" + (locked ? " dv-locked" : "")} role="dialog" aria-label="Deep Scan">
-    <DiveScene tier={tierNow} seed={seed} names={DIVE_TIERS} tag={locked && current?.answer ? current.answer.toUpperCase().slice(0, 18) : ""} />
+    <DiveScene up={horse} tier={tierNow} seed={seed} names={DIVE_TIERS} tag={locked && current?.answer ? current.answer.toUpperCase().slice(0, 18) : ""} />
     <div className="dv-scan" />
     <header className="dv-hud">
-      <div className="dv-chip"><small>DEPTH</small><b>{mmNow}<i> mm</i></b></div>
+      <div className="dv-chip"><small>{horse ? "HEIGHT" : "DEPTH"}</small><b>{mmNow}<i> mm</i></b></div>
       <div className="dv-segs" aria-label={"Scan " + (round + 1) + " of " + prompts.length}>
         <div>{prompts.map((_, i) => <i key={i} className={i === round ? "cur" : ""} style={i < results.length && results[i].tier ? { background: ZONE_COLORS[(results[i].tier ?? 1) - 1] } : i < results.length ? { background: "#4a4f78" } : undefined} />)}</div>
         <span>SCAN {Math.min(round + 1, prompts.length)} OF {prompts.length}</span>
@@ -224,25 +233,25 @@ function DeepDive({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
     </header>
     {onExit && <button className="dv-exit" onClick={onExit} aria-label="Leave Deep Scan">✕</button>}
     {!locked && <section className="dv-q" key={round}>
-      <small>SCAN {round + 1} OF {prompts.length} · {item.scope.toUpperCase()}</small>
+      <small>{horse ? "🐴 HORSE DAY" : "🦓 ZEBRA DAY"} · SCAN {round + 1} OF {prompts.length} · {item.scope.toUpperCase()}</small>
       <h2>{item.prompt}</h2>
-      <p>{gambling ? "▼ GO DEEPER: find a rarer layer or lose half ▼" : "▼ rarer answers dive deeper ▼"}</p>
+      <p>{gambling ? (horse ? "▲ PLAY IT SAFER: a more common answer, or lose half ▲" : "▼ GO DEEPER: find a rarer layer or lose half ▼") : (horse ? "▲ the most common answer rises highest ▲" : "▼ rarer answers dive deeper ▼")}</p>
     </section>}
     {locked && <section className="dv-rev" key={"rev" + round}>
       {current?.answer ? <>
         {(current.tier ?? 0) >= 5 && <div className={"dv-stinger tier-" + current.tier}>{current.tier === 6 ? "ONE IN A MARROW" : "DEEP CUT"}</div>}
         <h3 className="dv-tier" data-text={DIVE_TIERS[(current.tier ?? 1) - 1].toUpperCase()} style={{ color: ZONE_COLORS[(current.tier ?? 1) - 1] }}>{DIVE_TIERS[(current.tier ?? 1) - 1].toUpperCase()}</h3>
         <div className="dv-ans">“{current.answer}”</div>
-        <div className="dv-gain">+{current.points} PTS · DEPTH {Math.round(current.points / 5)} MM{current.gamble === "won" ? " · GAMBLE WON" : current.gamble === "lost" ? " · GAMBLE LOST" : ""}</div>
-        <div className="dv-flavor">{DIVE_FLAVOR[(current.tier ?? 1) - 1]}</div>
-        <p className="dv-note">{(() => { const t = current.tier ?? 1; const same = item.answers.filter((x) => x.tier === t).length; const deeper = item.answers.filter((x) => x.tier > t).sort((x, y) => y.tier - x.tier)[0]; return "One of " + same + " answer" + (same === 1 ? "" : "s") + " at this depth." + (deeper ? " Deeper layers held " + deeper.answer + "." : " Nothing lies deeper."); })()}</p>
+        <div className="dv-gain">+{current.points} PTS · {horse ? "HEIGHT" : "DEPTH"} {Math.round(current.points / 5)} MM{current.gamble === "won" ? " · GAMBLE WON" : current.gamble === "lost" ? " · GAMBLE LOST" : ""}</div>
+        <div className="dv-flavor">{(horse ? HORSE_FLAVOR : DIVE_FLAVOR)[(current.tier ?? 1) - 1]}</div>
+        <p className="dv-note">{(() => { const t = current.tier ?? 1; const same = item.answers.filter((x) => x.tier === t).length; const deeper = item.answers.filter((x) => x.tier > t).sort((x, y) => y.tier - x.tier)[0]; const commoner = item.answers.filter((x) => x.tier < t).sort((x, y) => x.tier - y.tier)[0]; if (horse) return "One of " + same + " answer" + (same === 1 ? "" : "s") + " at this level." + (commoner ? " A more common answer was " + commoner.answer + "." : " Nothing is more common."); return "One of " + same + " answer" + (same === 1 ? "" : "s") + " at this depth." + (deeper ? " Deeper layers held " + deeper.answer + "." : " Nothing lies deeper."); })()}</p>
       </> : <>
         <h3 className="dv-tier" data-text="NO SCAN" style={{ color: "#9aa3d8" }}>NO SCAN</h3>
         <div className="dv-flavor">Some answers: {item.answers.slice().sort((x, y) => x.tier - y.tier).slice(0, 3).map((x) => x.answer).join(" · ")} … and deeper: {item.answers.slice().sort((x, y) => y.tier - x.tier).slice(0, 2).map((x) => x.answer).join(" · ")}</div>
       </>}
       <p className="dv-expl">{item.explanation}</p>
       {message && <p className="dv-msg" aria-live="polite">{message}</p>}
-      {current?.answer && (current.tier ?? 0) < 6 && !current.gamble && <button className="dv-gamble" onClick={goDeeper}>⬇ GO DEEPER · RISK HALF FOR A RARER LAYER</button>}
+      {current?.answer && (horse ? (current.tier ?? 0) > 1 : (current.tier ?? 0) < 6) && !current.gamble && <button className="dv-gamble" onClick={goDeeper}>{horse ? "⬆ PLAY IT SAFER · RISK HALF FOR A MORE COMMON ANSWER" : "⬇ GO DEEPER · RISK HALF FOR A RARER LAYER"}</button>}
       <div className="dv-next"><button onClick={next}>{round === prompts.length - 1 ? "FINISH SCAN" : "NEXT QUESTION"}</button></div>
     </section>}
     {!locked && <footer className="dv-dock">
@@ -254,7 +263,7 @@ function DeepDive({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
         </div>
         <button className="dv-go" type="submit" disabled={!entry.trim()}>DIVE</button>
       </form>
-      <div className="dv-foot"><p aria-live="polite">{message}</p><button type="button" onClick={surface}>{gambling ? "KEEP IT" : "SKIP"}</button></div>
+      <div className="dv-foot"><p aria-live="polite">{horse && message.startsWith("Type one answer") ? "Type one answer. The more obvious it is (and still valid), the higher it rises." : message}</p><button type="button" onClick={surface}>{gambling ? "KEEP IT" : "SKIP"}</button></div>
     </footer>}
   </div>;
 

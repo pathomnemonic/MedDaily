@@ -3,26 +3,11 @@ import { createPortal } from "react-dom";
 import { branchSets, type BranchLeaf } from "./dataBranch";
 import { BRANCH_GUESSES, branchScore, branchSquare, candidatesUnder, pickBranchTarget, sharedDepth } from "./branchLogic";
 import { matchAnswer } from "./arcadeLogic";
+import BranchTree from "./BranchTree";
 import { reward } from "./juice";
 import { sfx } from "./audio";
 
 type Done = (score: number, maxScore: number, perfect: boolean, shareText?: string) => void;
-interface TNode { key: string; name: string; path: string[]; kids: TNode[]; leaf: boolean }
-
-/** Merge the lineages of all guesses into one tree, in the order they were first revealed. */
-function buildTree(guesses: BranchLeaf[]): TNode[] {
-  const roots: TNode[] = [];
-  for (const g of guesses) {
-    let level = roots;
-    g.path.forEach((name, i) => {
-      const key = g.path.slice(0, i + 1).join("/");
-      let node = level.find((n) => n.key === key);
-      if (!node) { node = { key, name, path: g.path.slice(0, i + 1), kids: [], leaf: i === g.path.length - 1 }; level.push(node); }
-      level = node.kids;
-    });
-  }
-  return roots;
-}
 
 /**
  * Branch Lab: a mystery microbe or drug hides in a family tree. Every guess grows the tree and shows how much of its
@@ -43,7 +28,6 @@ export default function BranchLab({ seed, onDone, onExit }: { seed: number; onDo
   useEffect(() => { const el = bodyRef.current; if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" }); }, [/* eslint-disable-line */ guesses.length, over]);
   const won = guesses.some((g) => g.name === target.name);
   const best = guesses.reduce((n, g) => Math.max(n, sharedDepth(g.path, target.path)), 0);
-  const tree = useMemo(() => buildTree(guesses), [guesses]);
   const left = BRANCH_GUESSES - guesses.length;
   const noun = set === "microbe" ? "microbe" : "drug";
 
@@ -90,18 +74,6 @@ export default function BranchLab({ seed, onDone, onExit }: { seed: number; onDo
     onDone(points, 100, won && guesses.length === 1, "Branch Lab · mystery " + noun + (won ? " · " + guesses.length + "/" + BRANCH_GUESSES : " · missed") + "\n" + squares);
   };
 
-  const render = (nodes: TNode[], depth: number): React.ReactNode => <ul className={"bl-list d" + Math.min(depth, 5)}>
-    {nodes.map((n) => {
-      const ancestor = !n.leaf && target.path.slice(0, n.path.length).join("/") === n.key;
-      const hit = n.leaf && n.name === target.name;
-      const cls = "bl-node" + (n.leaf ? (hit ? " hit" : " miss") : ancestor ? " true" : " dead");
-      return <li key={n.key}>
-        <span className={cls}>{n.leaf ? (hit ? "★ " : "✕ ") : ""}{n.name}{ancestor && <b>{candidatesUnder(set, n.path)}</b>}</span>
-        {n.kids.length > 0 && render(n.kids, depth + 1)}
-      </li>;
-    })}
-  </ul>;
-
   const ui = <div className="bl" role="dialog" aria-label="Branch Lab">
     <header className="bl-hud">
       {onExit && <button className="bl-exit" onClick={onExit} aria-label="Leave Branch Lab">✕</button>}
@@ -110,7 +82,7 @@ export default function BranchLab({ seed, onDone, onExit }: { seed: number; onDo
     </header>
     <div className="bl-body" ref={bodyRef}>
       {guesses.length === 0 && <div className="bl-intro"><span>🧫</span><h2>Name the mystery {noun}</h2><p>Every guess grows a family tree. <b className="g">Green</b> branches are real ancestors of the answer, so each miss narrows the search.</p></div>}
-      {render(tree, 0)}
+      <div className="bl-treewrap"><BranchTree set={set} guesses={guesses} target={target} /></div>
       {note && <p className="bl-note" aria-live="polite">{note}</p>}
       {clue && !over && <p className="bl-clue">🔎 {target.clue}</p>}
       {!clue && !over && guesses.length >= 2 && <button className="bl-clue-btn" onClick={() => setClue(true)}>🔎 Reveal a clue (−10 points)</button>}
