@@ -1,3 +1,5 @@
+import { crosswordBankExpansion } from "./dataCrosswordExpansion";
+
 /** Clue bank for Mini Crossword. Answers are 4–8 letters, A–Z only; each clue has exactly one sensible answer. */
 export const crosswordBank: [string, string][] = [
   ["AORTA", "Largest artery in the body"], ["FEMUR", "Longest bone in the body"], ["ULNA", "Forearm bone on the pinky side"], ["RADIUS", "Forearm bone on the thumb side"],
@@ -21,3 +23,5 @@ export const crosswordBank: [string, string][] = [
   ["IRIS", "Colored part of the eye"], ["PUPIL", "Opening in the iris"], ["COCHLEA", "Spiral organ of hearing"], ["MUSCLE", "Tissue that contracts"], ["DENTIN", "Hard tissue under tooth enamel"],
   ["ENAMEL", "Hardest substance in the body"], ["MARROW", "Blood-cell factory inside bones"], ["FASCIA", "Connective tissue sheet around muscles"], ["VEIN", "Vessel returning blood to the heart"], ["VALVE", "One-way door in the heart"]
 ];
+
+crosswordBank.push(...crosswordBankExpansion);
