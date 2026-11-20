@@ -2,7 +2,7 @@
 
 **Snapshot:** November 20, 2026 (gameplay parity iteration)
 
-MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blitz remains implemented but hidden; the retired Triage Order and Next Best Step banks remain in the repository for reference and are not presented as standalone games. Labline, Stat Word, Quad Squad, and Trivia Rumble now each have 365 unique source prompts/boards/questions; the other games still rely on smaller curated banks, procedural variation, or both, so the entire arcade is not yet a 365-day set of unique content for every game.
+MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blitz remains implemented but hidden; the retired Triage Order and Next Best Step banks remain in the repository for reference and are not presented as standalone games. Labline, Stat Word, Quad Squad, Trivia Rumble, Mime Time, and Crossword Clinic now each have 365 unique source prompts/boards/questions; the other games still rely on smaller curated banks, procedural variation, or both, so the entire arcade is not yet a 365-day set of unique content for every game.
 
 ## Curated content currently included
 
