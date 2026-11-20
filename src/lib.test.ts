@@ -104,6 +104,8 @@ describe("additional daily puzzle packs", () => {
         [...word].every((letter) => puzzle.letters.includes(letter))
       )).toBe(true);
       expect(puzzle.words).toContain(puzzle.pangram);
+      expect(new Set(puzzle.pangram.split("")).size).toBe(7);
+      expect(puzzle.letters.every((letter) => puzzle.pangram.includes(letter))).toBe(true);
     }
   });
 
