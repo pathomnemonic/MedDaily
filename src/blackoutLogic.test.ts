@@ -7,14 +7,24 @@ const GENERIC = new Set(["syndrome", "disease", "chronic", "pulmonary", "pregnan
 describe("Blackout Chart content", () => {
   it("has enough cases with unique titles and a sensible length", () => {
     expect(blackoutCases.length).toBeGreaterThanOrEqual(36);
-    expect(new Set(blackoutCases.map((c) => c.title.toLowerCase())).size).toBe(blackoutCases.length);
+    expect(new Set(blackoutCases.map((c) => c.text.toLowerCase())).size).toBe(blackoutCases.length);
     for (const c of blackoutCases) {
       const words = tokenize(c.text).filter((t) => t.kind === "word").length;
       expect(words, c.title).toBeGreaterThanOrEqual(50);
       expect(words, c.title).toBeLessThanOrEqual(130);
     }
   });
-  it("never uses the diagnosis's distinctive words in the case text", () => {
+  it("contains at least 365 cases and can rotate through a year without repeats", () => {
+    expect(blackoutCases.length).toBeGreaterThanOrEqual(365);
+    const seen = new Set<string>();
+    for (let day = 0; day < 365; day++) {
+      const selected = pickBlackoutCase(day);
+      expect(seen.has(selected.text)).toBe(false);
+      seen.add(selected.text);
+    }
+    expect(seen.size).toBe(365);
+  });
+  it("never uses the answer's distinctive words in the case text", () => {
     for (const c of blackoutCases) {
       const body = new Set(tokenize(c.text).filter((t) => t.kind === "word").map((t) => stem(t.text)));
       for (const w of titleWords(c.title)) {
