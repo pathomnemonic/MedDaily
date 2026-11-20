@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { achievementsFor, recordResult, type GameResult, type PlayerData } from "./storage";
+import { achievementsFor, completedToday, recordResult, type GameResult, type PlayerData } from "./storage";
+import { dailyDateKey } from "./lib";
 import type { GameId } from "./lib";
 
 const emptyPlayer = (): PlayerData => ({
@@ -76,5 +77,18 @@ describe("result recording", () => {
     const second = recordResult(first, { ...result("connections", 1), score: 70 });
     expect(second.bests.medle).toBe(55);
     expect(second.bests.connections).toBe(70);
+  });
+});
+
+describe("daily catalog progress", () => {
+  it("can exclude hidden and retired game results from the visible completion count", () => {
+    const player = emptyPlayer();
+    const today = dailyDateKey();
+    player.results = [
+      { ...result("medle", 0), date: today },
+      { ...result("bodymap", 1), date: today }
+    ];
+    expect(completedToday(player, "general")).toBe(2);
+    expect(completedToday(player, "general", ["medle"])).toBe(1);
   });
 });
