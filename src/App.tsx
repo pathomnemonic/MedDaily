@@ -179,7 +179,7 @@ export default function App() {
     return ()=>stop();
   },[roomCode]);
 
-  const doneToday=completedToday(player,scope);
+  const doneToday=completedToday(player,scope,LISTED.map((game)=>game.id));
   const streak=playStreak(player,scope);
   const seedFor=(game:GameId)=>hashSeed(date+"|"+scope+"|"+game);
 
