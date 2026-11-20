@@ -4,7 +4,7 @@ import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks
 import { glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, triviaRumbleResult } from "./arcadeLogic";
+import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateMedicalLadder, letterWordPoints, transformNonogram, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, triviaRumbleResult } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
 import { anteriorMuscles, posteriorMuscles } from "./dataBodyMuscles";
 import { mimeDeck } from "./dataMime";
@@ -1117,7 +1117,16 @@ function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boo
       picks.push(base);
       if (picks.length === 3) break;
     }
-    return picks;
+    if (!generated) return picks;
+    const labels = ["", "90° rotation", "180° rotation", "270° rotation", "mirror", "mirror + 90°", "mirror + 180°", "mirror + 270°"];
+    return picks.map((base, index) => {
+      const transform = hashSeed("cellsketch|" + seed + "|" + index) % 7 + 1;
+      return {
+        ...base,
+        name: base.name + " · " + labels[transform],
+        pattern: transformNonogram(base.pattern, transform)
+      };
+    });
   }, [seed, generated]);
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState<SketchResult[]>([]);
