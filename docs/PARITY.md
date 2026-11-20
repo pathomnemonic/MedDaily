@@ -39,3 +39,12 @@ art, text or code is copied from any of them.
 Render the best existing free version in a headless browser, study the screens, then give the game its own colour world instead of the shared teal card:
 Deep Scan is a pixel-art dive, What Has More? is a bold split-screen, Mime Time is a party card, Crossword Clinic is chart paper. Paywalled references (NYT Games) only show a
 landing page, so use free playable ones (Puzzmo, Weaver) or published screenshots for those formats.
+
+## Rule: never downgrade
+If the best existing version of a game looks worse than ours, keep ours and note it here instead of copying the reference.
+Checked on 2026-11-20 and left unchanged on that basis:
+- Association Blitz vs Memozor memory games: Memozor is a plain card grid on a content page; ours has the animated board, combo and timer HUD.
+- Cell Sketch vs puzzle-nonograms.com: a bare grid with an ad slot; ours has pens, auto-marking and a picture reveal.
+- Letter Rungs vs Weaver: Weaver is clean but flat tiles; ours is a themed ladder.
+- Stat Word vs free Wordle clones (wordlegame.org): plain tiles; ours already has flips and a coloured keyboard.
+No accessible reference was found for Trivia Rumble, Riddle Lab, Casefile Logic or Labline; those stay open until a good one is named.
