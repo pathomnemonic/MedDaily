@@ -327,7 +327,7 @@ import { generateMedicalLadder } from "./arcadeLogic";
 import { medicalRungWords, rungDictionary } from "./dataRungs";
 describe("medical Letter Rungs", () => {
   it("builds valid ladders with medical words at both ends for many seeds", () => {
-    const dictionary = [...ladderDictionary];
+    const dictionary = [...rungDictionary];
     const uniquePaths = new Set<string>();
     for (let seed = 0; seed < 365; seed++) {
       const puzzle = generateMedicalLadder(seed, dictionary, medicalRungWords);
@@ -338,7 +338,7 @@ describe("medical Letter Rungs", () => {
       expect(puzzle!.path.length).toBeLessThanOrEqual(6);
       uniquePaths.add(puzzle!.path.join(">"));
       puzzle!.path.forEach((word, i) => {
-        expect(ladderDictionary.has(word), word).toBe(true);
+        expect(rungDictionary.has(word), word).toBe(true);
         if (i > 0) expect([...word].filter((c, k) => c !== puzzle!.path[i - 1][k])).toHaveLength(1);
       });
     }
