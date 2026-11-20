@@ -147,7 +147,9 @@ describe("Cell Sketch generated variants", () => {
       const filled = original.flat().filter(Boolean).length;
       for (let seed = 1; seed <= 7; seed++) {
         const transformed = transformNonogram(original, seed);
-        expect(transformed.length).toBeGreaterThan(0);
+        const quarterTurn = seed % 2 === 1;
+        expect(transformed.length).toBe(quarterTurn ? original[0].length : original.length);
+        expect(transformed[0].length).toBe(quarterTurn ? original.length : original[0].length);
         expect(transformed.every((row) => row.length === transformed[0].length)).toBe(true);
         expect(transformed.flat().filter(Boolean)).toHaveLength(filled);
         expect(transformed.flat().every((cell) => cell === 0 || cell === 1)).toBe(true);
