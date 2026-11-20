@@ -13,7 +13,7 @@ import { watchStage, resetCombo } from "./juice";
 import { setHapticsEnabled, vibrate } from "./haptics";
 import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } from "./audio";
 import type { GameId } from "./lib";
-import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, PARTY_GAMES } from "./lib";
+import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, PARTY_GAMES, LISTED_GAME_IDS } from "./lib";
 import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
 import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, rankRoomPlayers, submitRoomScore, watchRoom, type RoomState } from "./firebase";
 import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnected } from "./googleDrive";
@@ -50,7 +50,7 @@ const GAMES: GameMeta[] = [
   {id:"ladder",title:"Letter Rungs",subtitle:"One letter at a time",description:"Build a one-letter-at-a-time path from the start word to the finish.",icon:"⌁",wash:"peach",time:"3 min",category:"Word play",difficulty:2},
 ];
 /** Games shown to players. A game with `hidden: true` stays in the code and still opens by id, but is not listed anywhere. */
-const LISTED: GameMeta[] = GAMES.filter(g => !g.hidden);
+const LISTED: GameMeta[] = GAMES.filter(g => !g.hidden && LISTED_GAME_IDS.includes(g.id));
 /** Rotating spotlight: the open-answer and trivia games trade the featured slot each UTC day. */
 const DIFFICULTY_LABEL = ["", "Easy", "Medium", "Hard"] as const;
 /** Three-pip difficulty badge: Easy, Medium, or Hard (rated for a practising clinician, not a beginner). */
