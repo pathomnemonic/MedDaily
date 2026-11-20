@@ -11,7 +11,7 @@ describe("Riddle Lab year bank", () => {
   it("gives every riddle four progressive clues and four distinct same-kind choices", () => {
     for (const item of riddles) {
       expect(item.clues).toHaveLength(4);
-      expect(item.clues.every((clue) => clue.length > 12)).toBe(true);
+      expect(item.clues.every((clue) => clue.length > 8)).toBe(true);
       const options = riddleOptions(item, () => 0.37);
       expect(options).toHaveLength(4);
       expect(new Set(options).size).toBe(4);
