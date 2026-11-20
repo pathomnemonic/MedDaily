@@ -508,8 +508,8 @@ solution:[{suspect:"Ari",location:"Reference Desk",object:"Atlas"},{suspect:"Min
 spellingHivePuzzles.push(...spellingHiveExpansion);
 
 // Expand the playable hive to a full-year rotation using only curated vocabulary.
-// The 50 source boards keep their letter sets; their accepted words are enriched from
-// the shared hive/crossword lexicon. New centers and pangrams create distinct valid boards.
+// The 50 source boards keep their letter sets and curated answers; any short base board
+// is topped up from the shared hive/crossword lexicon. New centers and pangrams create distinct boards.
 {
   const excluded = new Set(["Practice Round", "Capture the Clue", "Tricone Terms"]);
   const base = spellingHivePuzzles.filter((p) => !excluded.has(p.title));
