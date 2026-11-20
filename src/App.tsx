@@ -100,6 +100,7 @@ export default function App() {
   const [activeGame,setActiveGame] = useState<GameId|null>(null);
   const [practice,setPractice] = useState(false);
   const [notice,setNotice] = useState("");
+  useEffect(()=>{ if(!notice) return; const t=window.setTimeout(()=>setNotice(""), /saved|synced|Syncing|Left|imported|added/i.test(notice)?2200:5000); return ()=>window.clearTimeout(t); },[notice]);
   const [installPrompt,setInstallPrompt] = useState<InstallPrompt|null>(null);
   const [startAt,setStartAt] = useState(0);
   const [gameStartedAt,setGameStartedAt] = useState(0);
@@ -294,7 +295,7 @@ export default function App() {
       <button className={screen==="stats"?"active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}><span><Icon name="trophy" size={22}/></span>Trophies</button>
       <button className={screen==="settings"?"active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}><span><Icon name="gear" size={22}/></span>Options</button>
     </nav>
-    {notice&&<button className="notice" onClick={()=>setNotice("")} aria-label="Dismiss message">{notice}<span>×</span></button>}
+    {notice&&<button className="notice" style={{animationDuration:(/saved|synced|Syncing|Left|imported|added/i.test(notice)?2.2:5)+"s"}} onClick={()=>setNotice("")} aria-label="Dismiss message">{notice}<span>×</span></button>}
     {room&&<div className="room-strip"><span className="room-dot" /> <b>ROOM {room.code}</b><span>{room.players.length} players · {room.players.filter(p=>p.finished).length} finished</span><button onClick={()=>setScreen("friends")}>Room details</button><button onClick={closeRoom}>Leave</button></div>}
 
     <main>
