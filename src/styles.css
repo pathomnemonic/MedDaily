@@ -2357,3 +2357,20 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
   .association-card,.association-grid button{height:52px!important}
   .association-hud>div{padding:5px 4px}
 }
+.bo-bar{color:#d8d2c0;letter-spacing:.5px}.bo-bar i{font-style:normal;color:#7a7a7a;font-size:8px;margin-left:2px}
+
+/* Cell Sketch: boards are 10 to 12 cells wide; size cells to fit the screen width and height */
+.nonogram-wrap{--cs:clamp(20px,min(calc((100vw - 100px)/var(--n,5)),calc((100vh - 400px)/var(--r,5))),42px);max-width:100%;overflow:visible}
+.nonogram-col-clues,.nonogram-row{grid-template-columns:28px repeat(var(--n,5),var(--cs))!important;gap:3px!important}
+.nonogram-row{margin-bottom:3px!important}.nonogram-col-clues{margin-bottom:3px!important;font-size:9px!important;line-height:1.1;white-space:pre-line;word-break:break-all}
+.nonogram-cell{width:var(--cs)!important;height:var(--cs)!important;border-radius:5px!important;box-shadow:none!important;font-size:calc(var(--cs) * .45)}
+.nonogram-clue{font-size:9px!important}
+.sketch-art{gap:2px}.sketch-art div{gap:2px}.sketch-art i{width:min(26px,calc((100vw - 90px)/var(--n,5)));height:min(26px,calc((100vw - 90px)/var(--n,5)));border-radius:4px}
+.sketch-art i.on{box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
+.nonogram-wrap{--cs:clamp(18px,min(calc((100vw - 150px)/var(--n,5)),calc((100vh - 470px)/var(--r,5))),40px);margin:8px auto}
+@media(max-width:760px){
+  .cellsketch .ladder-mode-label{display:none}
+  .cellsketch .auto-toggle,.cellsketch .nonogram-actions>span:first-child{display:none}
+  .cellsketch .pen-row{margin:4px 0}.cellsketch .sketch-head{margin:2px 0}
+  .nonogram-actions{justify-content:center}
+}

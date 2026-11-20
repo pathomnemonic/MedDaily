@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { blackoutScore, isStop, pickBlackoutCase, stem, titleWords, tokenize } from "./blackoutLogic";
-import { matchAnswer } from "./arcadeLogic";
+import { editDistance, matchAnswer } from "./arcadeLogic";
 import { reward } from "./juice";
 import { sfx } from "./audio";
 
@@ -41,12 +41,19 @@ export default function BlackoutChart({ seed, onDone, onExit }: { seed: number; 
     const added: Guess[] = [];
     let n = count, msg = "";
     for (const piece of pieces) {
-      const s = stem(piece);
+      let s = stem(piece);
+      if (!countOf(s) && s.length >= 5) {
+        // a typo or near-miss still lands on the one hidden word it clearly means
+        const tol = s.length >= 9 ? 2 : 1;
+        const hidden = [...new Set([...body.filter((t) => t.kind === "word").map((t) => stem(t.text)), ...title.map(stem)])].filter((h) => !revealed.has(h) && !isStop(h) && h !== s);
+        const close = hidden.map((h) => ({ h, d: editDistance(s, h, tol) })).filter((x) => x.d <= tol).sort((a, b) => a.d - b.d);
+        if (close.length && (close.length === 1 || close[0].d < close[1].d)) s = close[0].h;
+      }
       if (isStop(piece)) { msg = "“" + piece + "” is already showing."; continue; }
       if (next.has(s) || guesses.some((g) => stem(g.word) === s)) { msg = "You already tried “" + piece + "”."; continue; }
       next.add(s); n++;
       const hits = countOf(s);
-      added.push({ word: piece, hits });
+      added.push({ word: stem(piece) === s ? piece : piece + " → " + s, hits });
       setLast(s);
       if (hits) { sfx("correct"); } else { sfx("wrong"); }
     }
@@ -95,7 +102,7 @@ export default function BlackoutChart({ seed, onDone, onExit }: { seed: number; 
     const shown = hit(w);
     return shown
       ? <span key={key} className={"bo-word" + (last && stem(w) === last && over === null ? " new" : "") + extra}>{w}</span>
-      : <span key={key} className={"bo-bar" + extra} style={{ width: Math.max(1.5, w.length * 0.6) + "em" }} aria-label={w.length + " letter word"}>{w.length}</span>;
+      : <span key={key} className={"bo-bar" + extra} style={{ width: Math.max(2.4, w.length * 0.62) + "em" }} aria-label={"starts with " + w[0] + ", " + w.length + " letters"}>{w[0].toUpperCase()}<i>{w.length}</i></span>;
   };
   const pts = over === "won" ? blackoutScore(count, hints) : 0;
 

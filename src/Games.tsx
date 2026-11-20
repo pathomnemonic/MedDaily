@@ -4,7 +4,7 @@ import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks
 import { glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
+import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, triviaRumbleResult } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
 import { anteriorMuscles, posteriorMuscles } from "./dataBodyMuscles";
 import { mimeDeck } from "./dataMime";
@@ -688,7 +688,7 @@ function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
     if (guesses.some((g) => normalize(g) === value)) { setNote("You already tried that diagnosis."); return; }
     const next = [...guesses, guess.trim()];
     const answerKey = normalize(item.answer);
-    const correct = value === answerKey || (DOCTORDLE_ALIASES[answerKey] ?? []).some((alias) => normalize(alias) === value);
+    const correct = value === answerKey || (DOCTORDLE_ALIASES[answerKey] ?? []).some((alias) => normalize(alias) === value) || !!matchAnswer(guess, [{ answer: item.answer, aliases: DOCTORDLE_ALIASES[answerKey] ?? [] }]);
     if (correct) reward(true, null, "Diagnosis!"); else reward(false);
     setGuesses(next);
     setGuess("");
@@ -1095,11 +1095,11 @@ function SketchBoard({ item, index, total, seed, onFinished }: { item: SketchIte
   return <div className="game-layout cellsketch" data-own-sfx="true">
     <div className="sketch-head"><span>PICTURE {index + 1} / {total}</span><b>{Math.floor(secs / 60)}:{String(secs % 60).padStart(2, "0")}</b><span>{hints ? "💡 " + hints : "no hints"}</span></div>
     <div className="pen-row" role="radiogroup" aria-label="Pen mode"><span>Pen</span>{([["fill", "● Fill"], ["cross", "× Cross"], ["cycle", "↻ Cycle"]] as const).map(([k, l]) => <button key={k} role="radio" aria-checked={pen === k} className={pen === k ? "on" : ""} onClick={() => setPen(k)}>{l}</button>)}</div>
-    <div className="nonogram-wrap"><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue) ? "clue-complete" : ""}>{clue.length ? clue.join(" ") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue" + (lineSolved(row, rowClues[r]) ? " clue-complete" : "")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={!!result} aria-label={"Row " + (r + 1) + " column " + (c + 1) + ": " + (value === 1 ? "filled" : value === 2 ? "marked empty" : "unknown")} className={"nonogram-cell" + (value === 1 ? " filled-cell" : "") + (value === 2 ? " empty-marked" : "") + (result ? " reveal-cell r" + r : "")} onContextMenu={(e) => { e.preventDefault(); setCell(r, c, value === 2 ? 0 : 2); }} onPointerDown={(e) => { if (e.button === 2) return; e.preventDefault(); painting.current = pen === "fill" ? (value === 1 ? 0 : 1) : pen === "cross" ? (value === 2 ? 0 : 2) : (value + 1) % 3; setCell(r, c, painting.current); vibrate(6); }} onPointerEnter={(e) => { if (painting.current !== null && e.buttons === 1 && value !== painting.current) setCell(r, c, painting.current); }} onPointerUp={() => { painting.current = null; }} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setCell(r, c, (value + 1) % 3); } }}>{value === 1 ? "●" : value === 2 ? "×" : ""}</button>)}</div>)}</div></div>
+    <div className="nonogram-wrap" style={{ "--n": item.pattern[0].length, "--r": item.pattern.length } as React.CSSProperties}><div className="nonogram-col-clues"><span />{colClues.map((clue, i) => <span key={i} className={lineSolved(cells.map((row) => row[i]), clue) ? "clue-complete" : ""}>{clue.length ? clue.join("\n") : "–"}</span>)}</div><div className="nonogram-grid">{cells.map((row, r) => <div className="nonogram-row" key={r}><span className={"nonogram-clue" + (lineSolved(row, rowClues[r]) ? " clue-complete" : "")}>{rowClues[r].length ? rowClues[r].join(" ") : "–"}</span>{row.map((value, c) => <button key={c} disabled={!!result} aria-label={"Row " + (r + 1) + " column " + (c + 1) + ": " + (value === 1 ? "filled" : value === 2 ? "marked empty" : "unknown")} className={"nonogram-cell" + (value === 1 ? " filled-cell" : "") + (value === 2 ? " empty-marked" : "") + (result ? " reveal-cell r" + r : "")} onContextMenu={(e) => { e.preventDefault(); setCell(r, c, value === 2 ? 0 : 2); }} onPointerDown={(e) => { if (e.button === 2) return; e.preventDefault(); painting.current = pen === "fill" ? (value === 1 ? 0 : 1) : pen === "cross" ? (value === 2 ? 0 : 2) : (value + 1) % 3; setCell(r, c, painting.current); vibrate(6); }} onPointerEnter={(e) => { if (painting.current !== null && e.buttons === 1 && value !== painting.current) setCell(r, c, painting.current); }} onPointerUp={() => { painting.current = null; }} onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setCell(r, c, (value + 1) % 3); } }}>{value === 1 ? "●" : value === 2 ? "×" : ""}</button>)}</div>)}</div></div>
     {!result ? <>
       <div className="nonogram-actions" onPointerLeave={() => { painting.current = null; }}><span>It solves itself the moment every clue is met.</span><span className="nonogram-tools"><button className="button button-quiet" onClick={undo} disabled={!history.length}>↶ Undo</button><button className="button button-quiet" onClick={hint}>💡 Hint −8</button><button className="button button-quiet" onClick={giveUp}>Reveal</button></span></div>
       <label className="auto-toggle"><input type="checkbox" checked={autoMark} onChange={(e) => setAutoMark(e.target.checked)} /> Auto-mark × on finished lines · drag across cells to paint · right-click for ×</label>
-    </> : <div className="sketch-reveal"><div className="sketch-art" aria-hidden="true">{item.pattern.map((row, r) => <div key={r}>{row.map((v, c) => <i key={c} className={v ? "on" : ""} style={{ "--h": (r * 38 + c * 11) % 360, animationDelay: (r * 5 + c) * 35 + "ms" } as React.CSSProperties} />)}</div>)}</div>
+    </> : <div className="sketch-reveal"><div className="sketch-art" aria-hidden="true" style={{ "--n": item.pattern[0].length } as React.CSSProperties}>{item.pattern.map((row, r) => <div key={r}>{row.map((v, c) => <i key={c} className={v ? "on" : ""} style={{ "--h": 165 + ((r * 7 + c * 5) % 40), animationDelay: (r * 5 + c) * 35 + "ms" } as React.CSSProperties} />)}</div>)}</div>
       <h3>{item.name.replace(/ ·.*$/, "")}</h3><p>{item.hint}</p><span className={"sketch-score" + (result.solved ? "" : " lost")}>{result.solved ? "Solved in " + result.secs + "s · +" + result.points : "Revealed · +" + result.points}</span>
       <button className="button button-primary full-button" onClick={() => onFinished(result)}>{index + 1 === total ? "See results" : "Next picture ▶"}</button></div>}
   </div>;
@@ -1114,7 +1114,7 @@ function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boo
       const key = base.name.replace(/ ·.*$/, "");
       if (names.has(key)) continue;
       names.add(key);
-      picks.push(generated ? { ...base, pattern: transformNonogram(base.pattern, seed + picks.length) } : base);
+      picks.push(base);
       if (picks.length === 3) break;
     }
     return picks;

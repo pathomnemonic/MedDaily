@@ -57,6 +57,7 @@ export function letterWordPoints(word: string): number {
 }
 
 import { normalize } from "./lib";
+import { MED_SYNONYMS, ROMAN } from "./medSynonyms";
 
 /** Levenshtein distance with an early exit once the distance must exceed `limit`. */
 export function editDistance(a: string, b: string, limit = 3): number {
@@ -95,21 +96,59 @@ function typoDistance(a: string, b: string, limit: number): number {
 }
 
 const GENERIC_TAIL = / (syndrome|disease|disorder|infection|deficiency|poisoning|toxicity|cancer|carcinoma|sign|test)$/;
-/** British/American and Greek-root spelling variants collapse to one form, and doubled letters are forgiven. */
-const canon = (text: string) => text.replace(/ /g, "").replace(/ae/g, "e").replace(/oe/g, "e").replace(/ph/g, "f").replace(/ou(?=r|s)/g, "o").replace(/([a-z])\1+/g, "$1");
-/** Each accepted spelling of a text: with and without a generic tail word like "syndrome", leading articles removed. */
-const spellings = (text: string): string[] => {
-  const bare = normalize(text.replace(/\([^)]*\)/g, " ")).replace(/^(the|a|an) /, "");
-  const full = normalize(text).replace(/^(the|a|an) /, "");
+const GENERIC_WORDS = new Set("syndrome disease disorder infection deficiency poisoning toxicity cancer carcinoma sign test acute chronic primary secondary of the a an and in with to for on by type".split(" "));
+/** Spelling and sound-alike variants collapse to one form (anaemia/anemia, sulphate/sulfate, cough/kof…), and doubled letters are forgiven. */
+const canon = (text: string) => text.replace(/ /g, "").replace(/ae/g, "e").replace(/oe/g, "e").replace(/ph/g, "f").replace(/ou(?=r|s)/g, "o").replace(/ck/g, "k").replace(/c(?![he])/g, "k").replace(/y/g, "i").replace(/z/g, "s").replace(/([a-z0-9])\1+/g, "$1");
+/** Roman numerals standing alone become digits: "type II diabetes" = "type 2 diabetes". */
+const arabic = (text: string) => text.split(" ").map((w, i, all) => (ROMAN[w] && (i > 0 || all.length > 1) && (w.length > 1 || /^(type|grade|stage|class|group|factor|vitamin|phase)$/.test(all[i - 1] ?? "")) ? ROMAN[w] : w)).join(" ");
+
+const synonymIndex = (() => {
+  const index = new Map<string, string[][]>();
+  for (const group of MED_SYNONYMS) for (const term of group) {
+    const key = canon(arabic(normalize(term)));
+    if (key) index.set(key, [...(index.get(key) ?? []), group]);
+  }
+  return index;
+})();
+
+/** Each accepted spelling of a text: with and without a generic tail word like "syndrome", leading articles removed, plus every synonym. */
+const baseSpellings = (text: string): string[] => {
+  const bare = arabic(normalize(text.replace(/\([^)]*\)/g, " "))).replace(/^(the|a|an) /, "");
+  const full = arabic(normalize(text)).replace(/^(the|a|an) /, "");
   const stripped = bare.replace(GENERIC_TAIL, "");
   return [...new Set([full, bare, stripped.length >= 5 ? stripped : bare].map(canon))].filter(Boolean);
 };
+const spellings = (text: string): string[] => {
+  const base = baseSpellings(text);
+  const extra = base.flatMap((form) => (synonymIndex.get(form) ?? []).flatMap((group) => group.flatMap(baseSpellings)));
+  return [...new Set([...base, ...extra])];
+};
+
+const SMALL = new Set("a an the of and in with to for on by or".split(" "));
+/** The meaningful words of a text, in canonical spelling, ignoring joining words. */
+const coreWords = (text: string): string[] => {
+  const words = arabic(normalize(text.replace(/\([^)]*\)/g, " "))).split(" ").filter((w) => w && !SMALL.has(w));
+  const strong = words.filter((w) => !GENERIC_WORDS.has(w));
+  return (strong.length ? strong : words).map(canon).filter(Boolean);
+};
+const tolerance = (len: number) => (len >= 15 ? 4 : len >= 11 ? 3 : len >= 7 ? 2 : len >= 5 ? 1 : 0);
+/** Whether two canonical words are the same word allowing typos; `prefix` also lets a long typed word be the start of the target. */
+function wordDistance(typed: string, target: string, prefix: boolean): number {
+  if (typed === target) return 0;
+  const allowed = Math.min(tolerance(typed.length), tolerance(target.length));
+  if (prefix && typed.length >= 6 && target.length > typed.length && target.startsWith(typed)) return 1;
+  if (typed.length >= 4 && allowed > 0) { const d = typoDistance(typed, target, allowed); if (d <= allowed) return d; }
+  return Infinity;
+}
 
 /**
- * Match free text against a curated answer list, generously. Order of preference:
- *  1. exact match after normalising spelling variants (anaemia/anemia), spacing, hyphens and doubled letters;
+ * Match free text against a curated answer list, as generously as is safe. Order of preference:
+ *  1. exact match after normalising spelling variants, sound-alikes, roman numerals, spacing, hyphens and doubled letters,
+ *     with abbreviations, lay terms and alternate names treated as the same answer (MI = heart attack = myocardial infarction);
  *  2. a typo-tolerant match (swapped letters count as one edit; the allowance grows with word length);
- *  3. the player's text containing a listed answer ("I think it's hyperkalemia").
+ *  3. the player's text containing a listed answer ("I think it's hyperkalemia");
+ *  4. word-by-word matching: the right words in any order ("infarction myocardial"), with typos, or the one
+ *     distinctive word on its own ("tamponade", "mono", a long-enough start of a word).
  * A fuzzy match is only accepted when one answer is strictly closest, so a typo can never be resolved to
  * a sibling answer (hypokalemia vs hyperkalemia).
  */
@@ -120,21 +159,55 @@ export function matchAnswer<T extends AnswerLike>(input: string, answers: readon
   const exact = answers.find((item) => formsOf(item).some((form) => typed.includes(form)));
   if (exact) return { match: exact, fuzzy: false };
   const value = typed[typed.length - 1];
-  if (value.length < 4) return null;
   let best = Infinity, winners: T[] = [];
-  for (const item of answers) {
-    let distance = Infinity;
-    for (const form of formsOf(item)) {
-      if (form.length < 4) continue;
-      const allowed = Math.min(form.length >= 12 ? 3 : form.length >= 8 ? 2 : form.length >= 5 ? 1 : 0, value.length >= 12 ? 3 : value.length >= 8 ? 2 : value.length >= 5 ? 1 : 0);
-      for (const t of typed) { const d = typoDistance(t, form, allowed); if (d <= allowed) distance = Math.min(distance, d); }
+  if (value.length >= 4) {
+    for (const item of answers) {
+      let distance = Infinity;
+      for (const form of formsOf(item)) {
+        if (form.length < 4) continue;
+        const allowed = Math.min(tolerance(form.length), tolerance(value.length));
+        for (const t of typed) { const d = typoDistance(t, form, allowed); if (d <= allowed) distance = Math.min(distance, d); }
+      }
+      if (distance < best) { best = distance; winners = [item]; } else if (distance === best && distance < Infinity) winners.push(item);
     }
-    if (distance < best) { best = distance; winners = [item]; } else if (distance === best && distance < Infinity) winners.push(item);
+    if (winners.length === 1) return { match: winners[0], fuzzy: true };
+    if (winners.length > 1) return null;
+    const inside = answers.map((item) => ({ item, longest: Math.max(0, ...formsOf(item).filter((f) => f.length >= 6 && value.includes(f)).map((f) => f.length)) })).filter((x) => x.longest > 0).sort((x, y) => y.longest - x.longest);
+    if (inside.length && (inside.length === 1 || inside[0].longest > inside[1].longest)) return { match: inside[0].item, fuzzy: true };
   }
-  if (winners.length === 1) return { match: winners[0], fuzzy: true };
-  if (winners.length > 1) return null;
-  const inside = answers.map((item) => ({ item, longest: Math.max(0, ...formsOf(item).filter((f) => f.length >= 6 && value.includes(f)).map((f) => f.length)) })).filter((x) => x.longest > 0).sort((x, y) => y.longest - x.longest);
-  if (inside.length && (inside.length === 1 || inside[0].longest > inside[1].longest)) return { match: inside[0].item, fuzzy: true };
+  // Word-by-word: every distinctive word of the answer is present (any order), then every typed word belongs to the answer.
+  const synonymTexts = (synonymIndex.get(baseSpellings(input)[0] ?? "") ?? []).flat();
+  const typedSets = [input, ...synonymTexts].map((t) => [...new Set(coreWords(t))]).filter((w) => w.length);
+  if (!typedSets.length) return null;
+  const score = (item: T, mode: "covers" | "inside"): number => {
+    let top = Infinity;
+    for (const text of [item.answer, ...(item.aliases ?? [])]) {
+      const words = coreWords(text);
+      if (!words.length) continue;
+      for (const typedWords of typedSets) {
+        const [needles, hay] = mode === "covers" ? [words, typedWords] : [typedWords, words];
+        if (mode === "inside" && !needles.some((w) => w.length >= 6)) continue;
+        let total = 0;
+        for (const w of needles) {
+          let d = Infinity;
+          for (const h of hay) d = Math.min(d, wordDistance(mode === "covers" ? h : w, mode === "covers" ? w : h, mode === "inside"));
+          total += d;
+        }
+        if (total < top) top = total;
+      }
+    }
+    return top;
+  };
+  for (const mode of ["covers", "inside"] as const) {
+    let low = Infinity, picks: T[] = [];
+    for (const item of answers) {
+      const d = score(item, mode);
+      if (d === Infinity) continue;
+      if (d < low) { low = d; picks = [item]; } else if (d === low) picks.push(item);
+    }
+    if (picks.length === 1) return { match: picks[0], fuzzy: true };
+    if (picks.length > 1) return null;
+  }
   return null;
 }
 
