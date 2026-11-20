@@ -10,7 +10,7 @@ describe("Branch Lab lineage maths", () => {
     expect(sharedDepth(a, ["Viruses", "DNA viruses", "Poxviridae", "Variola virus"])).toBe(0);
   });
   it("counts the answers left under a node", () => {
-    expect(candidatesUnder("microbe", [])).toBe(microbeLeaves.length);
+    expect(candidatesUnder("microbe", [])).toBe(branchSets.microbe.length);
     expect(candidatesUnder("microbe", ["Bacteria", "Gram-positive", "Cocci", "Staphylococcus"])).toBe(3);
     expect(candidatesUnder("drug", ["Hematology", "Antiplatelets"])).toBe(2);
   });
@@ -51,5 +51,7 @@ describe("Branch Lab content", () => {
     expect(seen.size).toBe(2);
     expect(BRANCH_GUESSES).toBe(8);
     expect(drugLeaves.length + microbeLeaves.length).toBeGreaterThan(160);
+    expect(branchSets.microbe.length).toBeGreaterThanOrEqual(180);
+    expect(branchSets.drug.length).toBeGreaterThanOrEqual(180);
   });
 });
