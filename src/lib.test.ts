@@ -222,6 +222,7 @@ describe("expanded content integrity", () => {
   it("keeps lab, triage, memory, and microbe records usable", () => {
     expect(new Set(labPrompts.map((item) => item.id)).size).toBe(labPrompts.length);
     expect(labPrompts.every((item) => Number.isFinite(item.value) && item.tolerance >= 0)).toBe(true);
+    expect(labPrompts.every((item) => item.prompt.trim().length > 10 && item.context.trim().length > 10 && item.source.trim().length > 5)).toBe(true);
     expect(new Set(triageCases.map((item) => item.id)).size).toBe(triageCases.length);
     expect(triageCases.every((item) => item.steps.length >= 3)).toBe(true);
     expect(new Set(pairsBank.map((item) => item[0])).size).toBe(pairsBank.length);
