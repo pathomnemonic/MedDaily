@@ -1,5 +1,5 @@
 import { connectionPuzzles, medleWords, microbePacks, pairsBank } from "./data";
-import { ladderDictionary, scrambleWords, wordLadders } from "./dataExtra";
+import { ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { normalize } from "./lib";
 
 /** Shared curated vocabulary for Letter Lab and the intermediate steps in Letter Rungs. */
@@ -7,6 +7,7 @@ export const LETTER_DICTIONARY = [...new Set([
   ...ladderDictionary,
   ...medleWords,
   ...scrambleWords.map(([word]) => word),
+  ...spellingHivePuzzles.flatMap((puzzle) => puzzle.words),
   ...wordLadders.flatMap((ladder) => ladder.path),
   ...pairsBank.map(([term]) => term),
   ...connectionPuzzles.flatMap((board) => board.flatMap((group) => group.words)),
