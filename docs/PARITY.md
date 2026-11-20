@@ -15,7 +15,7 @@ art, text or code is copied from any of them.
 | Seven Cells | Spelling Bee | Hexagon board, shuffle, pangram, rank bar | Rank bar sat below the entry box; bee-themed rank names | **Done**: rank bar moved to the top, medical ranks (Premed to Attending) |
 | What Has More? | Higher or Lower | Two-way comparison, tie option | Small cards, no count-up, no streak | **Done**: full-screen split, count-up reveal, streak, per-round progress |
 | Mime Time | Heads Up / charades | Turns, timer, got/skip | Card was a small box | **Done**: full-screen colour cards, ring timer, green/red flashes, giant buttons |
-| Crossword Clinic | NYT Mini | Grid, clue bar, check/reveal | No solve timer; no custom keyboard | **Partly done**: solve timer added (also in the share text); custom keyboard still open |
+| Crossword Clinic | NYT Mini | Grid, clue bar, check/reveal | No solve timer; no custom keyboard | **Done**: full-screen "chart paper" world (cream ruled paper, serif ink type), clue bar with prev/next, on-screen keyboard, clue drawer, timer in share text |
 | Letter Lab | Boggle | Drag paths, timer, word list | No dice-shake intro; plain tiles | Open |
 | Association Blitz | Memory match | Flip, combo, timer | Single card-back design | Open |
 | Trivia Rumble | Trivia Crack | Wheel, six categories, crowns | Wheel art is plain; no avatars | Open |
@@ -28,10 +28,14 @@ art, text or code is copied from any of them.
 
 ## Cross-cutting changes
 - Play pages use a one-line header (back, badge, title, difficulty, mode switch). The description is on the home card.
-- Full-screen games (Deep Scan, What Has More?, Mime Time) render in a portal over the app shell and have an exit button where a mid-game exit makes sense.
+- Full-screen games (Deep Scan, What Has More?, Mime Time, Crossword Clinic) render in a portal over the app shell and have an exit button where a mid-game exit makes sense.
 - Pixel fonts (Pixelify Sans, Silkscreen) are bundled and cached offline; see `docs/THIRD_PARTY.md`.
 
 ## Suggested order for the open items
-1. Crossword Clinic in-app keyboard (daily-habit game, largest gap on phones).
-2. Trivia Rumble wheel art and Association Blitz card backs.
-3. Remaining plain-card games (Riddle Lab, Casefile, Labline reveal).
+1. Trivia Rumble wheel art and Association Blitz card backs.
+2. Remaining plain-card games (Riddle Lab, Casefile, Labline reveal).
+
+## Method for the remaining games
+Render the best existing free version in a headless browser, study the screens, then give the game its own colour world instead of the shared teal card:
+Deep Scan is a pixel-art dive, What Has More? is a bold split-screen, Mime Time is a party card, Crossword Clinic is chart paper. Paywalled references (NYT Games) only show a
+landing page, so use free playable ones (Puzzmo, Weaver) or published screenshots for those formats.

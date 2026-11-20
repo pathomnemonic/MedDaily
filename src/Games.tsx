@@ -44,7 +44,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "dive": return <DeepDive seed={seed} onDone={onDone} onExit={onExit} />;
     case "trivia": return <TriviaRumble seed={seed} onDone={onDone} />;
     case "trail": return <ThemeTrail seed={seed} onDone={onDone} specialty={specialty} />;
-    case "crossword": return <CrosswordClinic seed={seed} onDone={onDone} />;
+    case "crossword": return <CrosswordClinic seed={seed} onDone={onDone} onExit={onExit} />;
     case "riddle": return <RiddleLab seed={seed} onDone={onDone} />;
     case "bodymap": return <BodyMapBlitz seed={seed} onDone={onDone} />;
     case "mime": return <MimeTime seed={seed} onDone={onDone} />;
@@ -1706,7 +1706,7 @@ function BodyMapBlitz({ seed, onDone }: Props) {
 }
 
 
-function CrosswordClinic({ seed, onDone }: Props) {
+function CrosswordClinic({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
   const cw = useMemo(() => makeCrossword(seed), [seed]);
   const cells = useMemo(() => {
     const map = new Map<string, { letter: string; number?: number }>();
@@ -1786,22 +1786,47 @@ function CrosswordClinic({ seed, onDone }: Props) {
   };
   const clueList = (isAcross: boolean) => cw.words.filter((w) => w.across === isAcross).sort((a, b) => a.number - b.number);
   const filled = [...cells.keys()].filter((k) => entries[k]).length;
-  return <div className="game-layout crossword-game" data-own-sfx="true" onKeyDown={onKey}>
-    <div className="crossword-active"><span>{active ? active.number + (active.across ? " Across" : " Down") : ""}</span><b>{active?.clue}</b></div>
-    <input ref={input} className="crossword-input" aria-label="Type letters for the selected square" autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false} value="" onChange={(e) => { const ch = e.target.value.slice(-1); if (/^[a-zA-Z]$/.test(ch)) type(ch.toUpperCase()); }} onKeyDown={onKey} />
-    <div className="crossword-grid" role="grid" style={{ gridTemplateColumns: "repeat(" + cw.size + ", 1fr)" }}>
+  // Physical keyboards work anywhere on the page while the chart is open.
+  useEffect(() => {
+    if (finished) return;
+    const handler = (e: KeyboardEvent) => { if (e.metaKey || e.ctrlKey || e.altKey) return; if ((e.target as HTMLElement)?.tagName === "INPUT") return; onKey(e as unknown as React.KeyboardEvent); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  });
+  const [showClues, setShowClues] = useState(false);
+  const ordered = [...clueList(true), ...clueList(false)];
+  const gotoClue = (delta: number) => {
+    const i = Math.max(0, ordered.findIndex((w) => w === active));
+    const w = ordered[(i + delta + ordered.length) % ordered.length];
+    setAcross(w.across); setSel({ r: w.row, c: w.col });
+  };
+  const KEYS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+  const ui = <div className="xwp" role="dialog" aria-label="Crossword Clinic">
+    <header className="xwp-top">
+      {onExit && <button className="xwp-icon" onClick={onExit} aria-label="Leave crossword">✕</button>}
+      <div className="xwp-title"><b>Crossword Clinic</b><small>⏱ {clock} · {filled}/{cells.size}</small></div>
+      <div className="xwp-tools"><button onClick={check}>Check</button><button onClick={reveal}>Reveal −5</button><button onClick={() => setShowClues((v) => !v)}>Clues</button></div>
+    </header>
+    <div className="xwp-clue"><button onClick={() => gotoClue(-1)} aria-label="Previous clue">‹</button><div><small>{active ? active.number + (active.across ? " ACROSS" : " DOWN") : ""}</small><b>{active?.clue}</b></div><button onClick={() => gotoClue(1)} aria-label="Next clue">›</button></div>
+    <div className="xwp-board"><div className="crossword-grid xwp-grid" role="grid" style={{ gridTemplateColumns: "repeat(" + cw.size + ", 1fr)" }}>
       {Array.from({ length: cw.size * cw.size }, (_, i) => {
         const r = Math.floor(i / cw.size), c = i % cw.size, k = key(r, c), cell = cells.get(k);
         if (!cell) return <span key={k} className="xw-block" />;
-        const cls = "xw-cell" + (r === sel.r && c === sel.c ? " sel" : activeCells.has(k) ? " in-word" : "") + (wrong.has(k) ? " bad" : "") + (finished ? " done" : "");
+        const cls = "xw-cell" + (r === sel.r && c === sel.c ? " sel" : activeCells.has(k) ? " in-word" : "") + (wrong.has(k) ? " bad" : "");
         return <button key={k} className={cls} role="gridcell" aria-label={"Row " + (r + 1) + " column " + (c + 1) + (cell.number ? ", clue " + cell.number : "") + (entries[k] ? ", " + entries[k] : ", empty")} onClick={() => pickCell(r, c)}>{cell.number && <i>{cell.number}</i>}{entries[k] ?? ""}</button>;
       })}
+    </div></div>
+    {showClues && <div className="xwp-drawer">{[true, false].map((isAcross) => <div key={String(isAcross)}><h4>{isAcross ? "ACROSS" : "DOWN"}</h4>{clueList(isAcross).map((w) => <button key={w.number + String(isAcross)} className={active === w ? "on" : ""} onClick={() => { setAcross(w.across); setSel({ r: w.row, c: w.col }); setShowClues(false); }}><b>{w.number}</b> {w.clue} <small>({w.word.length})</small></button>)}</div>)}</div>}
+    <div className="xwp-keys">
+      {KEYS.map((row, ri) => <div key={row} className="xwp-row">
+        {ri === 2 && <button className="xwp-key wide" onClick={() => setAcross((v) => !v)} aria-label="Switch direction">↔</button>}
+        {[...row].map((ch) => <button key={ch} className="xwp-key" onClick={() => type(ch)}>{ch}</button>)}
+        {ri === 2 && <button className="xwp-key wide" onClick={back} aria-label="Delete">⌫</button>}
+      </div>)}
     </div>
-    <div className="crossword-tools"><span>⏱ {clock} · {filled} / {cells.size} squares</span><span><button className="button button-quiet" onClick={check} disabled={finished}>✔ Check</button><button className="button button-quiet" onClick={reveal} disabled={finished}>💡 Reveal −5</button><button className="button button-quiet" onClick={() => setAcross((v) => !v)} disabled={finished}>↔ Direction</button></span></div>
-    <div className="crossword-clues">
-      {[true, false].map((isAcross) => <div key={String(isAcross)}><SectionLabel>{isAcross ? "ACROSS" : "DOWN"}</SectionLabel>{clueList(isAcross).map((w) => <button key={w.number + String(isAcross)} className={"xw-clue" + (active === w ? " on" : "")} onClick={() => { setAcross(w.across); setSel({ r: w.row, c: w.col }); input.current?.focus({ preventScroll: true }); }}><b>{w.number}</b> {w.clue} <small>({w.word.length})</small></button>)}</div>)}
-    </div>
-    {finished && <Finish title="Grid complete!" detail={reveals ? reveals + " letter" + (reveals > 1 ? "s" : "") + " revealed." : "Solved without a single reveal."} score={Math.max(0, 100 - reveals * 5) + " / 100"} />}
+  </div>;
+  return <div className="game-layout crossword-game" data-own-sfx="true">
+    {!finished ? (typeof document !== "undefined" ? createPortal(ui, document.body) : null) : <Finish title="Grid complete!" detail={reveals ? reveals + " letter" + (reveals > 1 ? "s" : "") + " revealed." : "Solved without a single reveal."} score={Math.max(0, 100 - reveals * 5) + " / 100"} />}
   </div>;
 }
 
