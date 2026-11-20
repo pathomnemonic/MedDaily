@@ -69,7 +69,7 @@ Medical material is for education and entertainment, not patient care or a clini
 
 - Filter shelves (All, Quick, Brain, Words, Clinical, Party), a Surprise me button, and a rotating featured slot that alternates Deep Scan and Trivia Rumble each UTC day. Dx Dash is always featured.
 - A 14-trophy cabinet computed from saved results (`src/achievements.ts`).
-- Mime Time is a pass-the-phone charades game with a 135-prompt deck.
+- Mime Time is a pass-the-phone charades game with a balanced 365-prompt deck across six categories.
 
 - Every game is medical-themed: Deep Scan descends through tissue layers, Letter Rungs ladders start and end on medical words, and Theme Trail packs are medical word themes.
 
