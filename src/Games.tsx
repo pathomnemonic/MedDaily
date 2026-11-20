@@ -1887,7 +1887,33 @@ function ThemeTrail({ seed, onDone, specialty = "general" }: Props) {
       </svg>}
       {grid.flat().map((letter, cell) => {
         const owner = accent(cell), inPath = path.includes(cell);
-        return <button key={cell} data-cell={cell} className={"trail-cell" + (owner ? (owner === puzzle.trail ? " is-trail" : " is-found") : "") + (inPath ? " in-path" : "") + (hintCells.includes(cell) ? " hint" : "")} onPointerDown={(e) => onDown(e, cell)} aria-label={"Letter " + letter}>{letter}</button>;
+        return <button
+          key={cell}
+          data-cell={cell}
+          className={"trail-cell" + (owner ? (owner === puzzle.trail ? " is-trail" : " is-found") : "") + (inPath ? " in-path" : "") + (hintCells.includes(cell) ? " hint" : "")}
+          onPointerDown={(e) => onDown(e, cell)}
+          onKeyDown={(e) => {
+            if (e.key.startsWith("Arrow")) {
+              const row = Math.floor(cell / columns), column = cell % columns;
+              const nextRow = row + (e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0);
+              const nextColumn = column + (e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0);
+              if (nextRow >= 0 && nextRow < rows && nextColumn >= 0 && nextColumn < columns) {
+                e.preventDefault();
+                e.currentTarget.closest(".trail-board")?.querySelector<HTMLButtonElement>('[data-cell="' + (nextRow * columns + nextColumn) + '"]')?.focus();
+              }
+              return;
+            }
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              if (path.length && path[path.length - 1] === cell) { submit(); return; }
+              setPath((current) => current.length ? extendStrandsPath(current, cell, rows, columns) : [cell]);
+              sfx("tap");
+            }
+          }}
+          aria-label={"Row " + (Math.floor(cell / columns) + 1) + ", column " + (cell % columns + 1) + ", letter " + letter}
+          aria-pressed={inPath}
+          aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Enter Space"
+        >{letter}</button>;
       })}
     </div>
     <div className="trail-actions">
