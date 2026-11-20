@@ -50,7 +50,7 @@ describe("local achievement progression", () => {
     player.results = [result("medle", 0, "general"), result("connections", 1, "specialty")];
     expect(achievementsFor(player, "general", 0)[0].earned).toBe(true);
     expect(achievementsFor(player, "specialty", 0)[0].earned).toBe(true);
-    expect(achievementsFor(player, "general", 0, 16)[1].earned).toBe(false);
+    expect(achievementsFor(player, "general", 0)[1].earned).toBe(false);
   });
 
   it("does not unlock Full Arcade using a hidden game's historical result", () => {
