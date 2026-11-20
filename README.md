@@ -8,7 +8,7 @@ A mobile-first medical mini-game arcade built with React, TypeScript, and Vite.
 Twenty-three playable formats span clinical deduction, word games, estimation, spatial logic, trivia, and party play. Every listed game has a daily round and a Free Play mode, selectable directly from the home screen:
 
 - **Clinical reasoning and knowledge:** Differential, Deep Scan, Hoofbeats, Blackout Chart, Crossmatch, Branch Lab, Scale Lab, Casefile Logic, Labline, Trivia Rumble, and Quad Squad.
-- **Word, visual, and logic puzzles:** Stat Word, Specimen Search, Theme Trail, Crossword Clinic, Letter Lab, Seven Cells, Riddle Lab, What Has More?, Association Blitz, Letter Rungs, Anagram Sprint, and Cell Sketch.
+- **Word, visual, and logic puzzles:** Stat Word, Theme Trail, Crossword Clinic, Letter Lab, Seven Cells, Riddle Lab, What Has More?, Association Blitz, Letter Rungs, Anagram Sprint, and Cell Sketch.
 - **Party play:** Mime Time and Trivia Rumble (which also appears in the clinical knowledge group).
 
 Body Map Blitz remains implemented but hidden from the home screen. The retired Triage Order and Next Best Step formats are not part of the current playable catalog.
