@@ -2,7 +2,7 @@
 
 **Snapshot:** November 20, 2026 (gameplay parity iteration)
 
-MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blitz remains implemented but hidden; the retired Triage Order and Next Best Step banks remain in the repository for reference and are not presented as standalone games. The current banks are not yet a 365-day set of unique puzzles for every game.
+MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blitz remains implemented but hidden; the retired Triage Order and Next Best Step banks remain in the repository for reference and are not presented as standalone games. Labline, Stat Word, Quad Squad, and Trivia Rumble now each have 365 unique source prompts/boards/questions; the other games still rely on smaller curated banks, procedural variation, or both, so the entire arcade is not yet a 365-day set of unique content for every game.
 
 ## Curated content currently included
 
@@ -11,7 +11,7 @@ MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blit
 | Stat Word | 365 unique five-letter answers (all real words; any ENABLE dictionary word is a valid guess) | Medical terms; one answer per daily seed |
 | Quad Squad | 365 boards | 160 curated source boards plus 205 deterministic, collision-checked category combinations; every board has four unique categories and 16 unique tiles |
 | Differential | 220 cases | Six-guess typed diagnosis puzzle with progressive clues, common clinical aliases, explanations, and source notes |
-| Labline | 100 prompts | Five-round estimation challenge with cumulative scoring and reference explanations |
+| Labline | 365 unique prompts | Five-round estimation challenge with cumulative scoring and reference explanations |
 | Association Blitz | 208 unique pairs | 24-card, twelve-pair timed memory board with combo streaks, a 75-second clock, and a time bonus |
 | Anagram Sprint | 111 terms | Five-word, 75-second timed scramble with hints and attempt-based scoring |
 | Cell Sketch | 15 hand-drawn 10–12-cell boards, with seeded rotations/reflections for generated daily and Free Play sets | Row and column run clues; tests verify one valid solution per curated board and that all seven non-identity transforms preserve each board's filled-cell count |
