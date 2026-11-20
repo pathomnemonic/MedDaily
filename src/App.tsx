@@ -182,7 +182,7 @@ export default function App() {
   const doneToday=completedToday(player,scope,LISTED.map((game)=>game.id));
   const streak=playStreak(player,scope);
   // Branch Lab uses a sequential UTC-day seed so its alternating organism/drug banks never repeat within a year.
-  const seedFor=(game:GameId)=>game==="branch"
+  const seedFor=(game:GameId)=>game==="branch"||game==="blackout"
     ? Math.floor(Date.parse(date+"T00:00:00Z")/86400000)
     : hashSeed(date+"|"+scope+"|"+game);
 
