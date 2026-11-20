@@ -139,7 +139,7 @@ describe("Cell Sketch nonogram clues", () => {
   };
 
   it("gives each hidden picture exactly one solution from its row and column runs", () => {
-    expect(glyphPatterns.length).toBeGreaterThanOrEqual(15);
+    expect(glyphPatterns.length).toBeGreaterThanOrEqual(24);
     expect(new Set(glyphPatterns.map((puzzle) => JSON.stringify(puzzle.pattern))).size).toBe(glyphPatterns.length);
     expect(new Set(glyphPatterns.map((puzzle) => puzzle.name)).size).toBe(glyphPatterns.length);
     for (const puzzle of glyphPatterns) {
