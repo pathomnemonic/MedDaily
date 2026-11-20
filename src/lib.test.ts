@@ -200,7 +200,7 @@ describe("expanded content integrity", () => {
     }
     expect(deductionCases.length).toBeGreaterThanOrEqual(15);
     expect(labPrompts).toHaveLength(365);
-    expect(pairsBank.length).toBeGreaterThanOrEqual(200);
+    expect(pairsBank.length).toBeGreaterThanOrEqual(365);
     expect(microbePacks.length).toBeGreaterThanOrEqual(68);
     expect(triageCases.length).toBeGreaterThanOrEqual(42);
     expect(medleWords.length).toBeGreaterThanOrEqual(365);
