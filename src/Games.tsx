@@ -1434,7 +1434,18 @@ function MimeTime({ seed, onDone }: Props) {
 
 
 function RiddleLab({ seed, onDone }: Props) {
-  const picks = useMemo(() => shuffle(riddles, seeded(seed + 991)).slice(0, 5), [seed]);
+  const picks = useMemo(() => {
+    const bag = shuffle(riddles, seeded(seed + 991));
+    const selected: typeof riddles = [];
+    const seen = new Set<string>();
+    for (const item of bag) {
+      const key = item.kind + "|" + item.answer.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key); selected.push(item);
+      if (selected.length === 5) break;
+    }
+    return selected;
+  }, [seed]);
   const [round, setRound] = useState(0);
   const [shown, setShown] = useState(1);
   const [gone, setGone] = useState<string[]>([]);
