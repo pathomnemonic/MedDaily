@@ -328,18 +328,21 @@ import { medicalRungWords } from "./dataRungs";
 describe("medical Letter Rungs", () => {
   it("builds valid ladders with medical words at both ends for many seeds", () => {
     const dictionary = [...ladderDictionary];
-    for (let seed = 0; seed < 120; seed++) {
+    const uniquePaths = new Set<string>();
+    for (let seed = 0; seed < 365; seed++) {
       const puzzle = generateMedicalLadder(seed, dictionary, medicalRungWords);
       expect(puzzle, "seed " + seed).not.toBeNull();
       expect(medicalRungWords).toContain(puzzle!.start);
       expect(medicalRungWords).toContain(puzzle!.end);
       expect(puzzle!.path.length).toBeGreaterThanOrEqual(4);
       expect(puzzle!.path.length).toBeLessThanOrEqual(6);
+      uniquePaths.add(puzzle!.path.join(">"));
       puzzle!.path.forEach((word, i) => {
         expect(ladderDictionary.has(word), word).toBe(true);
         if (i > 0) expect([...word].filter((c, k) => c !== puzzle!.path[i - 1][k])).toHaveLength(1);
       });
     }
+    expect(uniquePaths.size).toBe(365);
     expect(generateMedicalLadder(7, dictionary, medicalRungWords)).toEqual(generateMedicalLadder(7, dictionary, medicalRungWords));
   });
 });
