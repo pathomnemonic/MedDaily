@@ -177,7 +177,7 @@ describe("expanded content integrity", () => {
     expect(wordLadders.length).toBeGreaterThanOrEqual(36);
     expect(new Set(wordLadders.map((item) => item.start + "→" + item.end)).size).toBe(wordLadders.length);
     expect(deductionCases.length).toBeGreaterThanOrEqual(15);
-    expect(labPrompts.length).toBeGreaterThanOrEqual(100);
+    expect(labPrompts).toHaveLength(365);
     expect(pairsBank.length).toBeGreaterThanOrEqual(200);
     expect(microbePacks.length).toBeGreaterThanOrEqual(68);
     expect(triageCases.length).toBeGreaterThanOrEqual(42);
@@ -188,6 +188,7 @@ describe("expanded content integrity", () => {
     expect(new Set(higherLowerPairs.map((item) => item.a)).size).toBe(higherLowerPairs.length);
     expect(higherLowerPairs.filter((item) => item.av === item.bv).length).toBeLessThanOrEqual(Math.floor(higherLowerPairs.length * 0.1));
     expect(new Set(labPrompts.map((item) => item.id)).size).toBe(labPrompts.length);
+    expect(new Set(labPrompts.map((item) => item.prompt.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim())).size).toBe(labPrompts.length);
     expect(new Set(pairsBank.map(([term]) => term)).size).toBe(pairsBank.length);
     expect(new Set(microbePacks.map((pack) => pack.name)).size).toBe(microbePacks.length);
     expect(microbePacks.every((pack) => pack.words.every((word) => word.length <= 14))).toBe(true);
