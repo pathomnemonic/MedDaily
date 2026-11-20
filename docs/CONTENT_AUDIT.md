@@ -2,7 +2,7 @@
 
 **Snapshot:** November 20, 2026 (gameplay parity iteration)
 
-MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blitz remains implemented but hidden; the retired Triage Order and Next Best Step banks remain in the repository for reference and are not presented as standalone games. Labline, Stat Word, Quad Squad, Trivia Rumble, Mime Time, and Crossword Clinic now each have 365 unique source prompts/boards/questions; the other games still rely on smaller curated banks, procedural variation, or both, so the entire arcade is not yet a 365-day set of unique content for every game.
+MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blitz remains implemented but hidden; the retired Triage Order and Next Best Step banks remain in the repository for reference and are not presented as standalone games. Labline, Stat Word, Quad Squad, Trivia Rumble, Mime Time, Crossword Clinic, and Seven Cells now each have 365 unique source prompts/boards/questions; the other games still rely on smaller curated banks, procedural variation, or both, so the entire arcade is not yet a 365-day set of unique content for every game.
 
 ## Curated content currently included
 
@@ -17,7 +17,7 @@ MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blit
 | Cell Sketch | 15 hand-drawn 10–12-cell boards, with seeded rotations/reflections for generated daily and Free Play sets | Row and column run clues; tests verify one valid solution per curated board and that all seven non-identity transforms preserve each board's filled-cell count |
 | What Has More? | 116 comparisons (50 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
 | Letter Rungs | Generated medical ladders (both ends are medical words, 3–5 steps, verified across 120 seeds) | Curated everyday-word ladders were replaced; intermediate steps still use ordinary dictionary words |
-| Seven Cells | 50 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
+| Seven Cells | 365 playable seven-letter boards (50 curated bases, 269 center-letter variants, 46 new pangram sets) | Center-letter word hunt with pangram bonus; every board has at least five valid words and a pangram |
 | Casefile Logic | 11 clinical themes of look-alike conditions (75 conditions): cough, meningitis, food-borne diarrhea, fever with rash, anemia, endocrine, toxidromes, stroke localization, chest pain, liver, kidney biopsy | Each case picks three conditions from a theme and asks the player to match patients to causes and clinching findings; clues describe items by clinical features (decodable with (?) at a small cost); a generator guarantees exactly one solution (verified over 400 seeds); one accusation; teaching note per patient. The wording of every condition is checked so that its patient, cause, descriptor and finding share no content words (so nothing can be matched without medical knowledge). The earlier everyday-objects logic puzzle code remains in the repo but is no longer used. Clinical content should get specialty review. |
 | Deep Scan | 79 prompts; nine long-tail banks (60 answers each) plus synonym/abbreviation aliases (`src/dataDeepDiveExtra.ts`) | Modeled on the one-answer-per-question rarity-dive format (see the Krillion clones): seven questions, 25 seconds each, one typed answer; typo-tolerant and space/hyphen-insensitive matching; unlisted answers are retried, not called wrong; tiers are named for tissue layers (skin to marrow) and are editorial, not measured |
 | Scale Lab | 110+ estimation items across five scales (weight, size, volume, count, time) | Four rounds a day (weight, size, time, and a volume-or-count wildcard), two items per round on a fixed log ruler; scoring is log-based with a 25% bullseye window; values are typical adult figures, checked by range and no-leak tests |
@@ -50,7 +50,7 @@ Clinical cases are filtered toward specialties where curated mappings exist, inc
 ## Recommended next content work
 
 Remaining content priorities:
-1. Continue replacing generic Seven Cells entries with clinically meaningful, dictionary-verified words; the playable bank now has 50 boards.
+1. Continue reviewing the generated Seven Cells center-letter variants for balance; the playable rotation now has 365 valid boards.
 2. Expand Cell Sketch and Letter Rungs while preserving one-solution and valid-path checks (Cell Sketch now has 15 original patterns plus seeded rotation/reflection variants; Letter Rungs now has 36 curated paths).
 3. Add specialty-reviewed Quad Squad boards and clinical cases for tracks whose current content falls back to general banks.
 4. Add original/licensed visual material for ECG, imaging, histology, gross pathology, and anatomy recognition.
