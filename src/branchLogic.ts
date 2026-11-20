@@ -1,4 +1,3 @@
-import { hashSeed, seeded } from "./lib";
 import { branchSets, type BranchLeaf, type BranchSet } from "./dataBranch";
 
 export const BRANCH_GUESSES = 8;
