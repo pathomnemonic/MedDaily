@@ -185,8 +185,17 @@ describe("expanded content integrity", () => {
   it("keeps the expanded daily banks large and distributes answer positions", () => {
     expect(connectionPuzzles.length).toBeGreaterThanOrEqual(120);
     expect(spellingHivePuzzles.length).toBeGreaterThanOrEqual(24);
-    expect(wordLadders.length).toBeGreaterThanOrEqual(36);
+    expect(wordLadders).toHaveLength(50);
     expect(new Set(wordLadders.map((item) => item.start + "→" + item.end)).size).toBe(wordLadders.length);
+    for (const ladder of wordLadders) {
+      expect(ladder.path[0]).toBe(ladder.start);
+      expect(ladder.path[ladder.path.length - 1]).toBe(ladder.end);
+      expect(new Set(ladder.path).size).toBe(ladder.path.length);
+      expect(ladder.path.every((word) => ladderDictionary.has(word))).toBe(true);
+      for (let i = 1; i < ladder.path.length; i++) {
+        expect([...ladder.path[i - 1]].filter((letter, index) => letter !== ladder.path[i][index])).toHaveLength(1);
+      }
+    }
     expect(deductionCases.length).toBeGreaterThanOrEqual(15);
     expect(labPrompts).toHaveLength(365);
     expect(pairsBank.length).toBeGreaterThanOrEqual(200);
