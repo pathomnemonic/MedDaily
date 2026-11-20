@@ -61,4 +61,4 @@ Good candidates for later: a layers-of-the-body ordering puzzle and a Fibble-sty
 Skipped as poor fits: fandom "-dle" clones, geography games, arcade titles and the novelty word-ladder games.
 
 ## Casefile wording rule
-A condition's patient description, cause, decoding phrase and finding must share no content words, so a player cannot pair items by matching text. The rule is enforced by `src/clinicalCase.test.ts`.
+A condition's patient description, cause, decoding phrase and finding must share no content words, so a player cannot pair items by matching text. The rule is enforced by `src/clinicalCase.test.ts`, which also rejects shared word roots (for example "Cryptococcus" and "cryptococcal") and shared acronyms. All 75 conditions were additionally reviewed by hand for meaning-level giveaways (for example "after antibiotics" paired with "overgrows when gut flora is disrupted", or two conditions that would both fit one finding); those were rewritten. New conditions should get the same review.
