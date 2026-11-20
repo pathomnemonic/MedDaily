@@ -57,8 +57,9 @@ export const themeTrailYearCandidates: TrailPack[] = (() => {
   return candidates;
 })();
 
-/** The published daily pool is validated up front and capped at 365 distinct themed boards. */
-export const themeTrailYearPacks: TrailPack[] = (() => {
+/** The published daily pool is validated lazily and capped at 365 distinct themed boards. */
+let validatedTrailYearPacks: TrailPack[] | null = null;
+export const getThemeTrailYearPacks = (): TrailPack[] => (validatedTrailYearPacks ??= (() => {
   const valid: TrailPack[] = [];
   const names = new Set<string>();
   for (const pack of [...microbePacks, ...themeTrailYearCandidates]) {
@@ -68,4 +69,4 @@ export const themeTrailYearPacks: TrailPack[] = (() => {
     if (valid.length === 365) break;
   }
   return valid;
-})();
+})());
