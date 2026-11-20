@@ -147,6 +147,18 @@ const ART: Record<GameId, () => ReactNode> = {
     <circle cx={166} cy={30} r={11} fill="#7dffd0" {...S} /><path d="M166 24v12M160 30h12" stroke={INK} strokeWidth={3} strokeLinecap="round" />
     <ellipse cx={100} cy={124} rx={34} ry={8} fill="#3a2a6a" {...S} strokeWidth={3} />
   </g>,
+  cross: () => <g>
+    {[0, 1, 2].map((i) => <g key={i}><rect x={52 + i * 40} y={10} width={30} height={46} rx={8} fill="#fff" {...S} strokeWidth={3} /><rect x={52 + i * 40} y={10} width={30} height={12} rx={6} fill={["#a98bff", "#ff5d6c", "#3fd9a5"][i]} {...S} strokeWidth={3} /></g>)}
+    {[0, 1, 2].map((r) => [0, 1, 2].map((c) => <rect key={r + "-" + c} x={54 + c * 40} y={66 + r * 20} width={26} height={16} rx={4} fill={(r + c) % 2 ? "#7dffd0" : "#fff"} {...S} strokeWidth={2.5} />))}
+    <rect x={14} y={66} width={32} height={16} rx={4} fill="#ffd54a" {...S} strokeWidth={2.5} /><rect x={14} y={86} width={32} height={16} rx={4} fill="#ffd54a" {...S} strokeWidth={2.5} /><rect x={14} y={106} width={32} height={16} rx={4} fill="#ffd54a" {...S} strokeWidth={2.5} />
+  </g>,
+  blackout: () => <g>
+    <rect x={34} y={14} width={132} height={110} rx={8} fill="#fffdf6" {...S} />
+    <rect x={76} y={6} width={48} height={14} rx={5} fill="#c9a46e" {...S} strokeWidth={3} />
+    {[0, 1, 2, 3, 4].map((i) => <rect key={i} x={46} y={34 + i * 17} width={[96, 60, 108, 44, 84][i]} height={11} rx={2} fill="#1a1a1a" />)}
+    <rect x={112} y={51} width={30} height={11} rx={2} fill="#ffd54a" /><text x={127} y={60} textAnchor="middle" fontSize={9} fontFamily="monospace" fill={INK}>Dx</text>
+    <rect x={98} y={96} width={56} height={20} rx={4} fill="none" stroke="#e5484d" strokeWidth={3} transform="rotate(-8 126 106)" /><text x={126} y={110} textAnchor="middle" fontSize={9} fontFamily="monospace" fill="#e5484d" transform="rotate(-8 126 106)">SECRET</text>
+  </g>,
   bodymap: () => <g>
     <circle cx={100} cy={20} r={14} fill="#ffd9b8" {...S} />
     <path d="M70 38q30-8 60 0 8 4 8 20l-2 38q-2 14-36 14t-36-14l-2-38q0-16 8-20z" fill="#ffd9b8" {...S} />

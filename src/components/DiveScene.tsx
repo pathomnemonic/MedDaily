@@ -127,9 +127,9 @@ function buildWorld(W: number, seed: number): HTMLCanvasElement {
   return canvas;
 }
 
-interface Props { tier: number | null; seed: number; tag: string; names: string[] }
+interface Props { tier: number | null; seed: number; tag: string; names: string[]; /** Horse day: the capsule rises toward the surface (with a balloon) instead of diving. */ up?: boolean }
 
-export default function DiveScene({ tier, seed, tag, names }: Props) {
+export default function DiveScene({ tier, seed, tag, names, up = false }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tierRef = useRef<number | null>(tier);
   const lineRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -155,7 +155,8 @@ export default function DiveScene({ tier, seed, tag, names }: Props) {
     const bubbles = Array.from({ length: reduce ? 8 : 26 }, () => ({ x: rnd() * W, y: rnd() * SCENE_H, v: 4 + rnd() * 9, big: rnd() < 0.25 }));
     const birds = [0, 1, 2].map((i) => ({ x: rnd() * W, y: 40 + i * 28 + rnd() * 10, v: 5 + rnd() * 4 }));
     const sparks: { x: number; y: number; vx: number; vy: number; life: number; c: string }[] = [];
-    const state = { sprite: SURFACE - 12, cam: 0, arrived: false, lastTier: tierRef.current, t: 0 };
+    const restY = up ? WORLD_H - 70 : SURFACE - 12;
+    const state = { sprite: restY, cam: up ? WORLD_H - SCENE_H : 0, arrived: false, lastTier: tierRef.current, t: 0 };
     let raf = 0, last = performance.now();
     const spriteX = Math.round(W * 0.3);
     const tapeX = Math.round(W * 0.56);
@@ -165,7 +166,7 @@ export default function DiveScene({ tier, seed, tag, names }: Props) {
       const dt = Math.min(0.05, (now - last) / 1000); last = now; state.t += dt;
       const tr = tierRef.current;
       if (tr !== state.lastTier) { state.lastTier = tr; state.arrived = false; }
-      const target = tr ? markerY(tr) : SURFACE - 12 + Math.sin(state.t * 2) * 2;
+      const target = tr ? markerY(tr) : restY + Math.sin(state.t * 2) * 2;
       const ease = (rate: number) => (reduce ? 1 : 1 - Math.exp(-dt * rate));
       state.sprite += (target - state.sprite) * ease(tr ? 2.2 : 5);
       const camTarget = Math.max(0, Math.min(WORLD_H - SCENE_H, state.sprite - SPRITE_SCREEN_Y));
@@ -195,6 +196,14 @@ export default function DiveScene({ tier, seed, tag, names }: Props) {
       const sx = spriteX + Math.round(Math.sin(state.t * 3) * 1);
       for (let r = 10; r >= 4; r -= 3) { ctx.fillStyle = "rgba(255,255,255,.09)"; for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x * x + y * y <= r * r) ctx.fillRect(sx + x, sy + y, 1, 1); }
       SPRITE.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== " ") { ctx.fillStyle = colors[ch]; ctx.fillRect(sx - 4 + x, sy - 6 + y, 1, 1); } }));
+      if (up) {
+        // A balloon lifts the capsule toward the surface on horse days.
+        const bx = sx, by = sy - 22;
+        ctx.fillStyle = "#24124f"; ctx.fillRect(bx, by + 8, 1, 8);
+        ctx.fillStyle = "#24124f"; for (let y = -7; y <= 7; y++) for (let x = -6; x <= 6; x++) if ((x * x) / 40 + (y * y) / 56 <= 1) ctx.fillRect(bx + x, by + y, 1, 1);
+        ctx.fillStyle = "#ff5d6c"; for (let y = -6; y <= 6; y++) for (let x = -5; x <= 5; x++) if ((x * x) / 28 + (y * y) / 42 <= 1) ctx.fillRect(bx + x, by + y, 1, 1);
+        ctx.fillStyle = "#ffb3bb"; ctx.fillRect(bx - 3, by - 4, 2, 3);
+      }
       ctx.fillStyle = "rgba(255,255,255,.7)";
       for (let i = 0; i < 3; i++) ctx.fillRect(sx - 1 + Math.round(Math.sin(state.t * 5 + i * 2) * 2), sy - 10 - i * 4 - Math.floor((state.t * 10 + i * 3) % 3), 1 + (i % 2), 1 + (i % 2));
       // Arrival burst.
@@ -214,7 +223,7 @@ export default function DiveScene({ tier, seed, tag, names }: Props) {
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [W, seed]);
+  }, [W, seed, up]);
 
   return <div className="dv-scene" aria-hidden="true">
     <canvas ref={canvasRef} className="dv-canvas" />
