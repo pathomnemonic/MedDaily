@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank } from "./data";
-import { glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
+import { glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
 import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateMedicalLadder, letterWordPoints, transformNonogram, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, triviaRumbleResult } from "./arcadeLogic";
@@ -15,7 +15,8 @@ import Crossmatch from "./Crossmatch";
 import BlackoutChart from "./BlackoutChart";
 import Hoofbeats from "./Hoofbeats";
 import { fiveLetterWords } from "./dataFiveLetter";
-import { medicalRungWords } from "./dataRungs";
+import { medicalRungWords, rungDictionary } from "./dataRungs";
+import { LETTER_DICTIONARY } from "./dataLetterDictionary";
 import { riddles, riddleOptions } from "./dataRiddles";
 import { makeCrossword } from "./crosswordGen";
 import { makeTrailPuzzle } from "./trailLogic";
@@ -447,15 +448,6 @@ function TriviaRumble({ seed, onDone }: Props) {
     <p className="rumble-footnote">Original medical question set · local pass-and-play · no account needed</p>
   </div>;
 }
-
-const LETTER_DICTIONARY = [...new Set([
-  ...medleWords,
-  ...scrambleWords.map(([word]) => word),
-  ...wordLadders.flatMap((ladder) => ladder.path),
-  ...pairsBank.map(([term]) => term),
-  ...connectionPuzzles.flatMap((board) => board.flatMap((group) => group.words)),
-  ...microbePacks.flatMap((pack) => pack.words)
-].map((value) => normalize(String(value)).replace(/\s/g, "").toUpperCase()).filter((word) => /^[A-Z]{3,8}$/.test(word)))];
 
 function LetterGridGame({ seed, onDone }: Props) {
   const board = useMemo(() => makeLetterGrid(seed, LETTER_DICTIONARY), [seed]);
@@ -1231,7 +1223,7 @@ function HigherLower({ seed, onDone, onExit }: Props & { onExit?: () => void }) 
 
 
 function WordLadder({ seed, onDone }: Props) {
-  const item = useMemo(() => generateMedicalLadder(seed, [...ladderDictionary], medicalRungWords) ?? wordLadders[seed % wordLadders.length], [seed]);
+  const item = useMemo(() => generateMedicalLadder(seed, [...rungDictionary], medicalRungWords) ?? wordLadders[seed % wordLadders.length], [seed]);
   const [entered, setEntered] = useState<string[]>([item.start]);
   const [text, setText] = useState("");
   const [note, setNote] = useState("Change one letter at a time. Every step must be a real word.");
