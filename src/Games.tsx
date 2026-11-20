@@ -672,8 +672,8 @@ const DOCTORDLE_ALIASES: Record<string, string[]> = {
   "hepatocellular carcinoma": ["hcc"],
   "pheochromocytoma": ["pheo"]
 };
-function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
-  const item = pick(diagnosisCases, seed, specialty, "diagnosis");
+function DoctorDle({ seed, onDone }: Props) {
+  const item = diagnosisCases[Math.abs(Math.trunc(seed)) % diagnosisCases.length];
   const bank = useMemo(() => [...new Set(diagnosisCases.map((c) => c.answer))].sort(), []);
   const [guess, setGuess] = useState("");
   const [guesses, setGuesses] = useState<string[]>([]);
