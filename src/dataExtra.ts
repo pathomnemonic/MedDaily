@@ -524,7 +524,7 @@ spellingHivePuzzles.push(...spellingHiveExpansion);
     const words = [...wordPool].filter((word) =>
       word.length >= 4 && word.includes(center) && [...word].every((letter) => letters.includes(letter))
     ).sort();
-    if (words.length < 6 || !words.includes(pangram)) continue;
+    if (words.length < 5 || !words.includes(pangram)) continue;
     const key = keyOf(letters, center, words);
     if (seen.has(key)) continue;
     seen.add(key);
@@ -533,10 +533,10 @@ spellingHivePuzzles.push(...spellingHiveExpansion);
       letters, center, words, pangram,
       hint: clue
     });
-    if (generated.length === 39) break;
+    if (generated.length === 46) break;
   }
-  if (variants.length !== 276 || generated.length !== 39) {
-    throw new Error("Seven Cells year bank expected 276 center variants and 39 new pangram boards; got " + variants.length + " and " + generated.length);
+  if (variants.length !== 269 || generated.length !== 46) {
+    throw new Error("Seven Cells year bank expected 269 center variants and 46 new pangram boards; got " + variants.length + " and " + generated.length);
   }
   spellingHivePuzzles.push(...variants, ...generated);
 }
