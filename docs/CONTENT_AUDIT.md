@@ -31,7 +31,7 @@ MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blit
 | Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |
 | Crossword Clinic | 100+ clue-and-answer entries | Procedurally generated mini-crosswords; tests validate clue hygiene, unique entries, and deterministic valid grids across 120 seeds |
 | Riddle Lab | 50+ riddles | Four-stage progressive clues with four answer choices; tests check clue leakage, unique answers, and distractor availability |
-| Mime Time | 100+ act-it-out prompts | Pass-the-phone charades across procedures, symptoms, ward life, instruments, specialties, and patient scenarios |
+| Mime Time | 365 unique act-it-out prompts | Pass-the-phone charades across procedures, symptoms, ward life, instruments, specialties, and patient scenarios |
 
 The retired Triage Order bank (42 sequences) and Next Best Step bank remain in source control for reference; neither is exposed as a playable home-catalog game.
 
