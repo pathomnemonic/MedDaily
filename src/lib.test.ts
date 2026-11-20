@@ -78,7 +78,8 @@ describe("content bank sanity", () => {
 describe("additional daily puzzle packs", () => {
   it("keeps the playable Spelling Hive pool medical-focused and title-unique", () => {
     const playable = spellingHivePuzzles.filter((puzzle) => !["Practice Round", "Capture the Clue", "Tricone Terms"].includes(puzzle.title));
-    expect(playable.length).toBeGreaterThanOrEqual(50);
+    expect(playable).toHaveLength(365);
+    expect(playable.every((puzzle) => puzzle.words.length >= 5)).toBe(true);
     expect(new Set(playable.map((puzzle) => puzzle.title)).size).toBe(playable.length);
   });
   it("keeps every Seven Cells bank internally valid", () => {
