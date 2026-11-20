@@ -50,7 +50,7 @@ Clinical cases are filtered toward specialties where curated mappings exist, inc
 ## Recommended next content work
 
 Remaining content priorities:
-1. Continue reviewing the generated Seven Cells center-letter variants for balance; the playable rotation now has 365 valid boards.
+1. Continue editorial review of Seven Cells answer frequency and difficulty. The 365-board rotation now has at least eight accepted words per board, with 50 curated bases, 224 enriched center variants, and 91 additional pangram sets.
 2. Continue expanding Cell Sketch and Letter Rungs while preserving one-solution and valid-path checks (Cell Sketch has 24 original patterns plus seeded transforms; Letter Rungs has 50 curated paths plus procedural medical ladders verified across 120 seeds).
 3. Continue specialty review of Quad Squad and clinical-case mappings. Coverage was broadened for ENT, ophthalmology, allergy, pulmonology, rheumatology, orthopedics, urology, geriatrics, obstetrics, radiology, and other lower-volume tracks; the mappings now draw on more of the curated source bank, but some specialties still need additional original cases.
 4. Add original/licensed visual material for ECG, imaging, histology, gross pathology, and anatomy recognition.
