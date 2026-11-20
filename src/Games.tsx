@@ -532,11 +532,11 @@ function LetterGridGame({ seed, onDone }: Props) {
     })}</div>
     <div className="letter-grid-current"><span>YOUR WORD</span><strong>{currentWord || "—"}</strong><small>{path.length} tiles</small></div>
     <div className="letter-grid-controls"><button className="button button-soft" onClick={() => setPath((current) => current.slice(0, -1))} disabled={ended || !path.length}>Undo</button><button className="button button-quiet" onClick={() => setPath([])} disabled={ended || !path.length}>Clear</button><button className="button button-primary" onClick={submit} disabled={ended || path.length < 3}>Submit word</button></div>
+    {!ended && <button className="button button-quiet full-button" onClick={() => finish(found)}>Finish round</button>}
     <p className="letter-grid-score">{score} pts <span>·</span> {found.length} / {board.words.length} words found</p>
     {!ended ? <>
       <p className="game-feedback" aria-live="polite">{note}</p>
       <div className="letter-grid-found">{found.map((word) => <span key={word}>{word}<b>+{letterWordPoints(word)}</b></span>)}</div>
-      <button className="button button-quiet full-button" onClick={() => finish(found)}>Finish round</button>
     </> : <div className="letter-grid-finale"><h3>{found.length === board.words.length ? "Grid cleared!" : "Round complete"}</h3><strong>{score} / {maximum}</strong><p>{found.length} words found before the clock stopped. The full word list is below.</p><div>{board.words.slice().sort().map((word) => <span key={word} className={found.includes(word) ? "found" : ""}>{word}</span>)}</div></div>}
   </div>;
 }
