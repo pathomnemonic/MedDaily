@@ -11,7 +11,7 @@ const displayTitle = (answer: string): string => answer.split(/\s+/).filter((wor
 /** Keep the answer out of the narrative so the redaction puzzle remains fair. */
 const hideAnswer = (text: string, answer: string): string => {
   let result = (text + " The clinical team correlated the history, examination, laboratory results, and imaging before deciding on the next course of care. The record also summarizes vital signs, treatment response, relevant exposures, and the timing of symptom progression.").replace(/\s+/g, " ").trim();
-  const parts = answer.split(/[^A-Za-z0-9]+/).filter((part) => part.length >= 4 && !titleStopWords.has(part.toLowerCase()));
+  const parts = answer.split(/[^A-Za-z0-9]+/).filter((part) => part.length >= 2 && !titleStopWords.has(part.toLowerCase()));
   for (const part of parts) {
     const variants = new Set([part, part.replace(/ing$/i, ""), part.replace(/ed$/i, ""), part.replace(/es$/i, ""), part.replace(/s$/i, "")].filter((value) => value.length >= 3));
     for (const variant of variants) {
