@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank } from "./data";
-import { deductionCases, glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
+import { glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
 import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
@@ -10,6 +10,7 @@ import { anteriorMuscles, posteriorMuscles } from "./dataBodyMuscles";
 import { mimeDeck } from "./dataMime";
 import ScaleLab from "./ScaleLab";
 import BranchLab from "./BranchLab";
+import CasefileClinical from "./CasefileClinical";
 import { fiveLetterWords } from "./dataFiveLetter";
 import { medicalRungWords } from "./dataRungs";
 import { riddles, riddleOptions } from "./dataRiddles";
@@ -25,7 +26,6 @@ import "@fontsource/silkscreen/latin-700.css";
 import { reward } from "./juice";
 import { sfx } from "./audio";
 import { vibrate } from "./haptics";
-import { generateDeductionCase } from "./logicGenerator";
 
 type Done = (score: number, maxScore: number, perfect: boolean, share?: string) => void;
 type Specialty = "general" | "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
@@ -42,7 +42,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "higher": return <HigherLower seed={seed} onDone={onDone} onExit={onExit} />;
     case "ladder": return <WordLadder seed={seed} onDone={onDone} />;
     case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
-    case "casefile": return <CasefileLogic seed={seed} onDone={onDone} practice={practice} />;
+    case "casefile": return <CasefileClinical seed={seed} onDone={onDone} onExit={onExit} practice={practice} />;
     case "branch": return <BranchLab seed={seed} onDone={onDone} onExit={onExit} />;
     case "scale": return <ScaleLab seed={seed} onDone={onDone} onExit={onExit} />;
     case "dive": return <DeepDive seed={seed} onDone={onDone} onExit={onExit} />;
@@ -1324,83 +1324,6 @@ function wordPoints(word: string, puzzle: { pangram:string }): number {
   const pangram = [...new Set(word)].length === 7 && word === puzzle.pangram ? 7 : 0;
   return base + pangram;
 }
-
-function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
-  const item = useMemo(() => practice || seed % 2 === 1 ? generateDeductionCase(seed) : deductionCases[seed % deductionCases.length], [seed, practice]);
-  const blank = () => Object.fromEntries(item.suspects.map((suspect) => [suspect, { location:"", object:"" }]));
-  const [assignments, setAssignments] = useState(blank);
-  const [pencilMarks, setPencilMarks] = useState<Record<string, "possible" | "excluded">>({});
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
-  const [hintsUsed, setHintsUsed] = useState(0);
-  const [hints, setHints] = useState<string[]>([]);
-  const [note, setNote] = useState("Use the clues to assign one unique room and one unique item to each person.");
-  const update = (suspect: string, field: "location"|"object", value: string) => {
-    if (submitted) return;
-    const duplicate = item.suspects.some((other) => other !== suspect && assignments[other][field] === value);
-    if (value && duplicate) {
-      setNote("Each " + field + " can only be assigned once. Choose a different one.");
-      return;
-    }
-    setAssignments((current) => ({ ...current, [suspect]: { ...current[suspect], [field]: value } }));
-  };
-  const togglePencil = (suspect: string, field: "location" | "object", value: string) => {
-    const key = suspect + "|" + field + "|" + value;
-    setPencilMarks((current) => {
-      const next = { ...current };
-      if (!current[key]) next[key] = "possible";
-      else if (current[key] === "possible") next[key] = "excluded";
-      else delete next[key];
-      return next;
-    });
-  };
-  const revealHint = () => {
-    if (submitted || hintsUsed >= 3) return;
-    const solution = item.solution[Math.floor(hintsUsed / 2)];
-    const hint = hintsUsed % 2 === 0
-      ? solution.suspect + " was in the " + solution.location + "."
-      : solution.suspect + " had the " + solution.object + ".";
-    setHints((current) => [...current, hint]);
-    setHintsUsed((current) => current + 1);
-    setNote("Confirmed relationship revealed. This costs 10 points.");
-  };
-  const check = () => {
-    if (submitted) return;
-    const complete = item.suspects.every((suspect) => assignments[suspect].location && assignments[suspect].object);
-    if (!complete) { setNote("Complete both assignments for all three people first."); return; }
-    const matches = item.solution.reduce((n, solution) => {
-      const current = assignments[solution.suspect];
-      return n + Number(current.location === solution.location) + Number(current.object === solution.object);
-    }, 0);
-    const points = Math.max(0, Math.round(matches / 6 * 100) - hintsUsed * 10);
-    setScore(points);
-    setSubmitted(true);
-    setNote(matches === 6 ? "Every clue fits. Mystery solved." : matches + " of 6 assignments are in the right place. Review the clues and solution.");
-    onDone(points, 100, matches === 6 && hintsUsed === 0);
-  };
-  return <div className="game-layout">
-    <div className="case-banner logic-banner"><span>{practice?"GENERATED FREE-PLAY CASE":seed % 2 === 1 ? "GENERATED DAILY CASE" : "CURATED DAILY CASE"}</span><strong>{item.title}</strong><small>Deduction, not diagnosis · 3×3 logic grid</small></div>
-    <p className="logic-briefing">{item.briefing}</p>
-    <div className="logic-clues"><SectionLabel>CLUE BOARD</SectionLabel>{item.clues.map((clue,i)=><div key={i}><span>{String(i+1).padStart(2,"0")}</span>{clue}</div>)}</div>
-    <div className="logic-hint-tools"><button className="text-button" onClick={revealHint} disabled={submitted || hintsUsed >= 3}>Reveal a confirmed relationship · −10 pts</button><span>{hintsUsed} / 3 hints used</span></div>
-    {hints.length > 0 && <div className="logic-hints">{hints.map((hint,index)=><p key={index}><b>HINT {index+1}</b>{hint}</p>)}</div>}
-    <details className="logic-pencil-board"><summary>Open deduction grid <span>Use pencil marks instead of paper</span></summary><p>Tap a candidate to cycle through unknown, possible, and ruled out. Use these marks to track deductions across both categories; they never change your final assignments.</p><div className="pencil-legend"><span><b>✓</b> Possible</span><span><b>×</b> Ruled out</span><span><b>·</b> Unknown</span></div><div className="pencil-grid"><div className="pencil-head"><b>PERSON</b><b>LOCATION CANDIDATES</b><b>OBJECT CANDIDATES</b></div>{item.suspects.map((suspect)=><div className="pencil-row" key={suspect}><strong>{suspect}</strong><div>{item.locations.map((value)=><button type="button" key={value} className={pencilMarks[suspect+"|location|"+value]??""} onClick={()=>togglePencil(suspect,"location",value)} aria-pressed={Boolean(pencilMarks[suspect+"|location|"+value])} aria-label={suspect+" location "+value+": "+(pencilMarks[suspect+"|location|"+value]??"unknown")}>{pencilMarks[suspect+"|location|"+value]==="possible"?"✓ ":pencilMarks[suspect+"|location|"+value]==="excluded"?"× ":"· "}{value}</button>)}</div><div>{item.objects.map((value)=><button type="button" key={value} className={pencilMarks[suspect+"|object|"+value]??""} onClick={()=>togglePencil(suspect,"object",value)} aria-pressed={Boolean(pencilMarks[suspect+"|object|"+value])} aria-label={suspect+" object "+value+": "+(pencilMarks[suspect+"|object|"+value]??"unknown")}>{pencilMarks[suspect+"|object|"+value]==="possible"?"✓ ":pencilMarks[suspect+"|object|"+value]==="excluded"?"× ":"· "}{value}</button>)}</div></div>)}</div><button type="button" className="text-button" onClick={()=>setPencilMarks({})}>Clear pencil marks</button></details>
-    <div className="logic-table"><div className="logic-table-head"><span>PERSON</span><span>LOCATION</span><span>OBJECT</span></div>
-      {item.suspects.map((suspect) => <div className="logic-table-row" key={suspect}>
-        <strong>{suspect}</strong>
-        <select aria-label={suspect+" location"} disabled={submitted} value={assignments[suspect].location} onChange={(e)=>update(suspect,"location",e.target.value)}>
-          <option value="">Choose…</option>{item.locations.map((v)=><option key={v} value={v}>{v}</option>)}
-        </select>
-        <select aria-label={suspect+" object"} disabled={submitted} value={assignments[suspect].object} onChange={(e)=>update(suspect,"object",e.target.value)}>
-          <option value="">Choose…</option>{item.objects.map((v)=><option key={v} value={v}>{v}</option>)}
-        </select>
-      </div>)}
-    </div>
-    {!submitted ? <button className="button button-primary full-button" onClick={check}>Submit deduction</button> : <Finish title={score===100?"Case cracked":"The solution revealed"} detail={"You got " + score + "% of the assignments correct. " + item.title + " is a fictional deduction puzzle."} score={score+" / 100"}><div className="reveal-groups">{item.solution.map((solution)=><span key={solution.suspect}><b>{solution.suspect}</b>{solution.location} · {solution.object}</span>)}</div></Finish>}
-    <p className="game-feedback" aria-live="polite">{note}</p>
-  </div>;
-}
-
 
 const MIME_SECONDS = 45;
 type MimeStage = "setup" | "ready" | "play" | "between" | "done";
