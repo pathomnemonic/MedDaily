@@ -222,6 +222,12 @@ describe("expanded content integrity", () => {
     expect(medleWords.every((word) => /^[A-Z]{5}$/.test(word))).toBe(true);
     expect(new Set(medleWords).size).toBe(medleWords.length);
     expect(new Set(scrambleWordsExtended.map(([word]) => word)).size).toBe(scrambleWordsExtended.length);
+    const anagramDailyDecks = new Set(Array.from({ length: 365 }, (_, day) =>
+      shuffle(scrambleWordsExtended, seeded(day + 51))
+        .filter(([word]) => word.length >= 5 && word.length <= 11)
+        .slice(0, 5).map(([word]) => word).sort().join("|")
+    ));
+    expect(anagramDailyDecks.size).toBe(365);
     expect(triageCases.every((item) => item.steps.length === 4)).toBe(true);
     expect(diagnosisCases.length).toBeGreaterThanOrEqual(220);
     expect(nextStepCases.length).toBeGreaterThanOrEqual(220);
