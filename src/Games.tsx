@@ -1326,7 +1326,7 @@ function SpellingHive({ seed, onDone }: Props) {
       <button className="button button-soft" onClick={() => setEntry((v) => v.slice(0,-1))} disabled={ended || !entry}>⌫</button>
       <button className="button button-quiet" onClick={() => setEntry("")} disabled={ended}>Clear</button>
     </div>
-    <div className="hive-tools"><button className="text-button" onClick={() => setShuffles((n) => n + 1)}>🔀 Shuffle</button><button className="text-button" onClick={() => { const left = puzzle.words.filter((w) => !found.includes(w)); if (left.length) setStarter(left[Math.floor(Math.random() * left.length)].slice(0, 2) + "…"); }} disabled={ended}>Starter hint</button><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Need a hint?</button><button className="text-button" onClick={finish} disabled={ended}>Finish for today</button></div>
+    <div className="hive-tools"><button className="text-button" onClick={() => setShuffles((n) => n + 1)}>🔀 Shuffle</button><button className="text-button" onClick={() => { const left = puzzle.words.filter((w) => !found.includes(w)); if (left.length) setStarter(left[Math.floor(seeded(seed + 101 + hints * 37)() * left.length)].slice(0, 2) + "…"); }} disabled={ended}>Starter hint</button><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Need a hint?</button><button className="text-button" onClick={finish} disabled={ended}>Finish for today</button></div>
     {hint && <p className="game-feedback">{puzzle.hint}</p>}
     {starter && !ended && <p className="game-feedback">A word still hiding starts with <b>{starter}</b></p>}
     <p className="game-feedback" aria-live="polite">{note}</p>
