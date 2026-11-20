@@ -45,6 +45,15 @@ describe("Branch Lab content", () => {
       for (const l of leaves) for (const group of l.path.slice(0, -1)) expect(answers.has(group.toLowerCase()), group).toBe(false);
     });
   }
+  it("covers 365 consecutive daily seeds without repeating a target", () => {
+    const seen = new Set<string>();
+    for (let day = 0; day < 365; day++) {
+      const pick = pickBranchTarget(day);
+      expect(seen.has(pick.set + ":" + pick.target.name)).toBe(false);
+      seen.add(pick.set + ":" + pick.target.name);
+    }
+    expect(seen.size).toBe(365);
+  });
   it("always picks a valid target and is deterministic; both sets occur", () => {
     const seen = new Set<string>();
     for (let s = 0; s < 300; s++) { const a = pickBranchTarget(s); expect(a.target).toBeDefined(); seen.add(a.set); expect(pickBranchTarget(s).target.name).toBe(a.target.name); }
