@@ -1,4 +1,3 @@
-import { hashSeed } from "./lib";
 import { blackoutCases, type BlackoutCase } from "./dataBlackout";
 
 export type TokenKind = "word" | "num" | "punct" | "space";
@@ -35,7 +34,8 @@ export const isStop = (word: string): boolean => STOP_WORDS.has(word.toLowerCase
 /** Words that make up the diagnosis title (split on spaces and hyphens), each of which must be revealed to win by words. */
 export const titleWords = (title: string): string[] => title.split(/[\s-]+/).filter(Boolean);
 
-export const pickBlackoutCase = (seed: number): BlackoutCase => blackoutCases[hashSeed("blackout|" + seed) % blackoutCases.length];
+/** Daily seeds are UTC day ordinals; sequential indexing guarantees a full year without repeating a case. */
+export const pickBlackoutCase = (seed: number): BlackoutCase => blackoutCases[Math.abs(Math.trunc(seed)) % blackoutCases.length];
 
 /** 100 points up to eight guesses, then 3 fewer per extra guess, minus 8 per hint, never below 15 for a win. */
 export function blackoutScore(guesses: number, hints: number): number {
