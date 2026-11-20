@@ -40,9 +40,10 @@ export function recordResult(data: PlayerData, result: GameResult): PlayerData {
   const next = { ...data, results: [...data.results, result].slice(-1200), bests: { ...data.bests, [result.game]: best } };
   savePlayer(next); return next;
 }
-export function completedToday(data: PlayerData, scope = "general"): number {
+export function completedToday(data: PlayerData, scope = "general", listedGames?: readonly GameId[]): number {
   const today = dailyDateKey();
-  return data.results.filter((r) => r.date === today && r.scope === scope).length;
+  const listed = listedGames ? new Set(listedGames) : null;
+  return data.results.filter((r) => r.date === today && r.scope === scope && (!listed || listed.has(r.game))).length;
 }
 export function playStreak(data: PlayerData, scope?: string): number {
   const days = new Set(data.results.filter((r) => !scope || r.scope === scope).map((r) => r.date));
