@@ -230,9 +230,6 @@ export function associationTimeBonus(secondsRemaining: number): number {
 
 
 export const deepDivePointsByTier = [10, 15, 30, 60, 85, 100] as const;
-/** "Horse day" mirrors the scoring: the most common valid answer scores highest and the rarest scores least. */
-export const deepDiveHorsePointsByTier = [100, 85, 60, 30, 15, 10] as const;
-export const deepDiveHorseAward = (tier: number): number => (Number.isInteger(tier) && tier >= 1 && tier <= 6 ? deepDiveHorsePointsByTier[tier - 1] : 0);
 
 /** Award editorial rarity points without allowing a prompt to exceed 100 points. */
 export function deepDiveAnswerAward(tier: number, currentRoundScore: number): number {

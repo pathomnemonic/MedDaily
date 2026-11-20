@@ -11,7 +11,7 @@ art, text or code is copied from any of them.
 | Branch Lab (new) | Metazooa taxonomy-tree guessing | n/a | n/a | **New**, then re-laid out after viewing the real game: a vertical trunk of proven ancestors ending in a "???" box with wrong guesses branching off where they diverge. Metazooa's pastel styling is plainer than ours, so only its structure was adopted |
 | Crossmatch (new) | PokeDoku and Immaculate Grid style 3x3 | n/a | n/a | **New**: drugs by group and property, specimen-tube headers, close-miss hints, rarity bonus. PokeDoku's look is a plain grey grid with type badges; ours is themed |
 | Blackout Chart (new) | Redactle | n/a | n/a | **New**: original case reports with the diagnosis blacked out; manila folder and patient chart look. Redactle's dark plain UI was not copied |
-| Deep Scan horse day (new) | Noillirk (most-common-answer twist, balloon ascent) | n/a | n/a | **New** for about one day in three: mirrored scoring, rising balloon capsule |
+| Hoofbeats (new) | Noillirk (name the most common answer) | n/a | n/a | **New, separate from Deep Scan**: clinical prompts with prevalence-weighted answers (ten points per percent), a game-show board that flips to reveal every answer, galloping-horses marquee. An earlier horse-day toggle inside Deep Scan was removed |
 | Scale Lab (new) | Magnitude (daily size-estimation game) | n/a | n/a | **New**: medical version with five scales, log scoring, full-screen lab bench |
 | Stat Word | Wordle | Flip reveals, coloured keyboard, share grid | Header pushed the keyboard below the fold | **Done**: compact play header, board and keyboard fit on one phone screen |
 | Quad Squad | Connections | One-away message, mistakes, shuffle, solved bars | Header height only | **Done** (compact header) |
@@ -56,6 +56,9 @@ No accessible reference was found for Trivia Rumble, Riddle Lab, Casefile Logic 
 
 ## Ideas considered from the daily-games survey
 Already covered: Wordle (Stat Word), Connections (Quad Squad), Strands (Theme Trail), Spelling Bee (Seven Cells), Krillion (Deep Scan), Murdle-style logic (Casefile Logic), Magnitude/Fermi (Scale Lab), Picross (Cell Sketch), word ladders (Letter Rungs).
-Built from the survey: Branch Lab (Metazooa-style taxonomy tree), Crossmatch (PokeDoku-style grid), Blackout Chart (case-report Redactle) and Deep Scan horse day (Noillirk-style mirrored scoring).
+Built from the survey: Branch Lab (Metazooa-style taxonomy tree), Crossmatch (PokeDoku-style grid), Blackout Chart (case-report Redactle) and Hoofbeats (Noillirk-style most-common-answer game, built as its own game with questions written for it).
 Good candidates for later: a layers-of-the-body ordering puzzle and a Fibble-style "contaminated sample" twist on Stat Word.
 Skipped as poor fits: fandom "-dle" clones, geography games, arcade titles and the novelty word-ladder games.
+
+## Casefile wording rule
+A condition's patient description, cause, decoding phrase and finding must share no content words, so a player cannot pair items by matching text. The rule is enforced by `src/clinicalCase.test.ts`.
