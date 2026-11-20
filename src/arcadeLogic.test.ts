@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { associationPairPoints, associationTimeBonus, deepDiveAnswerAward, editDistance, generateWordLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
-import { ladderDictionary } from "./dataExtra";
+import { glyphPatterns, ladderDictionary } from "./dataExtra";
 
 describe("Letter Lab grid rules", () => {
   const grid = [
@@ -139,6 +139,23 @@ describe("generated Cell Sketch variants", () => {
   });
 });
 
+
+describe("Cell Sketch generated variants", () => {
+  it("rotates and mirrors every curated board without changing its filled-cell count", () => {
+    for (const puzzle of glyphPatterns) {
+      const original = puzzle.pattern;
+      const filled = original.flat().filter(Boolean).length;
+      for (let seed = 1; seed <= 7; seed++) {
+        const transformed = transformNonogram(original, seed);
+        expect(transformed.length).toBeGreaterThan(0);
+        expect(transformed.every((row) => row.length === transformed[0].length)).toBe(true);
+        expect(transformed.flat().filter(Boolean)).toHaveLength(filled);
+        expect(transformed.flat().every((cell) => cell === 0 || cell === 1)).toBe(true);
+        expect(transformNonogram(original, seed)).toEqual(transformed);
+      }
+    }
+  });
+});
 
 describe("Association Blitz scoring", () => {
   it("rewards streaks without allowing the per-pair bonus to grow without bound", () => {
