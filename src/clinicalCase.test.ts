@@ -46,3 +46,23 @@ describe("clinical case generator", () => {
     expect(decoded).toBeGreaterThan(40);
   });
 });
+
+/** Anything a player could match without medical knowledge: shared words between the texts of one condition. */
+describe("clinical case wording gives nothing away", () => {
+  const STOP = new Set("with without after before from that than this their there were they have been into onto over under also very more most some such only each both other which while where when what whose positive negative elevated raised high higher low lower level levels test tests serum urine patient pattern finding found light disease syndrome caused cause illness".split(" "));
+  const stem = (w: string) => w.toLowerCase().replace(/[^a-z0-9]/g, "").replace(/(ies)$/, "y").replace(/(ing|ed|es|s)$/, "");
+  const words = (s: string) => new Set(s.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !STOP.has(w)).map(stem));
+  const GENERIC_CAUSE_ALT = new Set(["viru", "virus", "artery", "arteri", "cerebral", "adrenal", "immune", "complex", "deposition", "duct", "tumor", "autoantibody", "autoantibodie", "chain", "wall", "aneurysm", "coronary", "bacterial", "bacteria", "organism", "glycosylation", "strain", "pattern", "tricyclic", "antidepressant", "drug", "cell"]);
+  it("shares no content words between a condition's patient, cause, descriptor and finding", () => {
+    const bad: string[] = [];
+    for (const t of clinicalThemes) for (const c of t.conditions) {
+      const parts: [string, string][] = [["patient", c.patient], ["cause", c.cause], ["alt", c.alt], ["finding", c.finding]];
+      for (let i = 0; i < parts.length; i++) for (let j = i + 1; j < parts.length; j++) {
+        const pair = parts[i][0] + "~" + parts[j][0];
+        const shared = [...words(parts[i][1])].filter((w) => words(parts[j][1]).has(w) && !(pair === "cause~alt" && GENERIC_CAUSE_ALT.has(w)));
+        if (shared.length) bad.push(t.id + " | " + c.cause + " | " + pair + ": " + shared.join(","));
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+});

@@ -159,6 +159,14 @@ const ART: Record<GameId, () => ReactNode> = {
     <rect x={112} y={51} width={30} height={11} rx={2} fill="#ffd54a" /><text x={127} y={60} textAnchor="middle" fontSize={9} fontFamily="monospace" fill={INK}>Dx</text>
     <rect x={98} y={96} width={56} height={20} rx={4} fill="none" stroke="#e5484d" strokeWidth={3} transform="rotate(-8 126 106)" /><text x={126} y={110} textAnchor="middle" fontSize={9} fontFamily="monospace" fill="#e5484d" transform="rotate(-8 126 106)">SECRET</text>
   </g>,
+  horses: () => <g>
+    <path d="M44 116 L52 66 Q54 38 82 30 Q100 24 116 34 L134 22 L132 42 Q150 52 150 74 L156 116 Z" fill="#c98a4a" {...S} />
+    <path d="M82 30 Q70 36 66 54" fill="none" stroke={INK} strokeWidth={4} strokeLinecap="round" />
+    <circle cx={112} cy={50} r={5} fill="#fff" {...S} strokeWidth={3} /><circle cx={113} cy={51} r={2} fill={INK} />
+    <ellipse cx={138} cy={84} rx={14} ry={10} fill="#e8b97a" {...S} strokeWidth={3} /><circle cx={134} cy={84} r={2} fill={INK} />
+    {[0, 1, 2].map((i) => <path key={i} d={`M${84 + i * 8} 30 L${88 + i * 8} 14 L${92 + i * 8} 32`} fill="#5a3a1a" {...S} strokeWidth={3} />)}
+    {[0, 1, 2, 3].map((i) => <path key={i} d={`M${160 + i * 7} ${96 + i * 4}h20`} stroke="#fff" strokeWidth={4} strokeLinecap="round" />)}
+  </g>,
   bodymap: () => <g>
     <circle cx={100} cy={20} r={14} fill="#ffd9b8" {...S} />
     <path d="M70 38q30-8 60 0 8 4 8 20l-2 38q-2 14-36 14t-36-14l-2-38q0-16 8-20z" fill="#ffd9b8" {...S} />
