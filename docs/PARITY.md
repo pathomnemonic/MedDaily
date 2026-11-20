@@ -8,6 +8,7 @@ art, text or code is copied from any of them.
 |---|---|---|---|---|
 | Deep Scan | Krillion and clones (rarity dive) | One typed answer, rarity tiers, 25 s timer | Small gauge, no scene, no reveal drama, strict matching | **Done**: full-screen pixel descent, glitch reveal, generous matching, Go-deeper gamble |
 | Body Map Blitz | Anatomy tap-quizzes | Tap targets | Organs only, all-or-nothing | **Done** (muscle maps, proximity scoring), then **unlisted** until a licensed 3D model is found |
+| Branch Lab (new) | Metazooa-style taxonomy-tree guessing | n/a | n/a | **New**: mystery microbe or drug, growing lineage tree, candidates-left counts |
 | Scale Lab (new) | Magnitude (daily size-estimation game) | n/a | n/a | **New**: medical version with five scales, log scoring, full-screen lab bench |
 | Stat Word | Wordle | Flip reveals, coloured keyboard, share grid | Header pushed the keyboard below the fold | **Done**: compact play header, board and keyboard fit on one phone screen |
 | Quad Squad | Connections | One-away message, mistakes, shuffle, solved bars | Header height only | **Done** (compact header) |
@@ -49,3 +50,9 @@ Checked on 2026-11-20 and left unchanged on that basis:
 - Letter Rungs vs Weaver: Weaver is clean but flat tiles; ours is a themed ladder.
 - Stat Word vs free Wordle clones (wordlegame.org): plain tiles; ours already has flips and a coloured keyboard.
 No accessible reference was found for Trivia Rumble, Riddle Lab, Casefile Logic or Labline; those stay open until a good one is named.
+
+## Ideas considered from the daily-games survey
+Already covered: Wordle (Stat Word), Connections (Quad Squad), Strands (Theme Trail), Spelling Bee (Seven Cells), Krillion (Deep Scan), Murdle-style logic (Casefile Logic), Magnitude/Fermi (Scale Lab), Picross (Cell Sketch), word ladders (Letter Rungs).
+Built from the survey: Branch Lab (Metazooa-style taxonomy tree).
+Good candidates for later: a 3x3 drug/disease intersection grid (PokeDoku-style, with a rarity bonus), a case-report Redactle, a layers-of-the-body ordering puzzle, a "think horses" scoring mode for Deep Scan, and a Fibble-style "contaminated sample" twist on Stat Word.
+Skipped as poor fits: fandom "-dle" clones, geography games, arcade titles and the novelty word-ladder games.

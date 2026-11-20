@@ -1,4 +1,4 @@
-export type GameId = "medle" | "connections" | "diagnosis" | "labline" | "pairs" | "splice" | "glyph" | "higher" | "ladder" | "hive" | "casefile" | "dive" | "trivia" | "lettergrid" | "mime" | "riddle" | "bodymap" | "crossword" | "trail" | "scale";
+export type GameId = "medle" | "connections" | "diagnosis" | "labline" | "pairs" | "splice" | "glyph" | "higher" | "ladder" | "hive" | "casefile" | "dive" | "trivia" | "lettergrid" | "mime" | "riddle" | "bodymap" | "crossword" | "trail" | "scale" | "branch";
 // A single UTC calendar day keeps daily puzzles identical across player time zones.
 export const dailyDateKey = (date = new Date()): string => {
   const y = date.getUTCFullYear(), m = String(date.getUTCMonth()+1).padStart(2,"0"), d = String(date.getUTCDate()).padStart(2,"0");
@@ -62,7 +62,7 @@ export function nonogramRuns(line: readonly number[]): number[] {
 }
 
 /** Games where several people racing the same puzzle makes sense (a shared, comparable result). */
-export const PARTY_GAMES: readonly GameId[] = ["medle","connections","diagnosis","labline","pairs","splice","higher","hive","dive","lettergrid","scale"];
+export const PARTY_GAMES: readonly GameId[] = ["medle","connections","diagnosis","labline","pairs","splice","higher","hive","dive","lettergrid","scale","branch"];
 export const normalizeRoomCode = (value: string): string => value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
 /** The same code always yields the same game and puzzle on every device; no server involved. */
 export const roomGame = (code: string): GameId => PARTY_GAMES[hashSeed("game|" + normalizeRoomCode(code)) % PARTY_GAMES.length];
