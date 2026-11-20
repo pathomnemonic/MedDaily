@@ -4,6 +4,8 @@ import { scrambleWordsExpansion2, higherLowerPairsExpansion2 } from "./dataUtili
 import { spellingHiveExpansion, wordLaddersExpansion, deductionCasesExpansion } from "./dataExtraExpansion";
 import { glyphPatternsExpansion } from "./dataGlyphExpansion";
 import { crosswordBank } from "./dataCrossword";
+import { pairsBank } from "./data";
+import { scrambleWordsYearExpansion } from "./dataAnagramYear";
 
 export const glyphPatterns: { name:string; pattern:number[][]; hint:string }[] = [...glyphPatternsExpansion];
 
@@ -64,7 +66,23 @@ export const scrambleWordsExpansion = [
 ["VENTILATION","Movement of air into and out of the lungs"],
 ["VERTIGO","Illusion of movement, often spinning"]
 ] as const;
-export const scrambleWordsExtended = [...scrambleWords, ...scrambleWordsExpansion, ...scrambleWordsExpansion2] as const;
+const pairWordScrambles: [string, string][] = pairsBank
+  .filter(([term]) => /^[A-Za-z]{5,11}$/.test(term))
+  .map(([term, clue]) => [term.toUpperCase(), clue]);
+const allScrambleWords: [string, string][] = [
+  ...scrambleWords.map(([word, clue]) => [word, clue]),
+  ...scrambleWordsExpansion,
+  ...scrambleWordsExpansion2,
+  ...pairWordScrambles,
+  ...scrambleWordsYearExpansion
+];
+const seenScrambleWords = new Set<string>();
+export const scrambleWordsExtended: [string, string][] = allScrambleWords.filter(([word]) => {
+  const key = word.trim().toUpperCase();
+  if (seenScrambleWords.has(key)) return false;
+  seenScrambleWords.add(key);
+  return true;
+});
 
 export const higherLowerPairs = [
   {a:"Red blood cells per µL (approximate)",av:4500,b:"Platelets per µL (approximate)",bv:250,unit:"thousands/µL",explanation:"RBCs are generally present in the millions per microliter; platelets in the hundreds of thousands.",source:"Standard CBC reference intervals."},
