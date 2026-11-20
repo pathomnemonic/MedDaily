@@ -7,6 +7,7 @@ describe("Theme Trail year bank", () => {
     const packs = getThemeTrailYearPacks();
     expect(packs).toHaveLength(365);
     expect(new Set(packs.map((pack) => pack.name)).size).toBe(365);
+    expect(new Set(packs.map((pack) => pack.words.map((word) => word.toUpperCase().replace(/[^A-Z]/g, "")).sort().join("|"))).size).toBe(365);
     for (const pack of packs) expect(trailPackOk(pack), pack.name).toBe(true);
   });
 
