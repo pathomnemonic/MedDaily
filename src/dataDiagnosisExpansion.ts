@@ -3,12 +3,9 @@ import { branchSets } from "./dataBranch";
 import { hashSeed, seeded, shuffle } from "./lib";
 
 const progressiveClues = (clue: string): string[] => {
-  const parts = clue.split(/(?<=[.;])\s+/).map((part) => part.trim()).filter(Boolean);
-  if (parts.length >= 3) return [parts[0], parts.slice(0, 2).join(" "), clue];
-  if (parts.length === 2) return [parts[0], clue, clue];
-  const words = clue.split(/\s+/);
-  const first = Math.max(3, Math.ceil(words.length * 0.38));
-  const second = Math.max(first + 2, Math.ceil(words.length * 0.72));
+  const words = clue.split(/\\s+/);
+  const first = Math.min(words.length - 2, Math.max(3, Math.ceil(words.length * 0.36)));
+  const second = Math.min(words.length - 1, Math.max(first + 2, Math.ceil(words.length * 0.72)));
   return [words.slice(0, first).join(" ") + "…", words.slice(0, second).join(" ") + "…", clue];
 };
 
