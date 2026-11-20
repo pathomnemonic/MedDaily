@@ -66,3 +66,25 @@ describe("clinical case wording gives nothing away", () => {
     expect(bad).toEqual([]);
   });
 });
+
+/** Meaning-level guards: related word forms ("Cryptococcus"/"cryptococcal") and shared acronyms count as overlap too. */
+describe("clinical case wording gives nothing away (word roots and acronyms)", () => {
+  const GENERIC_ROOTS = new Set(["positiv", "negativ", "syndrom"]);
+  const roots = (s: string) => new Set(s.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 7).map((w) => w.slice(0, 7)).filter((r) => !GENERIC_ROOTS.has(r)));
+  const acronyms = (s: string) => new Set((s.match(/\b[A-Z][A-Z0-9]{2,}\b/g) ?? []));
+  const ALLOWED_ACRONYMS = new Set(["MRI", "PCR", "ECG"]);
+  it("shares no word root or acronym between the texts a player could pair", () => {
+    const bad: string[] = [];
+    for (const t of clinicalThemes) for (const c of t.conditions) {
+      const parts: [string, string][] = [["patient", c.patient], ["cause", c.cause], ["alt", c.alt], ["finding", c.finding]];
+      for (let i = 0; i < parts.length; i++) for (let j = i + 1; j < parts.length; j++) {
+        const pair = parts[i][0] + "~" + parts[j][0];
+        if (pair === "cause~alt") continue;
+        const sharedRoots = [...roots(parts[i][1])].filter((r) => roots(parts[j][1]).has(r));
+        const sharedAcr = [...acronyms(parts[i][1])].filter((a) => acronyms(parts[j][1]).has(a) && !ALLOWED_ACRONYMS.has(a));
+        if (sharedRoots.length || sharedAcr.length) bad.push(c.cause + " | " + pair + ": " + [...sharedRoots, ...sharedAcr].join(","));
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+});
