@@ -24,7 +24,7 @@ service cloud.firestore {
         return isMember()
           && !(request.auth.uid in request.resource.data.memberUids)
           && resource.data.memberUids.hasAll(request.resource.data.memberUids)
-          && request.resource.data.memberUids.size() == resource.data.memberUids.size() - 1
+          && request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["memberUids", "updatedAt"]);
       }
 
@@ -62,7 +62,6 @@ service cloud.firestore {
           && request.resource.data.uid == playerUid
           && request.resource.data.keys().hasOnly(["uid", "name", "score", "maxScore", "finished", "perfect"])
           && request.resource.data.name is string
-          && request.resource.data.name.size() >= 1
           && request.resource.data.name.size() <= 20
           && request.resource.data.score == null
           && request.resource.data.maxScore == null
@@ -82,6 +81,7 @@ service cloud.firestore {
           && request.resource.data.maxScore > 0
           && request.resource.data.score <= request.resource.data.maxScore
           && request.resource.data.perfect is bool
+          && (!request.resource.data.perfect || request.resource.data.score == request.resource.data.maxScore)
           && request.resource.data.finished == true;
 
         allow delete: if signedIn() && request.auth.uid == playerUid;

@@ -21,15 +21,16 @@ import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnec
 type Mode = "general" | "specialty";
 type Specialty = "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
 type Screen = "home" | "stats" | "settings" | "friends";
-interface GameMeta { id: GameId; title: string; subtitle: string; description: string; icon: string; wash: string; time: string; category: string; difficulty: 1 | 2 | 3; }
+interface GameMeta { id: GameId; title: string; subtitle: string; description: string; icon: string; wash: string; time: string; category: string; difficulty: 1 | 2 | 3; hidden?: boolean; }
 const GAMES: GameMeta[] = [
 // Ordered by how fun, impressive, and replayable each game is (best first). The home grid follows this order.
   {id:"medle",title:"Stat Word",subtitle:"The five-letter rounds",description:"Find the hidden medical word in six guesses.",icon:"▦",wash:"mint",time:"2 min",category:"Word play",difficulty:2},
   {id:"diagnosis",title:"Differential",subtitle:"Name the diagnosis",description:"Solve a clinical case in six guesses as clues unlock.",icon:"✚",wash:"peach",time:"3 min",category:"Diagnosis game",difficulty:3},
   {id:"trivia",title:"Trivia Rumble",subtitle:"Spin. Answer. Collect badges.",description:"A six-category trivia wheel with solo and pass-and-play modes.",icon:"🎡",wash:"orange",time:"8–12 min",category:"Party quiz",difficulty:1},
   {id:"dive",title:"Deep Scan",subtitle:"Go past the obvious",description:"Seven timed open questions, one typed answer each. Common answers stop at the skin; rare ones reach the marrow.",icon:"🩻",wash:"blue",time:"4 min",category:"Open-answer trivia",difficulty:3},
+  {id:"scale",title:"Scale Lab",subtitle:"How big is it, really?",description:"Place organs, cells, doses and lifespans on a ruler where every notch is ten times bigger. The closer you land, the more you score.",icon:"📏",wash:"gold",time:"3 min",category:"Estimation",difficulty:2},
   {id:"connections",title:"Quad Squad",subtitle:"Think in fours",description:"Sort sixteen terms into four hidden medical families.",icon:"⊞",wash:"lilac",time:"4 min",category:"Pattern logic",difficulty:3},
-  {id:"bodymap",title:"Body Map Blitz",subtitle:"Tap the structure. Fast.",description:"Tap organs and named muscles on front and back body maps. Land close for partial points, hit it fast for the most.",icon:"🫀",wash:"peach",time:"2 min",category:"Anatomy arcade",difficulty:2},
+  {id:"bodymap",title:"Body Map Blitz",subtitle:"Tap the structure. Fast.",description:"Tap organs and named muscles on front and back body maps. Land close for partial points, hit it fast for the most.",icon:"🫀",wash:"peach",time:"2 min",category:"Anatomy arcade",difficulty:2,hidden:true},
   {id:"trail",title:"Theme Trail",subtitle:"Follow the winding words",description:"Trace hidden medical terms through a letter board. They bend in any direction, and the longest one stretches from top to bottom.",icon:"🧬",wash:"mint",time:"4 min",category:"Word trail",difficulty:2},
   {id:"crossword",title:"Crossword Clinic",subtitle:"Fill the tiny grid",description:"A fresh mini crossword every time, with clues from anatomy to pharmacology. Check or reveal letters when stuck.",icon:"✏️",wash:"gold",time:"4 min",category:"Crossword",difficulty:1},
   {id:"lettergrid",title:"Letter Lab",subtitle:"Find words in the grid",description:"Connect neighboring letters to uncover as many hidden words as possible before time runs out.",icon:"🔤",wash:"mint",time:"2 min",category:"Word hunt",difficulty:2},
@@ -44,6 +45,8 @@ const GAMES: GameMeta[] = [
   {id:"labline",title:"Labline",subtitle:"Calibrate your eye",description:"Five rapid-fire estimates of classic lab values and clinical thresholds.",icon:"⌁",wash:"pink",time:"2 min",category:"Numbers",difficulty:2},
   {id:"ladder",title:"Letter Rungs",subtitle:"One letter at a time",description:"Build a one-letter-at-a-time path from the start word to the finish.",icon:"⌁",wash:"peach",time:"3 min",category:"Word play",difficulty:2},
 ];
+/** Games shown to players. A game with `hidden: true` stays in the code and still opens by id, but is not listed anywhere. */
+const LISTED: GameMeta[] = GAMES.filter(g => !g.hidden);
 /** Rotating spotlight: the open-answer and trivia games trade the featured slot each UTC day. */
 const DIFFICULTY_LABEL = ["", "Easy", "Medium", "Hard"] as const;
 /** Three-pip difficulty badge: Easy, Medium, or Hard (rated for a practising clinician, not a beginner). */
@@ -264,7 +267,7 @@ export default function App() {
     if(roomCode&&multiplayerConfigured()){try{await leaveRoom(roomCode);}catch{/* no network */}}
     setRoomCode("");setRoom(null);setActiveGame(null);setPartyRun(false);setScreen("home");setNotice("Left the room.");
   };
-  const nextUp=completion?(()=>{const left=GAMES.filter(g=>g.id!==activeGame&&!player.results.some(r=>r.date===date&&r.game===g.id&&r.scope===scope));const pool=left.length?left:GAMES.filter(g=>g.id!==activeGame);if(!pool.length)return null;return practice||completion.party?pool[hashSeed(String(completion.score)+activeGame)%pool.length]:pool[0];})():null;
+  const nextUp=completion?(()=>{const left=LISTED.filter(g=>g.id!==activeGame&&!player.results.some(r=>r.date===date&&r.game===g.id&&r.scope===scope));const pool=left.length?left:LISTED.filter(g=>g.id!==activeGame);if(!pool.length)return null;return practice||completion.party?pool[hashSeed(String(completion.score)+activeGame)%pool.length]:pool[0];})():null;
   const title=activeGame?GAMES.find(g=>g.id===activeGame)?.title??"Game":screen==="stats"?"Your progress":screen==="settings"?"Preferences":screen==="friends"?"Play with friends":selectedTitle;
 
   return <div className="app-shell">
@@ -330,10 +333,10 @@ export default function App() {
 
 function HomePage({player,scope,today,openGame}:{player:PlayerData;scope:string;today:string;openGame:(id:GameId,practice?:boolean)=>void}){
   const featuredId=featuredToday(today);
-  const ordered=[...GAMES.filter(g=>g.id===featuredId),...GAMES.filter(g=>g.id!==featuredId)];
+  const ordered=[...LISTED.filter(g=>g.id===featuredId),...LISTED.filter(g=>g.id!==featuredId)];
   const surprise=()=>{
-    const left=GAMES.filter(g=>!player.results.some(r=>r.date===today&&r.game===g.id&&r.scope===scope));
-    const pool=left.length?left:GAMES;
+    const left=LISTED.filter(g=>!player.results.some(r=>r.date===today&&r.game===g.id&&r.scope===scope));
+    const pool=left.length?left:LISTED;
     openGame(pool[Math.floor(Math.random()*pool.length)].id,left.length===0);
   };
   return <div className="home-page page-enter">
@@ -394,14 +397,14 @@ function RoomScores({room}:{room:RoomState}){
 
 function StatsPage({player,scope,streak,done}:{player:PlayerData;scope:string;streak:number;done:number}){
   const lvl=levelFor(player.xp??0);
-  const trophies=computeTrophies(player,GAMES.length);
+  const trophies=computeTrophies(player,LISTED.length);
   const results=player.results.filter(r=>r.scope===scope);
   const perfect=results.filter(r=>r.perfect).length;
   return <div className="stats-page"><section className="profile-card"><Mascot mood="happy" size={84}/><div className="profile-main"><span className="eyebrow">YOUR PROFILE</span><h1>Lv {lvl.level} · {lvl.title}</h1><i className="profile-bar" role="progressbar" aria-valuenow={lvl.pct} aria-valuemin={0} aria-valuemax={100}><span style={{width:lvl.pct+"%"}}/></i><small>{lvl.into} / {lvl.span} XP to the next level</small>
         <div className="profile-chips"><span><Icon name="flame" size={22}/> {player.hideStreaks?"—":streak}-day streak</span><span><Icon name="star" size={22}/> {done}/{GAMES.length} cleared today</span><span className="profile-goal" title="Finish three daily games for a bonus chest">{[0,1,2].map(i=><i key={i} className={i<Math.min(done,3)?"on":""}/>)} {done>=3?"🎁 chest claimed":"daily goal"}</span></div></div></section>
     <span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div></div>
     <section className="trophy-cabinet"><h2>Trophy cabinet <small>{trophies.filter(t=>t.earned).length} / {trophies.length}</small></h2><div className="trophy-grid">{trophies.map(t=><div key={t.id} className={"trophy"+(t.earned?" earned":"")}><span className="trophy-icon">{t.earned?t.icon:"🔒"}</span><b>{t.name}</b><small>{t.hint}</small></div>)}</div></section>
-    <section className="stats-table"><h2>Game shelf</h2>{GAMES.map(g=>{const played=results.filter(r=>r.game===g.id);return <div key={g.id}><span>{g.title}</span><span>{played.length} played</span><b>Best run {Math.max(0,...played.map(r=>r.score))}</b></div>;})}</section>
+    <section className="stats-table"><h2>Game shelf</h2>{LISTED.map(g=>{const played=results.filter(r=>r.game===g.id);return <div key={g.id}><span>{g.title}</span><span>{played.length} played</span><b>Best run {Math.max(0,...played.map(r=>r.score))}</b></div>;})}</section>
     <p className="privacy-note">Progress and achievements are calculated from this device's saved results for the current arcade mode. Records stay local unless you choose Google Drive sync in Settings. Room leaderboards are private to the six-character room code.</p>
   </div>;
 }

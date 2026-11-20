@@ -5,7 +5,7 @@ type Scene = "library" | "clinic" | "lab" | "anatomy" | "party";
 const SCENE_OF: Record<GameId, Scene> = {
   medle: "library", connections: "library", splice: "library", ladder: "library", hive: "library", lettergrid: "library", crossword: "library", trail: "library",
   diagnosis: "clinic", casefile: "clinic", pairs: "clinic",
-  labline: "lab", higher: "lab", riddle: "lab", glyph: "lab",
+  labline: "lab", scale: "lab", higher: "lab", riddle: "lab", glyph: "lab",
   bodymap: "anatomy", dive: "anatomy",
   trivia: "party", mime: "party"
 };

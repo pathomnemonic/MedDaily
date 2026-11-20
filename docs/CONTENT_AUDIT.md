@@ -21,6 +21,7 @@ MedDaily exposes twenty playable game formats. The retired Next Best Step bank r
 | Seven Cells | 50 medical-themed seven-letter boards | Center-letter word hunt with pangram bonus; generic boards are excluded from play |
 | Casefile Logic | 30 curated cases + seeded procedural daily rotation and Free Play | Alternates curated cases with generated, uniquely solvable 3×3 deduction grids; both modes include pencil marks and scored hints |
 | Deep Scan | 79 prompts; nine long-tail banks (60 answers each) plus synonym/abbreviation aliases (`src/dataDeepDiveExtra.ts`) | Modeled on the one-answer-per-question rarity-dive format (see the Krillion clones): seven questions, 25 seconds each, one typed answer; typo-tolerant and space/hyphen-insensitive matching; unlisted answers are retried, not called wrong; tiers are named for tissue layers (skin to marrow) and are editorial, not measured |
+| Scale Lab | 110+ estimation items across five scales (weight, size, volume, count, time) | Four rounds a day (weight, size, time, and a volume-or-count wildcard), two items per round on a fixed log ruler; scoring is log-based with a 25% bullseye window; values are typical adult figures, checked by range and no-leak tests |
 | Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes; 20-second timer; a correct answer keeps the wheel in pass-and-play |
 
 | Theme Trail | 30 themed word packs, each laid out as a bending adjacent-letter board with a board-spanning trail word | Drag or tap to trace terms; bonus words earn hints; generator ported from ChatGPT's Strands-style prototype and tested on every qualifying pack |
@@ -66,3 +67,7 @@ All audio is synthesized in the browser (`src/audio.ts`); there are no audio fil
 ## PWA and offline
 
 The service worker now precaches the built JS and CSS on install (so the first offline visit works), matches cached files regardless of `Vary` headers, and the manifest ships 192/512 PNG icons plus an Apple touch icon. Verified in Chromium: install, go offline, reload, and play a game. Google Fonts are not cached, so offline the display fonts fall back to system fonts. Progress is stored in `localStorage` (with JSON export/import); it has not been migrated to IndexedDB.
+
+
+## Unlisted games
+Body Map Blitz is unlisted (`hidden: true` in `src/App.tsx`): the code, tests and data stay, it still opens by id, and it is not shown in the grid, Surprise me, "next up", the game shelf or trophy totals. Remove the flag to bring it back. It was unlisted because a 3D model for it could not be sourced under a clear licence.
