@@ -324,7 +324,7 @@ describe("new arcade content banks", () => {
 
 
 import { generateMedicalLadder } from "./arcadeLogic";
-import { medicalRungWords } from "./dataRungs";
+import { medicalRungWords, rungDictionary } from "./dataRungs";
 describe("medical Letter Rungs", () => {
   it("builds valid ladders with medical words at both ends for many seeds", () => {
     const dictionary = [...ladderDictionary];
