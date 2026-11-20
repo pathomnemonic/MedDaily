@@ -3,6 +3,7 @@ import { DROPPED_COMPARISON_PREFIXES, funComparisons } from "./dataFunCompare";
 import { scrambleWordsExpansion2, higherLowerPairsExpansion2 } from "./dataUtilityExpansion";
 import { spellingHiveExpansion, wordLaddersExpansion, deductionCasesExpansion } from "./dataExtraExpansion";
 import { glyphPatternsExpansion } from "./dataGlyphExpansion";
+import { crosswordBank } from "./dataCrossword";
 
 export const glyphPatterns: { name:string; pattern:number[][]; hint:string }[] = [...glyphPatternsExpansion];
 
@@ -488,6 +489,57 @@ solution:[{suspect:"Ari",location:"Reference Desk",object:"Atlas"},{suspect:"Min
 
 
 spellingHivePuzzles.push(...spellingHiveExpansion);
+
+// Expand the playable hive to a full-year rotation without fabricating word forms:
+// center-letter variants are valid subsets of existing curated boards, and new pangrams
+// are built from the answer-safe crossword lexicon plus the existing hive word pool.
+{
+  const excluded = new Set(["Practice Round", "Capture the Clue", "Tricone Terms"]);
+  const base = spellingHivePuzzles.filter((p) => !excluded.has(p.title));
+  const keyOf = (letters: string[], center: string, words: string[]) =>
+    [...letters].sort().join("") + "|" + center + "|" + [...words].sort().join(",");
+  const seen = new Set(base.map((p) => keyOf(p.letters, p.center, p.words)));
+  const variants: HivePuzzle[] = [];
+  for (const puzzle of base) {
+    for (const center of puzzle.letters) {
+      if (center === puzzle.center) continue;
+      const words = puzzle.words.filter((word) => word.includes(center));
+      if (words.length < 5) continue;
+      const key = keyOf(puzzle.letters, center, words);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      variants.push({ ...puzzle, title: puzzle.title + " · " + center + " center", center, words });
+    }
+  }
+
+  const wordPool = new Set([
+    ...spellingHivePuzzles.flatMap((p) => p.words),
+    ...crosswordBank.map(([word]) => word)
+  ]);
+  const generated: HivePuzzle[] = [];
+  for (const [pangram, clue] of crosswordBank) {
+    const letters = [...new Set(pangram)];
+    if (letters.length !== 7 || pangram.length < 7) continue;
+    const center = letters[0];
+    const words = [...wordPool].filter((word) =>
+      word.length >= 4 && word.includes(center) && [...word].every((letter) => letters.includes(letter))
+    ).sort();
+    if (words.length < 6 || !words.includes(pangram)) continue;
+    const key = keyOf(letters, center, words);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    generated.push({
+      title: "Clinical Letter Set " + (generated.length + 1),
+      letters, center, words, pangram,
+      hint: clue
+    });
+    if (generated.length === 39) break;
+  }
+  if (variants.length !== 276 || generated.length !== 39) {
+    throw new Error("Seven Cells year bank expected 276 center variants and 39 new pangram boards; got " + variants.length + " and " + generated.length);
+  }
+  spellingHivePuzzles.push(...variants, ...generated);
+}
 wordLadders.push(...wordLaddersExpansion);
 deductionCases.push(...deductionCasesExpansion);
 higherLowerPairs.push(...higherLowerPairsExpansion, ...higherLowerPairsExpansion2);
