@@ -74,7 +74,7 @@ const allScrambleWords: [string, string][] = [
   ...scrambleWordsExpansion,
   ...scrambleWordsExpansion2,
   ...pairWordScrambles,
-  ...scrambleWordsYearExpansion
+  ...scrambleWordsYearExpansion.map(([word, clue]) => [word, clue] as [string, string])
 ];
 const seenScrambleWords = new Set<string>();
 export const scrambleWordsExtended: [string, string][] = allScrambleWords.filter(([word]) => {
