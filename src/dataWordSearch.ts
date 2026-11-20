@@ -68,7 +68,9 @@ const SPECIALTY_THEMES: Record<string, string[]> = {
   urology: ["urology", "nephrology", "anatomy"],
   orthopedics: ["orthopedics", "anatomy", "emergency"],
   anesthesia: ["anesthesia", "criticalcare", "surgery"],
+  familymed: ["primarycare", "general", "internalmedicine"],
   familymedicine: ["primarycare", "general", "internalmedicine"],
+  internal: ["internalmedicine", "laboratory", "general"],
   internalmedicine: ["internalmedicine", "laboratory", "general"],
   emergency: ["emergency", "criticalcare", "radiology"]
 };
