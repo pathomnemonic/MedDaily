@@ -210,4 +210,9 @@ Immunology and oncology/Cancer therapies/Vinca alkaloids/Vincristine|Blocks micr
 Immunology and oncology/Cancer therapies/Tyrosine kinase inhibitors/Imatinib|Targets the BCR-ABL fusion of the Philadelphia chromosome in chronic myeloid leukemia.
 `);
 
-export const branchSets: Record<BranchSet, BranchLeaf[]> = { microbe: microbeLeaves, drug: drugLeaves };
+import { branchMicrobeYear, branchDrugYear } from "./dataBranchYear";
+
+export const branchSets: Record<BranchSet, BranchLeaf[]> = {
+  microbe: [...microbeLeaves, ...branchMicrobeYear],
+  drug: [...drugLeaves, ...branchDrugYear]
+};
