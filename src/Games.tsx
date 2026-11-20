@@ -38,7 +38,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
   switch (game) {
     case "medle": return <Medle seed={seed} onDone={onDone} specialty={specialty} />;
     case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} />;
-    case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} specialty={specialty} />;
+    case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} />;
     case "labline": return <Labline seed={seed} onDone={onDone} specialty={specialty} />;
     case "pairs": return <MemoryMatch seed={seed} onDone={onDone} specialty={specialty} />;
     case "splice": return <AnagramSprint seed={seed} onDone={onDone} specialty={specialty} />;
