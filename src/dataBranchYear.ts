@@ -53,7 +53,7 @@ Bacteria/Gram-negative/Rods/Fastidious and zoonotic/Cardiobacterium hominis|HACE
 Bacteria/Gram-negative/Rods/Fastidious and zoonotic/Eikenella corrodens|Slow-growing oral flora organism associated with human bite wounds and endocarditis.
 Bacteria/Gram-negative/Curved rods/Campylobacter jejuni|Undercooked poultry can cause inflammatory diarrhea followed by an acute immune neuropathy.
 Bacteria/Gram-negative/Curved rods/Campylobacter coli|Poultry-associated enteritis with curved motile rods and inflammatory diarrhea.
-Bacteria/Gram-negative/Curved rods/Helicobacter heilmannii|Less common gastric helicobacter associated with gastritis and peptic ulcer disease.
+Bacteria/Gram-negative/Curved rods/Helicobacter heilmannii|A less common gastric organism associated with gastritis and peptic ulcer disease.
 Bacteria/Gram-negative/Curved rods/Aeromonas hydrophila|Freshwater exposure can precede wound infection or watery diarrhea.
 Bacteria/Gram-negative/Curved rods/Plesiomonas shigelloides|Freshwater or seafood exposure can precede acute gastroenteritis.
 Bacteria/Gram-negative/Spirochetes/Borrelia recurrentis|Louse-borne infection causing relapsing fever.
