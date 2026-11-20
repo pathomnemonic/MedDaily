@@ -4,7 +4,7 @@ import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks
 import { deductionCases, glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, deepDivePointsByTier, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
+import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, transformNonogram, triviaRumbleResult } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
 import { anteriorMuscles, posteriorMuscles } from "./dataBodyMuscles";
 import { mimeDeck } from "./dataMime";
@@ -14,6 +14,12 @@ import { riddles, riddleOptions } from "./dataRiddles";
 import { makeCrossword } from "./crosswordGen";
 import { makeTrailPuzzle, trailPackOk } from "./trailLogic";
 import { extendStrandsPath, readStrandsPath } from "./strandsLogic";
+import { createPortal } from "react-dom";
+import DiveScene, { ZONE_COLORS } from "./components/DiveScene";
+import "@fontsource/pixelify-sans/latin-400.css";
+import "@fontsource/pixelify-sans/latin-600.css";
+import "@fontsource/silkscreen/latin-400.css";
+import "@fontsource/silkscreen/latin-700.css";
 import { reward } from "./juice";
 import { sfx } from "./audio";
 import { vibrate } from "./haptics";
@@ -22,7 +28,7 @@ import { generateDeductionCase } from "./logicGenerator";
 type Done = (score: number, maxScore: number, perfect: boolean, share?: string) => void;
 type Specialty = "general" | "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
 interface Props { seed: number; onDone: Done; specialty?: Specialty }
-export function GameBoard({ game, seed, onDone, specialty = "general", practice = false }: Props & { game: GameId; practice?: boolean }) {
+export function GameBoard({ game, seed, onDone, specialty = "general", practice = false, onExit }: Props & { game: GameId; practice?: boolean; onExit?: () => void }) {
   switch (game) {
     case "medle": return <Medle seed={seed} onDone={onDone} specialty={specialty} />;
     case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} />;
@@ -35,7 +41,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "ladder": return <WordLadder seed={seed} onDone={onDone} />;
     case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
     case "casefile": return <CasefileLogic seed={seed} onDone={onDone} practice={practice} />;
-    case "dive": return <DeepDive seed={seed} onDone={onDone} />;
+    case "dive": return <DeepDive seed={seed} onDone={onDone} onExit={onExit} />;
     case "trivia": return <TriviaRumble seed={seed} onDone={onDone} />;
     case "trail": return <ThemeTrail seed={seed} onDone={onDone} specialty={specialty} />;
     case "crossword": return <CrosswordClinic seed={seed} onDone={onDone} />;
@@ -88,16 +94,14 @@ function Finish({ title, detail, score, children }: { title: string; detail: str
 }
 function SectionLabel({ children }: { children: ReactNode }) { return <div className="section-label">{children}</div>; }
 
-const DIVE_POINTS = deepDivePointsByTier;
 const DIVE_TIERS = ["Skin deep", "Subcutaneous", "Fascia", "Muscle", "Bone", "Marrow"];
 const DIVE_SECONDS = 25;
-/** One landmark caption per tissue layer; shown in the descent scene like the scenic captions of a climbing game. */
-const DIVE_LANDMARKS = ["Epidermis · renewed roughly every month", "Subcutaneous fat · insulation and an energy store", "Deep fascia · the wrapping that organizes muscle", "Skeletal muscle · hundreds of named muscles", "Cortical bone · the dense outer shell", "Bone marrow · makes hundreds of billions of blood cells a day"];
+const DIVE_FLAVOR = ["Everyone's first thought.", "A little off the beaten path.", "Past the obvious.", "Not many reach for that one.", "A deep cut. Respect.", "One in a marrow. Almost nobody gets here."];
 interface DiveResult { answer: string | null; tier: number | null; points: number; gamble?: "won" | "lost" }
 const DIVE_GAMBLE_SECONDS = 10;
 
 /** Deep Scan: seven open questions, 25 seconds each, one typed answer per question. Rarer (less obvious) valid answers scan deeper into the tissue. */
-function DeepDive({ seed, onDone }: Props) {
+function DeepDive({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
   const prompts = useMemo(() => shuffle(deepDivePrompts, seeded(seed + 811)).slice(0, 7), [seed]);
   const [round, setRound] = useState(0);
   const [seconds, setSeconds] = useState(DIVE_SECONDS);
@@ -201,52 +205,57 @@ function DeepDive({ seed, onDone }: Props) {
     setMessage("Next scan. Think past the first obvious answer.");
   };
 
-  return <div className="game-layout dive-game" data-own-sfx="true">
-    <div className="dive-hud">
-      <div><span className="eyebrow">DEPTH SO FAR</span><strong>{Math.round(total / 5)}<small> mm</small></strong></div>
-      <div className={"dive-timer" + (seconds <= 5 && !locked ? " urgent" : "")}><b>{locked ? "✓" : seconds}</b><span>{locked ? "LOCKED" : "SECONDS"}</span></div>
-      <div><span className="eyebrow">SCAN</span><strong>{Math.min(round + 1, prompts.length)}<small> / 7</small></strong></div>
-    </div>
-    {!finished ? <>
-      <div className={"dive-stage" + (current?.tier ? " tier-hit-" + current.tier : "")} style={{ "--depth": Math.min(1, total / 700) } as React.CSSProperties}>
-        <div className="dive-scene" aria-hidden="true" style={{ "--cam": locked && current?.tier ? current.tier - 1 : 0 } as React.CSSProperties}>
-          <div className="dive-world">
-            {DIVE_TIERS.map((name, i) => <div key={name} className={"dive-layer layer-" + (i + 1) + (current?.tier === i + 1 ? " hit" : "")}><span className="dive-layer-name">{name}</span><b>{DIVE_POINTS[i]}</b></div>)}
-            <div className="dive-layer layer-7" />
-          </div>
-          {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => <i key={n} className="dive-cell" style={{ left: (8 + n * 11) + "%", animationDelay: (-n * 1.7) + "s", animationDuration: (9 + (n % 4) * 2) + "s" }} />)}
-          <b className="dive-diver">💊</b>
-          <span className="dive-landmark" key={String(locked) + (current?.tier ?? 0)}>{locked && current?.tier ? DIVE_LANDMARKS[current.tier - 1] : "The surface · dive in"}</span>
-          <span className="dive-scan" />
-        </div>
-        <div className="dive-prompt-card" key={round}>
-          <span className="eyebrow">{item.scope.toUpperCase()}</span>
-          <h2>{item.prompt}</h2>
-          <p>One answer. Common answers stop at the skin; unusual ones that are still correct reach bone and marrow. Tiers are editorial, not live player data.</p>
-        </div>
+  const tierNow = locked && current?.tier ? current.tier : null;
+  const mmNow = Math.round(total / 5);
+  const ui = <div className={"dv" + (locked ? " dv-locked" : "")} role="dialog" aria-label="Deep Scan">
+    <DiveScene tier={tierNow} seed={seed} names={DIVE_TIERS} tag={locked && current?.answer ? current.answer.toUpperCase().slice(0, 18) : ""} />
+    <div className="dv-scan" />
+    <header className="dv-hud">
+      <div className="dv-chip"><small>DEPTH</small><b>{mmNow}<i> mm</i></b></div>
+      <div className="dv-segs" aria-label={"Scan " + (round + 1) + " of " + prompts.length}>
+        <div>{prompts.map((_, i) => <i key={i} className={i === round ? "cur" : ""} style={i < results.length && results[i].tier ? { background: ZONE_COLORS[(results[i].tier ?? 1) - 1] } : i < results.length ? { background: "#4a4f78" } : undefined} />)}</div>
+        <span>SCAN {Math.min(round + 1, prompts.length)} OF {prompts.length}</span>
       </div>
-      {!locked ? <form key={shake} className={"dive-answer-row" + (shake ? " shake" : "") + (gambling ? " gambling" : "")} onSubmit={(e) => { e.preventDefault(); submit(); }}>
-        <input ref={input} value={entry} onChange={(e) => setEntry(e.target.value)} autoComplete="off" autoCapitalize="off" spellCheck={false} placeholder="Type your answer…" aria-label="Your answer" />
-        <button className="button button-primary" type="submit" disabled={!entry.trim()}>Scan ↓</button>
-        <button className="button button-quiet" type="button" onClick={surface}>{gambling ? "Keep it" : "Skip"}</button>
-      </form> : <div className="dive-result-card">
-        {current?.answer ? <>
-          {(current.tier ?? 0) >= 5 && <div className={"dive-stinger tier-" + current.tier} key={round + "-" + current.tier}>{current.tier === 6 ? "ONE IN A MARROW" : "DEEP CUT"}</div>}
-          <span className={"dive-tier tier-" + current.tier}>{DIVE_TIERS[(current.tier ?? 1) - 1]} · +{current.points}{current.gamble === "won" ? " · gamble won" : current.gamble === "lost" ? " · gamble lost" : ""}</span>
-          <h3>{current.answer}</h3>
-          {(current.tier ?? 0) < 6 && <p className="dive-deeper">Deeper layers existed: {item.answers.filter((a) => a.tier > (current.tier ?? 0)).sort((a, b) => b.tier - a.tier).slice(0, 4).map((a) => a.answer).join(" · ")}</p>}
-        </> : <>
-          <span className="dive-tier tier-0">No score this round</span>
-          <h3>Keep moving.</h3>
-          <p className="dive-deeper">Some answers: {item.answers.slice().sort((a, b) => a.tier - b.tier).slice(0, 3).map((a) => a.answer).join(" · ")} … and deeper: {item.answers.slice().sort((a, b) => b.tier - a.tier).slice(0, 2).map((a) => a.answer).join(" · ")}</p>
-        </>}
-        <p>{item.explanation}</p>
-        {current?.answer && (current.tier ?? 0) < 6 && !current.gamble && <button className="button button-quiet full-button dive-gamble" onClick={goDeeper}>⬇ Go deeper · risk half for a rarer layer</button>}
-        <button className="button button-primary full-button" onClick={next}>{round === prompts.length - 1 ? "Finish scan" : "Next scan ↓"}</button>
-      </div>}
-      <p className="game-feedback" aria-live="polite">{message}</p>
-      <div className="dive-progress-dots">{prompts.map((_, i) => <i key={i} className={i < results.length ? "complete" : i === round ? "current" : ""} />)}</div>
-    </> : <div className="dive-finale">
+      <div className="dv-chip right"><small>SCORE</small><b>{total}</b></div>
+    </header>
+    {onExit && <button className="dv-exit" onClick={onExit} aria-label="Leave Deep Scan">✕</button>}
+    {!locked && <section className="dv-q" key={round}>
+      <small>SCAN {round + 1} OF {prompts.length} · {item.scope.toUpperCase()}</small>
+      <h2>{item.prompt}</h2>
+      <p>{gambling ? "▼ GO DEEPER: find a rarer layer or lose half ▼" : "▼ rarer answers dive deeper ▼"}</p>
+    </section>}
+    {locked && <section className="dv-rev" key={"rev" + round}>
+      {current?.answer ? <>
+        {(current.tier ?? 0) >= 5 && <div className={"dv-stinger tier-" + current.tier}>{current.tier === 6 ? "ONE IN A MARROW" : "DEEP CUT"}</div>}
+        <h3 className="dv-tier" data-text={DIVE_TIERS[(current.tier ?? 1) - 1].toUpperCase()} style={{ color: ZONE_COLORS[(current.tier ?? 1) - 1] }}>{DIVE_TIERS[(current.tier ?? 1) - 1].toUpperCase()}</h3>
+        <div className="dv-ans">“{current.answer}”</div>
+        <div className="dv-gain">+{current.points} PTS · DEPTH {Math.round(current.points / 5)} MM{current.gamble === "won" ? " · GAMBLE WON" : current.gamble === "lost" ? " · GAMBLE LOST" : ""}</div>
+        <div className="dv-flavor">{DIVE_FLAVOR[(current.tier ?? 1) - 1]}</div>
+        <p className="dv-note">{(() => { const t = current.tier ?? 1; const same = item.answers.filter((x) => x.tier === t).length; const deeper = item.answers.filter((x) => x.tier > t).sort((x, y) => y.tier - x.tier)[0]; return "One of " + same + " answer" + (same === 1 ? "" : "s") + " at this depth." + (deeper ? " Deeper layers held " + deeper.answer + "." : " Nothing lies deeper."); })()}</p>
+      </> : <>
+        <h3 className="dv-tier" data-text="NO SCAN" style={{ color: "#9aa3d8" }}>NO SCAN</h3>
+        <div className="dv-flavor">Some answers: {item.answers.slice().sort((x, y) => x.tier - y.tier).slice(0, 3).map((x) => x.answer).join(" · ")} … and deeper: {item.answers.slice().sort((x, y) => y.tier - x.tier).slice(0, 2).map((x) => x.answer).join(" · ")}</div>
+      </>}
+      <p className="dv-expl">{item.explanation}</p>
+      {message && <p className="dv-msg" aria-live="polite">{message}</p>}
+      {current?.answer && (current.tier ?? 0) < 6 && !current.gamble && <button className="dv-gamble" onClick={goDeeper}>⬇ GO DEEPER · RISK HALF FOR A RARER LAYER</button>}
+      <div className="dv-next"><button onClick={next}>{round === prompts.length - 1 ? "FINISH SCAN" : "NEXT QUESTION"}</button></div>
+    </section>}
+    {!locked && <footer className="dv-dock">
+      <form key={shake} className={"dv-form" + (shake ? " shake" : "") + (gambling ? " gambling" : "")} onSubmit={(e) => { e.preventDefault(); submit(); }}>
+        <div className={"dv-clock" + (seconds <= 5 ? " urgent" : "")}>{seconds}</div>
+        <div className="dv-field">
+          <input ref={input} value={entry} onChange={(e) => setEntry(e.target.value)} autoComplete="off" autoCapitalize="off" spellCheck={false} placeholder="Type one answer…" aria-label="Your answer" />
+          <i className="dv-bar"><b style={{ width: (seconds / (gambling ? DIVE_GAMBLE_SECONDS : DIVE_SECONDS) * 100) + "%" }} /></i>
+        </div>
+        <button className="dv-go" type="submit" disabled={!entry.trim()}>DIVE</button>
+      </form>
+      <div className="dv-foot"><p aria-live="polite">{message}</p><button type="button" onClick={surface}>{gambling ? "KEEP IT" : "SKIP"}</button></div>
+    </footer>}
+  </div>;
+
+  return <div className="game-layout dive-game" data-own-sfx="true">
+    {!finished ? (typeof document !== "undefined" ? createPortal(ui, document.body) : null) : <div className="dive-finale">
       <div className="dive-medal">🩻</div><span className="eyebrow">SCAN COMPLETE</span>
       <h2>{total} / 700</h2><p>{Math.round(total / 5)} mm below the skin. {total >= 450 ? "Straight through to the marrow." : "Every scan teaches you another layer."}</p>
       <div className="dive-log">{prompts.map((prompt, i) => <div key={prompt.id}><span>{i + 1}</span><b>{results[i]?.answer ?? "—"}</b><strong>+{results[i]?.points ?? 0}</strong></div>)}</div>
