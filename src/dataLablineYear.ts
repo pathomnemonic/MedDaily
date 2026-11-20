@@ -223,7 +223,7 @@ const rows: Row[] = [
   ["ly349","Typical serum indirect bilirubin upper reference estimate",0.8,0.1,"mg/dL","Indirect bilirubin is often below about 0.8 mg/dL in adults; calculated values depend on total and direct bilirubin."],
   ["ly350","Typical serum iron saturation threshold below which iron deficiency is supported",20,0,"%","Transferrin saturation below 20% commonly supports iron deficiency in the appropriate clinical context."],
   ["ly351","Typical serum troponin interpretation threshold",99,0,"percentile","Myocardial injury is defined by at least one cardiac troponin value above the assay-specific 99th percentile; there is no universal numeric cutoff.","Fourth Universal Definition of Myocardial Infarction."],
-  ["ly352","Typical adult serum beta-2 microglobulin reference upper boundary",2.5,0.3,"mg/L","A broad adult serum reference upper boundary is around 2.5 mg/L; renal function and malignancy affect levels."],
+  ["ly352","Lower reference boundary for serum ceruloplasmin in adults",20,2,"mg/dL","A common adult ceruloplasmin reference interval is approximately 20–40 mg/dL; low values can support Wilson disease in context."],
   ["ly353","Common urine osmolality lower boundary in maximally dilute urine",100,15,"mOsm/kg","Healthy kidneys can dilute urine to roughly 50–100 mOsm/kg with adequate water intake."],
   ["ly354","Common urine osmolality upper boundary in maximally concentrated urine",1200,100,"mOsm/kg","With intact concentrating ability, urine osmolality can approach 1,200 mOsm/kg; age and renal function matter."],
   ["ly355","Typical serum beta-hydroxybutyrate level in nutritional ketosis",1.0,0.2,"mmol/L","Nutritional ketosis commonly produces beta-hydroxybutyrate around 0.5–3 mmol/L; this is not a DKA diagnostic threshold."],
@@ -236,7 +236,7 @@ const rows: Row[] = [
   ["ly362","Typical adult urine pH upper physiologic limit",8.0,0.2,"","Urine pH can range from approximately 4.5 to 8.0."],
   ["ly363","Typical adult serum sodium concentration used in the free-water deficit equation reference",140,2,"mEq/L","The free-water deficit equation commonly uses a target sodium near 140 mEq/L; correction goals are individualized."],
   ["ly364","Typical adult serum albumin value used as the reference in corrected calcium formulas",4.0,0.1,"g/dL","Traditional corrected calcium formulas use 4.0 g/dL as the albumin reference; formula accuracy is limited."],
-  ["ly365","Typical adult normal serum total CO₂ upper reference boundary in a basic metabolic panel",29,1.5,"mEq/L","A common chemistry-panel total CO₂ reference interval is approximately 22–29 mEq/L."]
+  ["ly365","Lower reference boundary for measured serum osmolality",275,3,"mOsm/kg","A common adult serum osmolality reference interval is approximately 275–295 mOsm/kg."]
 ];
 
 export const labPromptsYearExpansion: LabPrompt[] = rows.map(([id, prompt, value, tolerance, unit, context, source]) => ({
