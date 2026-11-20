@@ -26,7 +26,7 @@ const hideAnswer = (text: string, answer: string): string => {
  * The underlying clinical facts are retained; only the answer-bearing terms are hidden.
  */
 export const generatedBlackoutCases: BlackoutCase[] = [
-  ...diagnosisCases.map((item) => ({
+  ...diagnosisCases.filter((item) => !item.id.startsWith("microbe-")).map((item) => ({
     title: displayTitle(item.answer),
     aliases: [item.answer],
     text: hideAnswer([...item.clues, item.explanation].join(" "), item.answer)
