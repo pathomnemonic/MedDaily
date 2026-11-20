@@ -110,7 +110,7 @@ export const scrambleWordsYearExpansion: [string, string][] = [
   ["ILEITIS","Inflammation of the ileum"],
   ["IMMUNOGEN","Substance capable of inducing an immune response"],
   ["INCISION","Cut made into tissue during a procedure"],
-  ["INFLUENZA","Acute respiratory illness caused by influenza viruses"],
+  ["INFLUENZA","Acute respiratory illness caused by orthomyxoviruses"],
   ["INSOMNIA","Persistent difficulty initiating or maintaining sleep"],
   ["ISOTONIC","Having the same effective osmotic pressure as a reference solution"],
   ["JAUNDICE","Yellow discoloration from elevated bilirubin"],
