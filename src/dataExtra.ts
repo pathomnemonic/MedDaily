@@ -453,6 +453,23 @@ wordLadders.push(
 {start:"CARE",end:"PURL",path:["CARE","CORE","CURE","PURE","PURL"],note:"A clinical starting point leads to a textile term."}
 );
 
+wordLadders.push(
+{start:"WARM",end:"CURE",path:["WARM","WARD","CARD","CARE","CURE"],note:"A short clinical ladder from a temperature to a treatment."},
+{start:"SICK",end:"WARM",path:["SICK","SINK","SINE","SANE","CANE","CARE","CARD","WARD","WARM"],note:"A longer ladder with a clinical starting word."},
+{start:"COLD",end:"MATH",path:["COLD","BOLD","BOND","BONE","BANE","LANE","LATE","MATE","MATH"],note:"A longer route through familiar vocabulary."},
+{start:"BILE",end:"MIND",path:["BILE","MILE","MILD","MIND"],note:"A compact ladder that starts with a digestive term."},
+{start:"MILD",end:"MATE",path:["MILD","MILE","TILE","TIDE","SIDE","SINE","LINE","LANE","LATE","MATE"],note:"A longer path with several near-miss turns."},
+{start:"TIDE",end:"CARE",path:["TIDE","SIDE","SINE","SANE","CANE","CARE"],note:"A short route from a common noun to a clinical word."},
+{start:"SAGE",end:"CURE",path:["SAGE","PAGE","PARE","CARE","CURE"],note:"A compact ladder ending in a clinical term."},
+{start:"FISH",end:"MATH",path:["FISH","FIST","FAST","CAST","CASE","CANE","LANE","LATE","MATE","MATH"],note:"A longer ladder with one-letter changes throughout."},
+{start:"LUNG",end:"SAFE",path:["LUNG","LONG","SONG","SANG","SANE","SAFE"],note:"A short route from an anatomical term to a familiar adjective."},
+{start:"BOND",end:"HEAL",path:["BOND","BEND","BEAD","HEAD","HEAL"],note:"A compact ladder that finishes with a clinical verb."},
+{start:"RASH",end:"CURE",path:["RASH","CASH","CASE","CARE","CURE"],note:"A clinical starting point leads to a treatment word."},
+{start:"COST",end:"CARE",path:["COST","CAST","CASE","CARE"],note:"A compact ladder with a clinical endpoint."},
+{start:"BOLD",end:"SAFE",path:["BOLD","BOND","BONE","BANE","SANE","SAFE"],note:"A short route through common four-letter words."},
+{start:"FIVE",end:"TALK",path:["FIVE","FINE","LINE","LANE","CANE","CASE","CASK","TASK","TALK"],note:"A longer ladder ending in a communication verb."}
+);
+
 
 deductionCases.push(
 {
