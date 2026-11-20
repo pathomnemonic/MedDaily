@@ -560,8 +560,8 @@ spellingHivePuzzles.push(...spellingHiveExpansion);
     }
     if (generated.length === 91) break;
   }
-  if (variants.length !== 234 || generated.length !== 81) {
-    throw new Error("Seven Cells year bank expected 234 center variants and 81 new pangram boards; got " + variants.length + " and " + generated.length);
+  if (variants.length !== 234 || generated.length !== 91) {
+    throw new Error("Seven Cells year bank expected 234 center variants and 91 new pangram boards; got " + variants.length + " and " + generated.length);
   }
   spellingHivePuzzles.push(...variants, ...generated);
 }
