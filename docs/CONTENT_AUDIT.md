@@ -13,7 +13,6 @@ MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blit
 | Differential | 220 cases | Six-guess typed diagnosis puzzle with progressive clues, common clinical aliases, explanations, and source notes |
 | Labline | 100 prompts | Five-round estimation challenge with cumulative scoring and reference explanations |
 | Association Blitz | 208 unique pairs | 24-card, twelve-pair timed memory board with combo streaks, a 75-second clock, and a time bonus |
-| Triage Order | 42 sequences | Clinical sequence reconstruction with optional scored position hints |
 | Anagram Sprint | 111 terms | Five-word, 75-second timed scramble with hints and attempt-based scoring |
 | Cell Sketch | 44 named 5×5 boards (36 distinct shapes, including symmetry variants) + seeded generated daily and Free Play transforms | Row and column run clues; CI verifies one valid solution per board |
 | What Has More? | 116 comparisons (50 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
@@ -30,6 +29,8 @@ MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blit
 
 | Theme Trail | 30 themed word packs, each laid out as a bending adjacent-letter board with a board-spanning trail word | Drag or tap to trace terms; bonus words earn hints; generator ported from ChatGPT's Strands-style prototype and tested on every qualifying pack |
 | Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |\n| Crossword Clinic | 100+ clue-and-answer entries | Procedurally generated mini-crosswords; tests validate clue hygiene, unique entries, and deterministic valid grids across 120 seeds |\n| Riddle Lab | 50+ riddles | Four-stage progressive clues with four answer choices; tests check clue leakage, unique answers, and distractor availability |\n| Mime Time | 100+ act-it-out prompts | Pass-the-phone charades across procedures, symptoms, ward life, instruments, specialties, and patient scenarios |
+
+The retired Triage Order bank (42 sequences) and Next Best Step bank remain in source control for reference; neither is exposed as a playable home-catalog game.
 
 ## What this means for daily longevity
 
