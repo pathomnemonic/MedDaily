@@ -10,11 +10,11 @@ MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blit
 |---|---:|---|
 | Stat Word | 365 unique five-letter answers (all real words; any ENABLE dictionary word is a valid guess) | Medical terms; one answer per daily seed |
 | Quad Squad | 365 boards | 160 curated source boards plus 205 deterministic, collision-checked category combinations; every board has four unique categories and 16 unique tiles |
-| Differential | 220 cases | Six-guess typed diagnosis puzzle with progressive clues, common clinical aliases, explanations, and source notes |
+| Differential | 416 cases: 220 original clinical cases plus 196 organism-identification cases | Six-guess typed diagnosis puzzle with progressive clues, common clinical aliases, explanations, and source notes; the daily UTC rotation selects a new case for 365 consecutive days before repeating |
 | Labline | 365 unique prompts | Five-round estimation challenge with cumulative scoring and reference explanations |
 | Association Blitz | 208 unique pairs | 24-card, twelve-pair timed memory board with combo streaks, a 75-second clock, and a time bonus |
 | Anagram Sprint | 111 terms | Five-word, 75-second timed scramble with hints and attempt-based scoring |
-| Cell Sketch | 24 hand-drawn 10–12-cell boards, with seeded rotations/reflections for generated daily and Free Play sets | Row and column run clues; tests verify one valid solution per curated board and that all seven non-identity transforms preserve each board's filled-cell count |
+| Cell Sketch | 24 hand-drawn 10–12-cell boards, each with eight orientation states (192 individual picture variants); three pictures are played per session | The three-picture combinations provide well over 365 distinct daily sessions; row and column run clues; tests verify curated board dimensions and that all seven non-identity transforms preserve each board's filled-cell count |
 | What Has More? | 116 comparisons (50 fun-first rounds) | Surprising clinical, food, medication, anatomy, and everyday comparisons; values are explicitly approximate where appropriate |
 | Letter Rungs | Generated medical ladders (both ends are medical words, 3–5 steps, verified across 120 seeds) | Curated everyday-word ladders were replaced; intermediate steps still use ordinary dictionary words |
 | Seven Cells | 365 playable seven-letter boards (40 curated playable bases, 234 enriched center-letter variants, 91 new pangram sets) | Center-letter word hunt with pangram bonus; every board has at least eight valid words and a pangram |
@@ -37,9 +37,9 @@ The retired Triage Order bank (42 sequences) and Next Best Step bank remain in s
 
 ## What this means for daily longevity
 
-Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. The current counts above describe the curated source banks, not the number of unique calendar days supported. Daily and unlimited Free Play are both available. Most clinical knowledge games re-seed or reshuffle curated banks; Theme Trail, Letter Lab, Casefile Logic, Letter Rungs, and Cell Sketch also use procedural generation or seeded transformations. Procedural variety does not replace the need to keep expanding curated clinical content. Several smaller banks will need further expansion before the arcade can claim a full year of unique daily content.
+Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. The single-target daily games now have year-sized no-repeat rotations: DoctorDle (416 cases), Branch Lab (422 organism/drug targets alternating across days), Blackout Chart (483 case files), and Theme Trail (365 validated boards). Riddle Lab has 492 clue ladders. Multi-round games use several prompts per session, so their combinations support at least 365 daily sessions even when the raw source bank is smaller: Deep Scan uses seven of 79 prompts, Cell Sketch uses three of 192 picture variants, and games such as Hoofbeats, What Has More, Association Blitz, Anagram Sprint, and Scale Lab also draw multiple items per session. Daily and unlimited Free Play are both available.
 
-The architecture deliberately separates game engines from content datasets so banks can grow without rewriting the UI or scoring systems. However, **do not describe the current release as having 365 unique daily puzzles**.
+The architecture deliberately separates game engines from content datasets so banks can grow without rewriting the UI or scoring systems. However, **the current content inventory supports at least 365 distinct daily sessions across the listed games**, with the caveat that several banks reuse existing clinical source vignettes in a different game format and should continue to receive editorial review.
 
 ## Specialty and subject tracks
 
@@ -51,7 +51,7 @@ Clinical cases are filtered toward specialties where curated mappings exist, inc
 
 Remaining content priorities:
 1. Continue editorial review of Seven Cells answer frequency and difficulty. The 365-board rotation now has at least eight accepted words per board, with 40 curated playable bases, 234 enriched center variants, and 91 additional pangram sets.
-2. Continue expanding Cell Sketch and Letter Rungs while preserving one-solution and valid-path checks (Cell Sketch has 24 original patterns plus seeded transforms; Letter Rungs has 50 curated paths plus procedural medical ladders verified across 120 seeds).
+2. Continue adding original Cell Sketch art and Letter Rungs vocabulary while preserving board validity and path checks (Cell Sketch currently has 24 original patterns plus seeded transforms; Letter Rungs has 50 curated paths plus procedural medical ladders verified across 365 seeds).
 3. Continue specialty review of Quad Squad and clinical-case mappings. Coverage was broadened for ENT, ophthalmology, allergy, pulmonology, rheumatology, orthopedics, urology, geriatrics, obstetrics, radiology, and other lower-volume tracks; the mappings now draw on more of the curated source bank, but some specialties still need additional original cases.
 4. Add original/licensed visual material for ECG, imaging, histology, gross pathology, and anatomy recognition.
 5. Maintain Deep Scan's clinical review standard: nine dedicated long-tail prompts currently carry at least 60 answers each, with ten editorially tiered answers per tier and collision-checked aliases. Tiers are editorial judgments, not fabricated player-population statistics.
