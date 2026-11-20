@@ -276,9 +276,10 @@ describe("new arcade content banks", () => {
     for (const prompt of deepDivePrompts) {
       expect(prompt.prompt.length, prompt.id).toBeGreaterThan(12);
       expect(prompt.answers.length, prompt.id).toBeGreaterThanOrEqual(6);
-      const normalized = prompt.answers.map((item) => item.answer.toLowerCase().trim());
+      const accepted = prompt.answers.flatMap((item) => [item.answer, ...(item.aliases ?? [])]);
+      const normalized = accepted.map((answer) => answer.toLowerCase().replace(/[^a-z0-9]/g, ""));
       expect(new Set(normalized).size, prompt.id).toBe(normalized.length);
-      expect(prompt.answers.every((item) => item.answer.length > 1 && item.tier >= 1 && item.tier <= 6), prompt.id).toBe(true);
+      expect(prompt.answers.every((item) => item.answer.length > 1 && Number.isInteger(item.tier) && item.tier >= 1 && item.tier <= 6), prompt.id).toBe(true);
     }
   });
 
