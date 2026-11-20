@@ -42,7 +42,7 @@ Bacteria/Gram-negative/Rods/Enterobacterales/Salmonella Typhi|Rose spots, relati
 Bacteria/Gram-negative/Rods/Enterobacterales/Shigella dysenteriae|Non-lactose fermenter with tiny inocula needed; bloody diarrhea and hemolytic uremic syndrome.
 Bacteria/Gram-negative/Rods/Enterobacterales/Proteus mirabilis|Swarming motility, urease-positive, and struvite stones in alkaline urine.
 Bacteria/Gram-negative/Rods/Enterobacterales/Yersinia pestis|Bipolar "safety pin" stain; fleas carry it and it causes painful buboes.
-Bacteria/Gram-negative/Rods/Enterobacterales/Enterobacter cloacae|Hospital organism with inducible AmpC beta-lactamase, so third-generation cephalosporins can fail.
+Bacteria/Gram-negative/Rods/Enterobacterales/Enterobacter cloacae|Healthcare-associated gram-negative rod with inducible AmpC beta-lactamase, so third-generation cephalosporins can fail.
 Bacteria/Gram-negative/Rods/Enterobacterales/Serratia marcescens|Red pigment-producing opportunist in hospital catheters and respiratory equipment.
 Bacteria/Gram-negative/Rods/Non-fermenters/Pseudomonas aeruginosa|Oxidase-positive, blue-green pigment and grape-like odor; burns, hot tubs and cystic fibrosis lungs.
 Bacteria/Gram-negative/Rods/Non-fermenters/Acinetobacter baumannii|Multidrug-resistant coccobacillus in ventilated, intensive-care and war-wound infections.
