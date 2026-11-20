@@ -328,6 +328,7 @@ describe("party room codes", () => {
     expect(PARTY_GAMES).toHaveLength(15);
     expect(new Set(PARTY_GAMES).size).toBe(PARTY_GAMES.length);
     expect(PARTY_GAMES).not.toContain("bodymap");
+    expect(PARTY_GAMES.every((game) => LISTED_GAME_IDS.includes(game))).toBe(true);
     expect(roomGame("abc 123")).toBe(roomGame("ABC123"));
     expect(roomSeed("abc123")).toBe(roomSeed("ABC-123"));
     expect(PARTY_GAMES).toContain(roomGame("K7MQ2X"));
