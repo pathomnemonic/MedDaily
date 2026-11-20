@@ -81,6 +81,8 @@ describe("additional daily puzzle packs", () => {
     expect(playable).toHaveLength(365);
     expect(playable.every((puzzle) => puzzle.words.length >= 5)).toBe(true);
     expect(new Set(playable.map((puzzle) => puzzle.title)).size).toBe(playable.length);
+    const signatures = playable.map((puzzle) => [...puzzle.letters].sort().join("") + "|" + puzzle.center + "|" + [...puzzle.words].sort().join(","));
+    expect(new Set(signatures).size).toBe(playable.length);
   });
   it("keeps every Seven Cells bank internally valid", () => {
     for (const puzzle of spellingHivePuzzles) {
