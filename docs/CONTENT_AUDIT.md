@@ -51,7 +51,7 @@ Clinical cases are filtered toward specialties where curated mappings exist, inc
 
 Remaining content priorities:
 1. Continue reviewing the generated Seven Cells center-letter variants for balance; the playable rotation now has 365 valid boards.
-2. Expand Cell Sketch and Letter Rungs while preserving one-solution and valid-path checks (Cell Sketch now has 24 original patterns plus seeded rotation/reflection variants; Letter Rungs now has 36 curated paths).
+2. Continue expanding Cell Sketch and Letter Rungs while preserving one-solution and valid-path checks (Cell Sketch has 24 original patterns plus seeded transforms; Letter Rungs has 50 curated paths plus procedural medical ladders verified across 120 seeds).
 3. Add specialty-reviewed Quad Squad boards and clinical cases for tracks whose current content falls back to general banks.
 4. Add original/licensed visual material for ECG, imaging, histology, gross pathology, and anatomy recognition.
 5. Continue expanding Deep Scan's long-tail answer sets with clinically defensible aliases and explicit editorial rarity weights—not fabricated player-population statistics.
