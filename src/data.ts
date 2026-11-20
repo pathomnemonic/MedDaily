@@ -12,6 +12,7 @@ import { labPromptsExpansion3, pairsBankExpansion3, microbePacksExpansion3, tria
 import { medleWordsExpansionYear } from "./dataMedleYear";
 import { connectionPuzzlesExpansion11, labPromptsExpansion4 } from "./dataYearExpansion";
 import { connectionPuzzlesExpansion12 } from "./dataYearExpansion2";
+import { labPromptsYearExpansion } from "./dataLablineYear";
 
 export interface ConnectionGroup {
   category: string;
@@ -268,7 +269,7 @@ triageCases.push(...triageCasesExpansion, ...triageCasesExpansion2);
 connectionPuzzles.push(...connectionPuzzlesExpansion, ...connectionPuzzlesExpansion2, ...connectionPuzzlesExpansion3, ...connectionPuzzlesExpansion4, ...connectionPuzzlesExpansion5, ...connectionPuzzlesExpansion6, ...connectionPuzzlesExpansion7, ...connectionPuzzlesExpansion8, ...connectionPuzzlesExpansion9, ...connectionPuzzlesExpansion10, ...connectionPuzzlesExpansion11, ...connectionPuzzlesExpansion12);
 diagnosisCases.push(...diagnosisCasesExpansion, ...diagnosisCasesExpansion2, ...diagnosisCasesExpansion3, ...diagnosisCasesExpansion4, ...diagnosisCasesExpansion5, ...diagnosisCasesExpansion6, ...diagnosisCasesExpansion7, ...diagnosisCasesExpansion8, ...diagnosisCasesExpansion9, ...diagnosisCasesExpansion10);
 nextStepCases.push(...nextStepCasesExpansion, ...nextStepCasesExpansion2, ...nextStepCasesExpansion3, ...nextStepCasesExpansion4, ...nextStepCasesExpansion5, ...nextStepCasesExpansion6, ...nextStepCasesExpansion7, ...nextStepCasesExpansion8, ...nextStepCasesExpansion9, ...nextStepCasesExpansion10);
-labPrompts.push(...labPromptsExpansion, ...labPromptsExpansion4);
+labPrompts.push(...labPromptsExpansion, ...labPromptsExpansion4, ...labPromptsYearExpansion);
 pairsBank.push(...pairsBankExpansion);
 const seenPairTerms = new Set<string>();
 const uniquePairs = pairsBank.filter(([term]) => {
