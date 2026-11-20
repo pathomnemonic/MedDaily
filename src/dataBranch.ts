@@ -212,7 +212,17 @@ Immunology and oncology/Cancer therapies/Tyrosine kinase inhibitors/Imatinib|Tar
 
 import { branchMicrobeYear, branchDrugYear } from "./dataBranchYear";
 
+const uniqueLeaves = (leaves: BranchLeaf[]): BranchLeaf[] => {
+  const seen = new Set<string>();
+  return leaves.filter((leaf) => {
+    const key = leaf.name.toLocaleLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 export const branchSets: Record<BranchSet, BranchLeaf[]> = {
-  microbe: [...microbeLeaves, ...branchMicrobeYear],
-  drug: [...drugLeaves, ...branchDrugYear]
+  microbe: uniqueLeaves([...microbeLeaves, ...branchMicrobeYear]),
+  drug: uniqueLeaves([...drugLeaves, ...branchDrugYear])
 };
