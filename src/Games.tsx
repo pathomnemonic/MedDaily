@@ -8,6 +8,7 @@ import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoint
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
 import { anteriorMuscles, posteriorMuscles } from "./dataBodyMuscles";
 import { mimeDeck } from "./dataMime";
+import ScaleLab from "./ScaleLab";
 import { fiveLetterWords } from "./dataFiveLetter";
 import { medicalRungWords } from "./dataRungs";
 import { riddles, riddleOptions } from "./dataRiddles";
@@ -41,6 +42,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "ladder": return <WordLadder seed={seed} onDone={onDone} />;
     case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
     case "casefile": return <CasefileLogic seed={seed} onDone={onDone} practice={practice} />;
+    case "scale": return <ScaleLab seed={seed} onDone={onDone} onExit={onExit} />;
     case "dive": return <DeepDive seed={seed} onDone={onDone} onExit={onExit} />;
     case "trivia": return <TriviaRumble seed={seed} onDone={onDone} />;
     case "trail": return <ThemeTrail seed={seed} onDone={onDone} specialty={specialty} />;

@@ -130,6 +130,16 @@ const ART: Record<GameId, () => ReactNode> = {
     <text x={36} y={70} fontSize={28} fontFamily="Lilita One, sans-serif" fill="#7dffd0" stroke={INK} strokeWidth={3} paintOrder="stroke" transform="rotate(-14 36 70)">?</text>
     <rect x={52} y={86} width={96} height={18} rx={9} fill="#ff6aa2" {...S} /><text x={100} y={100} textAnchor="middle" fontFamily="Lilita One, sans-serif" fontSize={13} fill="#fff" stroke={INK} strokeWidth={2} paintOrder="stroke">WHO AM I?</text>
   </g>,
+  scale: () => <g>
+    <rect x={14} y={58} width={172} height={34} rx={8} fill="#ffd54a" {...S} />
+    {Array.from({ length: 9 }, (_, i) => <path key={i} d={`M${28 + i * 18} 58v${i % 2 ? 12 : 20}`} stroke={INK} strokeWidth={3} strokeLinecap="round" />)}
+    <text x={16} y={118} fontSize={13} fontFamily="Lilita One, sans-serif" fill="#fff" stroke={INK} strokeWidth={3} paintOrder="stroke">×10</text>
+    <text x={90} y={118} fontSize={13} fontFamily="Lilita One, sans-serif" fill="#fff" stroke={INK} strokeWidth={3} paintOrder="stroke">×10</text>
+    <text x={150} y={118} fontSize={13} fontFamily="Lilita One, sans-serif" fill="#fff" stroke={INK} strokeWidth={3} paintOrder="stroke">×10</text>
+    <circle cx={52} cy={42} r={14} fill="#4cc9f0" {...S} /><text x={52} y={49} textAnchor="middle" fontSize={16}>🫘</text>
+    <circle cx={140} cy={42} r={14} fill="#ff9fc2" {...S} /><text x={140} y={49} textAnchor="middle" fontSize={16}>🧠</text>
+    <path d="M52 56v4M140 56v4" stroke={INK} strokeWidth={3} strokeLinecap="round" />
+  </g>,
   bodymap: () => <g>
     <circle cx={100} cy={20} r={14} fill="#ffd9b8" {...S} />
     <path d="M70 38q30-8 60 0 8 4 8 20l-2 38q-2 14-36 14t-36-14l-2-38q0-16 8-20z" fill="#ffd9b8" {...S} />

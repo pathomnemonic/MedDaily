@@ -135,7 +135,8 @@ export async function submitRoomScore(code: string, score: number, maxScore: num
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists()) throw new Error("You are no longer in this room.");
-    tx.update(ref, { score, maxScore, perfect, finished: true });
+    // The room rules only accept "perfect" when the score equals the maximum, so a game-level perfect run below max is stored as not perfect.
+    tx.update(ref, { score, maxScore, perfect: perfect && score === maxScore, finished: true });
     tx.update(room, { status: "playing", updatedAt: serverTimestamp() });
   });
 }
