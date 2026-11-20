@@ -1,7 +1,16 @@
-/** Medical four-letter words used as the two ends of every Letter Rungs ladder. Words missing from the ladder dictionary are ignored. */
+import { LETTER_DICTIONARY } from "./dataLetterDictionary";
+
+/** Clinical and anatomical four-letter endpoints for Letter Rungs. */
 export const medicalRungWords = [
-  "BONE", "LUNG", "VEIN", "PAIN", "CURE", "CARE", "HEAL", "BILE", "RASH", "SORE", "SICK", "CELL", "GERM", "DOSE", "PILL", "SKIN", "HAND", "HEAD", "FOOT", "NECK",
-  "LIMB", "RIBS", "GUMS", "EYES", "EARS", "ACHE", "WARD", "CAST", "SHOT", "BEAT", "DIET", "DRUG", "VIAL", "TEST", "SCAN", "MASK", "GOWN", "COLD", "LOBE", "NODE",
-  "HEEL", "KNEE", "SHIN", "TOES", "HIPS", "BACK", "BODY", "CHIN", "LIPS", "NOSE", "ARMS", "LEGS", "DUCT", "IRIS", "LENS", "ULNA", "GUTS", "FLUX", "WOMB", "MOLE",
-  "CYST", "PUS", "TEAR", "HAIR", "NAIL", "HEAR", "SEPS", "BLOB", "WALK", "REST", "SLEEP", "LIFE", "DEAD", "WELL", "ILLS", "HURT", "FEVER", "COUGH"
-].filter((w) => w.length === 4);
+  "ACNE", "AIDS", "ACHE", "BACK", "BILE", "BITE", "BODY", "BONE", "BURN", "CARE",
+  "CAST", "CELL", "CLOT", "COLD", "CURE", "CYST", "DIET", "DOSE", "DRUG", "DUCT",
+  "EARS", "EYES", "FOOT", "GOUT", "GUMS", "HAND", "HEAD", "HEAL", "HEAR", "HEEL",
+  "HEME", "HIPS", "IRIS", "KNEE", "LENS", "LIDO", "LIMB", "LIPS", "LOBE", "LUNG",
+  "MASK", "MASS", "MOLE", "NAIL", "NECK", "NODE", "NOSE", "PAIN", "PATH", "PILL",
+  "PUS", "RASH", "RICE", "RIBS", "RISK", "SCAN", "SHOT", "SHIN", "SKIN", "SORE",
+  "TEST", "TEAR", "TICK", "TOES", "TUBE", "ULNA", "URIC", "VEIN", "VIAL", "WARD",
+  "WART", "WOMB", "WORM", "XRAY"
+].filter((word) => word.length === 4);
+
+/** Four-letter intermediate words come from the same curated medical-game dictionary. */
+export const rungDictionary = new Set([...LETTER_DICTIONARY, ...medicalRungWords].filter((word) => /^[A-Z]{4}$/.test(word)));
