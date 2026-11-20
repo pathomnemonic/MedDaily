@@ -18,7 +18,8 @@ import { fiveLetterWords } from "./dataFiveLetter";
 import { medicalRungWords } from "./dataRungs";
 import { riddles, riddleOptions } from "./dataRiddles";
 import { makeCrossword } from "./crosswordGen";
-import { makeTrailPuzzle, trailPackOk } from "./trailLogic";
+import { makeTrailPuzzle } from "./trailLogic";
+import { themeTrailYearPacks } from "./dataTrailExpansion";
 import { extendStrandsPath, readStrandsPath } from "./strandsLogic";
 import { createPortal } from "react-dom";
 import DiveScene, { ZONE_COLORS } from "./components/DiveScene";
@@ -1784,10 +1785,9 @@ function CrosswordClinic({ seed, onDone, onExit }: Props & { onExit?: () => void
 }
 
 
-let trailPacksCache: typeof microbePacks | null = null;
-const trailPacks = () => (trailPacksCache ??= microbePacks.filter(trailPackOk));
+const trailPacks = () => themeTrailYearPacks;
 function ThemeTrail({ seed, onDone, specialty = "general" }: Props) {
-  const pack = pick(trailPacks(), seed, specialty, "microbe");
+  const pack = trailPacks()[Math.abs(Math.trunc(seed)) % trailPacks().length];
   const puzzle = useMemo(() => makeTrailPuzzle(pack, seed), [pack, seed]);
   const { grid, rows, columns } = puzzle;
   // Measured cell centres let us draw connecting lines for the live path and for every found word, like the Strands look.
