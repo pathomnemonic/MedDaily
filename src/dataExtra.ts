@@ -507,12 +507,22 @@ solution:[{suspect:"Ari",location:"Reference Desk",object:"Atlas"},{suspect:"Min
 
 spellingHivePuzzles.push(...spellingHiveExpansion);
 
-// Expand the playable hive to a full-year rotation without fabricating word forms:
-// center-letter variants are valid subsets of existing curated boards, and new pangrams
-// are built from the answer-safe crossword lexicon plus the existing hive word pool.
+// Expand the playable hive to a full-year rotation using only curated vocabulary.
+// The 50 source boards keep their letter sets; their accepted words are enriched from
+// the shared hive/crossword lexicon. New centers and pangrams create distinct valid boards.
 {
   const excluded = new Set(["Practice Round", "Capture the Clue", "Tricone Terms"]);
   const base = spellingHivePuzzles.filter((p) => !excluded.has(p.title));
+  const wordPool = new Set([
+    ...spellingHivePuzzles.flatMap((p) => p.words),
+    ...crosswordBank.map(([word]) => word)
+  ]);
+  const wordsFor = (letters: string[], center: string) =>
+    [...wordPool].filter((word) =>
+      word.length >= 4 && word.includes(center) && [...word].every((letter) => letters.includes(letter))
+    ).sort();
+  for (const puzzle of base) puzzle.words = wordsFor(puzzle.letters, puzzle.center);
+
   const keyOf = (letters: string[], center: string, words: string[]) =>
     [...letters].sort().join("") + "|" + center + "|" + [...words].sort().join(",");
   const seen = new Set(base.map((p) => keyOf(p.letters, p.center, p.words)));
@@ -520,8 +530,8 @@ spellingHivePuzzles.push(...spellingHiveExpansion);
   for (const puzzle of base) {
     for (const center of puzzle.letters) {
       if (center === puzzle.center) continue;
-      const words = puzzle.words.filter((word) => word.includes(center));
-      if (words.length < 5) continue;
+      const words = wordsFor(puzzle.letters, center);
+      if (words.length < 8) continue;
       const key = keyOf(puzzle.letters, center, words);
       if (seen.has(key)) continue;
       seen.add(key);
@@ -529,31 +539,27 @@ spellingHivePuzzles.push(...spellingHiveExpansion);
     }
   }
 
-  const wordPool = new Set([
-    ...spellingHivePuzzles.flatMap((p) => p.words),
-    ...crosswordBank.map(([word]) => word)
-  ]);
   const generated: HivePuzzle[] = [];
   for (const [pangram, clue] of crosswordBank) {
     const letters = [...new Set(pangram)];
     if (letters.length !== 7 || pangram.length < 7) continue;
-    const center = letters[0];
-    const words = [...wordPool].filter((word) =>
-      word.length >= 4 && word.includes(center) && [...word].every((letter) => letters.includes(letter))
-    ).sort();
-    if (words.length < 5 || !words.includes(pangram)) continue;
-    const key = keyOf(letters, center, words);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    generated.push({
-      title: "Clinical Letter Set " + (generated.length + 1),
-      letters, center, words, pangram,
-      hint: clue
-    });
-    if (generated.length === 46) break;
+    for (const center of letters) {
+      const words = wordsFor(letters, center);
+      if (words.length < 8 || !words.includes(pangram)) continue;
+      const key = keyOf(letters, center, words);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      generated.push({
+        title: "Clinical Letter Set " + (generated.length + 1) + " · " + center + " center",
+        letters, center, words, pangram,
+        hint: clue
+      });
+      if (generated.length === 91) break;
+    }
+    if (generated.length === 91) break;
   }
-  if (variants.length !== 269 || generated.length !== 46) {
-    throw new Error("Seven Cells year bank expected 269 center variants and 46 new pangram boards; got " + variants.length + " and " + generated.length);
+  if (variants.length !== 224 || generated.length !== 91) {
+    throw new Error("Seven Cells year bank expected 224 center variants and 91 new pangram boards; got " + variants.length + " and " + generated.length);
   }
   spellingHivePuzzles.push(...variants, ...generated);
 }
