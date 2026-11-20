@@ -51,7 +51,7 @@ Clinical cases are filtered toward specialties where curated mappings exist, inc
 
 Remaining content priorities:
 1. Continue replacing generic Seven Cells entries with clinically meaningful, dictionary-verified words; the playable bank now has 50 boards.
-2. Expand Cell Sketch and Letter Rungs while preserving one-solution and valid-path checks (Cell Sketch now has 24 original patterns plus 12 transformed variants; Letter Rungs now has 36 curated paths).
+2. Expand Cell Sketch and Letter Rungs while preserving one-solution and valid-path checks (Cell Sketch now has 15 original patterns plus seeded rotation/reflection variants; Letter Rungs now has 36 curated paths).
 3. Add specialty-reviewed Quad Squad boards and clinical cases for tracks whose current content falls back to general banks.
 4. Add original/licensed visual material for ECG, imaging, histology, gross pathology, and anatomy recognition.
 5. Continue expanding Deep Scan's long-tail answer sets with clinically defensible aliases and explicit editorial rarity weights—not fabricated player-population statistics.
