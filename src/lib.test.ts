@@ -283,6 +283,15 @@ describe("new arcade content banks", () => {
     }
   });
 
+  it("keeps expanded Deep Scan aliases collision-free after editorial enrichment", () => {
+    expect(deepDivePromptsExpanded).toHaveLength(79);
+    for (const prompt of deepDivePromptsExpanded) {
+      const accepted = prompt.answers.flatMap((item) => [item.answer, ...(item.aliases ?? [])]);
+      const normalized = accepted.map((answer) => answer.toLowerCase().replace(/[^a-z0-9]/g, ""));
+      expect(new Set(normalized).size, prompt.id).toBe(normalized.length);
+    }
+  });
+
   it("keeps dedicated Deep Scan long-tail prompts genuinely open-ended", () => {
     const longTail = deepDivePrompts.filter((prompt) => prompt.longTail);
     expect(longTail).toHaveLength(9);
