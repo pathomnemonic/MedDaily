@@ -2374,3 +2374,26 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
   .cellsketch .pen-row{margin:4px 0}.cellsketch .sketch-head{margin:2px 0}
   .nonogram-actions{justify-content:center}
 }
+
+/* ---- keep the primary action of every full-screen game pinned in view ---- */
+.hn-next{position:sticky;bottom:0;z-index:2;box-shadow:0 4px 0 #a8730f,0 -10px 14px var(--cream)}
+.cf-actions{position:sticky;bottom:0;z-index:5;padding:10px 0 max(10px,env(safe-area-inset-bottom));background:linear-gradient(transparent,#fff4e0 28%)}
+.sl-lock{position:sticky;bottom:6px;z-index:3}
+@media(max-height:760px){
+  .sl-ruler{height:150px}.sl-bench{margin:6px 10px 2px}.sl-title h2{font-size:26px;margin:2px 0}.sl-title p{display:none}
+  .sl-legend{gap:5px;margin-top:4px}.sl-chip{padding:6px 9px}.sl-chip span{font-size:12px}.sl-hint{padding-bottom:4px}
+  .sl-panel{gap:6px;margin-top:6px}.sl-readout{font-size:26px}.sl-ctrl button{padding:8px 0}
+  .sl-dots i{width:26px;height:26px}
+  .riddle-clue{padding:8px 10px!important;font-size:13px!important;line-height:1.3}.riddle-clues{gap:6px!important}.riddle-kind{margin:2px 0!important}
+  .riddle-options button{padding:9px 8px!important}.riddle-worth{margin:4px 0!important}
+  .hn-list li{padding:4px 8px}.hn-sheet{max-height:70dvh}.hn-note{font-size:11px;margin:4px 0}
+  .complete-card{padding:16px 16px 14px;max-height:calc(100dvh - 24px);overflow-y:auto}
+  .complete-mascot{display:none}.complete-stars span{font-size:30px}.complete-stars{margin:0 0 4px}
+  .complete-card h2{font-size:26px;margin:8px 0 0}.complete-sub{margin-bottom:8px}.complete-xp{margin-bottom:8px}
+  .share-preview{max-height:74px;overflow:auto;font-size:11px;margin:0 0 8px}
+  .complete-actions{gap:6px}.complete-actions .button{min-height:40px;font-size:16px}
+  .complete-actions .next-up{min-height:46px}
+}
+.complete-actions{position:sticky;bottom:0}
+@media(max-width:760px){.wm-bar,.higher-bar{padding-bottom:max(8px,env(safe-area-inset-bottom))}}
+@media(max-width:760px){.hl-foot{gap:6px;padding:10px 14px max(10px,env(safe-area-inset-bottom))}.hl-foot p{font-size:11px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.hl-foot button{padding:10px}}
