@@ -70,9 +70,9 @@ const pairWordScrambles: [string, string][] = pairsBank
   .filter(([term]) => /^[A-Za-z]{5,11}$/.test(term))
   .map(([term, clue]) => [term.toUpperCase(), clue]);
 const allScrambleWords: [string, string][] = [
-  ...scrambleWords.map(([word, clue]) => [word, clue]),
-  ...scrambleWordsExpansion,
-  ...scrambleWordsExpansion2,
+  ...scrambleWords.map(([word, clue]) => [word, clue] as [string, string]),
+  ...scrambleWordsExpansion.map(([word, clue]) => [word, clue] as [string, string]),
+  ...scrambleWordsExpansion2.map(([word, clue]) => [word, clue] as [string, string]),
   ...pairWordScrambles,
   ...scrambleWordsYearExpansion.map(([word, clue]) => [word, clue] as [string, string])
 ];
