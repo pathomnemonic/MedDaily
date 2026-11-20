@@ -1,8 +1,8 @@
 # Content inventory and expansion priorities
 
-**Snapshot:** November 19, 2026 (gameplay parity iteration)
+**Snapshot:** November 20, 2026 (gameplay parity iteration)
 
-MedDaily exposes twenty playable game formats. The retired Next Best Step bank remains in the repository for reference but is not presented as a standalone game. The current banks are not yet a 365-day set of unique puzzles for every game.
+MedDaily exposes **23 playable game formats** in the home catalog. Body Map Blitz remains implemented but hidden; the retired Triage Order and Next Best Step banks remain in the repository for reference and are not presented as standalone games. The current banks are not yet a 365-day set of unique puzzles for every game.
 
 ## Curated content currently included
 
@@ -29,7 +29,7 @@ MedDaily exposes twenty playable game formats. The retired Next Best Step bank r
 | Trivia Rumble | 365+ questions | Six-category wheel with solo and local pass-and-play modes; 20-second timer; a correct answer keeps the wheel in pass-and-play |
 
 | Theme Trail | 30 themed word packs, each laid out as a bending adjacent-letter board with a board-spanning trail word | Drag or tap to trace terms; bonus words earn hints; generator ported from ChatGPT's Strands-style prototype and tested on every qualifying pack |
-| Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |
+| Letter Lab | Generated 4×4 dice boards | Boggle-style adjacent-letter path building; dictionary assembled from the curated medical banks |\n| Crossword Clinic | 100+ clue-and-answer entries | Procedurally generated mini-crosswords; tests validate clue hygiene, unique entries, and deterministic valid grids across 120 seeds |\n| Riddle Lab | 50+ riddles | Four-stage progressive clues with four answer choices; tests check clue leakage, unique answers, and distractor availability |\n| Mime Time | 100+ act-it-out prompts | Pass-the-phone charades across procedures, symptoms, ward life, instruments, specialties, and patient scenarios |
 
 ## What this means for daily longevity
 
@@ -62,7 +62,7 @@ The research notes in [DLE_RESEARCH.md](./DLE_RESEARCH.md) record the daily-game
 
 ## Visual system (November 19, 2026)
 
-The arcade home is now games-first: a compact HUD (streak, cleared count, Daily/Free Play and Open Arcade/Specialties toggles), an "Up next" featured game, then the 16-game grid, with Dx Dash below. Every game has original SVG cover art (`src/components/GameArt.tsx`) used on its card, the featured slot, and its play-page header, and each play page takes on its game's accent colour. Still open: bespoke in-game art (boards, completion animations, sound/haptics) and Dx Dash-style atmospheric backgrounds, which need that repository to be accessible.
+The arcade home is now games-first: a compact HUD (streak, cleared count, Daily/Free Play and Open Arcade/Specialties toggles), an "Up next" featured game, then the 23-game grid, with Dx Dash below. Every game has original SVG cover art (`src/components/GameArt.tsx`) used on its card, the featured slot, and its play-page header, and each play page takes on its game's accent colour. Still open: bespoke in-game art (boards, completion animations, sound/haptics) and Dx Dash-style atmospheric backgrounds, which need that repository to be accessible.
 
 ## Sound and music
 
