@@ -31,7 +31,7 @@ Bacteria/Gram-negative/Rods/Enterobacterales/Proteus vulgaris|Urease-positive, s
 Bacteria/Gram-negative/Rods/Enterobacterales/Morganella morganii|Urease-producing opportunist with inducible AmpC resistance and healthcare-associated urinary infections.
 Bacteria/Gram-negative/Rods/Enterobacterales/Providencia stuartii|Often colonizes long-term urinary catheters and can be highly drug resistant.
 Bacteria/Gram-negative/Rods/Enterobacterales/Edwardsiella tarda|Aquatic exposure can precede gastroenteritis or wound infection.
-Bacteria/Gram-negative/Rods/Enterobacterales/Enterobacter hormaechei|Healthcare-associated member of the Enterobacter cloacae complex with inducible AmpC potential.
+Bacteria/Gram-negative/Rods/Enterobacterales/Enterobacter hormaechei|Healthcare-associated member of a cloacae complex with inducible AmpC potential.
 Bacteria/Gram-negative/Rods/Enterobacterales/Klebsiella oxytoca|Can cause antibiotic-associated hemorrhagic colitis and occasionally liver abscess.
 Bacteria/Gram-negative/Rods/Enterobacterales/Escherichia coli O157:H7|Shiga toxin-producing strain linked to bloody diarrhea and hemolytic uremic syndrome.
 Bacteria/Gram-negative/Rods/Enterobacterales/Escherichia coli K1|Capsular strain associated with neonatal meningitis.
