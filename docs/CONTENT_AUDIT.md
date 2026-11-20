@@ -37,7 +37,7 @@ The retired Triage Order bank (42 sequences) and Next Best Step bank remain in s
 
 ## What this means for daily longevity
 
-Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. The current counts above describe the curated source banks, not the number of unique calendar days supported. Daily and unlimited Free Play are both available. Most clinical knowledge games re-seed or reshuffle curated banks; Word Hunt, Letter Lab, Casefile Logic, Word Ladder, and Cell Sketch also use procedural generation or seeded transformations. Procedural variety does not replace the need to keep expanding curated clinical content. Several smaller banks will need further expansion before the arcade can claim a full year of unique daily content.
+Daily puzzle selection is deterministic and shared by all players in the same UTC date/scope. The current counts above describe the curated source banks, not the number of unique calendar days supported. Daily and unlimited Free Play are both available. Most clinical knowledge games re-seed or reshuffle curated banks; Theme Trail, Letter Lab, Casefile Logic, Letter Rungs, and Cell Sketch also use procedural generation or seeded transformations. Procedural variety does not replace the need to keep expanding curated clinical content. Several smaller banks will need further expansion before the arcade can claim a full year of unique daily content.
 
 The architecture deliberately separates game engines from content datasets so banks can grow without rewriting the UI or scoring systems. However, **do not describe the current release as having 365 unique daily puzzles**.
 
