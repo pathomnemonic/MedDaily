@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank } from "./data";
+import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, pairsBank } from "./data";
 import { glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
@@ -19,7 +19,7 @@ import { medicalRungWords } from "./dataRungs";
 import { riddles, riddleOptions } from "./dataRiddles";
 import { makeCrossword } from "./crosswordGen";
 import { makeTrailPuzzle } from "./trailLogic";
-import { themeTrailYearPacks } from "./dataTrailExpansion";
+import { getThemeTrailYearPacks } from "./dataTrailExpansion";
 import { extendStrandsPath, readStrandsPath } from "./strandsLogic";
 import { createPortal } from "react-dom";
 import DiveScene, { ZONE_COLORS } from "./components/DiveScene";
@@ -1785,7 +1785,7 @@ function CrosswordClinic({ seed, onDone, onExit }: Props & { onExit?: () => void
 }
 
 
-const trailPacks = () => themeTrailYearPacks;
+const trailPacks = () => getThemeTrailYearPacks();
 function ThemeTrail({ seed, onDone, specialty = "general" }: Props) {
   const pack = trailPacks()[Math.abs(Math.trunc(seed)) % trailPacks().length];
   const puzzle = useMemo(() => makeTrailPuzzle(pack, seed), [pack, seed]);
