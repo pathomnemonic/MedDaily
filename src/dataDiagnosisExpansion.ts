@@ -3,7 +3,7 @@ import { branchSets } from "./dataBranch";
 import { hashSeed, seeded, shuffle } from "./lib";
 
 const progressiveClues = (clue: string): string[] => {
-  const words = clue.split(/\\s+/);
+  const words = clue.split(/\s+/);
   const first = Math.min(words.length - 2, Math.max(3, Math.ceil(words.length * 0.36)));
   const second = Math.min(words.length - 1, Math.max(first + 2, Math.ceil(words.length * 0.72)));
   return [words.slice(0, first).join(" ") + "…", words.slice(0, second).join(" ") + "…", clue];
