@@ -212,6 +212,10 @@ describe("expanded content integrity", () => {
     expect(new Set(labPrompts.map((item) => item.id)).size).toBe(labPrompts.length);
     expect(new Set(labPrompts.map((item) => item.prompt.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim())).size).toBe(labPrompts.length);
     expect(new Set(pairsBank.map(([term]) => term)).size).toBe(pairsBank.length);
+    const memoryBoards = new Set(Array.from({ length: 365 }, (_, day) =>
+      shuffle(pairsBank, seeded(day + 11)).slice(0, 12).map(([term]) => term).sort().join("|")
+    ));
+    expect(memoryBoards.size).toBe(365);
     expect(new Set(microbePacks.map((pack) => pack.name)).size).toBe(microbePacks.length);
     expect(microbePacks.every((pack) => pack.words.every((word) => word.length <= 14))).toBe(true);
     expect(new Set(triageCases.map((item) => item.id)).size).toBe(triageCases.length);
