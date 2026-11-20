@@ -42,7 +42,7 @@ import { isValid, makeCrossword } from "./crosswordGen";
 
 describe("Mini Crossword", () => {
   it("has a clean clue bank", () => {
-    expect(crosswordBank.length).toBeGreaterThanOrEqual(100);
+    expect(crosswordBank).toHaveLength(365);
     const words = crosswordBank.map(([w]) => w);
     expect(new Set(words).size).toBe(words.length);
     for (const [word, clue] of crosswordBank) {
