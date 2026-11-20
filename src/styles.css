@@ -2397,3 +2397,27 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .complete-actions{position:sticky;bottom:0}
 @media(max-width:760px){.wm-bar,.higher-bar{padding-bottom:max(8px,env(safe-area-inset-bottom))}}
 @media(max-width:760px){.hl-foot{gap:6px;padding:10px 14px max(10px,env(safe-area-inset-bottom))}.hl-foot p{font-size:11px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.hl-foot button{padding:10px}}
+
+
+/* Accessibility baseline: visible keyboard focus, readable form controls, and reduced motion. */
+:where(button, input, select, textarea, a, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 3px solid var(--mint);
+  outline-offset: 3px;
+}
+:where(input, select, textarea) {
+  color: inherit;
+}
+:where(button, input, select, textarea) {
+  touch-action: manipulation;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    caret-color: auto !important;
+  }
+}
