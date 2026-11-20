@@ -5,7 +5,7 @@ const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\
 const hideAnswer = (text: string, answer: string) => {
   let result = text.replace(/\s+/g, " ").trim();
   for (const part of answer.split(/[^A-Za-z0-9]+/).filter((word) => word.length >= 2)) {
-    result = result.replace(new RegExp("\\b" + escapeRegExp(part) + "(?:s|es|ed|ing)?\\b", "gi"), "the finding");
+    result = result.replace(new RegExp("\\b" + escapeRegExp(part) + "(?:s|es|ed|ing|ly|ely)?\\b", "gi"), "the finding");
   }
   return result;
 };
