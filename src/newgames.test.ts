@@ -29,8 +29,10 @@ describe("Riddle Lab content", () => {
 
 describe("Mime Time deck", () => {
   it("is large, unique, and has no empty prompts", () => {
-    expect(mimeDeck.length).toBeGreaterThanOrEqual(100);
-    expect(new Set(mimeDeck.map((m) => m.term.toLowerCase())).size).toBe(mimeDeck.length);
+    expect(mimeDeck).toHaveLength(365);
+    expect(new Set(mimeDeck.map((m) => m.term.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim())).size).toBe(mimeDeck.length);
+    expect(new Set(mimeDeck.map((m) => m.kind))).toEqual(new Set(["Procedure", "Symptom", "Ward life", "Instrument", "Specialty", "Patient"]));
+    for (const kind of ["Procedure", "Symptom", "Ward life", "Instrument", "Specialty", "Patient"] as const) expect(mimeDeck.filter((m) => m.kind === kind).length).toBeGreaterThanOrEqual(50);
     expect(mimeDeck.every((m) => m.term.trim().length > 3)).toBe(true);
   });
 });
