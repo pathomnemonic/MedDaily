@@ -37,7 +37,7 @@ const SCENES: Record<Scene, ReactNode> = {
     <rect x={18} y={22} width={364} height={236} rx={14} />
     {Array.from({ length: 9 }, (_, i) => <path key={"v"+i} d={`M${48+i*38} 34v212`} strokeDasharray="2 8" opacity={0.55} />)}
     {Array.from({ length: 6 }, (_, i) => <path key={"h"+i} d={`M28 ${58+i*36}h344`} strokeDasharray="2 8" opacity={0.55} />)}
-    <path d="M30 164h54l12-12 12 12h25l12-34 12 82 16-112 16 76 12-12h36l12-12 12 12h82" strokeWidth={4} />
+    <path className="ecg-trace" d="M30 164h54l12-12 12 12h25l12-34 12 82 16-112 16 76 12-12h36l12-12 12 12h82" strokeWidth={4} />
     <path d="M30 224h340M30 44h340" opacity={0.35} />
   </g>,
   imaging: <g fill="none" stroke={W} strokeWidth={3} strokeLinejoin="round" strokeLinecap="round">
