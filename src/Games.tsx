@@ -37,7 +37,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "pairs": return <MemoryMatch seed={seed} onDone={onDone} specialty={specialty} />;
     case "splice": return <AnagramSprint seed={seed} onDone={onDone} specialty={specialty} />;
     case "glyph": return <CellSketch seed={seed} onDone={onDone} practice={practice} />;
-    case "higher": return <HigherLower seed={seed} onDone={onDone} specialty={specialty} />;
+    case "higher": return <HigherLower seed={seed} onDone={onDone} onExit={onExit} />;
     case "ladder": return <WordLadder seed={seed} onDone={onDone} />;
     case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
     case "casefile": return <CasefileLogic seed={seed} onDone={onDone} practice={practice} />;
@@ -1138,33 +1138,74 @@ const splitNotes = (label: string): { title: string; notes: string } => {
   const notes = [...label.matchAll(/\(([^)]*)\)/g)].map((m) => m[1].trim()).filter((n) => n.toLowerCase() !== "approximate");
   return { title: label.replace(/\s*\([^)]*\)/g, "").trim(), notes: notes.join("; ") };
 };
-function HigherLower({ seed, onDone }: Props) {
+/** Counts up to a value, with the same decimals as the value, so reveals feel like a game-show tally. */
+function CountUp({ to, ms = 1000 }: { to: number; ms?: number }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) { setV(to); return; }
+    let raf = 0;
+    const t0 = performance.now();
+    const tick = (t: number) => { const k = Math.min(1, (t - t0) / ms); setV(to * (1 - Math.pow(1 - k, 3))); if (k < 1) raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [to, ms]);
+  const decimals = Number.isInteger(to) ? 0 : Math.min(3, (String(to).split(".")[1] ?? "").length);
+  return <>{v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</>;
+}
+
+function HigherLower({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
   const list = useMemo(() => shuffle(higherLowerPairs.filter((item) => "fun" in item), seeded(seed + 29)).slice(0, 5).map((item, i) => seeded(seed * 31 + i * 17 + 5)() < 0.5 ? { ...item, a: item.b, av: item.bv, b: item.a, bv: item.av } : item), [seed]);
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [marks, setMarks] = useState<("ok" | "no")[]>([]);
   const [picked, setPicked] = useState<"a" | "b" | "tie" | null>(null);
   const [reveal, setReveal] = useState(false);
   const [finished, setFinished] = useState(false);
-  const advanceTimer = useRef<number | null>(null);
-  useEffect(() => () => { if (advanceTimer.current !== null) window.clearTimeout(advanceTimer.current); }, []);
+  const done = useRef(false);
   const item = list[round];
   const correct = item.av === item.bv ? "tie" : item.av > item.bv ? "a" : "b";
-  const choose = (v: "a"|"b"|"tie") => {
+  const choose = (v: "a" | "b" | "tie") => {
     if (reveal || finished) return;
     const ok = v === correct;
-    const next = score + (ok ? 1 : 0);
-    setPicked(v); setScore(next); setReveal(true);
-    advanceTimer.current = window.setTimeout(() => {
-      advanceTimer.current = null;
-      if (round + 1 === list.length) { setFinished(true); onDone(Math.round(next / list.length * 100), 100, next === list.length); }
-      else { setRound((r) => r + 1); setPicked(null); setReveal(false); }
-    }, 1700);
+    setPicked(v); setReveal(true); setMarks((m) => [...m, ok ? "ok" : "no"]);
+    if (ok) { setScore((n) => n + 1); setStreak((n) => n + 1); reward(true, null, "+1"); } else { setStreak(0); reward(false); }
   };
-  return <div className="game-layout">
-    <div className="game-instructions"><span className="instruction-dot gold" /> Which quantity is greater? Five quick comparisons. Sometimes the answer is a tie.</div>
-    <div className="higher-progress">COMPARISON {Math.min(round + 1, 5)} / 5 <span>{score} right</span></div>
-    {!finished ? <div className="higher-cards"><button className={"higher-card" + (reveal && correct === "a" ? " right" : reveal && picked === "a" ? " wrong" : "")} onClick={() => choose("a")} disabled={reveal}><span>A</span><b>{splitNotes(item.a).title}</b>{reveal && <strong>{item.av.toLocaleString("en-US")} <small>{item.unit}</small>{splitNotes(item.a).notes && <small className="higher-note">{splitNotes(item.a).notes}</small>}</strong>}</button><div className="higher-or">{reveal && correct === "tie" ? "TIE" : "OR"} <button onClick={() => choose("tie")} disabled={reveal}>=</button></div><button className={"higher-card" + (reveal && correct === "b" ? " right" : reveal && picked === "b" ? " wrong" : "")} onClick={() => choose("b")} disabled={reveal}><span>B</span><b>{splitNotes(item.b).title}</b>{reveal && <strong>{item.bv.toLocaleString("en-US")} <small>{item.unit}</small>{splitNotes(item.b).notes && <small className="higher-note">{splitNotes(item.b).notes}</small>}</strong>}</button></div> : <Finish title="Comparison complete" detail={"You called " + score + " of " + list.length + " comparisons correctly."} score={Math.round(score/list.length*100) + " / 100"} />}
-    {reveal && <p className="game-feedback">{item.explanation} <span className="source-note">{item.source}</span></p>}
+  const next = () => {
+    if (!reveal) return;
+    if (round + 1 === list.length) {
+      setFinished(true);
+      if (!done.current) { done.current = true; onDone(Math.round(score / list.length * 100), 100, score === list.length); }
+      return;
+    }
+    setRound((r) => r + 1); setPicked(null); setReveal(false);
+  };
+  const half = (side: "a" | "b") => {
+    const label = splitNotes(side === "a" ? item.a : item.b);
+    const value = side === "a" ? item.av : item.bv;
+    const win = reveal && (correct === side || correct === "tie");
+    return <button className={"hl-half hl-" + side + (reveal ? (win ? " win" : " lose") : "") + (picked === side ? " picked" : "")} onClick={() => choose(side)} disabled={reveal}>
+      <small>{side.toUpperCase()}</small>
+      <h2 key={round + side}>{label.title}</h2>
+      {reveal && <div className="hl-val"><b><CountUp to={value} /></b><span>{item.unit}</span>{label.notes && <em>{label.notes}</em>}</div>}
+      {reveal && <i className="hl-mark">{win ? "✓" : "✗"}</i>}
+    </button>;
+  };
+  const ui = <div className="hl" role="dialog" aria-label="What Has More?">
+    <header className="hl-hud">
+      {onExit && <button className="hl-exit" onClick={onExit} aria-label="Leave game">✕</button>}
+      <div className="hl-segs">{list.map((_, i) => <i key={i} className={i === round ? "cur" : marks[i] ?? ""} />)}</div>
+      <div className={"hl-streak" + (streak >= 2 ? " hot" : "")}>{streak >= 2 ? "🔥 " + streak : score + " ✓"}</div>
+    </header>
+    <p className="hl-ask">WHICH IS GREATER?</p>
+    {half("a")}
+    <div className="hl-vs">{reveal ? <b className="hl-res">{picked === correct ? "✓" : "✗"}</b> : <button onClick={() => choose("tie")} aria-label="They are equal">=</button>}<span>{reveal && correct === "tie" ? "TIE" : "VS"}</span></div>
+    {half("b")}
+    {reveal && <footer className="hl-foot"><p>{item.explanation} <em>{item.source}</em></p><button onClick={next}>{round === list.length - 1 ? "SEE MY SCORE" : "NEXT ▶"}</button></footer>}
+  </div>;
+  return <div className="game-layout" data-own-sfx="true">
+    {!finished ? (typeof document !== "undefined" ? createPortal(ui, document.body) : null) : <Finish title="Comparison complete" detail={"You called " + score + " of " + list.length + " comparisons correctly."} score={Math.round(score / list.length * 100) + " / 100"} />}
   </div>;
 }
 
@@ -1249,6 +1290,13 @@ function SpellingHive({ seed, onDone }: Props) {
   return <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot mint" /> Find as many words as you can using the seven hive letters. Words need at least four letters and must include the center letter. Use all seven for a pangram bonus.</div>
     <div className="hive-header"><span className="eyebrow">TODAY'S HIVE</span><strong>{puzzle.title}</strong><small>{found.length} / {puzzle.words.length} words found · {score} points</small></div>
+    {(() => {
+      const ratio = score / Math.max(1, maximum);
+      const ranks = [["Premed", 0], ["Student", 0.1], ["Intern", 0.25], ["Resident", 0.4], ["Fellow", 0.6], ["Attending", 0.8]] as const;
+      const rank = [...ranks].reverse().find(([, min]) => ratio >= min)![0];
+      const lengths = [...new Set(puzzle.words.map((w) => w.length))].sort((a, b) => a - b);
+      return <div className="hive-progress"><div className="hive-rank"><b>{rank}</b><i><span style={{ width: Math.min(100, ratio * 100 / 0.8) + "%" }} /></i></div><div className="hive-lengths">{lengths.map((n) => <span key={n} className={puzzle.words.filter((w) => w.length === n && !found.includes(w)).length === 0 ? "done" : ""}>{n}-letter <b>{puzzle.words.filter((w) => w.length === n && found.includes(w)).length}/{puzzle.words.filter((w) => w.length === n).length}</b></span>)}</div></div>;
+    })()}
     <div className="hive-board" aria-label="Seven letter spelling hive">
       <button className="hive-letter center-letter" onClick={() => setEntry((v) => v + puzzle.center)}>{puzzle.center}</button>
       {outer.map((letter, i) => <button key={letter} className={"hive-letter hive-position-" + i} onClick={() => setEntry((v) => v + letter)}>{letter}</button>)}
@@ -1259,13 +1307,6 @@ function SpellingHive({ seed, onDone }: Props) {
       <button className="button button-soft" onClick={() => setEntry((v) => v.slice(0,-1))} disabled={ended || !entry}>⌫</button>
       <button className="button button-quiet" onClick={() => setEntry("")} disabled={ended}>Clear</button>
     </div>
-    {(() => {
-      const ratio = score / Math.max(1, maximum);
-      const ranks = [["Larva", 0], ["Worker", 0.1], ["Forager", 0.25], ["Guardian", 0.4], ["Royal Jelly", 0.6], ["Queen", 0.8]] as const;
-      const rank = [...ranks].reverse().find(([, min]) => ratio >= min)![0];
-      const lengths = [...new Set(puzzle.words.map((w) => w.length))].sort((a, b) => a - b);
-      return <div className="hive-progress"><div className="hive-rank"><b>{rank}</b><i><span style={{ width: Math.min(100, ratio * 100 / 0.8) + "%" }} /></i></div><div className="hive-lengths">{lengths.map((n) => <span key={n} className={puzzle.words.filter((w) => w.length === n && !found.includes(w)).length === 0 ? "done" : ""}>{n}-letter <b>{puzzle.words.filter((w) => w.length === n && found.includes(w)).length}/{puzzle.words.filter((w) => w.length === n).length}</b></span>)}</div></div>;
-    })()}
     <div className="hive-tools"><button className="text-button" onClick={() => setShuffles((n) => n + 1)}>🔀 Shuffle</button><button className="text-button" onClick={() => { const left = puzzle.words.filter((w) => !found.includes(w)); if (left.length) setStarter(left[Math.floor(Math.random() * left.length)].slice(0, 2) + "…"); }} disabled={ended}>Starter hint</button><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Need a hint?</button><button className="text-button" onClick={finish} disabled={ended}>Finish for today</button></div>
     {hint && <p className="game-feedback">{puzzle.hint}</p>}
     {starter && !ended && <p className="game-feedback">A word still hiding starts with <b>{starter}</b></p>}
@@ -1360,6 +1401,9 @@ function CasefileLogic({ seed, onDone, practice = false }: Props & { practice?: 
 const MIME_SECONDS = 45;
 type MimeStage = "setup" | "ready" | "play" | "between" | "done";
 function MimeTime({ seed, onDone }: Props) {
+  const [flash, setFlash] = useState<"" | "got" | "skip">("");
+  const flashTimer = useRef<number | null>(null);
+  const blink = (kind: "got" | "skip") => { setFlash(kind); if (flashTimer.current !== null) window.clearTimeout(flashTimer.current); flashTimer.current = window.setTimeout(() => setFlash(""), 320); };
   const [count, setCount] = useState(2);
   const [names, setNames] = useState(["Player 1", "Player 2", "Player 3", "Player 4", "Player 5", "Player 6"]);
   const [stage, setStage] = useState<MimeStage>("setup");
@@ -1388,8 +1432,8 @@ function MimeTime({ seed, onDone }: Props) {
     setScores((all) => all.map((v, i) => i === player ? v + gotThisTurn : v));
     setStage("between");
   };
-  const got = () => { reward(true, null, "+1"); setGotThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
-  const skip = () => { setSkipsThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
+  const got = () => { blink("got"); reward(true, null, "+1"); setGotThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
+  const skip = () => { blink("skip"); sfx("whoosh"); setSkipsThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
   const nextTurn = () => {
     if (turn + 1 >= totalTurns) {
       setStage("done");
@@ -1422,12 +1466,20 @@ function MimeTime({ seed, onDone }: Props) {
       <p>{count > 1 ? "Take the phone, hide the screen from the others, then start." : "Act each card out loud-free and count your own wins."}</p>
       <button className="button button-primary full-button" onClick={startTurn}>I'm ready ▶</button>
     </div>}
-    {stage === "play" && <div className="mime-play">
-      <div className={"mime-clock" + (seconds <= 10 ? " urgent" : "")}><i style={{ width: seconds / MIME_SECONDS * 100 + "%" }} /><b>{seconds}</b></div>
-      <div className="mime-card" key={cardIndex}><span className="mime-kind">{card.kind}</span><h2>{card.term}</h2></div>
-      <div className="mime-buttons"><button className="mime-skip" onClick={skip}>↷ Skip</button><button className="mime-got" onClick={got}>✓ Got it!</button></div>
-      <p className="mime-tally">{gotThisTurn} guessed this turn · {skipsThisTurn} skipped</p>
-    </div>}
+    {stage === "play" && createPortal(<div className={"mm mm-c" + (cardIndex % 5) + (flash ? " flash-" + flash : "")} role="dialog" aria-label="Mime Time">
+      <header className="mm-top">
+        <span className="mm-who">{(names[player] ?? "").trim() || "Player " + (player + 1)}</span>
+        <div className={"mm-ring" + (seconds <= 10 ? " urgent" : "")}><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" /><circle cx="22" cy="22" r="19" className="fg" style={{ strokeDasharray: 119.4, strokeDashoffset: 119.4 * (1 - seconds / MIME_SECONDS) }} /></svg><b>{seconds}</b></div>
+        <span className="mm-tally">{gotThisTurn} ✓<small> · {skipsThisTurn} ↷</small></span>
+      </header>
+      <div className="mm-card" key={cardIndex}>
+        <small>{card.kind.toUpperCase()}</small>
+        <h2 style={{ fontSize: card.term.length > 26 ? "clamp(26px,8vw,48px)" : card.term.length > 14 ? "clamp(34px,10.5vw,64px)" : "clamp(44px,15vw,90px)" }}>{card.term}</h2>
+        <p>Act it out. No words, no sounds.</p>
+      </div>
+      <div className="mm-btns"><button className="mm-skip" onClick={skip}><b>↷</b>SKIP</button><button className="mm-got" onClick={got}><b>✓</b>GOT IT</button></div>
+      <i className="mm-flash" aria-hidden="true">{flash === "got" ? "✓" : flash === "skip" ? "↷" : ""}</i>
+    </div>, document.body)}
     {stage === "between" && <div className="mime-ready">
       <span className="eyebrow">TIME'S UP</span>
       <h2>{gotThisTurn} {gotThisTurn === 1 ? "card" : "cards"}!</h2>
@@ -1671,6 +1723,9 @@ function CrosswordClinic({ seed, onDone }: Props) {
   const [wrong, setWrong] = useState<Set<string>>(new Set());
   const [reveals, setReveals] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [secs, setSecs] = useState(0);
+  useEffect(() => { if (finished) return; const id = window.setInterval(() => setSecs((v) => v + 1), 1000); return () => window.clearInterval(id); }, [finished]);
+  const clock = Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0");
   const input = useRef<HTMLInputElement>(null);
   const done = useRef(false);
   const key = (r: number, c: number) => r + "," + c;
@@ -1681,7 +1736,7 @@ function CrosswordClinic({ seed, onDone }: Props) {
   const complete = (next: Record<string, string>) => {
     if (done.current || ![...cells].every(([k, v]) => next[k] === v.letter)) return;
     done.current = true; setFinished(true);
-    onDone(Math.max(0, 100 - reveals * 5), 100, reveals === 0, "Crossword Clinic " + cw.words.length + " words" + (reveals ? " · " + reveals + " reveal" + (reveals > 1 ? "s" : "") : " · no reveals ✨") + "\n" + "🟩".repeat(cw.words.length));
+    onDone(Math.max(0, 100 - reveals * 5), 100, reveals === 0, "Crossword Clinic " + cw.words.length + " words · " + clock + (reveals ? " · " + reveals + " reveal" + (reveals > 1 ? "s" : "") : " · no reveals ✨") + "\n" + "🟩".repeat(cw.words.length));
   };
   const move = (dr: number, dc: number) => {
     let r = sel.r + dr, c = sel.c + dc;
@@ -1742,7 +1797,7 @@ function CrosswordClinic({ seed, onDone }: Props) {
         return <button key={k} className={cls} role="gridcell" aria-label={"Row " + (r + 1) + " column " + (c + 1) + (cell.number ? ", clue " + cell.number : "") + (entries[k] ? ", " + entries[k] : ", empty")} onClick={() => pickCell(r, c)}>{cell.number && <i>{cell.number}</i>}{entries[k] ?? ""}</button>;
       })}
     </div>
-    <div className="crossword-tools"><span>{filled} / {cells.size} squares</span><span><button className="button button-quiet" onClick={check} disabled={finished}>✔ Check</button><button className="button button-quiet" onClick={reveal} disabled={finished}>💡 Reveal −5</button><button className="button button-quiet" onClick={() => setAcross((v) => !v)} disabled={finished}>↔ Direction</button></span></div>
+    <div className="crossword-tools"><span>⏱ {clock} · {filled} / {cells.size} squares</span><span><button className="button button-quiet" onClick={check} disabled={finished}>✔ Check</button><button className="button button-quiet" onClick={reveal} disabled={finished}>💡 Reveal −5</button><button className="button button-quiet" onClick={() => setAcross((v) => !v)} disabled={finished}>↔ Direction</button></span></div>
     <div className="crossword-clues">
       {[true, false].map((isAcross) => <div key={String(isAcross)}><SectionLabel>{isAcross ? "ACROSS" : "DOWN"}</SectionLabel>{clueList(isAcross).map((w) => <button key={w.number + String(isAcross)} className={"xw-clue" + (active === w ? " on" : "")} onClick={() => { setAcross(w.across); setSel({ r: w.row, c: w.col }); input.current?.focus({ preventScroll: true }); }}><b>{w.number}</b> {w.clue} <small>({w.word.length})</small></button>)}</div>)}
     </div>
@@ -1757,6 +1812,22 @@ function ThemeTrail({ seed, onDone, specialty = "general" }: Props) {
   const pack = pick(trailPacks(), seed, specialty, "microbe");
   const puzzle = useMemo(() => makeTrailPuzzle(pack, seed), [pack, seed]);
   const { grid, rows, columns } = puzzle;
+  // Measured cell centres let us draw connecting lines for the live path and for every found word, like the Strands look.
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [geo, setGeo] = useState<{ w: number; h: number; c: { x: number; y: number }[] }>({ w: 0, h: 0, c: [] });
+  useEffect(() => {
+    const board = boardRef.current;
+    if (!board) return;
+    const measure = () => {
+      const br = board.getBoundingClientRect();
+      const c = [...board.querySelectorAll<HTMLElement>("[data-cell]")].map((el) => { const r = el.getBoundingClientRect(); return { x: r.left - br.left + r.width / 2, y: r.top - br.top + r.height / 2 }; });
+      setGeo({ w: br.width, h: br.height, c });
+    };
+    measure();
+    const ro = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : null;
+    ro?.observe(board);
+    return () => ro?.disconnect();
+  }, [grid]);
   const [found, setFound] = useState<string[]>([]);
   const [bonus, setBonus] = useState<string[]>([]);
   const [hintsUsed, setHintsUsed] = useState(0);
@@ -1842,7 +1913,11 @@ function ThemeTrail({ seed, onDone, specialty = "general" }: Props) {
   return <div className="game-layout trail-game" data-own-sfx="true" onPointerUp={onUp} onPointerLeave={() => { if (drag.current) { drag.current = false; if (moved.current) submit(); } }}>
     <div className="trail-theme"><span className="eyebrow">TODAY'S THEME</span><strong>{puzzle.theme}</strong><small>{found.length} / {puzzle.words.length} terms · {bonus.length} bonus {bonus.length === 1 ? "word" : "words"}</small></div>
     <div className="trail-word-live" aria-live="polite">{currentWord || "\u00a0"}</div>
-    <div className="trail-board" style={{ gridTemplateColumns: "repeat(" + columns + ", 1fr)" }} onPointerMove={onMove}>
+    <div className="trail-board" ref={boardRef} style={{ gridTemplateColumns: "repeat(" + columns + ", 1fr)" }} onPointerMove={onMove}>
+      {geo.c.length > 0 && <svg className="trail-lines" width={geo.w} height={geo.h} aria-hidden="true">
+        {found.map((word) => <polyline key={word} points={puzzle.paths[word].map((cell) => geo.c[cell] ? geo.c[cell].x + "," + geo.c[cell].y : "").join(" ")} className={word === puzzle.trail ? "line-trail" : "line-found"} />)}
+        {path.length > 1 && <polyline points={path.map((cell) => geo.c[cell] ? geo.c[cell].x + "," + geo.c[cell].y : "").join(" ")} className="line-live" />}
+      </svg>}
       {grid.flat().map((letter, cell) => {
         const owner = accent(cell), inPath = path.includes(cell);
         return <button key={cell} data-cell={cell} className={"trail-cell" + (owner ? (owner === puzzle.trail ? " is-trail" : " is-found") : "") + (inPath ? " in-path" : "") + (hintCells.includes(cell) ? " hint" : "")} onPointerDown={(e) => onDown(e, cell)} aria-label={"Letter " + letter}>{letter}</button>;
