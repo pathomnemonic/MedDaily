@@ -14,6 +14,7 @@ import { medleWordsExpansionYear } from "./dataMedleYear";
 import { connectionPuzzlesExpansion11, labPromptsExpansion4 } from "./dataYearExpansion";
 import { connectionPuzzlesExpansion12 } from "./dataYearExpansion2";
 import { labPromptsYearExpansion } from "./dataLablineYear";
+import { pairsBankExpansionYear } from "./dataPairsYear";
 
 export interface ConnectionGroup {
   category: string;
@@ -271,7 +272,7 @@ connectionPuzzles.push(...connectionPuzzlesExpansion, ...connectionPuzzlesExpans
 diagnosisCases.push(...diagnosisCasesExpansion, ...diagnosisCasesExpansion2, ...diagnosisCasesExpansion3, ...diagnosisCasesExpansion4, ...diagnosisCasesExpansion5, ...diagnosisCasesExpansion6, ...diagnosisCasesExpansion7, ...diagnosisCasesExpansion8, ...diagnosisCasesExpansion9, ...diagnosisCasesExpansion10, ...branchDiagnosisCases);
 nextStepCases.push(...nextStepCasesExpansion, ...nextStepCasesExpansion2, ...nextStepCasesExpansion3, ...nextStepCasesExpansion4, ...nextStepCasesExpansion5, ...nextStepCasesExpansion6, ...nextStepCasesExpansion7, ...nextStepCasesExpansion8, ...nextStepCasesExpansion9, ...nextStepCasesExpansion10);
 labPrompts.push(...labPromptsExpansion, ...labPromptsExpansion4, ...labPromptsYearExpansion);
-pairsBank.push(...pairsBankExpansion);
+pairsBank.push(...pairsBankExpansion, ...pairsBankExpansionYear);
 const seenPairTerms = new Set<string>();
 const uniquePairs = pairsBank.filter(([term]) => {
   const key = term.trim().toLocaleLowerCase();
