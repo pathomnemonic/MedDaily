@@ -47,3 +47,12 @@ describe("Blackout Chart logic", () => {
     expect(pickBlackoutCase(9).title).toBe(pickBlackoutCase(9).title);
   });
 });
+
+describe("auto-revealed common words", () => {
+  it("never auto-reveal a diagnosis title word", () => {
+    for (const c of blackoutCases) for (const w of titleWords(c.title)) {
+      // title words that are plain stop words (like "of") are already shown by design; any other must stay hidden
+      if (isStop(w) && !/^(of|and|the|in|with|a|an)$/i.test(w)) throw new Error(c.title + " reveals " + w);
+    }
+  });
+});

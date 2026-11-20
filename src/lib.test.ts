@@ -127,29 +127,38 @@ describe("Cell Sketch nonogram clues", () => {
     return result;
   };
 
-  it("gives each hidden 5x5 shape a unique solution from row and column runs", () => {
-    expect(glyphPatterns.length).toBeGreaterThanOrEqual(44);
-    expect(new Set(glyphPatterns.map((puzzle) => JSON.stringify(puzzle.pattern))).size).toBeGreaterThanOrEqual(36);
+  it("gives each hidden picture exactly one solution from its row and column runs", () => {
+    expect(glyphPatterns.length).toBeGreaterThanOrEqual(14);
+    expect(new Set(glyphPatterns.map((puzzle) => JSON.stringify(puzzle.pattern))).size).toBe(glyphPatterns.length);
     expect(new Set(glyphPatterns.map((puzzle) => puzzle.name)).size).toBe(glyphPatterns.length);
     for (const puzzle of glyphPatterns) {
       const pattern = puzzle.pattern;
+      const width = pattern[0].length;
+      expect(width).toBeGreaterThanOrEqual(10);
       const rowClues = pattern.map(runs);
       const colClues = pattern[0].map((_, c) => runs(pattern.map((row) => row[c])));
       const rowOptions = rowClues.map((clue) =>
-        Array.from({ length: 32 }, (_, mask) => Array.from({ length: 5 }, (_, c) => (mask >> c) & 1))
+        Array.from({ length: 1 << width }, (_, mask) => Array.from({ length: width }, (_, c) => (mask >> c) & 1))
           .filter((row) => JSON.stringify(runs(row)) === JSON.stringify(clue))
       );
+      // a partial column is viable when its finished runs match the clue's start and its open run still fits the next number
+      const viable = (col: number[], clue: number[]) => {
+        const all = runs(col);
+        const closed = col[col.length - 1] ? all.slice(0, -1) : all;
+        if (closed.length > clue.length || closed.some((n, i) => n !== clue[i])) return false;
+        return col[col.length - 1] ? all[all.length - 1] <= (clue[closed.length] ?? 0) : true;
+      };
       let solutions = 0;
       const rows: number[][] = [];
       const visit = (r: number) => {
         if (solutions > 1) return;
-        if (r === 5) {
+        if (r === pattern.length) {
           if (colClues.every((clue, c) => JSON.stringify(runs(rows.map((row) => row[c]))) === JSON.stringify(clue))) solutions++;
           return;
         }
         for (const candidate of rowOptions[r]) {
           rows[r] = candidate;
-          visit(r + 1);
+          if (colClues.every((clue, c) => viable(rows.slice(0, r + 1).map((row) => row[c]), clue))) visit(r + 1);
         }
       };
       visit(0);

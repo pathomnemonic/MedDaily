@@ -4,14 +4,7 @@ import { scrambleWordsExpansion2, higherLowerPairsExpansion2 } from "./dataUtili
 import { spellingHiveExpansion, wordLaddersExpansion, deductionCasesExpansion } from "./dataExtraExpansion";
 import { glyphPatternsExpansion } from "./dataGlyphExpansion";
 
-export const glyphPatterns: { name: string; pattern: number[][]; hint: string }[] = [
-  { name:"Neuron", hint:"A cell that carries signals", pattern:[[0,0,1,0,0],[0,1,1,1,0],[1,1,1,1,1],[0,0,1,0,0],[0,1,0,1,0]] },
-  { name:"Heart", hint:"A very hardworking muscle", pattern:[[0,1,0,1,0],[1,1,1,1,1],[1,1,1,1,1],[0,1,1,1,0],[0,0,1,0,0]] },
-  { name:"Bacterium", hint:"A tiny single-celled organism", pattern:[[0,1,1,1,0],[1,1,1,1,1],[1,0,1,0,1],[1,1,1,1,1],[0,1,1,1,0]] },
-  { name:"Cross", hint:"A familiar first-aid symbol", pattern:[[0,0,1,0,0],[0,0,1,0,0],[1,1,1,1,1],[0,0,1,0,0],[0,0,1,0,0]] },
-  { name:"Pill", hint:"A common medication shape", pattern:[[0,1,1,1,0],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[0,1,1,1,0]] },
-  { name:"Lungs", hint:"Paired organs of gas exchange", pattern:[[0,1,1,0,0],[1,1,1,0,1],[1,1,1,1,1],[0,1,1,1,0],[0,0,1,0,0]] }
-];
+export const glyphPatterns: { name:string; pattern:number[][]; hint:string }[] = [...glyphPatternsExpansion];
 
 export const scrambleWords = [
   ["NEURON","A cell that sends electrical signals"],["PLASMA","The liquid component of blood"],["FEMUR","The longest bone in the body"],["INSULIN","A hormone that lowers blood glucose"],["RETINA","The light-sensitive layer of the eye"],["TENDON","Connects muscle to bone"],["CORTEX","The outer layer of an organ"],["SUTURE","A stitch used to close a wound"],["SPLEEN","An organ involved in blood filtration and immunity"],["MUCOSA","A moist membrane lining body cavities"],["GANGLIA","Collections of neuronal cell bodies"],["OXYGEN","A gas required for aerobic metabolism"],["PLATELET","A cell fragment involved in hemostasis"],["NEPHRON","The functional unit of the kidney"],["CILIUM","A hair-like cellular projection"],["AXON","The long projection of a neuron"],["ALVEOLI","Tiny air sacs in the lungs"],["LIGAMENT","Connects bone to bone"],["TIBIA","The larger medial bone of the lower leg"],["GLUCOSE","A major circulating monosaccharide"],["MYELIN","Insulating sheath around many axons"],["ARTERY","A vessel carrying blood away from the heart"],["URETER","Carries urine from kidney to bladder"],["CORNEA","Transparent anterior part of the eye"],["MITOSIS","Division of a cell nucleus"],["CYTOKINE","A signaling protein in immunity"],["HEMOGLOBIN","Oxygen-carrying protein in red cells"],["CEREBELLUM","A brain region important for coordination"],["PANCREAS","An organ with endocrine and exocrine functions"],["OSTEON","A structural unit of compact bone"]
@@ -459,15 +452,6 @@ wordLadders.push(
 {start:"CARE",end:"PURL",path:["CARE","CORE","CURE","PURE","PURL"],note:"A clinical starting point leads to a textile term."}
 );
 
-// Rotations and reflections preserve each original nonogram's unique row/column solution.
-const rotateGlyph = (pattern: number[][]) => pattern[0].map((_, c) => pattern.map((row) => row[c]).reverse());
-const mirrorGlyph = (pattern: number[][]) => pattern.map((row) => [...row].reverse());
-glyphPatterns.push(...glyphPatternsExpansion);
-const originalGlyphs = glyphPatterns.slice(0, 6);
-glyphPatterns.push(
-  ...originalGlyphs.map((item) => ({...item, name:item.name+" · rotated", pattern:rotateGlyph(item.pattern)})),
-  ...originalGlyphs.map((item) => ({...item, name:item.name+" · mirrored", pattern:mirrorGlyph(item.pattern)}))
-);
 
 deductionCases.push(
 {

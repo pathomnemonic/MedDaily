@@ -61,7 +61,8 @@ describe("Deep Dive answer matching", () => {
   });
   it("rejects short, unrelated, or empty input", () => {
     expect(matchAnswer("", answers)).toBeNull();
-    expect(matchAnswer("lead", answers)).toBeNull();
+    expect(matchAnswer("lead", answers)?.match.answer).toBe("Lead poisoning"); // the distinctive word alone is enough
+    expect(matchAnswer("an", answers)).toBeNull();
     expect(matchAnswer("copper", answers)).toBeNull();
     expect(editDistance("kitten", "sitting", 3)).toBe(3);
   });
@@ -262,3 +263,30 @@ describe("Deep Scan matching with parenthetical answers", () => {
   });
 });
 
+
+describe("generous answer matching", () => {
+  const list = [{ answer: "Myocardial infarction" }, { answer: "Cardiac tamponade" }, { answer: "Type 2 diabetes mellitus" }, { answer: "Hyperkalemia" }, { answer: "Hypokalemia" }, { answer: "Pulmonary embolism" }, { answer: "Tuberculosis" }];
+  const pick = (t: string) => matchAnswer(t, list)?.match.answer;
+  it("accepts abbreviations and lay terms", () => {
+    expect(pick("heart attack")).toBe("Myocardial infarction");
+    expect(pick("MI")).toBe("Myocardial infarction");
+    expect(pick("TB")).toBe("Tuberculosis");
+    expect(pick("PE")).toBe("Pulmonary embolism");
+    expect(pick("lung clot")).toBe("Pulmonary embolism");
+    expect(pick("T2DM")).toBe("Type 2 diabetes mellitus");
+  });
+  it("accepts word order changes, roman numerals and the key word alone", () => {
+    expect(pick("infarction myocardial")).toBe("Myocardial infarction");
+    expect(pick("type II diabetes")).toBe("Type 2 diabetes mellitus");
+    expect(pick("tamponade")).toBe("Cardiac tamponade");
+    expect(pick("embolus pulmonary")).toBe("Pulmonary embolism");
+  });
+  it("forgives sound-alike spellings and bigger typos in long words", () => {
+    expect(pick("miocardial infarkshun")).toBe("Myocardial infarction");
+    expect(pick("tuburculosis")).toBe("Tuberculosis");
+    expect(pick("cardiak tamponaid")).toBe("Cardiac tamponade");
+  });
+  it("still refuses to guess between siblings", () => {
+    expect(pick("kalemia")).toBeUndefined();
+  });
+});
