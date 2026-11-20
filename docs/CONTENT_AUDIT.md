@@ -66,7 +66,7 @@ The research notes in [DLE_RESEARCH.md](./DLE_RESEARCH.md) record the daily-game
 
 ## Visual system (November 19, 2026)
 
-The arcade home is now games-first: a compact HUD (streak, cleared count, Daily/Free Play and Open Arcade/Specialties toggles), an "Up next" featured game, then the 23-game grid, with Dx Dash below. Every game has original SVG cover art (`src/components/GameArt.tsx`) used on its card, the featured slot, and its play-page header, and each play page takes on its game's accent colour. StageScene now includes original library, clinic, lab, anatomy, party, ECG, imaging, histology, and gross-pathology line art; the ECG trace has a restrained motion loop. Still open: bespoke per-game board illustrations, completion animations, haptics, and the full Dx Dash-style atmospheric background treatment.
+The arcade home is now games-first: a compact HUD (streak, cleared count, Daily/Free Play and Open Arcade/Specialties toggles), an "Up next" featured game, then the 23-game grid, with Dx Dash below. Every game has original SVG cover art (`src/components/GameArt.tsx`) used on its card, the featured slot, and its play-page header, and each play page takes on its game's accent colour. StageScene now includes original library, clinic, lab, anatomy, party, ECG, imaging, histology, and gross-pathology line art; the ECG trace has a restrained motion loop. Game stages now have per-game atmospheric color fields in addition to the ECG/imaging/histology/gross-pathology line art. Still open: bespoke per-game board illustrations, richer completion animations, haptic feedback on more interactions, and the full Dx Dash-style background treatment.
 
 ## Sound and music
 
