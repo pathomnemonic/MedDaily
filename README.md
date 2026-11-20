@@ -55,7 +55,7 @@ See [Setup](docs/SETUP.md). The site can build and deploy without Google or Fire
 
 ## Content inventory
 
-See [Content inventory and expansion priorities](docs/CONTENT_AUDIT.md) for the exact current bank sizes, daily longevity limitations, specialty coverage, and next content priorities.
+Seven formats now have full-year banks: Labline, Stat Word, Quad Squad, Trivia Rumble, Mime Time, Crossword Clinic, and Seven Cells each have at least 365 source prompts, boards, or questions. Cell Sketch has 24 unique-solution originals; Letter Rungs has 50 curated paths plus procedural medical ladders. See [Content inventory and expansion priorities](docs/CONTENT_AUDIT.md) for exact counts, specialty coverage, and remaining work.
 
 ## Format research
 
