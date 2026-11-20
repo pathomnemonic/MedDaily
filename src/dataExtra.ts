@@ -521,7 +521,9 @@ spellingHivePuzzles.push(...spellingHiveExpansion);
     [...wordPool].filter((word) =>
       word.length >= 4 && word.includes(center) && [...word].every((letter) => letters.includes(letter))
     ).sort();
-  for (const puzzle of base) puzzle.words = wordsFor(puzzle.letters, puzzle.center);
+  for (const puzzle of base) {
+    if (puzzle.words.length < 8) puzzle.words = wordsFor(puzzle.letters, puzzle.center);
+  }
 
   const keyOf = (letters: string[], center: string, words: string[]) =>
     [...letters].sort().join("") + "|" + center + "|" + [...words].sort().join(",");
@@ -558,8 +560,8 @@ spellingHivePuzzles.push(...spellingHiveExpansion);
     }
     if (generated.length === 91) break;
   }
-  if (variants.length !== 224 || generated.length !== 91) {
-    throw new Error("Seven Cells year bank expected 224 center variants and 91 new pangram boards; got " + variants.length + " and " + generated.length);
+  if (variants.length !== 234 || generated.length !== 81) {
+    throw new Error("Seven Cells year bank expected 234 center variants and 81 new pangram boards; got " + variants.length + " and " + generated.length);
   }
   spellingHivePuzzles.push(...variants, ...generated);
 }
