@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { blackoutCases } from "./dataBlackout";
 import { blackoutScore, isStop, pickBlackoutCase, stem, titleWords, tokenize } from "./blackoutLogic";
 import { editDistance, matchAnswer } from "./arcadeLogic";
 import { reward } from "./juice";
@@ -16,6 +17,8 @@ export default function BlackoutChart({ seed, onDone, onExit }: { seed: number; 
   const kase = useMemo(() => pickBlackoutCase(seed), [seed]);
   const body = useMemo(() => tokenize(kase.text), [kase]);
   const title = useMemo(() => titleWords(kase.title), [kase]);
+  /** Every other case's diagnosis: typing one of those exactly is a wrong answer, never a typo of this one. */
+  const rivalTitles = useMemo(() => blackoutCases.filter((c) => c.title !== kase.title).flatMap((c) => [c.title, ...c.aliases]), [kase]);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [last, setLast] = useState("");
   const [guesses, setGuesses] = useState<Guess[]>([]);
@@ -68,7 +71,7 @@ export default function BlackoutChart({ seed, onDone, onExit }: { seed: number; 
     const q = text.trim();
     if (!q) return;
     const n = count + 1;
-    const ok = matchAnswer(q, [{ answer: kase.title, aliases: kase.aliases }]);
+    const ok = matchAnswer(q, [{ answer: kase.title, aliases: kase.aliases }], rivalTitles);
     setText("");
     if (ok) { win(n); return; }
     setCount(n); setShake((v) => v + 1); setNote("That is not the hidden answer. Keep revealing words.");

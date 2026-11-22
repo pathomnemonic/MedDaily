@@ -120,3 +120,14 @@ describe("daily catalog progress", () => {
     expect(completedToday(player, "general", ["medle"])).toBe(1);
   });
 });
+
+import { levelFor } from "./levels";
+describe("level maths survives corrupted xp", () => {
+  it("never loops forever or returns NaN", () => {
+    for (const xp of [Number.NaN, -50, 1e308, Infinity]) {
+      const lv = levelFor(xp);
+      expect(Number.isFinite(lv.level)).toBe(true);
+      expect(lv.pct).toBeGreaterThanOrEqual(0);
+    }
+  });
+});
