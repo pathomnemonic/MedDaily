@@ -1,4 +1,3 @@
-import { hashSeed, seeded } from "./lib";
 import { branchSets, type BranchLeaf, type BranchSet } from "./dataBranch";
 
 export const BRANCH_GUESSES = 8;
@@ -16,11 +15,14 @@ export const candidatesUnder = (set: BranchSet, prefix: readonly string[]): numb
 
 /** Daily puzzle: a mystery microbe on some days and a mystery drug on others, the same for everyone with the same seed. */
 export function pickBranchTarget(seed: number): { set: BranchSet; target: BranchLeaf } {
-  const rnd = seeded(hashSeed("branch|" + seed));
-  rnd();
-  const set: BranchSet = rnd() < 0.5 ? "microbe" : "drug";
+  // Daily seeds are UTC day ordinals. Alternate sets and advance each set's index once every two days:
+  // 365 consecutive daily seeds therefore consume 183 microbes and 182 drugs without replacement.
+  // Free Play passes a fresh hash seed and still receives a deterministic, effectively random target.
+  const day = Math.abs(Math.trunc(seed));
+  const set: BranchSet = day % 2 === 0 ? "microbe" : "drug";
   const pool = branchSets[set];
-  return { set, target: pool[Math.floor(rnd() * pool.length)] };
+  const index = Math.floor(day / 2) % pool.length;
+  return { set, target: pool[index] };
 }
 
 /** 100 for a first-guess win, 10 fewer per extra guess, 10 off for using the clue; a miss earns partial credit for closeness. */

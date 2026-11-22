@@ -29,8 +29,10 @@ describe("Riddle Lab content", () => {
 
 describe("Mime Time deck", () => {
   it("is large, unique, and has no empty prompts", () => {
-    expect(mimeDeck.length).toBeGreaterThanOrEqual(100);
-    expect(new Set(mimeDeck.map((m) => m.term.toLowerCase())).size).toBe(mimeDeck.length);
+    expect(mimeDeck).toHaveLength(365);
+    expect(new Set(mimeDeck.map((m) => m.term.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim())).size).toBe(mimeDeck.length);
+    expect(new Set(mimeDeck.map((m) => m.kind))).toEqual(new Set(["Procedure", "Symptom", "Ward life", "Instrument", "Specialty", "Patient"]));
+    for (const kind of ["Procedure", "Symptom", "Ward life", "Instrument", "Specialty", "Patient"] as const) expect(mimeDeck.filter((m) => m.kind === kind).length).toBeGreaterThanOrEqual(50);
     expect(mimeDeck.every((m) => m.term.trim().length > 3)).toBe(true);
   });
 });
@@ -40,7 +42,7 @@ import { isValid, makeCrossword } from "./crosswordGen";
 
 describe("Mini Crossword", () => {
   it("has a clean clue bank", () => {
-    expect(crosswordBank.length).toBeGreaterThanOrEqual(100);
+    expect(crosswordBank).toHaveLength(365);
     const words = crosswordBank.map(([w]) => w);
     expect(new Set(words).size).toBe(words.length);
     for (const [word, clue] of crosswordBank) {
@@ -50,12 +52,15 @@ describe("Mini Crossword", () => {
     }
   });
   it("generates valid, deterministic grids for many seeds", () => {
-    for (let seed = 1; seed <= 120; seed++) {
+    const uniqueGrids = new Set<string>();
+    for (let seed = 1; seed <= 365; seed++) {
       const cw = makeCrossword(seed);
       expect(isValid(cw), "seed " + seed).toBe(true);
       expect(cw.words.length).toBeGreaterThanOrEqual(6);
       expect(new Set(cw.words.map((w) => w.word)).size).toBe(cw.words.length);
+      uniqueGrids.add(JSON.stringify(cw));
     }
+    expect(uniqueGrids.size).toBe(365);
     expect(JSON.stringify(makeCrossword(5))).toBe(JSON.stringify(makeCrossword(5)));
   });
 });

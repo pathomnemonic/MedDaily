@@ -42,7 +42,7 @@ Bacteria/Gram-negative/Rods/Enterobacterales/Salmonella Typhi|Rose spots, relati
 Bacteria/Gram-negative/Rods/Enterobacterales/Shigella dysenteriae|Non-lactose fermenter with tiny inocula needed; bloody diarrhea and hemolytic uremic syndrome.
 Bacteria/Gram-negative/Rods/Enterobacterales/Proteus mirabilis|Swarming motility, urease-positive, and struvite stones in alkaline urine.
 Bacteria/Gram-negative/Rods/Enterobacterales/Yersinia pestis|Bipolar "safety pin" stain; fleas carry it and it causes painful buboes.
-Bacteria/Gram-negative/Rods/Enterobacterales/Enterobacter cloacae|Hospital organism with inducible AmpC beta-lactamase, so third-generation cephalosporins can fail.
+Bacteria/Gram-negative/Rods/Enterobacterales/Enterobacter cloacae|Healthcare-associated gram-negative rod with inducible AmpC beta-lactamase, so third-generation cephalosporins can fail.
 Bacteria/Gram-negative/Rods/Enterobacterales/Serratia marcescens|Red pigment-producing opportunist in hospital catheters and respiratory equipment.
 Bacteria/Gram-negative/Rods/Non-fermenters/Pseudomonas aeruginosa|Oxidase-positive, blue-green pigment and grape-like odor; burns, hot tubs and cystic fibrosis lungs.
 Bacteria/Gram-negative/Rods/Non-fermenters/Acinetobacter baumannii|Multidrug-resistant coccobacillus in ventilated, intensive-care and war-wound infections.
@@ -210,4 +210,19 @@ Immunology and oncology/Cancer therapies/Vinca alkaloids/Vincristine|Blocks micr
 Immunology and oncology/Cancer therapies/Tyrosine kinase inhibitors/Imatinib|Targets the BCR-ABL fusion of the Philadelphia chromosome in chronic myeloid leukemia.
 `);
 
-export const branchSets: Record<BranchSet, BranchLeaf[]> = { microbe: microbeLeaves, drug: drugLeaves };
+import { branchMicrobeYear, branchDrugYear } from "./dataBranchYear";
+
+const uniqueLeaves = (leaves: BranchLeaf[]): BranchLeaf[] => {
+  const seen = new Set<string>();
+  return leaves.filter((leaf) => {
+    const key = leaf.name.toLocaleLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+export const branchSets: Record<BranchSet, BranchLeaf[]> = {
+  microbe: uniqueLeaves([...microbeLeaves, ...branchMicrobeYear]),
+  drug: uniqueLeaves([...drugLeaves, ...branchDrugYear])
+};

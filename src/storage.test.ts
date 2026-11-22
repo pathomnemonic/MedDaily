@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { achievementsFor, recordResult, type GameResult, type PlayerData } from "./storage";
+import { achievementsFor, completedToday, playStreak, recordResult, type GameResult, type PlayerData } from "./storage";
+import { dailyDateKey, LISTED_GAME_IDS } from "./lib";
 import type { GameId } from "./lib";
 
 const emptyPlayer = (): PlayerData => ({
@@ -24,7 +25,7 @@ const result = (game: GameId, index: number, scope = "general", perfect = false)
 
 describe("local achievement progression", () => {
   it("keeps every achievement locked for a new player", () => {
-    const achievements = achievementsFor(emptyPlayer(), "general", 0, 16);
+    const achievements = achievementsFor(emptyPlayer(), "general", 0);
     expect(achievements).toHaveLength(6);
     expect(achievements.every((item) => !item.earned)).toBe(true);
     expect(achievements[0].progress).toBe("0/1");
@@ -39,7 +40,7 @@ describe("local achievement progression", () => {
       result("pairs", 3),
       result("labline", 4)
     ];
-    const achievements = achievementsFor(player, "general", 2, 16);
+    const achievements = achievementsFor(player, "general", 2);
     expect(achievements.find((item) => item.name === "Curious Mind")?.earned).toBe(true);
     expect(achievements.find((item) => item.name === "Full Arcade")?.earned).toBe(false);
   });
@@ -47,16 +48,27 @@ describe("local achievement progression", () => {
   it("unlocks milestones only from the selected study scope", () => {
     const player = emptyPlayer();
     player.results = [result("medle", 0, "general"), result("connections", 1, "specialty")];
-    expect(achievementsFor(player, "general", 0, 16)[0].earned).toBe(true);
-    expect(achievementsFor(player, "specialty", 0, 16)[0].earned).toBe(true);
-    expect(achievementsFor(player, "general", 0, 16)[1].earned).toBe(false);
+    expect(achievementsFor(player, "general", 0)[0].earned).toBe(true);
+    expect(achievementsFor(player, "specialty", 0)[0].earned).toBe(true);
+    expect(achievementsFor(player, "general", 0)[1].earned).toBe(false);
+  });
+
+  it("does not unlock Full Arcade using a hidden game's historical result", () => {
+    const player = emptyPlayer();
+    player.results = [
+      ...LISTED_GAME_IDS.slice(0, -1).map((game, index) => result(game, index)),
+      result("bodymap", 99)
+    ];
+    expect(achievementsFor(player, "general", 0).find((item) => item.name === "Full Arcade")?.earned).toBe(false);
+    player.results.push(result(LISTED_GAME_IDS[LISTED_GAME_IDS.length - 1], 100));
+    expect(achievementsFor(player, "general", 0).find((item) => item.name === "Full Arcade")?.earned).toBe(true);
   });
 
   it("unlocks the veteran, perfect-run, full-arcade, and streak milestones at their thresholds", () => {
     const player = emptyPlayer();
-    const games: GameId[] = ["medle","connections","diagnosis","labline","pairs","splice","glyph","higher","ladder","hive","casefile","dive","trivia","lettergrid"];
+    const games: GameId[] = [...LISTED_GAME_IDS];
     player.results = Array.from({ length: 100 }, (_, index) => result(games[index % games.length], index, "general", index < 5));
-    const achievements = achievementsFor(player, "general", 7, games.length);
+    const achievements = achievementsFor(player, "general", 7);
     expect(achievements.every((item) => item.earned)).toBe(true);
     expect(achievements.map((item) => item.progress)).toEqual(["1/1","5/5",games.length + "/" + games.length,"5/5","100/100","7/7"]);
   });
@@ -76,5 +88,35 @@ describe("result recording", () => {
     const second = recordResult(first, { ...result("connections", 1), score: 70 });
     expect(second.bests.medle).toBe(55);
     expect(second.bests.connections).toBe(70);
+  });
+});
+
+describe("daily catalog progress", () => {
+  it("does not let hidden-game results maintain the daily streak", () => {
+    const player = emptyPlayer();
+    const today = dailyDateKey();
+    const yesterday = new Date();
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    player.results = [
+      { ...result("bodymap", 0), date: today },
+      { ...result("bodymap", 1), date: dailyDateKey(yesterday) }
+    ];
+    expect(playStreak(player)).toBe(0);
+    player.results.push(
+      { ...result("medle", 2), date: today },
+      { ...result("connections", 3), date: dailyDateKey(yesterday) }
+    );
+    expect(playStreak(player)).toBe(2);
+  });
+
+  it("can exclude hidden and retired game results from the visible completion count", () => {
+    const player = emptyPlayer();
+    const today = dailyDateKey();
+    player.results = [
+      { ...result("medle", 0), date: today },
+      { ...result("bodymap", 1), date: today }
+    ];
+    expect(completedToday(player, "general")).toBe(1);
+    expect(completedToday(player, "general", ["medle"])).toBe(1);
   });
 });

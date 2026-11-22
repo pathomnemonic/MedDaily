@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, microbePacks, pairsBank } from "./data";
-import { glyphPatterns, higherLowerPairs, ladderDictionary, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
+import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, pairsBank } from "./data";
+import { glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
 import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
-import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateMedicalLadder, letterWordPoints, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, triviaRumbleResult } from "./arcadeLogic";
+import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateMedicalLadder, letterWordPoints, transformNonogram, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, triviaRumbleResult } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
 import { anteriorMuscles, posteriorMuscles } from "./dataBodyMuscles";
 import { mimeDeck } from "./dataMime";
@@ -15,10 +15,12 @@ import Crossmatch from "./Crossmatch";
 import BlackoutChart from "./BlackoutChart";
 import Hoofbeats from "./Hoofbeats";
 import { fiveLetterWords } from "./dataFiveLetter";
-import { medicalRungWords } from "./dataRungs";
+import { medicalRungWords, rungDictionary } from "./dataRungs";
+import { LETTER_DICTIONARY } from "./dataLetterDictionary";
 import { riddles, riddleOptions } from "./dataRiddles";
 import { makeCrossword } from "./crosswordGen";
-import { makeTrailPuzzle, trailPackOk } from "./trailLogic";
+import { makeTrailPuzzle } from "./trailLogic";
+import { getThemeTrailYearPacks } from "./dataTrailExpansion";
 import { extendStrandsPath, readStrandsPath } from "./strandsLogic";
 import { createPortal } from "react-dom";
 import DiveScene, { ZONE_COLORS } from "./components/DiveScene";
@@ -37,7 +39,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
   switch (game) {
     case "medle": return <Medle seed={seed} onDone={onDone} specialty={specialty} />;
     case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} />;
-    case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} specialty={specialty} />;
+    case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} />;
     case "labline": return <Labline seed={seed} onDone={onDone} specialty={specialty} />;
     case "pairs": return <MemoryMatch seed={seed} onDone={onDone} specialty={specialty} />;
     case "splice": return <AnagramSprint seed={seed} onDone={onDone} specialty={specialty} />;
@@ -63,34 +65,34 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
 }
 
 const SPECIALTY_INDEX: Partial<Record<Specialty, Partial<Record<string, number[]>>>> = {
-  neurology: { diagnosis:[1,4,5,12,13,19,120,121,122,123,124,125], nextstep:[2,16,120,121,122,123,124], connections:[3,10,72,73,78], labline:[18,19,20], pairs:[12,13], microbe:[0,5], triage:[4] },
-  cardiology: { diagnosis:[7,16,17,126,127,128,129,209,210], nextstep:[3,13,126,127,128,129,209,210], connections:[0,1,4,74,79,115,121], labline:[1,3,4,17], pairs:[0,1,2,3], triage:[10] },
-  emergency: { diagnosis:[0,4,5,7,10,16,17,18,19,125,126,130,153,154,155,163,164,167,180,189,193,194,195,196,197,198,200,201,209,210,211,212,213,218], nextstep:[0,1,2,4,7,8,10,11,12,13,14,18,19,125,126,130,146,153,154,155,163,164,167,170,171,177,178,179,180,189,193,194,195,196,197,198,200,201,209,210,212,213,218], connections:[4,5,7,8,9,73,75,85,89,90,92,100,101,104,106,109,110,114,115,116,119,121], triage:[0,1,2,4,5,6,7,9,10] },
-  criticalcare: { diagnosis:[4,5,7,10,11,16,17,18,19], nextstep:[0,1,2,4,7,10,11,12,13,14,18,19], connections:[4,5,7,9,11], labline:[0,1,2,3,4,5,11,17,22], triage:[0,1,2,4,5,6,7,9,10,11] },
-  anesthesia: { diagnosis:[5,16,17,178,179], nextstep:[0,2,4,12,14,178,179], connections:[0,1,7,96,100], labline:[0,1,2,4,17], pairs:[0,1,2,3,4,5], triage:[0,4,5,6,9,11] },
-  surgery: { diagnosis:[0,5,17,18,160,161,162,163,164,165,166,167], nextstep:[8,9,14,17,160,161,162,163,164,165,166,167], connections:[4,8,9,92,93,100,101], triage:[3,8,9] },
-  orthopedics: { diagnosis:[15,16,152,153,154,155], nextstep:[8,153,154], connections:[3,9,85,89,90], pairs:[12,13,14,15,16,17], triage:[9] },
-  urology: { diagnosis:[8,9,148,149,150,151], nextstep:[14,148,149,150,151], connections:[4,11,84,87,89,90,91], labline:[2,3,4,12,13], triage:[0] },
-  otolaryngology: { diagnosis:[18,19], nextstep:[12], connections:[5,9], triage:[0,11] },
-  ophthalmology: { diagnosis:[3,12,159], nextstep:[19,159], connections:[3,10,88], pairs:[12,13,17,18], triage:[2] },
-  pediatrics: { diagnosis:[8,9,11,14,18,19,100,101,102,103,104,105,206,218], nextstep:[18,100,101,102,103,104,206,218], connections:[4,5,8,62,67,112,120], labline:[14,15], triage:[11] },
-  obgyn: { diagnosis:[0,134,135,136,137,138,139], nextstep:[5,9,16,134,135,136,137,138,139], connections:[8,76,77,80], triage:[3,8] },
-  psychiatry: { diagnosis:[1,2,7,12,13,190,191,192,193,194,195,196,197,198,199], nextstep:[2,6,190,191,192,193,194,195,196,197,198,199], connections:[7,10,105,106,107,109], labline:[21], triage:[4] },
-  infectious: { diagnosis:[8,11,14,16,18,19,118,119,155,169,171,181,182,183,184,185,186,187,188,189], nextstep:[11,12,118,119,155,169,171,181,182,183,184,185,186,187,188,189], connections:[5,7,9,65,67,94,102,103,104,110,111], microbe:[0,1,2,3,4,5,6,7], triage:[6,7] },
-  allergy: { diagnosis:[16,146,147], nextstep:[4,146,147], connections:[5,7,83,87], pairs:[0,1,2,3], triage:[1] },
-  nephrology: { diagnosis:[8,9,10,11,106,107,108,109,172,173,174,175], nextstep:[0,11,14,17,105,106,107,108,109,172,173,174,175], connections:[4,11,63,68,95,98], labline:[2,3,4,5,7,11,12,13,14,15,18,19,20,21], triage:[5] },
-  pulmonology: { diagnosis:[18,19,112,113], nextstep:[12,112,113], connections:[5,9,64,66], labline:[1,22,27], triage:[0,6] },
-  endocrine: { diagnosis:[7,9,10,15,130,131,132,133,176,177], nextstep:[0,14,17,130,131,132,133,176,177], connections:[2,11,75,81,96,99], labline:[8,9,10,23], triage:[5] },
-  dermatology: { diagnosis:[14,15,16,140,141,142,143,144,145], nextstep:[4,140,141,142,143,144,145], connections:[4,5,9,82,83,89,91], labline:[24], triage:[1] },
-  rheumatology: { diagnosis:[3,15,110,111,158], nextstep:[6,110,111,158], connections:[4,9,10,64,70,88], pairs:[30,31,32,33,34,35], triage:[1] },
-  hemeonc: { diagnosis:[10,11,180,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218], nextstep:[7,14,180,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218], connections:[4,5,11,102,104,110,112,113,114,115,116,117,118,119,120,121], labline:[14,15,16,17], pairs:[42,43,44,45], triage:[6] },
-  gastro: { diagnosis:[17,114,115,116,117,168,169,170,171,214,219], nextstep:[11,114,115,116,117,165,166,168,169,171,205,214,219], connections:[4,12,65,69,71,92,93,94,97,101,118,121], labline:[24], pairs:[35], triage:[6] },
-  geriatrics: { diagnosis:[6,7,10,17,156,157], nextstep:[7,13,14,156,157], connections:[4,11,86,88,89], labline:[12,13,14,15,16,17], triage:[0,2,6] },
-  radiology: { diagnosis:[4,5,6,12,17,18], nextstep:[1,10], connections:[3,9,10], triage:[2,7] },
-  anatomy: { connections:[3,9], pairs:[12,13,14,15,16,17], microbe:[0], triage:[] },
+  neurology: { diagnosis:[1,4,5,12,13,19,120,121,122,123,124,125,149,151], nextstep:[2,16,120,121,122,123,124,129,131], connections:[3,10,72,73,78,75,144,155,86], labline:[18,19,20], pairs:[12,13], microbe:[0,5], triage:[4] },
+  cardiology: { diagnosis:[7,16,17,126,127,128,129,209,210], nextstep:[3,13,126,127,128,129,209,210], connections:[0,1,4,74,79,115,121,12,33,39], labline:[1,3,4,17,...Array.from({length:17},(_,i)=>i+316)], pairs:[0,1,2,3], triage:[10] },
+  emergency: { diagnosis:[0,4,5,7,10,16,17,18,19,125,126,130,153,154,155,163,164,167,180,189,193,194,195,196,197,198,200,201,209,210,211,212,213,218], nextstep:[0,1,2,4,7,8,10,11,12,13,14,18,19,125,126,130,146,153,154,155,163,164,167,170,171,177,178,179,180,189,193,194,195,196,197,198,200,201,209,210,212,213,218], connections:[4,5,7,8,9,73,75,85,89,90,92,100,101,104,106,109,110,114,115,116,119,121,19,24,30,39,50,78,91,103,112,123,132,134], triage:[0,1,2,4,5,6,7,9,10] },
+  criticalcare: { diagnosis:[4,5,7,10,11,16,17,18,19], nextstep:[0,1,2,4,7,10,11,12,13,14,18,19], connections:[4,5,7,9,11,8,10,28,112,123], labline:[0,1,2,3,4,5,11,17,22,...Array.from({length:35},(_,i)=>i+221),...Array.from({length:5},(_,i)=>i+356)], triage:[0,1,2,4,5,6,7,9,10,11] },
+  anesthesia: { diagnosis:[5,16,17,178,179], nextstep:[0,2,4,12,14,178,179], connections:[0,1,7,96,100,28,112], labline:[0,1,2,4,17,...Array.from({length:9},(_,i)=>i+221),...Array.from({length:5},(_,i)=>i+243),296,297,298,299,300,301,302,303,304], pairs:[0,1,2,3,4,5], triage:[0,4,5,6,9,11] },
+  surgery: { diagnosis:[0,5,17,18,160,161,162,163,164,165,166,167], nextstep:[8,9,14,17,160,161,162,163,164,165,166,167], connections:[4,8,9,92,93,100,101,30,87,103], triage:[3,8,9] },
+  orthopedics: { diagnosis:[15,16,152,153,154,155,26,38,102], nextstep:[8,153,154,6,18,82,132,133], connections:[3,9,85,89,90,30,87,92], pairs:[12,13,14,15,16,17], triage:[9] },
+  urology: { diagnosis:[8,9,148,149,150,151], nextstep:[14,148,149,150,151], connections:[4,11,84,87,89,90,91], labline:[2,3,4,12,13,...Array.from({length:10},(_,i)=>i+256),...Array.from({length:5},(_,i)=>i+357)], triage:[0] },
+  otolaryngology: { diagnosis:[18,19,35], nextstep:[12,15], connections:[5,9,24], triage:[0,11] },
+  ophthalmology: { diagnosis:[3,12,159,37,66,120], nextstep:[19,159,17,46,100,139], connections:[3,10,88,24,40,51,91,134], pairs:[12,13,17,18], triage:[2] },
+  pediatrics: { diagnosis:[8,9,11,14,18,19,100,101,102,103,104,105,206,218], nextstep:[18,100,101,102,103,104,206,218], connections:[4,5,8,62,67,112,120,39,50,132], labline:[14,15,164,165,170,171,174,175,176,177,179,180,181,182,183,184,185,186,187,188,189], triage:[11] },
+  obgyn: { diagnosis:[0,134,135,136,137,138,139,29,211], nextstep:[5,9,16,134,135,136,137,138,139,114,115,116,117,118,119,191], connections:[8,76,77,80,7,19,78,82,133,141,145], labline:[...Array.from({length:8},(_,i)=>i+287)], triage:[3,8] },
+  psychiatry: { diagnosis:[1,2,7,12,13,190,191,192,193,194,195,196,197,198,199], nextstep:[2,6,190,191,192,193,194,195,196,197,198,199], connections:[7,10,105,106,107,109,41,52], labline:[21,...Array.from({length:19},(_,i)=>i+295)], triage:[4] },
+  infectious: { diagnosis:[8,11,14,16,18,19,118,119,155,169,171,181,182,183,184,185,186,187,188,189], nextstep:[11,12,118,119,155,169,171,181,182,183,184,185,186,187,188,189], connections:[5,7,9,65,67,94,102,103,104,110,111,22,60,148], labline:[240,254,274,275,336,337,338,339,356,357], microbe:[0,1,2,3,4,5,6,7], triage:[6,7] },
+  allergy: { diagnosis:[16,146,147], nextstep:[4,146,147,126,127], connections:[5,7,83,87,85,90], pairs:[0,1,2,3], triage:[1] },
+  nephrology: { diagnosis:[8,9,10,11,106,107,108,109,172,173,174,175], nextstep:[0,11,14,17,105,106,107,108,109,172,173,174,175], connections:[4,11,63,68,95,98,65,97], labline:[2,3,4,5,7,11,12,13,14,15,18,19,20,21,...Array.from({length:33},(_,i)=>i+130),...Array.from({length:9},(_,i)=>i+256)], triage:[5] },
+  pulmonology: { diagnosis:[18,19,112,113,42,43,45,63,65,181,185,210], nextstep:[12,112,113,22,23,24,25,43,45,90,161,165,190], connections:[5,9,64,66,8,50], labline:[1,22,27,...Array.from({length:9},(_,i)=>i+221),245,246,247,248,249,331], triage:[0,6] },
+  endocrine: { diagnosis:[7,9,10,15,130,131,132,133,176,177], nextstep:[0,14,17,130,131,132,133,176,177], connections:[2,11,75,81,96,99,10,79,83,140], labline:[8,9,10,23,...Array.from({length:18},(_,i)=>i+202),...Array.from({length:17},(_,i)=>i+273)], triage:[5] },
+  dermatology: { diagnosis:[14,15,16,140,141,142,143,144,145], nextstep:[4,140,141,142,143,144,145], connections:[4,5,9,82,83,89,91,27], labline:[24], triage:[1] },
+  rheumatology: { diagnosis:[3,15,110,111,158,58,82,83,84,86,87,105,112], nextstep:[6,110,111,158,38,46,62,63,64,66,67,85,92,138], connections:[4,9,10,64,70,88,21,54,55,62,72,130,143,149], pairs:[30,31,32,33,34,35], triage:[1] },
+  hemeonc: { diagnosis:[10,11,180,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218], nextstep:[7,14,180,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218], connections:[4,5,11,102,104,110,112,113,114,115,116,117,118,119,120,121,10,63,123], labline:[14,15,16,17,...Array.from({length:29},(_,i)=>i+163),...Array.from({length:15},(_,i)=>i+335)], pairs:[42,43,44,45], triage:[6] },
+  gastro: { diagnosis:[17,114,115,116,117,168,169,170,171,214,219], nextstep:[11,114,115,116,117,165,166,168,169,171,205,214,219], connections:[4,12,65,69,71,92,93,94,97,101,118,121,11,73,103,152], labline:[24,...Array.from({length:8},(_,i)=>i+146),...Array.from({length:4},(_,i)=>i+250)], pairs:[35], triage:[6] },
+  geriatrics: { diagnosis:[6,7,10,17,156,157], nextstep:[7,13,14,156,157,136,137], connections:[4,11,86,88,89,91], labline:[12,13,14,15,16,17], triage:[0,2,6] },
+  radiology: { diagnosis:[4,5,6,12,17,18,210], nextstep:[1,10,190], connections:[3,9,10,103], triage:[2,7] },
+  anatomy: { connections:[3,9,30,144,155], pairs:[12,13,14,15,16,17], microbe:[0], triage:[] },
   pathology: { diagnosis:[8,9,10,11,14,15,16,17,18,19], connections:[4,5,6,11], pairs:[42,43,44,45] },
-  pharmacology: { nextstep:[0,4,7,8,9,10,11,12,13,14], connections:[0,1,7], pairs:[0,1,2,3,4,5,6,7,8,9,10,11], triage:[1,4,5,6] },
-  biostatistics: { labline:[8,9,10,11,17,21,22,23], connections:[4,11] }
+  pharmacology: { nextstep:[0,4,7,8,9,10,11,12,13,14], connections:[0,1,7,6,22,41,138,140,148], pairs:[0,1,2,3,4,5,6,7,8,9,10,11], triage:[1,4,5,6] },
+  biostatistics: { labline:[8,9,10,11,17,21,22,23,157,158,159,243,244,245,246,274,275,287,288,289,290,329,330,344,345], connections:[4,11,29,42,53] }
 };
 
 function pick<T>(items: readonly T[], seed: number, specialty: Specialty, key: string): T {
@@ -447,15 +449,6 @@ function TriviaRumble({ seed, onDone }: Props) {
   </div>;
 }
 
-const LETTER_DICTIONARY = [...new Set([
-  ...medleWords,
-  ...scrambleWords.map(([word]) => word),
-  ...wordLadders.flatMap((ladder) => ladder.path),
-  ...pairsBank.map(([term]) => term),
-  ...connectionPuzzles.flatMap((board) => board.flatMap((group) => group.words)),
-  ...microbePacks.flatMap((pack) => pack.words)
-].map((value) => normalize(String(value)).replace(/\s/g, "").toUpperCase()).filter((word) => /^[A-Z]{3,8}$/.test(word)))];
-
 function LetterGridGame({ seed, onDone }: Props) {
   const board = useMemo(() => makeLetterGrid(seed, LETTER_DICTIONARY), [seed]);
   const [path, setPath] = useState<number[]>([]);
@@ -671,8 +664,8 @@ const DOCTORDLE_ALIASES: Record<string, string[]> = {
   "hepatocellular carcinoma": ["hcc"],
   "pheochromocytoma": ["pheo"]
 };
-function DoctorDle({ seed, onDone, specialty = "general" }: Props) {
-  const item = pick(diagnosisCases, seed, specialty, "diagnosis");
+function DoctorDle({ seed, onDone }: Props) {
+  const item = diagnosisCases[Math.abs(Math.trunc(seed)) % diagnosisCases.length];
   const bank = useMemo(() => [...new Set(diagnosisCases.map((c) => c.answer))].sort(), []);
   const [guess, setGuess] = useState("");
   const [guesses, setGuesses] = useState<string[]>([]);
@@ -1117,7 +1110,16 @@ function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boo
       picks.push(base);
       if (picks.length === 3) break;
     }
-    return picks;
+    if (!generated) return picks;
+    const labels = ["", "90° rotation", "180° rotation", "270° rotation", "mirror", "mirror + 90°", "mirror + 180°", "mirror + 270°"];
+    return picks.map((base, index) => {
+      const transform = hashSeed("cellsketch|" + seed + "|" + index) % 7 + 1;
+      return {
+        ...base,
+        name: base.name + " · " + labels[transform],
+        pattern: transformNonogram(base.pattern, transform)
+      };
+    });
   }, [seed, generated]);
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState<SketchResult[]>([]);
@@ -1221,7 +1223,7 @@ function HigherLower({ seed, onDone, onExit }: Props & { onExit?: () => void }) 
 
 
 function WordLadder({ seed, onDone }: Props) {
-  const item = useMemo(() => generateMedicalLadder(seed, [...ladderDictionary], medicalRungWords) ?? wordLadders[seed % wordLadders.length], [seed]);
+  const item = useMemo(() => generateMedicalLadder(seed, [...rungDictionary], medicalRungWords) ?? wordLadders[seed % wordLadders.length], [seed]);
   const [entered, setEntered] = useState<string[]>([item.start]);
   const [text, setText] = useState("");
   const [note, setNote] = useState("Change one letter at a time. Every step must be a real word.");
@@ -1235,7 +1237,7 @@ function WordLadder({ seed, onDone }: Props) {
     const word = text.trim().toUpperCase();
     if (ended || !word) return;
     if (!diffOne(entered[entered.length - 1], word)) { setNote("Change exactly one letter."); return; }
-    if (!ladderDictionary.has(word)) { setNote("That word is not in the ladder dictionary. Try another one-letter neighbor."); return; }
+    if (!rungDictionary.has(word)) { setNote("That word is not in the ladder dictionary. Try another one-letter neighbor."); return; }
     if (entered.includes(word)) { setNote("You've already used that word."); return; }
     const next = [...entered, word]; setEntered(next); setText("");
     if (word === item.end) { setEnded(true); onDone(Math.max(0, Math.min(100, 100 - Math.max(0, next.length - item.path.length) * 12 - (hintUsed ? 20 : 0) - nudges * 8)), 100, next.length === item.path.length && !hintUsed && nudges === 0); }
@@ -1249,7 +1251,7 @@ function WordLadder({ seed, onDone }: Props) {
     <div className="ladder-rungs">{entered.map((w, i) => <span key={i}>{[...w].map((ch, k) => <em key={k} className={i > 0 && ch !== entered[i - 1][k] ? "changed" : ""}>{ch}</em>)}</span>)}{!ended && <i>?</i>}</div>
     {!ended ? <>
       <form className="word-entry" onSubmit={(e) => { e.preventDefault(); add(); }}><input value={text} maxLength={item.start.length} onChange={(e) => setText(e.target.value.replace(/[^a-z]/gi,"").toUpperCase())} placeholder="Next word" /><button className="button button-primary">Add step</button></form>
-      <p className={"ladder-live" + (text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (ladderDictionary.has(text) ? " ok" : " maybe") : " bad") : "")} aria-live="polite">{text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (ladderDictionary.has(text) ? "✓ Valid step" : "One letter changed, but not a word in this round") : "✗ Change exactly one letter from " + entered[entered.length - 1]) : "Type the next " + item.start.length + "-letter word"}</p>
+      <p className={"ladder-live" + (text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (rungDictionary.has(text) ? " ok" : " maybe") : " bad") : "")} aria-live="polite">{text.length === item.start.length ? (diffOne(entered[entered.length - 1], text) ? (rungDictionary.has(text) ? "✓ Valid step" : "One letter changed, but not a word in this round") : "✗ Change exactly one letter from " + entered[entered.length - 1]) : "Type the next " + item.start.length + "-letter word"}</p>
       <button className="text-button" onClick={() => { const i = entered.length; const nxt = item.path[i]; if (!nxt) return; setNudges((n) => n + 1); const prev = entered[entered.length - 1]; const pos = [...nxt].findIndex((ch, k) => ch !== prev[k]); setNote("Nudge: change letter " + (pos + 1) + " to " + nxt[pos] + "."); }}>Nudge me one letter (−8)</button>
       <button className="text-button" onClick={() => { setShowPath((value) => !value); setHintUsed(true); }}>{showPath ? "Hide suggested path" : "Need a nudge? Reveal one possible path"}</button>
       {showPath && <p className="ladder-hint">One valid route: {item.path.join(" → ")}</p>}
@@ -1317,7 +1319,7 @@ function SpellingHive({ seed, onDone }: Props) {
       <button className="button button-soft" onClick={() => setEntry((v) => v.slice(0,-1))} disabled={ended || !entry}>⌫</button>
       <button className="button button-quiet" onClick={() => setEntry("")} disabled={ended}>Clear</button>
     </div>
-    <div className="hive-tools"><button className="text-button" onClick={() => setShuffles((n) => n + 1)}>🔀 Shuffle</button><button className="text-button" onClick={() => { const left = puzzle.words.filter((w) => !found.includes(w)); if (left.length) setStarter(left[Math.floor(Math.random() * left.length)].slice(0, 2) + "…"); }} disabled={ended}>Starter hint</button><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Need a hint?</button><button className="text-button" onClick={finish} disabled={ended}>Finish for today</button></div>
+    <div className="hive-tools"><button className="text-button" onClick={() => setShuffles((n) => n + 1)}>🔀 Shuffle</button><button className="text-button" onClick={() => { const left = puzzle.words.filter((w) => !found.includes(w)); if (left.length) setStarter(left[Math.floor(seeded(seed + 101)() * left.length)].slice(0, 2) + "…"); }} disabled={ended}>Starter hint</button><button className="text-button" onClick={() => setHint(true)} disabled={hint}>Need a hint?</button><button className="text-button" onClick={finish} disabled={ended}>Finish for today</button></div>
     {hint && <p className="game-feedback">{puzzle.hint}</p>}
     {starter && !ended && <p className="game-feedback">A word still hiding starts with <b>{starter}</b></p>}
     <p className="game-feedback" aria-live="polite">{note}</p>
@@ -1425,7 +1427,18 @@ function MimeTime({ seed, onDone }: Props) {
 
 
 function RiddleLab({ seed, onDone }: Props) {
-  const picks = useMemo(() => shuffle(riddles, seeded(seed + 991)).slice(0, 5), [seed]);
+  const picks = useMemo(() => {
+    const bag = shuffle(riddles, seeded(seed + 991));
+    const selected: typeof riddles = [];
+    const seen = new Set<string>();
+    for (const item of bag) {
+      const key = item.kind + "|" + item.answer.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key); selected.push(item);
+      if (selected.length === 5) break;
+    }
+    return selected;
+  }, [seed]);
   const [round, setRound] = useState(0);
   const [shown, setShown] = useState(1);
   const [gone, setGone] = useState<string[]>([]);
@@ -1764,10 +1777,9 @@ function CrosswordClinic({ seed, onDone, onExit }: Props & { onExit?: () => void
 }
 
 
-let trailPacksCache: typeof microbePacks | null = null;
-const trailPacks = () => (trailPacksCache ??= microbePacks.filter(trailPackOk));
-function ThemeTrail({ seed, onDone, specialty = "general" }: Props) {
-  const pack = pick(trailPacks(), seed, specialty, "microbe");
+const trailPacks = () => getThemeTrailYearPacks();
+function ThemeTrail({ seed, onDone }: Props) {
+  const pack = trailPacks()[Math.abs(Math.trunc(seed)) % trailPacks().length];
   const puzzle = useMemo(() => makeTrailPuzzle(pack, seed), [pack, seed]);
   const { grid, rows, columns } = puzzle;
   // Measured cell centres let us draw connecting lines for the live path and for every found word, like the Strands look.
@@ -1791,7 +1803,7 @@ function ThemeTrail({ seed, onDone, specialty = "general" }: Props) {
   const [hintsUsed, setHintsUsed] = useState(0);
   const [hintCells, setHintCells] = useState<number[]>([]);
   const [path, setPath] = useState<number[]>([]);
-  const [note, setNote] = useState("Drag through touching letters (any direction) to spell a hidden term. Or tap letters one by one, then Submit.");
+  const [note, setNote] = useState("Drag through touching letters (any direction) to spell a hidden term, tap letters one by one, or use arrow keys and Enter/Space. Then Submit.");
   const [ended, setEnded] = useState(false);
   const drag = useRef(false);
   const moved = useRef(false);
@@ -1878,7 +1890,33 @@ function ThemeTrail({ seed, onDone, specialty = "general" }: Props) {
       </svg>}
       {grid.flat().map((letter, cell) => {
         const owner = accent(cell), inPath = path.includes(cell);
-        return <button key={cell} data-cell={cell} className={"trail-cell" + (owner ? (owner === puzzle.trail ? " is-trail" : " is-found") : "") + (inPath ? " in-path" : "") + (hintCells.includes(cell) ? " hint" : "")} onPointerDown={(e) => onDown(e, cell)} aria-label={"Letter " + letter}>{letter}</button>;
+        return <button
+          key={cell}
+          data-cell={cell}
+          className={"trail-cell" + (owner ? (owner === puzzle.trail ? " is-trail" : " is-found") : "") + (inPath ? " in-path" : "") + (hintCells.includes(cell) ? " hint" : "")}
+          onPointerDown={(e) => onDown(e, cell)}
+          onKeyDown={(e) => {
+            if (e.key.startsWith("Arrow")) {
+              const row = Math.floor(cell / columns), column = cell % columns;
+              const nextRow = row + (e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0);
+              const nextColumn = column + (e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0);
+              if (nextRow >= 0 && nextRow < rows && nextColumn >= 0 && nextColumn < columns) {
+                e.preventDefault();
+                e.currentTarget.closest(".trail-board")?.querySelector<HTMLButtonElement>('[data-cell="' + (nextRow * columns + nextColumn) + '"]')?.focus();
+              }
+              return;
+            }
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              if (path.length && path[path.length - 1] === cell) { submit(); return; }
+              setPath((current) => current.length ? extendStrandsPath(current, cell, rows, columns) : [cell]);
+              sfx("tap");
+            }
+          }}
+          aria-label={"Row " + (Math.floor(cell / columns) + 1) + ", column " + (cell % columns + 1) + ", letter " + letter}
+          aria-pressed={inPath}
+          aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Enter Space"
+        >{letter}</button>;
       })}
     </div>
     <div className="trail-actions">

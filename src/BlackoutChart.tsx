@@ -9,7 +9,7 @@ type Done = (score: number, maxScore: number, perfect: boolean, shareText?: stri
 interface Guess { word: string; hits: number }
 
 /**
- * Blackout Chart: a case report with the diagnosis blacked out. Guess words to reveal every matching word in the chart, or
+ * Blackout Chart: a case report with a diagnosis or next clinical action blacked out. Guess words to reveal every matching word in the chart, or
  * name the diagnosis outright. Redaction bars show each hidden word's length.
  */
 export default function BlackoutChart({ seed, onDone, onExit }: { seed: number; onDone: Done; onExit?: () => void }) {
@@ -71,7 +71,7 @@ export default function BlackoutChart({ seed, onDone, onExit }: { seed: number; 
     const ok = matchAnswer(q, [{ answer: kase.title, aliases: kase.aliases }]);
     setText("");
     if (ok) { win(n); return; }
-    setCount(n); setShake((v) => v + 1); setNote("That is not the diagnosis. Keep revealing words.");
+    setCount(n); setShake((v) => v + 1); setNote("That is not the hidden answer. Keep revealing words.");
     reward(false); sfx("wrong");
   };
   const submit = () => { if (over) return; if (mode === "word") guessWord(); else guessDiagnosis(); };

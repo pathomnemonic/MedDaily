@@ -13,11 +13,13 @@ export function longestStreak(data: PlayerData): number {
   return best;
 }
 
-export function computeTrophies(data: PlayerData, totalGames: number): Trophy[] {
+export function computeTrophies(data: PlayerData, listedGames: readonly GameId[]): Trophy[] {
+  const listed = new Set<GameId>(listedGames);
   const results = data.results;
-  const games = new Set<GameId>(results.map((r) => r.game));
+  const arcadeResults = results.filter((r) => listed.has(r.game));
+  const games = new Set<GameId>(arcadeResults.map((r) => r.game));
   const perDay = new Map<string, Set<GameId>>();
-  for (const r of results) perDay.set(r.date + "|" + r.scope, (perDay.get(r.date + "|" + r.scope) ?? new Set()).add(r.game));
+  for (const r of arcadeResults) perDay.set(r.date + "|" + r.scope, (perDay.get(r.date + "|" + r.scope) ?? new Set()).add(r.game));
   const bestDay = Math.max(0, ...[...perDay.values()].map((s) => s.size));
   const streak = longestStreak(data);
   const best = (game: GameId) => Math.max(0, ...results.filter((r) => r.game === game).map((r) => r.score));
@@ -27,7 +29,7 @@ export function computeTrophies(data: PlayerData, totalGames: number): Trophy[] 
     t("perfect", "✨", "Flawless", "Get a perfect run", results.some((r) => r.perfect)),
     t("three", "🎯", "Hat Trick", "Finish 3 games in one day", bestDay >= 3),
     t("sampler", "🧩", "Sampler Platter", "Try 8 different games", games.size >= 8),
-    t("full", "🏆", "Arcade Cleared", "Finish every game in one day", bestDay >= totalGames),
+    t("full", "🏆", "Arcade Cleared", "Finish every game in one day", bestDay >= listedGames.length),
     t("streak3", "🔥", "Warming Up", "3-day streak", streak >= 3),
     t("streak7", "🌋", "On Fire", "7-day streak", streak >= 7),
     t("streak30", "☄️", "Unstoppable", "30-day streak", streak >= 30),

@@ -13,7 +13,11 @@ import { watchStage, resetCombo } from "./juice";
 import { setHapticsEnabled, vibrate } from "./haptics";
 import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } from "./audio";
 import type { GameId } from "./lib";
+<<<<<<< HEAD
 import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, PARTY_GAMES } from "./lib";
+=======
+import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, PARTY_GAMES, LISTED_GAME_IDS } from "./lib";
+>>>>>>> origin/main
 import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
 import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, rankRoomPlayers, submitRoomScore, watchRoom, type RoomState } from "./firebase";
 import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnected } from "./googleDrive";
@@ -29,7 +33,7 @@ const GAMES: GameMeta[] = [
   {id:"trivia",title:"Trivia Rumble",subtitle:"Spin. Answer. Collect badges.",description:"A six-category trivia wheel with solo and pass-and-play modes.",icon:"🎡",wash:"orange",time:"8–12 min",category:"Party quiz",difficulty:1},
   {id:"dive",title:"Deep Scan",subtitle:"Go past the obvious",description:"Seven timed open questions, one typed answer each. Common answers stop at the skin; rare ones reach the marrow.",icon:"🩻",wash:"blue",time:"4 min",category:"Open-answer trivia",difficulty:3},
   {id:"horses",title:"Hoofbeats",subtitle:"Think horses, not zebras",description:"Clinical prompts where every valid answer is weighted by how common it really is. Name the most common one: horses score big, zebras almost nothing.",icon:"🐴",wash:"orange",time:"4 min",category:"Prevalence quiz",difficulty:2},
-  {id:"blackout",title:"Blackout Chart",subtitle:"Read the chart, name the diagnosis",description:"A patient case with the diagnosis and key words blacked out. Guess words to reveal them everywhere they appear, then name the diagnosis.",icon:"🗂️",wash:"peach",time:"4 min",category:"Case detective",difficulty:3},
+  {id:"blackout",title:"Blackout Chart",subtitle:"Read the chart, name the diagnosis",description:"A clinical case with its diagnosis or next action blacked out. Reveal matching words throughout the chart, then name the hidden answer.",icon:"🗂️",wash:"peach",time:"4 min",category:"Case detective",difficulty:3},
   {id:"cross",title:"Crossmatch",subtitle:"Fit the row and the column",description:"A 3×3 grid of drug groups and properties. Each cell needs a drug that fits both, and each drug can be used once. Rarer answers score more.",icon:"🧪",wash:"pink",time:"4 min",category:"Pharmacology grid",difficulty:3},
   {id:"branch",title:"Branch Lab",subtitle:"Find the mystery microbe or drug",description:"Each guess grows a family tree and shows how much lineage it shares with a hidden microbe or drug. Narrow it down in eight guesses.",icon:"🌳",wash:"lime",time:"3 min",category:"Taxonomy",difficulty:2},
   {id:"scale",title:"Scale Lab",subtitle:"How big is it, really?",description:"Place organs, cells, doses and lifespans on a ruler where every notch is ten times bigger. The closer you land, the more you score.",icon:"📏",wash:"gold",time:"3 min",category:"Estimation",difficulty:2},
@@ -39,7 +43,7 @@ const GAMES: GameMeta[] = [
   {id:"crossword",title:"Crossword Clinic",subtitle:"Fill the tiny grid",description:"A fresh mini crossword every time, with clues from anatomy to pharmacology. Check or reveal letters when stuck.",icon:"✏️",wash:"gold",time:"4 min",category:"Crossword",difficulty:1},
   {id:"lettergrid",title:"Letter Lab",subtitle:"Find words in the grid",description:"Connect neighboring letters to uncover as many hidden words as possible before time runs out.",icon:"🔤",wash:"mint",time:"2 min",category:"Word hunt",difficulty:2},
   {id:"hive",title:"Seven Cells",subtitle:"Seven letters, a swarm of terms",description:"Find every accepted medical word in a seven-letter hive. Use the center tile and hunt for the pangram.",icon:"✿",wash:"gold",time:"3 min",category:"Medical wordplay",difficulty:2},
-  {id:"riddle",title:"Riddle Lab",subtitle:"Who am I?",description:"A germ, a drug, an organ, or a syndrome speaks in riddles. Guess early for more points.",icon:"🕵️",wash:"lilac",time:"3 min",category:"Guess who",difficulty:1},
+  {id:"riddle",title:"Riddle Lab",subtitle:"Who am I?",description:"Microbes, medicines, organs, diagnoses and clinical decisions reveal themselves through four progressive clues. Guess early for more points.",icon:"🕵️",wash:"lilac",time:"3 min",category:"Guess who",difficulty:1},
   {id:"higher",title:"What Has More?",subtitle:"Ridiculous medical matchups",description:"Pick the bigger number in surprising food, drug, body, and everyday comparisons.",icon:"⚖",wash:"gold",time:"2 min",category:"Wild comparisons",difficulty:1},
   {id:"pairs",title:"Association Blitz",subtitle:"Make the connections",description:"Flip a 24-card board, find twelve clinical pairs, and build a streak before time runs out.",icon:"◇",wash:"lime",time:"3 min",category:"Association",difficulty:2},
   {id:"mime",title:"Mime Time",subtitle:"Act it out. No talking.",description:"Pass the phone and act out medical scenes, symptoms, and instruments while your friends guess. Beat the clock.",icon:"🎭",wash:"pink",time:"5–10 min",category:"Party charades",difficulty:1},
@@ -50,7 +54,7 @@ const GAMES: GameMeta[] = [
   {id:"ladder",title:"Letter Rungs",subtitle:"One letter at a time",description:"Build a one-letter-at-a-time path from the start word to the finish.",icon:"⌁",wash:"peach",time:"3 min",category:"Word play",difficulty:2},
 ];
 /** Games shown to players. A game with `hidden: true` stays in the code and still opens by id, but is not listed anywhere. */
-const LISTED: GameMeta[] = GAMES.filter(g => !g.hidden);
+const LISTED: GameMeta[] = GAMES.filter(g => !g.hidden && LISTED_GAME_IDS.includes(g.id));
 /** Rotating spotlight: the open-answer and trivia games trade the featured slot each UTC day. */
 const DIFFICULTY_LABEL = ["", "Easy", "Medium", "Hard"] as const;
 /** Three-pip difficulty badge: Easy, Medium, or Hard (rated for a practising clinician, not a beginner). */
@@ -179,9 +183,12 @@ export default function App() {
     return ()=>stop();
   },[roomCode]);
 
-  const doneToday=completedToday(player,scope);
+  const doneToday=completedToday(player,scope,LISTED.map((game)=>game.id));
   const streak=playStreak(player,scope);
-  const seedFor=(game:GameId)=>hashSeed(date+"|"+scope+"|"+game);
+  // Branch Lab uses a sequential UTC-day seed so its alternating organism/drug banks never repeat within a year.
+  const seedFor=(game:GameId)=>game==="branch"||game==="blackout"||game==="trail"||game==="diagnosis"||game==="ladder"||game==="crossword"
+    ? Math.floor(Date.parse(date+"T00:00:00Z")/86400000)
+    : hashSeed(date+"|"+scope+"|"+game);
 
   const openGame=(id:GameId,isPractice=false,forcedSeed?:number,party=false)=>{
     sfx("start");resetCombo();vibrate(10);
@@ -303,7 +310,7 @@ export default function App() {
         <div className="breadcrumb"><button onClick={()=>{setActiveGame(null);setPractice(false);}}>← All games</button><span>/</span><span>{title}</span>{!completion&&<PipCompanion/>}</div>
         <div className="play-heading"><div className="play-badge" aria-hidden="true"><GameArt game={activeGame}/></div><div className="play-heading-text"><span className="eyebrow">{partyRun?"PARTY ROOM · "+roomCode:practice?"FREE PLAY":selectedTitle.toUpperCase()+" · "+date}</span><h1>{title}</h1><p>{GAMES.find(g=>g.id===activeGame)?.description}</p>{(()=>{const g=GAMES.find(x=>x.id===activeGame);return g?<Difficulty level={g.difficulty}/>:null;})()}</div>
           {!partyRun&&<div className="mode-switch" role="group" aria-label="Game mode"><button className={!practice?"selected":""} onClick={()=>{if(practice)openGame(activeGame,false,room?.seed);}}>Daily</button><button className={practice?"selected":""} onClick={()=>{if(!practice)openGame(activeGame,true,hashSeed(activeGame+"-practice-"+Date.now()));}}>Free Play</button></div>}</div>
-        <section className="game-stage"><div className="stage-orbit orbit-one"/><div className="stage-orbit orbit-two"/><StageScene game={activeGame}/><div className="stage-watermark" aria-hidden="true"><GameArt game={activeGame}/></div>
+        <section className="game-stage" data-game={activeGame}><div className="stage-orbit orbit-one"/><div className="stage-orbit orbit-two"/><StageScene game={activeGame}/><div className="stage-watermark" aria-hidden="true"><GameArt game={activeGame}/></div>
           <GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onExit={()=>{setActiveGame(null);setPractice(false);}} onDone={finishGame}/>
         </section>
         {room&&<RoomScores room={room}/>}
@@ -404,11 +411,11 @@ function RoomScores({room}:{room:RoomState}){
 
 function StatsPage({player,scope,streak,done}:{player:PlayerData;scope:string;streak:number;done:number}){
   const lvl=levelFor(player.xp??0);
-  const trophies=computeTrophies(player,LISTED.length);
+  const trophies=computeTrophies(player,LISTED.map((game) => game.id));
   const results=player.results.filter(r=>r.scope===scope);
   const perfect=results.filter(r=>r.perfect).length;
   return <div className="stats-page"><section className="profile-card"><Mascot mood="happy" size={84}/><div className="profile-main"><span className="eyebrow">YOUR PROFILE</span><h1>Lv {lvl.level} · {lvl.title}</h1><i className="profile-bar" role="progressbar" aria-valuenow={lvl.pct} aria-valuemin={0} aria-valuemax={100}><span style={{width:lvl.pct+"%"}}/></i><small>{lvl.into} / {lvl.span} XP to the next level</small>
-        <div className="profile-chips"><span><Icon name="flame" size={22}/> {player.hideStreaks?"—":streak}-day streak</span><span><Icon name="star" size={22}/> {done}/{GAMES.length} cleared today</span><span className="profile-goal" title="Finish three daily games for a bonus chest">{[0,1,2].map(i=><i key={i} className={i<Math.min(done,3)?"on":""}/>)} {done>=3?"🎁 chest claimed":"daily goal"}</span></div></div></section>
+        <div className="profile-chips"><span><Icon name="flame" size={22}/> {player.hideStreaks?"—":streak}-day streak</span><span><Icon name="star" size={22}/> {done}/{LISTED.length} cleared today</span><span className="profile-goal" title="Finish three daily games for a bonus chest">{[0,1,2].map(i=><i key={i} className={i<Math.min(done,3)?"on":""}/>)} {done>=3?"🎁 chest claimed":"daily goal"}</span></div></div></section>
     <span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div></div>
     <section className="trophy-cabinet"><h2>Trophy cabinet <small>{trophies.filter(t=>t.earned).length} / {trophies.length}</small></h2><div className="trophy-grid">{trophies.map(t=><div key={t.id} className={"trophy"+(t.earned?" earned":"")}><span className="trophy-icon">{t.earned?t.icon:"🔒"}</span><b>{t.name}</b><small>{t.hint}</small></div>)}</div></section>
     <section className="stats-table"><h2>Game shelf</h2>{LISTED.map(g=>{const played=results.filter(r=>r.game===g.id);return <div key={g.id}><span>{g.title}</span><span>{played.length} played</span><b>Best run {Math.max(0,...played.map(r=>r.score))}</b></div>;})}</section>

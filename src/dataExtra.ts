@@ -3,6 +3,9 @@ import { DROPPED_COMPARISON_PREFIXES, funComparisons } from "./dataFunCompare";
 import { scrambleWordsExpansion2, higherLowerPairsExpansion2 } from "./dataUtilityExpansion";
 import { spellingHiveExpansion, wordLaddersExpansion, deductionCasesExpansion } from "./dataExtraExpansion";
 import { glyphPatternsExpansion } from "./dataGlyphExpansion";
+import { crosswordBank } from "./dataCrossword";
+import { pairsBank } from "./data";
+import { scrambleWordsYearExpansion } from "./dataAnagramYear";
 
 export const glyphPatterns: { name:string; pattern:number[][]; hint:string }[] = [...glyphPatternsExpansion];
 
@@ -63,7 +66,23 @@ export const scrambleWordsExpansion = [
 ["VENTILATION","Movement of air into and out of the lungs"],
 ["VERTIGO","Illusion of movement, often spinning"]
 ] as const;
-export const scrambleWordsExtended = [...scrambleWords, ...scrambleWordsExpansion, ...scrambleWordsExpansion2] as const;
+const pairWordScrambles: [string, string][] = pairsBank
+  .filter(([term]) => /^[A-Za-z]{5,11}$/.test(term))
+  .map(([term, clue]) => [term.toUpperCase(), clue]);
+const allScrambleWords: [string, string][] = [
+  ...scrambleWords.map(([word, clue]) => [word, clue] as [string, string]),
+  ...scrambleWordsExpansion.map(([word, clue]) => [word, clue] as [string, string]),
+  ...scrambleWordsExpansion2.map(([word, clue]) => [word, clue] as [string, string]),
+  ...pairWordScrambles,
+  ...scrambleWordsYearExpansion.map(([word, clue]) => [word, clue] as [string, string])
+];
+const seenScrambleWords = new Set<string>();
+export const scrambleWordsExtended: [string, string][] = allScrambleWords.filter(([word]) => {
+  const key = word.trim().toUpperCase();
+  if (seenScrambleWords.has(key)) return false;
+  seenScrambleWords.add(key);
+  return true;
+});
 
 export const higherLowerPairs = [
   {a:"Red blood cells per µL (approximate)",av:4500,b:"Platelets per µL (approximate)",bv:250,unit:"thousands/µL",explanation:"RBCs are generally present in the millions per microliter; platelets in the hundreds of thousands.",source:"Standard CBC reference intervals."},
@@ -452,6 +471,23 @@ wordLadders.push(
 {start:"CARE",end:"PURL",path:["CARE","CORE","CURE","PURE","PURL"],note:"A clinical starting point leads to a textile term."}
 );
 
+wordLadders.push(
+{start:"WARM",end:"CURE",path:["WARM","WARD","CARD","CARE","CURE"],note:"A short clinical ladder from a temperature to a treatment."},
+{start:"SICK",end:"WARM",path:["SICK","SINK","SINE","SANE","CANE","CARE","CARD","WARD","WARM"],note:"A longer ladder with a clinical starting word."},
+{start:"COLD",end:"MATH",path:["COLD","BOLD","BOND","BONE","BANE","LANE","LATE","MATE","MATH"],note:"A longer route through familiar vocabulary."},
+{start:"BILE",end:"MIND",path:["BILE","MILE","MILD","MIND"],note:"A compact ladder that starts with a digestive term."},
+{start:"MILD",end:"MATE",path:["MILD","MILE","TILE","TIDE","SIDE","SINE","LINE","LANE","LATE","MATE"],note:"A longer path with several near-miss turns."},
+{start:"TIDE",end:"CARE",path:["TIDE","SIDE","SINE","SANE","CANE","CARE"],note:"A short route from a common noun to a clinical word."},
+{start:"SAGE",end:"CURE",path:["SAGE","PAGE","PARE","CARE","CURE"],note:"A compact ladder ending in a clinical term."},
+{start:"FISH",end:"MATH",path:["FISH","FIST","FAST","CAST","CASE","CANE","LANE","LATE","MATE","MATH"],note:"A longer ladder with one-letter changes throughout."},
+{start:"LUNG",end:"SAFE",path:["LUNG","LONG","SONG","SANG","SANE","SAFE"],note:"A short route from an anatomical term to a familiar adjective."},
+{start:"BOND",end:"HEAL",path:["BOND","BEND","BEAD","HEAD","HEAL"],note:"A compact ladder that finishes with a clinical verb."},
+{start:"RASH",end:"CURE",path:["RASH","CASH","CASE","CARE","CURE"],note:"A clinical starting point leads to a treatment word."},
+{start:"COST",end:"CARE",path:["COST","CAST","CASE","CARE"],note:"A compact ladder with a clinical endpoint."},
+{start:"BOLD",end:"SAFE",path:["BOLD","BOND","BONE","BANE","SANE","SAFE"],note:"A short route through common four-letter words."},
+{start:"FIVE",end:"TALK",path:["FIVE","FINE","LINE","LANE","CANE","CASE","CASK","TASK","TALK"],note:"A longer ladder ending in a communication verb."}
+);
+
 
 deductionCases.push(
 {
@@ -488,6 +524,65 @@ solution:[{suspect:"Ari",location:"Reference Desk",object:"Atlas"},{suspect:"Min
 
 
 spellingHivePuzzles.push(...spellingHiveExpansion);
+
+// Expand the playable hive to a full-year rotation using only curated vocabulary.
+// The 50 source boards keep their letter sets and curated answers; any short base board
+// is topped up from the shared hive/crossword lexicon. New centers and pangrams create distinct boards.
+{
+  const excluded = new Set(["Practice Round", "Capture the Clue", "Tricone Terms"]);
+  const base = spellingHivePuzzles.filter((p) => !excluded.has(p.title));
+  const wordPool = new Set([
+    ...spellingHivePuzzles.flatMap((p) => p.words),
+    ...crosswordBank.map(([word]) => word)
+  ]);
+  const wordsFor = (letters: string[], center: string) =>
+    [...wordPool].filter((word) =>
+      word.length >= 4 && word.includes(center) && [...word].every((letter) => letters.includes(letter))
+    ).sort();
+  for (const puzzle of base) {
+    if (puzzle.words.length < 8) puzzle.words = wordsFor(puzzle.letters, puzzle.center);
+  }
+
+  const keyOf = (letters: string[], center: string, words: string[]) =>
+    [...letters].sort().join("") + "|" + center + "|" + [...words].sort().join(",");
+  const seen = new Set(base.map((p) => keyOf(p.letters, p.center, p.words)));
+  const variants: HivePuzzle[] = [];
+  for (const puzzle of base) {
+    for (const center of puzzle.letters) {
+      if (center === puzzle.center) continue;
+      const words = wordsFor(puzzle.letters, center);
+      if (words.length < 8) continue;
+      const key = keyOf(puzzle.letters, center, words);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      variants.push({ ...puzzle, title: puzzle.title + " · " + center + " center", center, words });
+    }
+  }
+
+  const generated: HivePuzzle[] = [];
+  for (const [pangram, clue] of crosswordBank) {
+    const letters = [...new Set(pangram)];
+    if (letters.length !== 7 || pangram.length < 7) continue;
+    for (const center of letters) {
+      const words = wordsFor(letters, center);
+      if (words.length < 8 || !words.includes(pangram)) continue;
+      const key = keyOf(letters, center, words);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      generated.push({
+        title: "Clinical Letter Set " + (generated.length + 1) + " · " + center + " center",
+        letters, center, words, pangram,
+        hint: clue
+      });
+      if (generated.length === 81) break;
+    }
+    if (generated.length === 81) break;
+  }
+  if (variants.length !== 234 || generated.length !== 81) {
+    throw new Error("Seven Cells year bank expected 234 center variants and 81 new pangram boards; got " + variants.length + " and " + generated.length);
+  }
+  spellingHivePuzzles.push(...variants, ...generated);
+}
 wordLadders.push(...wordLaddersExpansion);
 deductionCases.push(...deductionCasesExpansion);
 higherLowerPairs.push(...higherLowerPairsExpansion, ...higherLowerPairsExpansion2);

@@ -1,9 +1,11 @@
+import { generatedRiddles } from "./dataRiddlesExpansion";
+
 /** First-person riddles for Riddle Lab: four clues from cryptic to obvious. Distractors come from the same kind. */
-export type RiddleKind = "Microbe" | "Drug" | "Organ" | "Molecule" | "Syndrome";
+export type RiddleKind = "Microbe" | "Drug" | "Organ" | "Molecule" | "Syndrome" | "Diagnosis" | "Next step";
 export interface Riddle { id: string; kind: RiddleKind; answer: string; clues: [string, string, string, string] }
 const r = (kind: RiddleKind, answer: string, clues: [string, string, string, string]): Riddle => ({ id: (kind[0] + answer).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 24), kind, answer, clues });
 
-export const riddles: Riddle[] = [
+const originalRiddles: Riddle[] = [
   r("Microbe", "Pseudomonas aeruginosa", ["I smell like grapes and I'm famous for blue-green pus.", "I love moist places: hot tubs, burn wounds, and ventilator tubing.", "I'm an oxidase-positive gram-negative rod that makes pyocyanin.", "In cystic fibrosis lungs, my mucoid form takes over."]),
   r("Microbe", "Staphylococcus aureus", ["I form grape-like clusters of golden colonies.", "I make coagulase, so I clot plasma.", "Toxic shock and scalded skin are two of my tricks.", "Some of my family resist methicillin."]),
   r("Microbe", "Clostridioides difficile", ["Antibiotics are my best friend because they clear out my competition.", "I make toxins A and B and leave a pseudomembranous gut.", "My spores shrug off hand sanitizer, so soap and water wins.", "A fecal transplant can put me in my place."]),
@@ -48,7 +50,7 @@ export const riddles: Riddle[] = [
   r("Molecule", "Erythropoietin", ["Kidney cells make me.", "Hypoxia turns on my gene.", "I tell bone marrow to make red cells.", "Athletes who abuse me risk thick blood."]),
   r("Syndrome", "Marfan syndrome", ["I'm tall with long fingers.", "My fibrillin-1 is faulty.", "Upward lens dislocation and aortic root dilation are my risks.", "I'm autosomal dominant."]),
   r("Syndrome", "Down syndrome", ["I come from an extra chromosome 21.", "A single palmar crease and a flat facial profile are classic.", "I'm linked with AV canal defects and early Alzheimer disease.", "Advanced maternal age raises my odds."]),
-  r("Syndrome", "Turner syndrome", ["I'm 45,X.", "Short stature and a webbed neck go with me.", "Bicuspid aortic valve and coarctation are common.", "Streak ovaries leave me with primary amenorrhea."]),
+  r("Syndrome", "Turner syndrome", ["I'm 45,X, with gonadal dysgenesis.", "Short stature and a webbed neck go with me.", "Bicuspid aortic valve and coarctation are common.", "Streak ovaries leave me with primary amenorrhea."]),
   r("Syndrome", "Cushing syndrome", ["Moon facies and a buffalo hump belong to me.", "Purple striae mark my skin.", "Dexamethasone suppression separates my causes.", "Cortisol excess is my definition."]),
   r("Syndrome", "Guillain-Barré syndrome", ["I often follow an infection like Campylobacter.", "I climb from the legs upward.", "Reflexes vanish, and the CSF shows albuminocytologic dissociation.", "IVIG or plasmapheresis treats me."]),
   r("Syndrome", "Horner syndrome", ["Ptosis, miosis, and anhidrosis are my triad.", "A sympathetic pathway interruption causes me.", "Pancoast tumors are a classic culprit.", "Carotid dissection can cause me."]),
@@ -58,9 +60,20 @@ export const riddles: Riddle[] = [
   r("Syndrome", "Tetralogy of Fallot", ["I'm the most common cyanotic congenital heart defect after infancy.", "Squatting relieves my spells.", "I include pulmonary stenosis and a ventricular septal defect.", "An overriding aorta and right ventricular hypertrophy complete my four parts."])
 ];
 
+const seenRiddleAnswers = new Set(originalRiddles.map((item) => item.answer.trim().toLowerCase()));
+export const riddles: Riddle[] = [
+  ...originalRiddles,
+  ...generatedRiddles.filter((item) => {
+    const key = item.answer.trim().toLowerCase();
+    if (seenRiddleAnswers.has(key)) return false;
+    seenRiddleAnswers.add(key);
+    return true;
+  })
+];
+
 /** Four options: the answer plus three same-kind distractors, in a seeded order. */
 export function riddleOptions(riddle: Riddle, rand: () => number): string[] {
-  const pool = riddles.filter((x) => x.kind === riddle.kind && x.answer !== riddle.answer).map((x) => x.answer);
+  const pool = [...new Set(riddles.filter((x) => x.kind === riddle.kind && x.answer !== riddle.answer).map((x) => x.answer))];
   const picks: string[] = [];
   const bag = [...pool];
   while (picks.length < 3 && bag.length) picks.push(bag.splice(Math.floor(rand() * bag.length), 1)[0]);

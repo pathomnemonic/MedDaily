@@ -35,6 +35,20 @@ describe("clinical case generator", () => {
     }
     expect(themes.size).toBe(clinicalThemes.length);
   });
+  it("provides 365 distinct, uniquely solvable daily cases", () => {
+    const signatures = new Set<string>();
+    for (let seed = 0; seed < 365; seed++) {
+      const kase = generateClinicalCase(seed);
+      signatures.add(JSON.stringify({
+        patients: kase.patients,
+        causes: kase.causes,
+        findings: kase.findings,
+        clues: kase.clues.map((clue) => clue.text)
+      }));
+      expect(countClinicalSolutions(kase.constraints), "seed " + seed).toBe(1);
+    }
+    expect(signatures.size).toBe(365);
+  });
   it("is deterministic and the solution is consistent with every clue", () => {
     const a = generateClinicalCase(123), b = generateClinicalCase(123);
     expect(a.clues.map((c) => c.text)).toEqual(b.clues.map((c) => c.text));

@@ -1,3 +1,5 @@
+import { mimeDeckExpansion } from "./dataMimeExpansion";
+
 /** Act-it-out prompts for Mime Time. Every item can be performed without speaking or props. */
 export type MimeKind = "Procedure" | "Symptom" | "Ward life" | "Instrument" | "Specialty" | "Patient";
 export const mimeDeck: { term: string; kind: MimeKind }[] = [
@@ -8,3 +10,5 @@ export const mimeDeck: { term: string; kind: MimeKind }[] = [
   ...["Cardiologist", "Neurosurgeon", "Pediatrician", "Dermatologist", "Anesthesiologist", "Radiologist", "Dentist", "Podiatrist", "Ophthalmologist", "Psychiatrist", "Obstetrician", "Orthopedic surgeon", "ENT surgeon", "Pathologist", "Emergency physician", "Physical therapist", "Chiropractor", "Veterinarian", "Paramedic", "Flight nurse"].map((term) => ({ term, kind: "Specialty" as const })),
   ...["Someone with a broken arm", "A patient who hates needles", "A toddler at the doctor", "A patient pretending to be fine", "A very sleepy resident", "A nervous first-year student", "A patient who read the internet", "A runner with shin splints", "A patient waking from anesthesia", "A grandparent who won't use the walker", "A proud new parent", "A medical student pimped on rounds", "Someone allergic to cats", "A patient on laughing gas", "A marathon finisher at the med tent"].map((term) => ({ term, kind: "Patient" as const }))
 ];
+
+mimeDeck.push(...mimeDeckExpansion);
