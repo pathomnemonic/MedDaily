@@ -2637,3 +2637,5 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .lb-context{margin:0;font:500 11px/1.45 var(--font-game);opacity:.85;text-align:left}.lb-context span{opacity:.6}
 @media(max-height:720px){.lb{gap:7px}.lb-label{padding:8px 12px}.lb-lcd{padding:8px}.lb-score{width:70px;height:70px}.lb-score b{font-size:26px}}
 .lb-pin{display:flex!important;flex-direction:column;align-items:center}.lb-pin.answer{margin-top:0}.lb-pin.you{margin-top:-62px}.lb-pin.answer::before{margin-bottom:2px}.lb-pin.you::after{margin-top:2px}
+.mime-tilt{display:flex;gap:10px;align-items:flex-start;margin:8px 0;padding:10px 12px;border:2px dashed rgba(255,255,255,.3);border-radius:12px;font:500 12px/1.4 var(--font-game);text-align:left;cursor:pointer}.mime-tilt b{display:block;font-size:13px}.mime-tilt input{margin-top:3px}
+.mime-setup .full-button{position:sticky;bottom:10px;z-index:3;box-shadow:0 5px 0 #9b6826,0 -10px 14px rgba(0,0,0,.25)}

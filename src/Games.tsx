@@ -29,6 +29,7 @@ import "@fontsource/pixelify-sans/latin-600.css";
 import "@fontsource/silkscreen/latin-400.css";
 import "@fontsource/silkscreen/latin-700.css";
 import { reward } from "./juice";
+import { requestTiltAccess, tiltStep, type TiltState } from "./mimeTilt";
 import { sfx } from "./audio";
 import { vibrate } from "./haptics";
 
@@ -1406,6 +1407,9 @@ function MimeTime({ seed, onDone }: Props) {
   const [seconds, setSeconds] = useState(MIME_SECONDS);
   const [gotThisTurn, setGotThisTurn] = useState(0);
   const [skipsThisTurn, setSkipsThisTurn] = useState(0);
+  const [tilt, setTilt] = useState(false);
+  const [tiltOk, setTiltOk] = useState(false);
+  const tiltState = useRef<TiltState>({ armed: false });
   const done = useRef(false);
   const deck = useMemo(() => shuffle(mimeDeck, seeded(seed + 4242)), [seed]);
   const rounds = count === 1 ? 3 : 2;
@@ -1414,7 +1418,11 @@ function MimeTime({ seed, onDone }: Props) {
   const card = deck[cardIndex % deck.length];
 
   const begin = () => { setScores(Array(count).fill(0)); setTurn(0); setCardIndex(0); setStage("ready"); done.current = false; };
-  const startTurn = () => { setSeconds(MIME_SECONDS); setGotThisTurn(0); setSkipsThisTurn(0); setStage("play"); };
+  const startTurn = async () => {
+    if (tilt) setTiltOk(await requestTiltAccess()); else setTiltOk(false);
+    tiltState.current = { armed: false };
+    setSeconds(MIME_SECONDS); setGotThisTurn(0); setSkipsThisTurn(0); setStage("play");
+  };
   useEffect(() => {
     if (stage !== "play") return;
     const id = window.setInterval(() => setSeconds((v) => Math.max(0, v - 1)), 1000);
@@ -1427,6 +1435,19 @@ function MimeTime({ seed, onDone }: Props) {
   };
   const got = () => { blink("got"); reward(true, null, "+1"); setGotThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
   const skip = () => { blink("skip"); sfx("whoosh"); setSkipsThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
+  const actions = useRef({ got, skip });
+  actions.current = { got, skip };
+  useEffect(() => {
+    if (stage !== "play" || !tiltOk) return;
+    const onTilt = (e: DeviceOrientationEvent) => {
+      const result = tiltStep(e.beta, tiltState.current);
+      tiltState.current = result.state;
+      if (result.action === "got") actions.current.got();
+      else if (result.action === "skip") actions.current.skip();
+    };
+    window.addEventListener("deviceorientation", onTilt);
+    return () => window.removeEventListener("deviceorientation", onTilt);
+  }, [stage, tiltOk]);
   const nextTurn = () => {
     if (turn + 1 >= totalTurns) {
       setStage("done");
@@ -1451,6 +1472,7 @@ function MimeTime({ seed, onDone }: Props) {
       <p>One person acts the card on screen. Everyone else shouts guesses. Tap <b>Got it</b> when someone nails it. {MIME_SECONDS} seconds per turn.</p>
       <div className="mime-count" role="group" aria-label="Number of players">{[1, 2, 3, 4, 5, 6].map((n) => <button key={n} className={count === n ? "chosen" : ""} onClick={() => setCount(n)}>{n === 1 ? "Solo" : n}</button>)}</div>
       <div className="mime-names">{names.slice(0, count).map((name, i) => <input key={i} value={name} maxLength={14} aria-label={"Player " + (i + 1) + " name"} onChange={(e) => setNames((all) => all.map((v, j) => j === i ? e.target.value : v))} />)}</div>
+      {typeof window !== "undefined" && "DeviceOrientationEvent" in window && <label className="mime-tilt"><input type="checkbox" checked={tilt} onChange={(e) => setTilt(e.target.checked)} /> <span><b>Tilt to score</b> Hold the phone on your forehead: tip it down for Got it, up to Skip.</span></label>}
       <button className="button button-primary full-button" onClick={begin}>Start the show ▶</button>
     </div>}
     {stage === "ready" && <div className="mime-ready">
@@ -1468,7 +1490,7 @@ function MimeTime({ seed, onDone }: Props) {
       <div className="mm-card" key={cardIndex}>
         <small>{card.kind.toUpperCase()}</small>
         <h2 style={{ fontSize: card.term.length > 26 ? "clamp(26px,8vw,48px)" : card.term.length > 14 ? "clamp(34px,10.5vw,64px)" : "clamp(44px,15vw,90px)" }}>{card.term}</h2>
-        <p>Act it out. No words, no sounds.</p>
+        <p>{tiltOk ? "Tilt down = got it · tilt up = skip" : "Act it out. No words, no sounds."}</p>
       </div>
       <div className="mm-btns"><button className="mm-skip" onClick={skip}><b>↷</b>SKIP</button><button className="mm-got" onClick={got}><b>✓</b>GOT IT</button></div>
       <i className="mm-flash" aria-hidden="true">{flash === "got" ? "✓" : flash === "skip" ? "↷" : ""}</i>
