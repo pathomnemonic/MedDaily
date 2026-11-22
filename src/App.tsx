@@ -22,6 +22,32 @@ type Mode = "general" | "specialty";
 type Specialty = "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
 type Screen = "home" | "stats" | "settings" | "friends";
 interface GameMeta { id: GameId; title: string; subtitle: string; description: string; icon: string; wash: string; time: string; category: string; difficulty: 1 | 2 | 3; hidden?: boolean; }
+/** Per-game finale stamps: [perfect, great, complete, try again]. */
+const FINALE: Partial<Record<GameId,[string,string,string,string]>> = {
+  medle:["FLAWLESS LAB WORK","RESULT CONFIRMED","SAMPLE LOGGED","RETEST NEEDED"],
+  diagnosis:["SPOT-ON DIAGNOSIS","CASE SOLVED","CHART FILED","MISSED THE DX"],
+  connections:["BOARD CLEARED","SQUAD ASSEMBLED","GROUPS FILED","ERASE & RETRY"],
+  glyph:["FULLY DEVELOPED","IMAGE CLEAR","FILM PROCESSED","OVEREXPOSED"],
+  casefile:["CASE CLOSED","DEDUCTION SOUND","CASE FILED","WRONG ACCUSATION"],
+  blackout:["UNREDACTED","DECLASSIFIED","CHART OPENED","STILL CLASSIFIED"],
+  riddle:["MASTER SLEUTH","RIDDLE SOLVED","FILES CLOSED","COLD TRAIL"],
+  trivia:["CHAMPION","WEDGE WINNER","ARENA CLEARED","BACK TO THE WHEEL"],
+  pairs:["PERFECT MEMORY","MATCH MASTER","SLIDES SORTED","TIME RAN OUT"],
+  lettergrid:["GRID CLEARED","WORD WIZARD","TRAY EMPTIED","SHAKE AGAIN"],
+  splice:["SPLICE PERFECT","PRESS-READY","EDITION PRINTED","UNREADABLE"],
+  labline:["BULLSEYE","WELL CALIBRATED","SPECIMENS LOGGED","RECALIBRATE"],
+  hive:["QUEEN CELL","FIELD COMPLETE","SLIDE LOGGED","OUT OF FOCUS"],
+  trail:["END OF THE LINE","ALL STATIONS","ROUTE DONE","MISSED YOUR STOP"],
+  ladder:["TOP RUNG","CLIMBED","LADDER DONE","SLIPPED"],
+  horses:["SKY HIGH","UP IN THE AIR","LANDED","STILL GROUNDED"],
+  dive:["DEEPEST DIVE","DEEP SCAN","SURFACED","SHALLOW DIVE"],
+  mime:["STANDING OVATION","STAGE STAR","CURTAIN CALL","TOUGH CROWD"],
+  higher:["HOT STREAK","SHARP EYE","ROUND OVER","LOST THE THREAD"],
+  scale:["PERFECT SCALE","WELL JUDGED","WEIGHED IN","OFF THE SCALE"],
+  branch:["FULL TREE","FOUND IT","BRANCH CLOSED","LOST IN THE TREE"],
+  cross:["GRID COMPLETE","WELL MATCHED","CROSSED","MISMATCH"],
+  crossword:["PERFECT CHART","CHART COMPLETE","SIGNED OFF","INCOMPLETE CHART"],
+};
 const GAMES: GameMeta[] = [
 // Ordered by how fun, impressive, and replayable each game is (best first). The home grid follows this order.
   {id:"medle",title:"Stat Word",subtitle:"The five-letter rounds",description:"Find the hidden medical word in six guesses.",icon:"▦",wash:"mint",time:"2 min",category:"Word play",difficulty:2},
@@ -307,7 +333,7 @@ export default function App() {
         <div className="play-heading"><div className="play-badge" aria-hidden="true"><GameArt game={activeGame}/></div><div className="play-heading-text"><span className="eyebrow">{partyRun?"PARTY ROOM · "+roomCode:practice?"FREE PLAY":selectedTitle.toUpperCase()+" · "+date}</span><h1>{title}</h1><p>{GAMES.find(g=>g.id===activeGame)?.description}</p>{(()=>{const g=GAMES.find(x=>x.id===activeGame);return g?<Difficulty level={g.difficulty}/>:null;})()}</div>
           {!partyRun&&<div className="mode-switch" role="group" aria-label="Game mode"><button className={!practice?"selected":""} onClick={()=>{if(practice)openGame(activeGame,false,room?.seed);}}>Daily</button><button className={practice?"selected":""} onClick={()=>{if(!practice)openGame(activeGame,true,hashSeed(activeGame+"-practice-"+Date.now()));}}>Free Play</button></div>}</div>
         <section className="game-stage" data-game={activeGame}><div className="stage-orbit orbit-one"/><div className="stage-orbit orbit-two"/><StageScene game={activeGame}/><div className="stage-watermark" aria-hidden="true"><GameArt game={activeGame}/></div>
-          <GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onExit={()=>{setActiveGame(null);setPractice(false);}} onDone={finishGame}/>
+          <GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onExit={()=>{if(!player.reducedMotion&&activeGame){setWipe({id:activeGame,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}setActiveGame(null);setPractice(false);}} onDone={finishGame}/>
         </section>
         {room&&<RoomScores room={room}/>}
         {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"MedDaily result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
@@ -315,11 +341,11 @@ export default function App() {
       </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak} done={doneToday}/>:screen==="settings"?<SettingsPage mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} updateTheme={updateTheme} player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} today={date} openGame={openGame}/>}
     </main>
     {completion&&<div className="complete-overlay" role="dialog" aria-modal="true" aria-label="Round complete" onClick={()=>setCompletion(null)}>
-      <div className={"complete-card"+(completion.perfect?" perfect":"")} onClick={e=>e.stopPropagation()}>
+      <div className={"complete-card tone-"+(GAMES.find(g=>g.id===activeGame)?.wash??"lilac")+(completion.perfect?" perfect":"")} onClick={e=>e.stopPropagation()}>
         {!player.reducedMotion&&<div className="confetti" aria-hidden="true">{Array.from({length:26},(_,i)=><i key={i} style={{left:((i*37)%100)+"%",animationDelay:((i%9)*0.12)+"s",background:["#ffd54a","#ff5d9e","#52e3b0","#36bdf5","#a99aff"][i%5]}}/>)}</div>}
         <div className="complete-mascot"><Mascot mood={completion.stars>=3?"cheer":completion.stars===0?"sad":"happy"} size={96}/></div>
         <div className="complete-stars" aria-label={completion.stars+" of 3 stars"}>{[1,2,3].map(n=><span key={n} className={n<=completion.stars?"on":""} style={{animationDelay:(0.25+n*0.22)+"s"}}>★</span>)}</div>
-        <span className="complete-stamp">{completion.perfect?"PERFECT":completion.stars>=3?"GREAT":completion.stars===0?"TRY AGAIN":"COMPLETE"}</span>
+        <span className="complete-stamp">{(()=>{const f=FINALE[activeGame as GameId];return f?(completion.perfect?f[0]:completion.stars>=3?f[1]:completion.stars===0?f[3]:f[2]):(completion.perfect?"PERFECT":completion.stars>=3?"GREAT":completion.stars===0?"TRY AGAIN":"COMPLETE");})()}</span>
         <h2>{completion.title}</h2>
         <p className="complete-sub">{completion.party?"Room "+roomCode+" · send this to your group":practice?"Free Play round finished":"Daily saved · come back tomorrow"}</p>
         <div className="complete-xp"><b>+{completion.gain} XP</b>{completion.chest>0&&<span className="chest-pop">🎁 Daily goal reached! +{completion.chest} XP chest</span>}{completion.levelUp&&<span className="level-up">LEVEL UP! {completion.levelUp}</span>}</div>

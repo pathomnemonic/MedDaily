@@ -38,16 +38,16 @@ type Specialty = "general" | "internal" | "familymed" | "neurology" | "cardiolog
 interface Props { seed: number; onDone: Done; specialty?: Specialty }
 export function GameBoard({ game, seed, onDone, specialty = "general", practice = false, onExit }: Props & { game: GameId; practice?: boolean; onExit?: () => void }) {
   switch (game) {
-    case "medle": return <Medle seed={seed} onDone={onDone} specialty={specialty} />;
-    case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} />;
-    case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} />;
+    case "medle": return <Medle seed={seed} onDone={onDone} onExit={onExit} specialty={specialty} />;
+    case "connections": return <Connections seed={seed} onDone={onDone} onExit={onExit} specialty={specialty} />;
+    case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} onExit={onExit} />;
     case "labline": return <Labline seed={seed} onDone={onDone} onExit={onExit} specialty={specialty} />;
     case "pairs": return <MemoryMatch seed={seed} onDone={onDone} onExit={onExit} specialty={specialty} />;
     case "splice": return <AnagramSprint seed={seed} onDone={onDone} onExit={onExit} />;
-    case "glyph": return <CellSketch seed={seed} onDone={onDone} practice={practice} />;
+    case "glyph": return <CellSketch seed={seed} onDone={onDone} onExit={onExit} practice={practice} />;
     case "higher": return <HigherLower seed={seed} onDone={onDone} onExit={onExit} />;
-    case "ladder": return <WordLadder seed={seed} onDone={onDone} />;
-    case "hive": return <SpellingHive seed={seed} onDone={onDone} />;
+    case "ladder": return <WordLadder seed={seed} onDone={onDone} onExit={onExit} />;
+    case "hive": return <SpellingHive seed={seed} onDone={onDone} onExit={onExit} />;
     case "casefile": return <CasefileClinical seed={seed} onDone={onDone} onExit={onExit} practice={practice} />;
     case "horses": return <Hoofbeats seed={seed} onDone={onDone} onExit={onExit} />;
     case "blackout": return <BlackoutChart seed={seed} onDone={onDone} onExit={onExit} />;
@@ -56,7 +56,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "scale": return <ScaleLab seed={seed} onDone={onDone} onExit={onExit} />;
     case "dive": return <DeepDive seed={seed} onDone={onDone} onExit={onExit} />;
     case "trivia": return <TriviaRumble seed={seed} onDone={onDone} onExit={onExit} />;
-    case "trail": return <ThemeTrail seed={seed} onDone={onDone} specialty={specialty} />;
+    case "trail": return <ThemeTrail seed={seed} onDone={onDone} onExit={onExit} />;
     case "crossword": return <CrosswordClinic seed={seed} onDone={onDone} onExit={onExit} />;
     case "riddle": return <RiddleLab seed={seed} onDone={onDone} onExit={onExit} />;
     case "bodymap": return <BodyMapBlitz seed={seed} onDone={onDone} />;
@@ -102,6 +102,20 @@ function pick<T>(items: readonly T[], seed: number, specialty: Specialty, key: s
   const pool = valid?.length ? valid : items;
   return pool[Math.abs(seed) % pool.length];
 }
+
+/** Full-screen shell for a game: its own backdrop, a slim top bar with exit, and a centred scrolling column. Unmounted when a round ends so the completion card can show. */
+function World({ id, title, kicker, onExit, children }: { id: string; title: string; kicker: string; onExit?: () => void; children: ReactNode }) {
+  if (typeof document === "undefined") return null;
+  return createPortal(<div className={"world world-" + id} role="dialog" aria-label={title}>
+    <header className="world-top">
+      {onExit ? <button className="world-exit" onClick={onExit} aria-label={"Leave " + title}>✕</button> : <span className="world-exit-gap" />}
+      <div className="world-title"><small>{kicker}</small><b>{title}</b></div>
+      <span className="world-exit-gap" />
+    </header>
+    <div className="world-body">{children}</div>
+  </div>, document.body);
+}
+
 function Finish({ title, detail, score, children }: { title: string; detail: string; score?: string; children?: ReactNode }) {
   return <div className="finish-panel"><div className="finish-spark">✦</div><h3>{title}</h3><p>{detail}</p>{score && <strong className="finish-score">{score}</strong>}{children}</div>;
 }
@@ -576,7 +590,7 @@ function LetterGridGame({ seed, onDone, onExit }: Props & { onExit?: () => void 
   </div>;
 }
 
-function Medle({ seed, onDone, specialty = "general" }: Props) {
+function Medle({ seed, onDone, onExit, specialty = "general" }: Props & { onExit?: () => void }) {
   const pool = specialty === "general" ? medleWords : medleWords.filter((w) => specialty === "neurology" ? ["BRAIN","NERVE","OPTIC","VAGUS","ULNAR","SPASM","MOTOR","COMAS"].includes(w) : specialty === "cardiology" ? ["AORTA","VALVE","SHOCK","RALES","SPASM","ACUTE"].includes(w) : specialty === "infectious" ? ["STAPH","STREP","VIRAL","YEAST","SPORE","TITER","COCCI","PRION"].includes(w) : true);
   const answer = pool[seed % pool.length] ?? "ACUTE";
   const [guess, setGuess] = useState("");
@@ -630,7 +644,7 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guess, ended, rows]);
-  return <div className="game-layout medle-game">
+  const view = <div className="game-layout medle-game">
     <div className="game-instructions"><span className="instruction-dot mint" /> Guess the five-letter medical word in six tries. Green is the right letter in the right place; gold is in the word elsewhere.</div>
     <div className="medle-modes"><button className={hard ? "on" : ""} onClick={toggleHard} aria-pressed={hard}>{hard ? "☑" : "☐"} Hard mode</button><button className={contrast ? "on" : ""} onClick={() => setContrast((v) => !v)} aria-pressed={contrast}>{contrast ? "☑" : "☐"} High contrast</button></div>
     <div className="word-grid" aria-label="Six guess rows">{Array.from({ length: 6 }, (_, r) => {
@@ -644,9 +658,10 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
     </> : <Finish title={won ? "Word found!" : "A word for your rounds"} detail={won ? "You solved it in " + rows.length + (rows.length === 1 ? " guess." : " guesses.") : "The answer was " + answer + ". Try another daily puzzle tomorrow."} score={won ? (100 - (rows.length - 1) * 12) + " / 100" : "0 / 100"} />}
     <p className="game-feedback" aria-live="polite">{message}</p>
   </div>;
+  return ended ? view : <World id="sw" title="STAT WORD" kicker="LAB PRINTOUT" onExit={onExit}>{view}</World>;
 }
 
-function Connections({ seed, onDone, specialty = "general" }: Props) {
+function Connections({ seed, onDone, onExit, specialty = "general" }: Props & { onExit?: () => void }) {
   const board = pick(connectionPuzzles, seed, specialty, "connections");
   const [tiles, setTiles] = useState(() => shuffle(board.flatMap((g, group) => g.words.map((word) => ({ word, group }))), seeded(seed + 31)));
   const [selected, setSelected] = useState<string[]>([]);
@@ -680,7 +695,7 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
     setShuffleCount(next);
     setTiles((current) => shuffle(current, seeded(hashSeed(String(seed) + String(solved.length) + String(mistakes) + String(next)))));
   };
-  return <div className="game-layout">
+  const view = <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot lilac" /> Select four terms that share a medical connection. Four groups complete the board; you have four mistakes available.</div>
     <div className="connection-found">{solved.map((n) => <div className="connection-solved" key={n}><strong>{board[n].category}</strong><span>{board[n].words.join(" · ")}</span></div>)}</div>
     <div className="connection-grid">{tiles.map((tile, i) => {
@@ -691,6 +706,7 @@ function Connections({ seed, onDone, specialty = "general" }: Props) {
     <p className="game-feedback" aria-live="polite">{note}</p>
     {ended && <Finish title={solved.length === 4 ? "Board cleared!" : "The connections revealed"} detail={solved.length === 4 ? "All four categories found." : "Keep the category patterns in mind for your next round."} score={Math.max(0, solved.length === 4 ? 100 - mistakes * 15 : 40 - mistakes * 5) + " / 100"}><div className="reveal-groups">{board.map((g) => <span key={g.category}><b>{g.category}</b>{g.words.join(" · ")}</span>)}</div></Finish>}
   </div>;
+  return ended ? view : <World id="qs" title="QUAD SQUAD" kicker="THE WHITEBOARD" onExit={onExit}>{view}</World>;
 }
 
 const DOCTORDLE_ALIASES: Record<string, string[]> = {
@@ -712,7 +728,7 @@ const DOCTORDLE_ALIASES: Record<string, string[]> = {
   "hepatocellular carcinoma": ["hcc"],
   "pheochromocytoma": ["pheo"]
 };
-function DoctorDle({ seed, onDone }: Props) {
+function DoctorDle({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
   const item = diagnosisCases[Math.abs(Math.trunc(seed)) % diagnosisCases.length];
   const bank = useMemo(() => [...new Set(diagnosisCases.map((c) => c.answer))].sort(), []);
   const [guess, setGuess] = useState("");
@@ -748,7 +764,7 @@ function DoctorDle({ seed, onDone }: Props) {
     setManualHints((n) => n + 1);
     setNote("Optional clue revealed. This costs 5 points.");
   };
-  return <div className="game-layout doctordle-game">
+  const view = <div className="game-layout doctordle-game">
     <div className="case-banner"><span>DOCTORDLE · CASE {item.id.toUpperCase()}</span><strong>{item.title}</strong><small>{clueCount} of {item.clues.length} clues revealed · {6 - guesses.length} guesses left</small></div>
     <div className="doctordle-attempts" aria-label="Six diagnosis attempts">{Array.from({length:6},(_,i)=><span key={i} className={i < guesses.length ? "used" : ""}>{i < guesses.length ? guesses[i] : "Diagnosis "+(i+1)}</span>)}</div>
     <div className="clue-stack">{item.clues.slice(0, clueCount).map((clue, i) => <div className="clue-card" key={i}><span>{String(i + 1).padStart(2, "0")}</span><p>{clue}</p></div>)}</div>
@@ -766,6 +782,7 @@ function DoctorDle({ seed, onDone }: Props) {
     </> : <Finish title={won ? "Diagnosis found" : "Case revealed"} detail={(won ? "Solved in " + guesses.length + " of 6 guesses. " : "Six guesses used. ") + item.explanation}><p className="doctordle-answer">Answer: <b>{item.answer}</b></p><p className="source-note">Source note: {item.source}</p></Finish>}
     <p className="game-feedback" aria-live="polite">{note}</p>
   </div>;
+  return ended ? view : <World id="dx" title="DIFFERENTIAL" kicker="CASE CLIPBOARD" onExit={onExit}>{view}</World>;
 }
 
 
@@ -1164,7 +1181,7 @@ function SketchBoard({ item, index, total, seed, onFinished }: { item: SketchIte
 }
 
 /** Cell Sketch: three pictures per run. Daily and generated variants alternate; solved boards finish themselves. */
-function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boolean }) {
+function CellSketch({ seed, onDone, onExit, practice = false }: Props & { practice?: boolean; onExit?: () => void }) {
   const generated = practice || seed % 2 === 1;
   const items = useMemo<SketchItem[]>(() => {
     const names = new Set<string>(), picks: SketchItem[] = [];
@@ -1203,11 +1220,12 @@ function CellSketch({ seed, onDone, practice = false }: Props & { practice?: boo
       }
     } else setIndex((i) => i + 1);
   };
-  return <div className="game-layout">
+  const view = <div className="game-layout">
     <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY SET" : generated ? "GENERATED DAILY SET" : "CURATED DAILY SET"} · {total} pts</div>
     {!finished ? <SketchBoard key={index} item={items[index]} index={index} total={items.length} seed={seed + index * 7} onFinished={advance} />
       : <Finish title="Gallery complete" detail={results.map((r) => r.name + (r.solved ? " (" + r.secs + "s)" : " (revealed)")).join(" · ")} score={total + " / " + items.length * 100} />}
   </div>;
+  return finished ? view : <World id="cs" title="CELL SKETCH" kicker="LIGHTBOX" onExit={onExit}>{view}</World>;
 }
 
 /** Card titles hide parenthetical working (per-item amounts, "approximate"), which would let players do the sum; it is shown after the reveal. */
@@ -1287,7 +1305,7 @@ function HigherLower({ seed, onDone, onExit }: Props & { onExit?: () => void }) 
 }
 
 
-function WordLadder({ seed, onDone }: Props) {
+function WordLadder({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
   const item = useMemo(() => generateMedicalLadder(seed, [...rungDictionary], medicalRungWords) ?? wordLadders[seed % wordLadders.length], [seed]);
   const [entered, setEntered] = useState<string[]>([item.start]);
   const [text, setText] = useState("");
@@ -1309,7 +1327,7 @@ function WordLadder({ seed, onDone }: Props) {
     else if (next.length >= maxMoves) { setEnded(true); onDone(0, 100, false); }
     else setNote("Good step. Keep going.");
   };
-  return <div className="game-layout">
+  const view = <div className="game-layout">
     <div className="eyebrow ladder-mode-label">MEDICAL LADDER · TURN {item.start} INTO {item.end}</div>
     <div className="game-instructions"><span className="instruction-dot peach" /> Build a word ladder from the start word to the end word. Change one letter at a time; all intermediate steps must be words.</div>
     <div className="ladder-ends"><span>START <b>{item.start}</b></span><span>FINISH <b>{item.end}</b></span></div>
@@ -1323,11 +1341,12 @@ function WordLadder({ seed, onDone }: Props) {
     </> : <Finish title={entered[entered.length-1] === item.end ? "Ladder climbed" : "The ladder revealed"} detail={"One possible path: " + item.path.join(" → ")} score={entered[entered.length-1] === item.end ? (showPath ? "Hint used" : "Solved") : "Try another run"} />}
     <p className="game-feedback">{note}</p>
   </div>;
+  return ended ? view : <World id="lr" title="LETTER RUNGS" kicker="THE LADDER" onExit={onExit}>{view}</World>;
 }
 
 
 const MEDICAL_HIVE_PUZZLES = spellingHivePuzzles.filter((puzzle) => !["Practice Round","Capture the Clue","Tricone Terms"].includes(puzzle.title));
-function SpellingHive({ seed, onDone }: Props) {
+function SpellingHive({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
   const puzzle = MEDICAL_HIVE_PUZZLES[seed % MEDICAL_HIVE_PUZZLES.length];
   const letters = useMemo(() => shuffle(puzzle.letters, seeded(seed + 83)), [puzzle, seed]);
   const [entry, setEntry] = useState("");
@@ -1364,7 +1383,7 @@ function SpellingHive({ seed, onDone }: Props) {
     setEnded(true);
     onDone(score, maximum, found.length === puzzle.words.length);
   };
-  return <div className="game-layout">
+  const view = <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot mint" /> Find as many words as you can using the seven hive letters. Words need at least four letters and must include the center letter. Use all seven for a pangram bonus.</div>
     <div className="hive-header"><span className="eyebrow">TODAY'S HIVE</span><strong>{puzzle.title}</strong><small>{found.length} / {puzzle.words.length} words found · {score} points</small></div>
     {(() => {
@@ -1391,6 +1410,7 @@ function SpellingHive({ seed, onDone }: Props) {
     {found.length>0&&<div className="hive-found"><SectionLabel>FOUND WORDS</SectionLabel>{found.map((word) => <span key={word} className={word===puzzle.pangram?"pangram-word":""}>{word}<b>+{points(word)}</b></span>)}</div>}
     {ended && <Finish title={found.includes(puzzle.pangram) ? "Pangram found" : "Hive closed"} detail={found.length + " of " + puzzle.words.length + " words found. The longest word is " + puzzle.pangram + "."} score={score + " / " + maximum}><div className="hive-reveal">{puzzle.words.filter((word)=>!found.includes(word)).map((word)=><span key={word}>{word}</span>)}</div></Finish>}
   </div>;
+  return ended ? view : <World id="sc" title="SEVEN CELLS" kicker="MICROSCOPE FIELD" onExit={onExit}>{view}</World>;
 }
 function wordPoints(word: string, puzzle: { pangram:string }): number {
   const base = Math.max(1, word.length - 3);
@@ -1876,7 +1896,7 @@ function CrosswordClinic({ seed, onDone, onExit }: Props & { onExit?: () => void
 
 
 const trailPacks = () => getThemeTrailYearPacks();
-function ThemeTrail({ seed, onDone }: Props) {
+function ThemeTrail({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
   const pack = trailPacks()[Math.abs(Math.trunc(seed)) % trailPacks().length];
   const puzzle = useMemo(() => makeTrailPuzzle(pack, seed), [pack, seed]);
   const { grid, rows, columns } = puzzle;
@@ -1978,7 +1998,7 @@ function ThemeTrail({ seed, onDone }: Props) {
     if (moved.current) submit();
   };
   const accent = (cell: number) => ownerOf.get(cell);
-  return <div className="game-layout trail-game" data-own-sfx="true" onPointerUp={onUp} onPointerLeave={() => { if (drag.current) { drag.current = false; if (moved.current) submit(); } }}>
+  const view = <div className="game-layout trail-game" data-own-sfx="true" onPointerUp={onUp} onPointerLeave={() => { if (drag.current) { drag.current = false; if (moved.current) submit(); } }}>
     <div className="trail-theme"><span className="eyebrow">TODAY'S THEME</span><strong>{puzzle.theme}</strong><small>{found.length} / {puzzle.words.length} terms · {bonus.length} bonus {bonus.length === 1 ? "word" : "words"}</small></div>
     <div className="trail-word-live" aria-live="polite">{currentWord || "\u00a0"}</div>
     <div className="trail-board" ref={boardRef} style={{ gridTemplateColumns: "repeat(" + columns + ", 1fr)" }} onPointerMove={onMove}>
@@ -2027,4 +2047,5 @@ function ThemeTrail({ seed, onDone }: Props) {
     {found.length > 0 && <div className="trail-found">{found.map((w) => <span key={w} className={w === puzzle.trail ? "is-trail" : ""}>{w}</span>)}</div>}
     {ended && <Finish title={found.length === puzzle.words.length ? "Trail complete!" : "Trail revealed"} detail={"The theme was " + puzzle.theme + ". Terms: " + puzzle.words.join(", ") + ". The long trail word was " + puzzle.trail + "."} score={Math.round(found.length / puzzle.words.length * 100) + " / 100"} />}
   </div>;
+  return ended ? view : <World id="tt" title="THEME TRAIL" kicker="METRO MAP" onExit={onExit}>{view}</World>;
 }

@@ -72,15 +72,20 @@ function hit(dur: number, vol: number, when: number, bus: GainNode, hp = 6000) {
   src.start(when, Math.random() * 0.5); src.stop(when + dur + 0.02);
 }
 
+/** Each game gets its own effects timbre and a small pitch shift, derived from its name, so a chime in one game does not sound like another. */
+const VOICES: OscillatorType[] = ["square", "triangle", "sine", "sawtooth"];
+const voiceOf = (): OscillatorType => (scene && scene !== "menu" ? VOICES[hashSeed("voice|" + scene) % VOICES.length] : "square");
+const shiftOf = (): number => (scene && scene !== "menu" ? (hashSeed("shift|" + scene) % 5) - 2 : 0);
+
 /** `level` raises the pitch of a correct-answer chime by that many semitones (combo escalation). */
 export function sfx(name: Sfx, level = 0) {
   if (!sfxOn || !unlocked) return;
   const c = ensure(); if (!c || !sfxBus) return;
   if (c.state === "suspended") void c.resume();
   const t = c.currentTime + 0.005, bus = sfxBus;
-  const arp = (notes: number[], gap: number, type: OscillatorType = "square", vol = 0.5, len = 0.16) => notes.forEach((n, i) => tone(midi(n), len, type, vol, t + i * gap, bus, undefined, 5200));
+  const arp = (notes: number[], gap: number, type: OscillatorType = "square", vol = 0.5, len = 0.16) => notes.forEach((n, i) => tone(midi(n + shiftOf()), len, type === "square" ? voiceOf() : type, vol, t + i * gap, bus, undefined, 5200));
   switch (name) {
-    case "tap": tone(660, 0.06, "square", 0.55, t, bus, 990, 4000); break;
+    case "tap": tone(660, 0.06, voiceOf(), 0.55, t, bus, 990, 4000); break;
     case "pop": tone(420, 0.09, "sine", 0.6, t, bus, 900); break;
     case "tick": tone(1400, 0.04, "square", 0.5, t, bus); break;
     case "correct": arp([72, 76, 79].map((n) => n + Math.min(8, Math.max(0, level))), 0.065); break;
