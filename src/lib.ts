@@ -65,10 +65,21 @@ export function nonogramRuns(line: readonly number[]): number[] {
 /** Games where several people racing the same puzzle makes sense (a shared, comparable result). */
 export const PARTY_GAMES: readonly GameId[] = ["medle","connections","diagnosis","labline","pairs","splice","higher","hive","dive","lettergrid","scale","branch","cross","blackout","horses"];
 export const normalizeRoomCode = (value: string): string => value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
-/** The same code always yields the same game and puzzle on every device; no server involved. */
-export const roomGame = (code: string): GameId => PARTY_GAMES[hashSeed("game|" + normalizeRoomCode(code)) % PARTY_GAMES.length];
+const ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+/** The first character of a room code names its game, so whoever makes the code chooses the game and everyone who joins plays it. Older or hand-typed codes fall back to a hash. */
+export const roomGame = (code: string): GameId => {
+  const clean = normalizeRoomCode(code);
+  const idx = ROOM_ALPHABET.indexOf(clean[0] ?? "");
+  return idx >= 0 && idx < PARTY_GAMES.length ? PARTY_GAMES[idx] : PARTY_GAMES[hashSeed("game|" + clean) % PARTY_GAMES.length];
+};
+/** The same code always yields the same puzzle on every device; no server involved. */
 export const roomSeed = (code: string): number => hashSeed("seed|" + normalizeRoomCode(code));
-export function randomRoomCode(random: () => number = Math.random): string {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 6 }, () => alphabet[Math.floor(random() * alphabet.length)]).join("");
+/** Re-point a (possibly partial) room code at a chosen game, keeping the other characters. */
+export const withRoomGame = (code: string, game: GameId, random: () => number = Math.random): string => {
+  const rest = normalizeRoomCode(code).slice(1).padEnd(5, " ").split("").map((c) => (c === " " ? ROOM_ALPHABET[Math.floor(random() * ROOM_ALPHABET.length)] : c)).join("");
+  return ROOM_ALPHABET[Math.max(0, PARTY_GAMES.indexOf(game))] + rest;
+};
+export function randomRoomCode(random: () => number = Math.random, game?: GameId): string {
+  const code = Array.from({ length: 6 }, () => ROOM_ALPHABET[Math.floor(random() * ROOM_ALPHABET.length)]).join("");
+  return game ? withRoomGame(code, game, random) : code;
 }

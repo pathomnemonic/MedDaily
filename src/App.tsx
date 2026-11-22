@@ -13,7 +13,7 @@ import { watchStage, resetCombo } from "./juice";
 import { setHapticsEnabled, vibrate } from "./haptics";
 import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } from "./audio";
 import type { GameId } from "./lib";
-import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, PARTY_GAMES, LISTED_GAME_IDS } from "./lib";
+import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, PARTY_GAMES, LISTED_GAME_IDS } from "./lib";
 import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
 import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, rankRoomPlayers, submitRoomScore, watchRoom, type RoomState } from "./firebase";
 import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnected } from "./googleDrive";
@@ -389,9 +389,11 @@ function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,live,g
     </div>:<div className="friends-grid single-room-entry">
       <section className="friends-card"><span className="eyebrow">ENTER A CODE</span><h2>Join a room</h2>
         <label>Nickname (optional)<input maxLength={20} value={roomName} onChange={e=>setRoomName(e.target.value)} placeholder="What should we call you?"/></label>
+        <div className="room-picker"><span className="eyebrow">STARTING A NEW ROOM? PICK THE GAME</span><div className="room-game-chips" role="radiogroup" aria-label="Room game">{PARTY_GAMES.map(id=>{const g=games.find(x=>x.id===id);if(!g)return null;const on=joinCode.length===6&&roomGame(joinCode)===id;return <button key={id} role="radio" aria-checked={on} className={on?"on":""} onClick={()=>setJoinCode(withRoomGame(joinCode||randomRoomCode(),id))}><span className="chip-art"><GameArt game={id}/></span>{g.title}</button>;})}</div></div>
         <label>Six-character code<input className="room-code-input" maxLength={6} value={joinCode} onChange={e=>setJoinCode(normalizeRoomCode(e.target.value))} placeholder="ABC123" autoCapitalize="characters" autoComplete="off"/></label>
+        {joinCode.length===6&&<p className="room-preview">This code plays <b>{games.find(g=>g.id===roomGame(joinCode))?.title}</b>.</p>}
         <div className="room-entry-actions"><button className="button button-primary" onClick={onJoin} disabled={busy||joinCode.length!==6}>{busy?"Joining…":"Join room ↗"}</button><button className="button button-soft" onClick={()=>setJoinCode(randomRoomCode())}>🎲 Random code</button></div>
-        <p className="room-hint">Group rooms use games where racing the same puzzle makes sense: {PARTY_GAMES.map(id=>games.find(g=>g.id===id)?.title).filter(Boolean).join(", ")}. Trivia Rumble has its own pass-and-play mode.</p>
+        <p className="room-hint">Pick a game above to make a code for it, then share the code or the invite link. Anyone who joins with that code plays the same game and puzzle. Joining a friend's room? Just type their code.</p>
       </section>
     </div>}
     <div className="privacy-note"><b>Private by default.</b> No account needed. Nothing is sent anywhere unless live scoreboards are enabled, and then only a nickname, the room code, and scores. Never enter patient information.</div>

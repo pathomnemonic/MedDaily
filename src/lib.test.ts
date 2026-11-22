@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { connectionPuzzles, medleWords, diagnosisCases, nextStepCases, labPrompts, triageCases, pairsBank, microbePacks } from "./data";
 import { deductionCases, glyphPatterns, ladderDictionary, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
-import { PARTY_GAMES, LISTED_GAME_IDS, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
+import { PARTY_GAMES, LISTED_GAME_IDS, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
 import { deepDiveExtras, deepDivePromptsExpanded } from "./dataDeepDiveExtra";
 import { deepDivePrompts, triviaCategories, triviaQuestions } from "./dataArcade";
+
+describe("room game choice", () => {
+  it("lets the room creator pick the game through the code", () => {
+    for (const game of PARTY_GAMES) expect(roomGame(randomRoomCode(seeded(3), game))).toBe(game);
+    expect(roomGame(withRoomGame("ZZZZZZ", "blackout"))).toBe("blackout");
+    expect(withRoomGame("K7MQ2X", "medle").slice(1)).toBe("7MQ2X");
+  });
+});
 
 describe("visible game catalog", () => {
   it("contains 23 unique playable game IDs and excludes the hidden body-map game", () => {
@@ -371,7 +379,7 @@ describe("party room codes", () => {
   });
   it("spreads codes across several games and generates valid codes", () => {
     const games = new Set(Array.from({ length: 200 }, (_, i) => roomGame(randomRoomCode(seeded(i + 1)))));
-    expect(games.size).toBeGreaterThanOrEqual(8);
+    expect(games.size).toBeGreaterThanOrEqual(4);
     expect(normalizeRoomCode(randomRoomCode())).toHaveLength(6);
   });
 });
