@@ -27,7 +27,9 @@ export function loadPlayer(): PlayerData {
   try {
     const parsed = JSON.parse(localStorage.getItem(KEY) ?? "null") as Partial<PlayerData> | null;
     const legacy = parsed != null && parsed.music === undefined; // saves from before music existed never chose sound
-    return { ...empty(), ...parsed, ...(legacy ? { sound: true, music: true } : {}), results: Array.isArray(parsed?.results) ? parsed.results.map((r) => ({ ...r, scope: r.scope ?? "general" })) : [], bests: parsed?.bests ?? {} };
+    const loaded = { ...empty(), ...parsed, ...(legacy ? { sound: true, music: true } : {}), results: Array.isArray(parsed?.results) ? parsed.results.filter((r) => r && typeof r === "object" && typeof r.date === "string" && typeof r.game === "string").map((r) => ({ ...r, scope: r.scope ?? "general" })) : [], bests: parsed?.bests && typeof parsed.bests === "object" && !Array.isArray(parsed.bests) ? parsed.bests : {} };
+    loaded.xp = Number.isFinite(Number(loaded.xp)) ? Math.max(0, Math.min(Number(loaded.xp), 1e9)) : 0;
+    return loaded;
   } catch { return empty(); }
 }
 export function savePlayer(data: PlayerData): void {

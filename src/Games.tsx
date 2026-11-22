@@ -481,6 +481,7 @@ function LetterGridGame({ seed, onDone, onExit }: Props & { onExit?: () => void 
   const [started, setStarted] = useState(false);
   const [rolling, setRolling] = useState(false);
   const dragging = useRef(false);
+  const dragCount = useRef(0);
   const [note, setNote] = useState("Drag across touching cubes to spell a word, then let go.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
@@ -553,11 +554,26 @@ function LetterGridGame({ seed, onDone, onExit }: Props & { onExit?: () => void 
     setPath((cur) => {
       if (cur.includes(i)) return cur.length > 1 && cur[cur.length - 2] === i ? cur.slice(0, -1) : cur;
       if (cur.length && !touching(cur[cur.length - 1], i)) return cur;
-      sfx("pop");
+      sfx("pop"); dragCount.current += 1;
       return [...cur, i];
     });
   };
-  const released = () => { if (!dragging.current) return; dragging.current = false; if (path.length >= 3) submit(); };
+  /** Touch down on a cube: start a word, extend the word with a touching cube (tap mode), or undo the last cube. */
+  const pressCube = (clientX: number, clientY: number) => {
+    const cell = (document.elementFromPoint(clientX, clientY) as HTMLElement | null)?.closest("[data-cube]") as HTMLElement | null;
+    dragging.current = true; dragCount.current = 0;
+    if (!cell) return;
+    const i = Number(cell.dataset.cube);
+    setPath((cur) => {
+      if (!cur.length) { sfx("pop"); return [i]; }
+      if (cur[cur.length - 1] === i) return cur.slice(0, -1);
+      if (cur.includes(i)) return cur;
+      if (touching(cur[cur.length - 1], i)) { sfx("pop"); return [...cur, i]; }
+      sfx("pop"); return [i]; // far from the current word: begin a new one here
+    });
+  };
+  /** Lifting after sweeping across cubes submits the word; a plain tap just keeps the word so you can build it tile by tile. */
+  const released = () => { if (!dragging.current) return; dragging.current = false; if (dragCount.current >= 2 && path.length >= 3) submit(); };
   const mm = Math.floor(seconds / 60), ss = String(seconds % 60).padStart(2, "0");
   const ui = <div className="ll" role="dialog" aria-label="Letter Lab">
     <header className="ll-top">
@@ -567,12 +583,12 @@ function LetterGridGame({ seed, onDone, onExit }: Props & { onExit?: () => void 
     </header>
     <div className="ll-slip"><span>{currentWord || (started ? "…" : "READY?")}</span><small>{started ? note : "Shake the tray to begin. The clock starts when the cubes land."}</small></div>
     <div className={"ll-tray" + (rolling ? " rolling" : "") + (!started && !rolling ? " idle" : "")} data-testid="tray"
-      onPointerDown={(e) => { if (!started || ended) return; dragging.current = true; setPath([]); dragOver(e.clientX, e.clientY); }}
+      onPointerDown={(e) => { if (!started || ended) return; pressCube(e.clientX, e.clientY); }}
       onPointerMove={(e) => dragOver(e.clientX, e.clientY)} onPointerUp={released} onPointerCancel={released} onPointerLeave={() => { if (dragging.current) released(); }}>
       <svg className="ll-line" viewBox="0 0 4 4" aria-hidden="true"><polyline points={path.map((i) => ((i % 4) + 0.5) + "," + (Math.floor(i / 4) + 0.5)).join(" ")} /></svg>
       {board.grid.map((letter, i) => {
         const isFound = foundPaths.some((cells) => cells.includes(i));
-        return <button key={i} type="button" data-cube={i} style={{ "--d": (i * 70) + "ms", "--r": ((i * 37) % 11 - 5) + "deg" } as React.CSSProperties} className={"ll-cube" + (path.includes(i) ? " on" : "") + (path[path.length - 1] === i ? " tip" : "") + (isFound ? " found" : "")} disabled={ended || !started} onClick={() => { if (!dragging.current) chooseCell(i); }} aria-label={"Tile " + letter + ", row " + (Math.floor(i / 4) + 1) + ", column " + (i % 4 + 1)}><span>{letter}</span><em>{path.includes(i) ? path.indexOf(i) + 1 : ""}</em></button>;
+        return <button key={i} type="button" data-cube={i} style={{ "--d": (i * 70) + "ms", "--r": ((i * 37) % 11 - 5) + "deg" } as React.CSSProperties} className={"ll-cube" + (path.includes(i) ? " on" : "") + (path[path.length - 1] === i ? " tip" : "") + (isFound ? " found" : "")} disabled={ended || !started} onClick={(e) => { if (e.detail === 0) chooseCell(i); }} aria-label={"Tile " + letter + ", row " + (Math.floor(i / 4) + 1) + ", column " + (i % 4 + 1)}><span>{letter}</span><em>{path.includes(i) ? path.indexOf(i) + 1 : ""}</em></button>;
       })}
     </div>
     <div className="ll-found">{found.length ? found.map((word) => <span key={word}>{word}<b>+{letterWordPoints(word)}</b></span>) : <small>Words you find collect here</small>}</div>

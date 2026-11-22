@@ -309,3 +309,21 @@ describe("generous answer matching", () => {
     expect(pick("kalemia")).toBeUndefined();
   });
 });
+
+describe("matcher regressions found by the bug scan", () => {
+  it("a typed name that is itself a listed answer beats a synonym of a sibling", () => {
+    const list = [{ answer: "Thyrotoxicosis" }, { answer: "Hyperthyroidism" }, { answer: "Dermatomyositis" }, { answer: "Polymyositis" }];
+    expect(matchAnswer("Hyperthyroidism", list)?.match.answer).toBe("Hyperthyroidism");
+    expect(matchAnswer("Polymyositis", list)?.match.answer).toBe("Polymyositis");
+  });
+  it("stripping a generic tail never lets 'bladder cancer' match a urinary tract infection", () => {
+    const list = [{ answer: "Urinary tract infection" }, { answer: "Bladder cancer" }, { answer: "Renal cell carcinoma" }];
+    expect(matchAnswer("Bladder cancer", list)?.match.answer).toBe("Bladder cancer");
+    expect(matchAnswer("kidney cancer", list)?.match.answer).toBe("Renal cell carcinoma");
+    expect(matchAnswer("UTI", list)?.match.answer).toBe("Urinary tract infection");
+  });
+  it("a different known diagnosis is never accepted as a near-miss typo", () => {
+    expect(matchAnswer("Myasthenia gravis", [{ answer: "Graves disease", aliases: ["Graves"] }], ["Myasthenia gravis"])).toBeNull();
+    expect(matchAnswer("gravess disease", [{ answer: "Graves disease", aliases: ["Graves"] }], ["Myasthenia gravis"])).not.toBeNull();
+  });
+});

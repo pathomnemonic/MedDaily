@@ -3,8 +3,10 @@ export const LEVEL_TITLES = ["Pre-med", "Med student", "Intern", "Resident", "Fe
 /** XP required to reach level n (n >= 1): 0, 100, 250, 450, 700, ... */
 export const xpForLevel = (n: number): number => 50 * (n - 1) * (n + 2);
 export function levelFor(xp: number): { level: number; title: string; into: number; span: number; pct: number } {
+  // corrupted or hand-edited saves can hold NaN, negatives or astronomically large values; keep the loop bounded
+  xp = Number.isFinite(xp) ? Math.max(0, Math.min(xp, 1e9)) : 0;
   let level = 1;
-  while (xp >= xpForLevel(level + 1)) level++;
+  while (level < 5000 && xp >= xpForLevel(level + 1)) level++;
   const into = xp - xpForLevel(level), span = xpForLevel(level + 1) - xpForLevel(level);
   return { level, title: LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)], into, span, pct: Math.min(100, Math.round(into / span * 100)) };
 }

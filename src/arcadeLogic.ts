@@ -111,18 +111,26 @@ const synonymIndex = (() => {
   return index;
 })();
 
-/** Each accepted spelling of a text: with and without a generic tail word like "syndrome", leading articles removed, plus every synonym. */
-const baseSpellings = (text: string): string[] => {
+/** The accepted spellings of a text: full forms (with synonyms) and, separately, the form without a generic tail like "syndrome". */
+interface Forms { own: string[]; full: string[]; stripped: string[] }
+const normalizedForms = (text: string): { full: string; bare: string; stripped: string } => {
   const bare = arabic(normalize(text.replace(/\([^)]*\)/g, " "))).replace(/^(the|a|an) /, "");
   const full = arabic(normalize(text)).replace(/^(the|a|an) /, "");
   const stripped = bare.replace(GENERIC_TAIL, "");
-  return [...new Set([full, bare, stripped.length >= 5 ? stripped : bare].map(canon))].filter(Boolean);
+  return { full: canon(full), bare: canon(bare), stripped: stripped.length >= 5 && stripped !== bare ? canon(stripped) : "" };
 };
-const spellings = (text: string): string[] => {
-  const base = baseSpellings(text);
-  const extra = base.flatMap((form) => (synonymIndex.get(form) ?? []).flatMap((group) => group.flatMap(baseSpellings)));
-  return [...new Set([...base, ...extra])];
+const formsCache = new Map<string, Forms>();
+const formsOfText = (text: string): Forms => {
+  const hit = formsCache.get(text); if (hit) return hit;
+  const n = normalizedForms(text);
+  const own = [...new Set([n.full, n.bare])].filter(Boolean);
+  const extra = own.flatMap((form) => (synonymIndex.get(form) ?? []).flatMap((group) => group.flatMap((term) => { const t = normalizedForms(term); return [t.full, t.bare]; })));
+  const result = { own, full: [...new Set([...own, ...extra])].filter(Boolean), stripped: n.stripped ? [n.stripped] : [] };
+  if (formsCache.size > 5000) formsCache.clear();
+  formsCache.set(text, result);
+  return result;
 };
+const spellings = (text: string): string[] => { const f = formsOfText(text); return [...new Set([...f.full, ...f.stripped])]; };
 
 const SMALL = new Set("a an the of and in with to for on by or".split(" "));
 /** The meaningful words of a text, in canonical spelling, ignoring joining words. */
@@ -152,12 +160,23 @@ function wordDistance(typed: string, target: string, prefix: boolean): number {
  * A fuzzy match is only accepted when one answer is strictly closest, so a typo can never be resolved to
  * a sibling answer (hypokalemia vs hyperkalemia).
  */
-export function matchAnswer<T extends AnswerLike>(input: string, answers: readonly T[]): AnswerMatch<T> | null {
+export function matchAnswer<T extends AnswerLike>(input: string, answers: readonly T[], rivals: readonly string[] = []): AnswerMatch<T> | null {
+  const typedForms = formsOfText(input);
   const typed = spellings(input);
   if (!typed.length || !typed[0]) return null;
-  const formsOf = (item: T) => [item.answer, ...(item.aliases ?? [])].flatMap(spellings);
-  const exact = answers.find((item) => formsOf(item).some((form) => typed.includes(form)));
-  if (exact) return { match: exact, fuzzy: false };
+  const itemForms = (item: T): Forms[] => [item.answer, ...(item.aliases ?? [])].map(formsOfText);
+  const formsOf = (item: T) => itemForms(item).flatMap((f) => [...f.full, ...f.stripped]);
+  // 0. the player typed one of this item's own names exactly: that item wins over any synonym of a sibling
+  const own = answers.find((item) => itemForms(item).some((f) => f.own.some((form) => typedForms.own.includes(form))));
+  if (own) return { match: own, fuzzy: false };
+  // 1. an exact match including abbreviations and alternate names
+  const full = answers.find((item) => itemForms(item).some((f) => f.full.some((form) => typedForms.full.includes(form))));
+  if (full) return { match: full, fuzzy: false };
+  // 2. the same name once a generic tail ("syndrome", "cancer") is ignored; only if one item claims it
+  const tailed = answers.filter((item) => itemForms(item).some((f) => f.stripped.some((form) => typedForms.full.includes(form) || typedForms.stripped.includes(form)) || f.full.some((form) => typedForms.stripped.includes(form))));
+  if (tailed.length === 1) return { match: tailed[0], fuzzy: false };
+  // a different known diagnosis must never be accepted by a near-miss (graves vs gravis)
+  if (rivals.some((r) => formsOfText(r).full.some((form) => typedForms.full.includes(form)))) return null;
   const value = typed[typed.length - 1];
   let best = Infinity, winners: T[] = [];
   if (value.length >= 4) {
@@ -176,7 +195,7 @@ export function matchAnswer<T extends AnswerLike>(input: string, answers: readon
     if (inside.length && (inside.length === 1 || inside[0].longest > inside[1].longest)) return { match: inside[0].item, fuzzy: true };
   }
   // Word-by-word: every distinctive word of the answer is present (any order), then every typed word belongs to the answer.
-  const synonymTexts = (synonymIndex.get(baseSpellings(input)[0] ?? "") ?? []).flat();
+  const synonymTexts = (synonymIndex.get(typedForms.own[0] ?? "") ?? []).flat();
   const typedSets = [input, ...synonymTexts].map((t) => [...new Set(coreWords(t))]).filter((w) => w.length);
   if (!typedSets.length) return null;
   const score = (item: T, mode: "covers" | "inside"): number => {
