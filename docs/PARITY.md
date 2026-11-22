@@ -19,16 +19,16 @@ art, text or code is copied from any of them.
 | Theme Trail | Strands | Drag-to-spell, hint every 3 bonus words | No connecting lines | **Done**: live and found-word path lines |
 | Seven Cells | Spelling Bee | Hexagon board, shuffle, pangram, rank bar | Rank bar sat below the entry box; bee-themed rank names | **Done**: rank bar moved to the top, medical ranks (Premed to Attending) |
 | What Has More? | Higher or Lower | Two-way comparison, tie option | Small cards, no count-up, no streak | **Done**: full-screen split, count-up reveal, streak, per-round progress |
-| Mime Time | Heads Up / charades | Turns, timer, got/skip | Card was a small box | **Done**: full-screen colour cards, ring timer, green/red flashes, giant buttons |
+| Mime Time | Heads Up / charades | Turns, timer, got/skip | Card was a small box | **Done**: full-screen colour cards, ring timer, green/red flashes, giant buttons, and optional tilt-to-score (tip down for Got it, up to Skip; needs motion access on iOS) |
 | Crossword Clinic | NYT Mini | Grid, clue bar, check/reveal | No solve timer; no custom keyboard | **Done**: full-screen "chart paper" world (cream ruled paper, serif ink type), clue bar with prev/next, on-screen keyboard, clue drawer, timer in share text |
-| Letter Lab | Boggle | Drag paths, timer, word list | No dice-shake intro; plain tiles | Open |
-| Association Blitz | Memory match | Flip, combo, timer | Single card-back design | Open |
-| Trivia Rumble | Trivia Crack | Wheel, six categories, crowns | Wheel art is plain; no avatars | Open |
-| Riddle Lab | Guess-who riddles | Clue ladder, points decay | Plain cards | Open |
-| Casefile Logic | Logic-grid puzzles | Pencil marks, hints | Text-heavy clue list | Open |
-| Anagram Sprint | Word jumble | Shuffle, clue, skip | Tiles do not animate into place | Open |
-| Cell Sketch | Picross | Fill/cross/pencil, auto-cross, picture reveal with name | Already at parity on review | No change needed |
-| Labline | Estimation games | Slider, band scoring | Plain reveal ruler | Open |
+| Letter Lab | Boggle (Wordshake) | Drag paths, timer, word list | Plain tiles, no shake intro, tap-only | **Done**: full-screen wooden dice tray (viewed Wordshake's physical-tile look), tumble-in shake to start, drag-to-trace with a gold path line, release to submit, sand-gauge clock |
+| Association Blitz | Memory match | Flip, combo, timer | Single card-back design | **Done**: lab specimen board with six distinct card backs (pill stripes, ECG grid, helix, cells, bone, blood), 3D flips, glow on match, term cards tinted blue |
+| Trivia Rumble | Trivia Crack | Wheel, six categories, crowns | Wheel art is plain; no avatars | **Done**: game-show stage with spotlight beams, bulb-ringed seven-wedge colour wheel with pointer, emoji avatars, wedge-pie progress, category-coloured question screens with four coloured answers |
+| Riddle Lab | Guess-who riddles | Clue ladder, points decay | Plain cards | **Done**: detective dossier: evidence photo that sharpens as clues unlock, pinned sticky-note clues, point pips, SOLVED / UNSOLVED stamp |
+| Casefile Logic | Logic-grid puzzles (Murdle) | Pencil marks, hints | Text-heavy clue list | **Done**: rebuilt as a clinical deduction game with flip cards, real notebook grid, pinned accusation button |
+| Anagram Sprint | Word jumble (Jumble newsprint) | Shuffle, clue, skip | Tiles do not animate into place | **Done**: newsprint page with red masthead, circled-letter tiles that slide into the answer slots, ink-bar timer |
+| Cell Sketch | Picross | Fill/cross/pencil, auto-cross, picture reveal with name | Pictures were 5x5 blobs and rotations made them unreadable | **Done**: 21 hand-drawn pictures on 10 to 12 cell grids, each with a unique solution (tested), no rotations, cells sized to the screen |
+| Labline | Estimation games | Slider, band scoring | Plain reveal ruler | **Done**: bench analyzer with an LCD readout, fader, animated score ring and a reveal ruler where the pins slide into place |
 | Letter Rungs | Word ladders | Valid-step checking, changed-letter highlight | No ladder visual | **Done**: wooden ladder with rails and rungs |
 
 ## Cross-cutting changes
@@ -36,9 +36,8 @@ art, text or code is copied from any of them.
 - Full-screen games (Deep Scan, What Has More?, Mime Time, Crossword Clinic) render in a portal over the app shell and have an exit button where a mid-game exit makes sense.
 - Pixel fonts (Pixelify Sans, Silkscreen) are bundled and cached offline; see `docs/THIRD_PARTY.md`.
 
-## Suggested order for the open items
-1. Trivia Rumble wheel art and Association Blitz card backs.
-2. Remaining plain-card games (Riddle Lab, Casefile, Labline reveal).
+## Open items
+None. Every listed game has been rebuilt with its own look. The two survey ideas not built (layers-of-the-body ordering, a Fibble-style Stat Word twist) were vetoed and are not planned.
 
 ## Method for the remaining games
 Render the best existing free version in a headless browser, study the screens, then give the game its own colour world instead of the shared teal card:
@@ -57,8 +56,14 @@ No accessible reference was found for Trivia Rumble, Riddle Lab, Casefile Logic 
 ## Ideas considered from the daily-games survey
 Already covered: Wordle (Stat Word), Connections (Quad Squad), Strands (Theme Trail), Spelling Bee (Seven Cells), Krillion (Deep Scan), Murdle-style logic (Casefile Logic), Magnitude/Fermi (Scale Lab), Picross (Cell Sketch), word ladders (Letter Rungs).
 Built from the survey: Branch Lab (Metazooa-style taxonomy tree), Crossmatch (PokeDoku-style grid), Blackout Chart (case-report Redactle) and Hoofbeats (Noillirk-style most-common-answer game, built as its own game with questions written for it).
-Good candidates for later: a layers-of-the-body ordering puzzle and a Fibble-style "contaminated sample" twist on Stat Word.
+Vetoed: a layers-of-the-body ordering puzzle and a Fibble-style "contaminated sample" twist on Stat Word.
 Skipped as poor fits: fandom "-dle" clones, geography games, arcade titles and the novelty word-ladder games.
 
 ## Casefile wording rule
 A condition's patient description, cause, decoding phrase and finding must share no content words, so a player cannot pair items by matching text. The rule is enforced by `src/clinicalCase.test.ts`, which also rejects shared word roots (for example "Cryptococcus" and "cryptococcal") and shared acronyms. All 75 conditions were additionally reviewed by hand for meaning-level giveaways (for example "after antibiotics" paired with "overgrows when gut flora is disrupted", or two conditions that would both fit one finding); those were rewritten. New conditions should get the same review.
+
+## Typed answers
+Free-text answers (Deep Scan, Hoofbeats, Blackout Chart, Differential, Branch Lab, Crossmatch) go through `matchAnswer`: abbreviation and lay-term synonym groups (`src/medSynonyms.ts`), any word order, roman numerals, sound-alike spellings, typos that grow with word length, and the one distinctive word on its own. It never resolves a typo to a sibling answer (hypo- vs hyperkalemia).
+
+## Rooms
+A party room's first code character names its game, so whoever makes the code picks the game and everyone joining plays it.

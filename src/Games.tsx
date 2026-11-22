@@ -29,6 +29,7 @@ import "@fontsource/pixelify-sans/latin-600.css";
 import "@fontsource/silkscreen/latin-400.css";
 import "@fontsource/silkscreen/latin-700.css";
 import { reward } from "./juice";
+import { requestTiltAccess, tiltStep, type TiltState } from "./mimeTilt";
 import { sfx } from "./audio";
 import { vibrate } from "./haptics";
 
@@ -40,9 +41,9 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "medle": return <Medle seed={seed} onDone={onDone} specialty={specialty} />;
     case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} />;
     case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} />;
-    case "labline": return <Labline seed={seed} onDone={onDone} specialty={specialty} />;
-    case "pairs": return <MemoryMatch seed={seed} onDone={onDone} specialty={specialty} />;
-    case "splice": return <AnagramSprint seed={seed} onDone={onDone} specialty={specialty} />;
+    case "labline": return <Labline seed={seed} onDone={onDone} onExit={onExit} specialty={specialty} />;
+    case "pairs": return <MemoryMatch seed={seed} onDone={onDone} onExit={onExit} specialty={specialty} />;
+    case "splice": return <AnagramSprint seed={seed} onDone={onDone} onExit={onExit} />;
     case "glyph": return <CellSketch seed={seed} onDone={onDone} practice={practice} />;
     case "higher": return <HigherLower seed={seed} onDone={onDone} onExit={onExit} />;
     case "ladder": return <WordLadder seed={seed} onDone={onDone} />;
@@ -54,13 +55,13 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "branch": return <BranchLab seed={seed} onDone={onDone} onExit={onExit} />;
     case "scale": return <ScaleLab seed={seed} onDone={onDone} onExit={onExit} />;
     case "dive": return <DeepDive seed={seed} onDone={onDone} onExit={onExit} />;
-    case "trivia": return <TriviaRumble seed={seed} onDone={onDone} />;
+    case "trivia": return <TriviaRumble seed={seed} onDone={onDone} onExit={onExit} />;
     case "trail": return <ThemeTrail seed={seed} onDone={onDone} specialty={specialty} />;
     case "crossword": return <CrosswordClinic seed={seed} onDone={onDone} onExit={onExit} />;
-    case "riddle": return <RiddleLab seed={seed} onDone={onDone} />;
+    case "riddle": return <RiddleLab seed={seed} onDone={onDone} onExit={onExit} />;
     case "bodymap": return <BodyMapBlitz seed={seed} onDone={onDone} />;
     case "mime": return <MimeTime seed={seed} onDone={onDone} />;
-    case "lettergrid": return <LetterGridGame seed={seed} onDone={onDone} />;
+    case "lettergrid": return <LetterGridGame seed={seed} onDone={onDone} onExit={onExit} />;
   }
 }
 
@@ -291,7 +292,7 @@ const newRumblePlayer = (name: string): RumblePlayer => ({
 });
 
 const RUMBLE_SECONDS = 20;
-function TriviaRumble({ seed, onDone }: Props) {
+function TriviaRumble({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
   const [mode, setMode] = useState<RumbleMode>("solo");
   const [names, setNames] = useState(["Player 1", "Player 2"]);
   const [players, setPlayers] = useState<RumblePlayer[]>([]);
@@ -396,66 +397,77 @@ function TriviaRumble({ seed, onDone }: Props) {
     setStage("spin");
   };
 
-  return <div className="game-layout trivia-rumble" data-own-sfx="true">
-    {stage === "setup" ? <div className="rumble-setup">
-      <div className="rumble-logo">TRIVIA <b>RUMBLE</b><span>⚡</span></div>
-      <p>Spin into six worlds of medical knowledge. Collect three correct answers in a category to win its badge. {mode === "pass" ? "Get one right and you keep the wheel; miss, or run out of the 20 seconds, and it passes." : "Beat the 20-second clock on every question."}</p>
-      <div className="rumble-mode-picks">
-        <button className={mode === "solo" ? "chosen" : ""} onClick={() => setMode("solo")}><b>Solo challenge</b><span>Collect all six badges</span></button>
-        <button className={mode === "pass" ? "chosen" : ""} onClick={() => setMode("pass")}><b>Pass & play</b><span>Take turns on one device</span></button>
-      </div>
-      <label className="rumble-name">Player 1<input value={names[0]} onChange={(event) => setNames((v) => [event.target.value, v[1]])} maxLength={18} /></label>
-      {mode === "pass" && <label className="rumble-name">Player 2<input value={names[1]} onChange={(event) => setNames((v) => [v[0], event.target.value])} maxLength={18} /></label>}
-      <button className="button button-primary full-button rumble-start" onClick={start}>Enter the arena ↗</button>
-    </div> : stage !== "done" ? <>
-      <div className="rumble-scoreboard">
-        {players.map((player, i) => <div key={player.name + i} className={"rumble-player" + (turn === i ? " active" : "")}>
-          <b>{player.name}</b><strong>{player.crowns.length}<small> / 6</small></strong>
-          <div className="rumble-crowns">{triviaCategories.map((cat) => <span key={cat.id} className={player.crowns.includes(cat.id) ? "won" : ""} title={cat.name}>{player.crowns.includes(cat.id) ? cat.icon : "·"}</span>)}</div>
-        </div>)}
-      </div>
-      <div className="rumble-roundline"><span>ROUND {round + 1} / {limit}</span><span>{currentPlayer?.name ?? "Your turn"} {mode === "pass" ? "· pass the device" : "· solo run"}</span></div>
-      {stage === "spin" || stage === "spinning" || stage === "wild" ? <div className="rumble-wheel-area">
-        <div className="trivia-wheel-wrap">
-          <div className="trivia-pointer">▼</div>
-          <div className="trivia-wheel" style={{ transform: "rotate(" + rotation + "deg)" }}>
-            {triviaCategories.map((cat, i) => {
-              const angle = i * (360 / 7) + (180 / 7);
-              return <span key={cat.id} className="trivia-wheel-mark" style={{ transform: "rotate(" + angle + "deg) translateY(-94px) rotate(" + (-angle) + "deg)" }}>{cat.icon}</span>;
-            })}
-            <span className="trivia-wheel-wild" style={{ transform: "rotate(" + (6 * 360 / 7 + 180 / 7) + "deg) translateY(-94px) rotate(" + (-(6 * 360 / 7 + 180 / 7)) + "deg)" }}>★</span>
-            <div className="trivia-wheel-hub">GO!</div>
-          </div>
+  const AVATARS = ["🩺", "💉", "🧬", "🦷", "🫀", "🧠"];
+  const [avatars, setAvatars] = useState([0, 1]);
+  const seg = 360 / 7;
+  const wheelBg = "conic-gradient(" + [...triviaCategories.map((c) => c.color), "#ffd54a"].map((c, i) => c + " " + (i * seg) + "deg " + ((i + 1) * seg) + "deg").join(",") + ")";
+  const catColor = category?.color ?? "#6c4cff";
+  const answerColors = ["#ef5350", "#42a5f5", "#43c59e", "#ffb02e"];
+  const ui = <div className="tr" role="dialog" aria-label="Trivia Rumble" style={{ "--cat": catColor } as React.CSSProperties}>
+    <div className="tr-beams" aria-hidden="true" />
+    <header className="tr-top">
+      {onExit && <button className="tr-icon" onClick={onExit} aria-label="Leave Trivia Rumble">✕</button>}
+      {stage !== "setup" && stage !== "done" && <div className="tr-players">{players.map((player, i) => <div key={player.name + i} className={"tr-player" + (turn === i ? " active" : "")}>
+        <span className="tr-avatar">{AVATARS[avatars[i] ?? i]}</span>
+        <div><b>{player.name}</b><div className="tr-pie">{triviaCategories.map((cat) => <i key={cat.id} title={cat.name} className={player.crowns.includes(cat.id) ? "won" : ""} style={{ background: player.crowns.includes(cat.id) ? cat.color : "rgba(255,255,255,.18)", opacity: player.crowns.includes(cat.id) ? 1 : 0.4 + player.progress[cat.id] * 0.2 }} />)}</div></div>
+      </div>)}</div>}
+      {stage !== "setup" && stage !== "done" && <span className="tr-round">{round + 1}/{limit}</span>}
+    </header>
+
+    {stage === "setup" && <section className="tr-setup">
+      <div className="tr-logo">TRIVIA<b>RUMBLE</b></div>
+      <p>Spin the wheel into six worlds of medicine. Three right answers in a category wins its wedge. Fill the whole pie!</p>
+      <div className="tr-modes"><button className={mode === "solo" ? "on" : ""} onClick={() => setMode("solo")}><b>Solo</b><span>Win all six wedges</span></button><button className={mode === "pass" ? "on" : ""} onClick={() => setMode("pass")}><b>Pass & play</b><span>Two players, one device</span></button></div>
+      {(mode === "pass" ? [0, 1] : [0]).map((i) => <div key={i} className="tr-name"><div className="tr-avatars">{AVATARS.map((a, k) => <button key={a} className={avatars[i] === k ? "on" : ""} onClick={() => setAvatars((v) => v.map((x, j) => (j === i ? k : x)))} aria-label={"Avatar " + a}>{a}</button>)}</div><input value={names[i]} onChange={(event) => setNames((v) => v.map((x, j) => (j === i ? event.target.value : x)))} maxLength={18} aria-label={"Player " + (i + 1) + " name"} /></div>)}
+      <button className="tr-go" onClick={start}>ENTER THE ARENA ▶</button>
+    </section>}
+
+    {(stage === "spin" || stage === "spinning" || stage === "wild") && <section className="tr-stage">
+      <p className="tr-turn">{currentPlayer?.name}{mode === "pass" ? "'s turn" : ", spin!"}</p>
+      <div className="tr-wheel-wrap">
+        <div className="tr-pointer" aria-hidden="true" />
+        <div className="tr-wheel" style={{ transform: "rotate(" + rotation + "deg)", background: wheelBg }}>
+          {triviaCategories.map((cat, i) => { const angle = i * seg + seg / 2; return <span key={cat.id} className="tr-mark" style={{ transform: "rotate(" + angle + "deg) translateY(calc(var(--w) * -0.34)) rotate(" + (-angle) + "deg)" }}>{cat.icon}</span>; })}
+          <span className="tr-mark" style={{ transform: "rotate(" + (6 * seg + seg / 2) + "deg) translateY(calc(var(--w) * -0.34)) rotate(" + (-(6 * seg + seg / 2)) + "deg)" }}>★</span>
         </div>
-        {stage === "spin" && <button className="button button-primary rumble-spin" onClick={spin}>SPIN THE WHEEL ↻</button>}
-        {stage === "spinning" && <p className="rumble-wheel-note">The wheel is choosing your category…</p>}
-        {stage === "wild" && <div className="rumble-wild-pick"><h3>Wild card! Choose a category.</h3><div>{triviaCategories.filter((cat) => !currentPlayer.crowns.includes(cat.id)).map((cat) => <button key={cat.id} style={{ "--cat-color": cat.color } as React.CSSProperties} onClick={() => deal(cat)}>{cat.icon} {cat.name}</button>)}</div></div>}
-      </div> : null}
-      {stage === "question" || stage === "reveal" ? question && category && <div className="rumble-question" style={{ "--cat-color": category.color } as React.CSSProperties}>
-        <div className="rumble-category"><span>{category.icon}</span><b>{category.name}</b></div>
-        <div className="rumble-question-card"><span className="eyebrow">{category.short} · QUESTION {round + 1}</span>{stage === "question" && <div className={"rumble-timer" + (seconds <= 5 ? " urgent" : "")} role="timer" aria-label={seconds + " seconds left"}><i style={{ width: (seconds / RUMBLE_SECONDS * 100) + "%" }} /><b>{seconds}</b></div>}<h2>{question.question}</h2></div>
-        <div className="rumble-options">{question.options.map((option, i) => <button key={option} disabled={stage === "reveal"} className={stage === "reveal" ? (i === question.answer ? "right" : i === picked ? "wrong" : "dim") : picked === i ? "selected" : ""} onClick={() => answer(i)}><span>{String.fromCharCode(65 + i)}</span>{option}</button>)}</div>
-        {stage === "reveal" && <div className={"rumble-explanation" + (picked === question.answer ? " correct" : "")}>
-          <b>{picked === question.answer ? (mode === "pass" ? "Correct! You keep the wheel." : "Correct! Badge progress updated.") : (picked === -1 ? "Time's up! " : "Not quite. ") + "Correct answer: " + question.options[question.answer] + "." + (mode === "pass" ? " The wheel passes on." : "")}</b><p>{question.explanation}</p>
-          <button className="button button-primary full-button" onClick={next}>{winner ? "See the winner" : round + 1 === limit ? "View final scores" : mode === "pass" ? (lastCorrect ? "Spin again — you keep going →" : "Next player's turn →") : "Spin again →"}</button>
-        </div>}
-      </div> : null}
-    </> : <div className="rumble-finale">
+        <button className="tr-hub" onClick={spin} disabled={stage !== "spin"} aria-label="Spin the wheel">{stage === "spin" ? "SPIN" : AVATARS[avatars[turn] ?? 0]}</button>
+      </div>
+      {stage === "spin" && <button className="tr-go" onClick={spin}>SPIN THE WHEEL ↻</button>}
+      {stage === "spinning" && <p className="tr-note">Round and round…</p>}
+      {stage === "wild" && <div className="tr-wild"><h3>⭐ Wild card! Pick any wedge</h3><div>{triviaCategories.filter((cat) => !currentPlayer.crowns.includes(cat.id)).map((cat) => <button key={cat.id} style={{ background: cat.color }} onClick={() => deal(cat)}>{cat.icon} {cat.name}</button>)}</div></div>}
+    </section>}
+
+    {(stage === "question" || stage === "reveal") && question && category && <section className="tr-q">
+      <div className="tr-badge"><span>{category.icon}</span><b>{category.name}</b></div>
+      <div className="tr-card"><p>{question.question}</p>{stage === "question" && <div className={"tr-clock" + (seconds <= 5 ? " urgent" : "")} role="timer" aria-label={seconds + " seconds left"}><i style={{ width: (seconds / RUMBLE_SECONDS * 100) + "%" }} /><b>{seconds}</b></div>}</div>
+      <div className="tr-options">{question.options.map((option, i) => <button key={option} disabled={stage === "reveal"} style={{ "--ac": answerColors[i % 4] } as React.CSSProperties} className={stage === "reveal" ? (i === question.answer ? "right" : i === picked ? "wrong" : "dim") : picked === i ? "selected" : ""} onClick={() => answer(i)}><span>{String.fromCharCode(65 + i)}</span>{option}</button>)}</div>
+      {stage === "reveal" && <div className={"tr-reveal" + (picked === question.answer ? " ok" : "")}>
+        <b>{picked === question.answer ? (mode === "pass" ? "Correct! Keep the wheel." : "Correct! Wedge progress up.") : (picked === -1 ? "Time's up! " : "Not quite. ") + "Answer: " + question.options[question.answer] + (mode === "pass" ? " · wheel passes" : "")}</b>
+        <p>{question.explanation}</p>
+        <button className="tr-go" onClick={next}>{winner ? "SEE THE WINNER ▶" : round + 1 === limit ? "FINAL SCORES ▶" : mode === "pass" ? (lastCorrect ? "SPIN AGAIN ▶" : "NEXT PLAYER ▶") : "SPIN AGAIN ▶"}</button>
+      </div>}
+    </section>}
+  </div>;
+
+  return <div className="game-layout trivia-rumble" data-own-sfx="true">
+    {stage !== "done" ? (typeof document !== "undefined" ? createPortal(ui, document.body) : null) : <div className="rumble-finale">
       <div className="rumble-trophy">🏆</div><span className="eyebrow">ARENA COMPLETE</span><h2>{winner ? winner + " wins!" : "Final scoreboard"}</h2>
       <div className="rumble-final-list">{[...players].sort((a, b) => b.crowns.length - a.crowns.length || b.correct - a.correct).map((player, i) => <div key={player.name + i}><span>{i + 1}</span><b>{player.name}</b><strong>{player.crowns.length} badges · {player.correct} correct</strong></div>)}</div>
-      <p>Six badges are waiting tomorrow. Keep your streak going.</p>
+      <p>Six wedges are waiting tomorrow. Keep your streak going.</p>
     </div>}
-    <p className="rumble-footnote">Original medical question set · local pass-and-play · no account needed</p>
   </div>;
 }
 
-function LetterGridGame({ seed, onDone }: Props) {
+function LetterGridGame({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
   const board = useMemo(() => makeLetterGrid(seed, LETTER_DICTIONARY), [seed]);
   const [path, setPath] = useState<number[]>([]);
   const [found, setFound] = useState<string[]>([]);
   const [foundPaths, setFoundPaths] = useState<number[][]>([]);
   const [seconds, setSeconds] = useState(75);
-  const [note, setNote] = useState("Connect adjacent letters in any direction. Each cell can be used once per word.");
+  const [started, setStarted] = useState(false);
+  const [rolling, setRolling] = useState(false);
+  const dragging = useRef(false);
+  const [note, setNote] = useState("Drag across touching cubes to spell a word, then let go.");
   const [ended, setEnded] = useState(false);
   const done = useRef(false);
   const score = found.reduce((total, word) => total + letterWordPoints(word), 0);
@@ -472,10 +484,10 @@ function LetterGridGame({ seed, onDone }: Props) {
   };
 
   useEffect(() => {
-    if (ended) return;
+    if (ended || !started) return;
     const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
     return () => window.clearInterval(timer);
-  }, [ended]);
+  }, [ended, started]);
   useEffect(() => {
     if (seconds === 0 && !ended) finish(found);
   }, [seconds, ended, found]);
@@ -516,21 +528,51 @@ function LetterGridGame({ seed, onDone }: Props) {
     if (next.length === board.words.length) finish(next);
   };
 
-  return <div className="game-layout letter-grid-game">
-    <div className="letter-grid-hud"><div><span className="eyebrow">LETTER LAB</span><h2>Find the hidden words</h2></div><div className={"letter-grid-clock" + (seconds <= 10 ? " urgent" : "")}>{String(Math.floor(seconds / 60)).padStart(2, "0")}:{String(seconds % 60).padStart(2, "0")}</div></div>
-    <p className="game-instructions"><span className="instruction-dot mint" /> Connect neighboring letters horizontally, vertically, or diagonally. Longer words earn more points.</p>
-    <div className="letter-grid-board" aria-label="Boggle-style letter board">{board.grid.map((letter, i) => {
-      const isFound = foundPaths.some((cells) => cells.includes(i));
-      return <button key={i} type="button" className={"letter-grid-tile" + (path.includes(i) ? " selected" : "") + (isFound ? " found" : "")} onClick={() => chooseCell(i)} disabled={ended || isFound} aria-label={"Tile " + letter + ", row " + (Math.floor(i / 4) + 1) + ", column " + (i % 4 + 1)}>{letter}</button>;
-    })}</div>
-    <div className="letter-grid-current"><span>YOUR WORD</span><strong>{currentWord || "—"}</strong><small>{path.length} tiles</small></div>
-    <div className="letter-grid-controls"><button className="button button-soft" onClick={() => setPath((current) => current.slice(0, -1))} disabled={ended || !path.length}>Undo</button><button className="button button-quiet" onClick={() => setPath([])} disabled={ended || !path.length}>Clear</button><button className="button button-primary" onClick={submit} disabled={ended || path.length < 3}>Submit word</button></div>
-    {!ended && <button className="button button-quiet full-button" onClick={() => finish(found)}>Finish round</button>}
-    <p className="letter-grid-score">{score} pts <span>·</span> {found.length} / {board.words.length} words found</p>
-    {!ended ? <>
-      <p className="game-feedback" aria-live="polite">{note}</p>
-      <div className="letter-grid-found">{found.map((word) => <span key={word}>{word}<b>+{letterWordPoints(word)}</b></span>)}</div>
-    </> : <div className="letter-grid-finale"><h3>{found.length === board.words.length ? "Grid cleared!" : "Round complete"}</h3><strong>{score} / {maximum}</strong><p>{found.length} words found before the clock stopped. The full word list is below.</p><div>{board.words.slice().sort().map((word) => <span key={word} className={found.includes(word) ? "found" : ""}>{word}</span>)}</div></div>}
+  const touching = (a: number, b: number) => Math.abs(Math.floor(a / 4) - Math.floor(b / 4)) <= 1 && Math.abs((a % 4) - (b % 4)) <= 1;
+  const shake = () => { sfx("whoosh"); setRolling(true); window.setTimeout(() => { setRolling(false); setStarted(true); }, 1100); };
+  const dragOver = (clientX: number, clientY: number) => {
+    if (!dragging.current || ended) return;
+    const el = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
+    const cell = el?.closest("[data-cube]") as HTMLElement | null;
+    if (!cell) return;
+    const i = Number(cell.dataset.cube);
+    setPath((cur) => {
+      if (cur.includes(i)) return cur.length > 1 && cur[cur.length - 2] === i ? cur.slice(0, -1) : cur;
+      if (cur.length && !touching(cur[cur.length - 1], i)) return cur;
+      sfx("pop");
+      return [...cur, i];
+    });
+  };
+  const released = () => { if (!dragging.current) return; dragging.current = false; if (path.length >= 3) submit(); };
+  const mm = Math.floor(seconds / 60), ss = String(seconds % 60).padStart(2, "0");
+  const ui = <div className="ll" role="dialog" aria-label="Letter Lab">
+    <header className="ll-top">
+      {onExit && <button className="ll-icon" onClick={onExit} aria-label="Leave Letter Lab">✕</button>}
+      <div className="ll-score"><b>{score}</b><small>pts · {found.length}/{board.words.length} words</small></div>
+      <div className={"ll-clock" + (seconds <= 10 ? " urgent" : "")}><i style={{ height: (seconds / 75 * 100) + "%" }} /><b>{mm}:{ss}</b></div>
+    </header>
+    <div className="ll-slip"><span>{currentWord || (started ? "…" : "READY?")}</span><small>{started ? note : "Shake the tray to begin. The clock starts when the cubes land."}</small></div>
+    <div className={"ll-tray" + (rolling ? " rolling" : "") + (!started && !rolling ? " idle" : "")} data-testid="tray"
+      onPointerDown={(e) => { if (!started || ended) return; dragging.current = true; setPath([]); dragOver(e.clientX, e.clientY); }}
+      onPointerMove={(e) => dragOver(e.clientX, e.clientY)} onPointerUp={released} onPointerCancel={released} onPointerLeave={() => { if (dragging.current) released(); }}>
+      <svg className="ll-line" viewBox="0 0 4 4" aria-hidden="true"><polyline points={path.map((i) => ((i % 4) + 0.5) + "," + (Math.floor(i / 4) + 0.5)).join(" ")} /></svg>
+      {board.grid.map((letter, i) => {
+        const isFound = foundPaths.some((cells) => cells.includes(i));
+        return <button key={i} type="button" data-cube={i} style={{ "--d": (i * 70) + "ms", "--r": ((i * 37) % 11 - 5) + "deg" } as React.CSSProperties} className={"ll-cube" + (path.includes(i) ? " on" : "") + (path[path.length - 1] === i ? " tip" : "") + (isFound ? " found" : "")} disabled={ended || !started} onClick={() => { if (!dragging.current) chooseCell(i); }} aria-label={"Tile " + letter + ", row " + (Math.floor(i / 4) + 1) + ", column " + (i % 4 + 1)}><span>{letter}</span><em>{path.includes(i) ? path.indexOf(i) + 1 : ""}</em></button>;
+      })}
+    </div>
+    <div className="ll-found">{found.length ? found.map((word) => <span key={word}>{word}<b>+{letterWordPoints(word)}</b></span>) : <small>Words you find collect here</small>}</div>
+    <footer className="ll-dock">
+      {!started ? <button className="ll-go" onClick={shake} disabled={rolling}>{rolling ? "…" : "🎲 SHAKE THE TRAY"}</button> : <>
+        <button className="ll-btn" onClick={() => setPath((c) => c.slice(0, -1))} disabled={!path.length}>⌫</button>
+        <button className="ll-go" onClick={submit} disabled={currentWord.length < 3}>SUBMIT {currentWord}</button>
+        <button className="ll-btn" onClick={() => finish(found)} aria-label="Finish round">END</button>
+      </>}
+    </footer>
+  </div>;
+
+  return <div className="game-layout letter-grid-game" data-own-sfx="true">
+    {!ended ? (typeof document !== "undefined" ? createPortal(ui, document.body) : null) : <div className="letter-grid-finale"><h3>{found.length === board.words.length ? "Grid cleared!" : "Round complete"}</h3><strong>{score} / {maximum}</strong><p>{found.length} words found. The full word list is below.</p><div>{board.words.slice().sort().map((word) => <span key={word} className={found.includes(word) ? "found" : ""}>{word}</span>)}</div></div>}
   </div>;
 }
 
@@ -722,7 +764,7 @@ function DoctorDle({ seed, onDone }: Props) {
 
 
 
-function Labline({ seed, onDone, specialty = "general" }: Props) {
+function Labline({ seed, onDone, onExit, specialty = "general" }: Props & { onExit?: () => void }) {
   const rounds = useMemo(() => {
     const pool = specialty === "neurology" ? labPrompts.filter((_, index) => [18,19,20].includes(index)) : specialty === "cardiology" ? labPrompts.filter((_, index) => [1,3,4,17].includes(index)) : labPrompts;
     return shuffle(pool.length >= 5 ? pool : labPrompts, seeded(seed + 27)).slice(0, 5);
@@ -766,14 +808,11 @@ function Labline({ seed, onDone, specialty = "general" }: Props) {
     window.setTimeout(() => setPins(true), 60);
     reward(points >= 60, null, points >= 99 ? "BULLSEYE!" : "+" + (points + streakBonus));
     if (round === rounds.length - 1) {
-      setFinished(true);
-      if (!done.current) {
-        done.current = true;
-        const squares = results.concat([{ prompt: "", estimate: guess, actual: item.value, unit: "", points }]).map((r) => r.points >= 95 ? "🟩" : r.points >= 70 ? "🟨" : r.points >= 35 ? "🟧" : "🟥").join("");
-        onDone(nextTotal, maxScore, nextTotal >= rounds.length * 100, "Labline " + nextTotal + "/" + maxScore + "\n" + squares);
-      }
+      const squares = results.concat([{ prompt: "", estimate: guess, actual: item.value, unit: "", points }]).map((r) => r.points >= 95 ? "🟩" : r.points >= 70 ? "🟨" : r.points >= 35 ? "🟧" : "🟥").join("");
+      finalPayload.current = () => { setFinished(true); if (!done.current) { done.current = true; onDone(nextTotal, maxScore, nextTotal >= rounds.length * 100, "Labline " + nextTotal + "/" + maxScore + "\n" + squares); } };
     }
   };
+  const finalPayload = useRef<(() => void) | null>(null);
   const next = () => {
     if (!submitted) return;
     const nextItem = rounds[round + 1];
@@ -789,39 +828,46 @@ function Labline({ seed, onDone, specialty = "general" }: Props) {
   const pct = (v: number) => ((v - rLo) / (rHi - rLo)) * 100;
   const verdict = earned >= 99 ? "Bullseye! 🎯" : earned >= 85 ? "Inside the window ✓" : earned >= 60 ? "Close" : earned >= 30 ? "Getting warm" : "Far off";
 
+  const lastRound = round === rounds.length - 1;
+  const ring = 2 * Math.PI * 30;
+  const ui = <div className="lb" role="dialog" aria-label="Labline">
+    <header className="lb-top">
+      {onExit && <button className="lb-icon" onClick={onExit} aria-label="Leave Labline">✕</button>}
+      <div className="lb-dots">{rounds.map((_, i) => <i key={i} className={i < round + Number(submitted) ? "done" : i === round ? "cur" : ""} />)}</div>
+      <div className={"lb-streak" + (streak >= 2 ? " on" : "")}>{streak >= 2 ? "🔥×" + streak : ""}</div>
+      <div className="lb-total"><b>{total}</b><small>PTS</small></div>
+    </header>
+    <section className="lb-label"><small>SPECIMEN {round + 1} · ESTIMATE THE VALUE</small><h2>{item.prompt}</h2></section>
+    {!submitted ? <section className="lb-panel">
+      <div className="lb-lcd">{typing === null ? <button onClick={() => setTyping(String(estimate))} aria-label="Tap to type an exact number"><b>{fmt(estimate)}</b><small>{item.unit}</small></button>
+        : <form onSubmit={(e) => { e.preventDefault(); lock(); }}><input autoFocus type="number" step="any" value={typing} onChange={(e) => setTyping(e.target.value)} onBlur={() => { const n = Number(typing); if (Number.isFinite(n) && typing.trim()) setEstimate(n); setTyping(null); }} aria-label={"Estimate in " + item.unit} /><small>{item.unit}</small></form>}</div>
+      <div className="lb-fader">
+        <button onClick={() => setEstimate((v) => snap(v - step))} aria-label="Decrease">−</button>
+        <div className="lb-track"><div className="lb-ticks" aria-hidden="true" /><input type="range" min={sMin} max={sMax} step={step} value={Math.min(sMax, Math.max(sMin, estimate))} onChange={(e) => { setEstimate(Number(e.target.value)); setTyping(null); }} aria-label={"Estimate in " + item.unit} /></div>
+        <button onClick={() => setEstimate((v) => snap(v + step))} aria-label="Increase">+</button>
+      </div>
+      <div className="lb-ends"><span>{fmt(sMin)}</span><span>drag, nudge, or tap the number to type</span><span>{fmt(sMax)}</span></div>
+      <button className="lb-lock" onClick={lock}>LOCK IN {fmt(typing !== null && Number.isFinite(Number(typing)) && typing.trim() ? Number(typing) : estimate)} {item.unit}</button>
+    </section> : <section className="lb-panel lb-rev">
+      <div className="lb-score"><svg viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="30" /><circle cx="36" cy="36" r="30" className="fg" style={{ strokeDasharray: ring, strokeDashoffset: pins ? ring * (1 - earned / 100) : ring }} /></svg><b>{earned}</b></div>
+      <div className="lb-verdict"><b>{verdict}</b><span>{bonus ? "🔥 streak bonus +" + bonus : "points this round"}</span></div>
+      <div className="lb-ruler" aria-label={"You said " + fmt(estimate) + ", the value is " + item.value}>
+        <div className="lb-axis" />
+        {item.tolerance > 0 && <i className="lb-band" style={{ left: pct(item.value - item.tolerance) + "%", width: pct(item.value + item.tolerance) - pct(item.value - item.tolerance) + "%" }} />}
+        <span className={"lb-pin you" + (pins ? " go" : "")} style={{ left: pins ? pct(estimate) + "%" : "50%" }}><em>YOU</em><b>{fmt(estimate)}</b></span>
+        <span className={"lb-pin answer" + (pins ? " go" : "")} style={{ left: pins ? pct(item.value) + "%" : "50%" }}><em>ANSWER</em><b>{item.value}</b></span>
+      </div>
+      <p className="lb-context">{item.context} <span>{item.source}</span></p>
+      <button className="lb-lock" onClick={() => (lastRound ? finalPayload.current?.() : next())}>{lastRound ? "SEE MY RESULTS ▶" : "NEXT SPECIMEN ▶"}</button>
+    </section>}
+  </div>;
   return <div className="game-layout labline-game" data-own-sfx="true">
-    <div className="labline-hud"><div><b>{round + 1}<small> / 5</small></b><span>ROUND</span></div><div><b>{total}</b><span>POINTS</span></div><div className={"hot" + (streak >= 2 ? " on" : "")}><b>{streak >= 2 ? "🔥 ×" + streak : "—"}</b><span>HOT STREAK</span></div></div>
-    <div className="labline-progress"><i style={{ width: ((round + Number(submitted)) / 5 * 100) + "%" }} /></div>
-    {!finished || submitted ? <>
-      <div className="lab-prompt"><SectionLabel>CALIBRATE YOUR CLINICAL EYE</SectionLabel><h3>{item.prompt}</h3></div>
-      {!submitted ? <div className="lab-dial">
-        <div className="lab-readout">
-          {typing === null ? <button className="lab-number" onClick={() => setTyping(String(estimate))} aria-label="Tap to type an exact number">{fmt(estimate)}<small>{item.unit}</small></button>
-            : <form onSubmit={(e) => { e.preventDefault(); lock(); }}><input className="lab-number-input" autoFocus type="number" step="any" value={typing} onChange={(e) => setTyping(e.target.value)} onBlur={() => { const n = Number(typing); if (Number.isFinite(n) && typing.trim()) setEstimate(n); setTyping(null); }} aria-label={"Estimate in " + item.unit} /><small>{item.unit}</small></form>}
-        </div>
-        <div className="lab-slider-row">
-          <button className="lab-step" onClick={() => setEstimate((v) => snap(v - step))} aria-label="Decrease">−</button>
-          <input type="range" className="lab-slider" min={sMin} max={sMax} step={step} value={Math.min(sMax, Math.max(sMin, estimate))} onChange={(e) => { setEstimate(Number(e.target.value)); setTyping(null); }} aria-label={"Estimate in " + item.unit} />
-          <button className="lab-step" onClick={() => setEstimate((v) => snap(v + step))} aria-label="Increase">+</button>
-        </div>
-        <div className="lab-scale"><span>{fmt(sMin)}</span><span>drag, nudge, or tap the number to type</span><span>{fmt(sMax)}</span></div>
-        <button className="button button-primary full-button lab-lock" onClick={lock}>Lock in {fmt(typing !== null && Number.isFinite(Number(typing)) && typing.trim() ? Number(typing) : estimate)} {item.unit}</button>
-      </div> : <div className="lab-reveal">
-        <div className="lab-verdict"><b>{verdict}</b><span>+{earned}{bonus ? " · 🔥 streak bonus +" + bonus : ""}</span></div>
-        <div className="lab-ruler" aria-label={"You said " + fmt(estimate) + ", the value is " + item.value}>
-          {item.tolerance > 0 && <i className="lab-band" style={{ left: pct(item.value - item.tolerance) + "%", width: pct(item.value + item.tolerance) - pct(item.value - item.tolerance) + "%" }} />}
-          <span className={"lab-pin you" + (pins ? " go" : "")} style={{ left: pins ? pct(estimate) + "%" : "50%" }}><em>You</em><b>{fmt(estimate)}</b></span>
-          <span className={"lab-pin answer" + (pins ? " go" : "")} style={{ left: pins ? pct(item.value) + "%" : "50%" }}><em>Answer</em><b>{item.value}</b></span>
-        </div>
-        <p className="lab-context">{item.context} <span className="source-note">{item.source}</span></p>
-        {!finished && <button className="button button-primary full-button" onClick={next}>Next estimate ▶</button>}
-      </div>}
-    </> : null}
-    {finished && submitted && <Finish title="Calibration complete" detail={"Five clinical estimates. " + (total >= 450 ? "Superb calibration." : total >= 300 ? "Your reference instincts are sharp." : "Keep building your mental reference ranges.")} score={total + " / " + maxScore}><div className="labline-results">{results.map((r, i) => <div key={i}><span>{r.prompt}</span><b>{fmt(r.estimate)} vs {r.actual} {r.unit}</b><strong>+{r.points}</strong></div>)}</div></Finish>}
+    {!finished ? (typeof document !== "undefined" ? createPortal(ui, document.body) : null) : null}
+    {finished && <Finish title="Calibration complete" detail={"Five clinical estimates. " + (total >= 450 ? "Superb calibration." : total >= 300 ? "Your reference instincts are sharp." : "Keep building your mental reference ranges.")} score={total + " / " + maxScore}><div className="labline-results">{results.map((r, i) => <div key={i}><span>{r.prompt}</span><b>{fmt(r.estimate)} vs {r.actual} {r.unit}</b><strong>+{r.points}</strong></div>)}</div></Finish>}
   </div>;
 }
 
-function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
+function MemoryMatch({ seed, onDone, onExit, specialty = "general" }: Props & { onExit?: () => void }) {
   const pool = useMemo(() => specialty === "neurology" ? pairsBank.slice(12, 24) : specialty === "infectious" ? pairsBank.slice(36, 46) : specialty === "cardiology" ? pairsBank.slice(0, 12) : pairsBank, [specialty]);
   const pairSet = useMemo(() => {
     // Preserve the selected specialty first; pad small specialty subsets without silently
@@ -903,33 +949,38 @@ function MemoryMatch({ seed, onDone, specialty = "general" }: Props) {
     }
   };
 
-  return <div className="game-layout association-game">
-    <div className="game-instructions"><span className="instruction-dot peach" /> Twelve pairs are hidden in a 4 × 6 memory board. Match terms to their clinical associations, build a streak, and beat the 75-second clock.</div>
-    <div className="association-hud">
-      <div><b>{seconds}</b><span>SECONDS</span></div>
-      <div><b>{matched.length}/{pairSet.length}</b><span>PAIRS</span></div>
-      <div><b>{combo}×</b><span>STREAK</span></div>
-      <div><b>{score}</b><span>POINTS</span></div>
-    </div>
-    <div className="association-grid" aria-label="Memory cards">
-      {cards.map((card) => {
+  const BACKS = ["pill", "pulse", "helix", "cells", "bone", "drop"];
+  const ui = <div className="am" role="dialog" aria-label="Association Blitz">
+    <header className="am-top">
+      {onExit && <button className="am-icon" onClick={onExit} aria-label="Leave Association Blitz">✕</button>}
+      <div className="am-stat"><b>{score}</b><small>POINTS</small></div>
+      <div className={"am-ring" + (seconds <= 10 ? " urgent" : "")} role="timer" aria-label={seconds + " seconds left"}><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" /><circle cx="20" cy="20" r="17" className="fg" style={{ strokeDasharray: 106.8, strokeDashoffset: 106.8 * (1 - seconds / 75) }} /></svg><b>{seconds}</b></div>
+      <div className="am-stat"><b>{combo > 1 ? "🔥×" + combo : matched.length + "/" + pairSet.length}</b><small>{combo > 1 ? "STREAK" : "PAIRS"}</small></div>
+    </header>
+    <div className="am-board" aria-label="Memory cards">
+      {cards.map((card, i) => {
         const isMatched = matched.includes(card.pairId);
         const isRevealed = revealed.includes(card.id);
-        return <button key={card.id} type="button" className={"association-card" + (isMatched ? " matched" : "") + (isRevealed ? " revealed" : "")} onClick={() => flip(card.id)} disabled={ended || isMatched || locked} aria-label={isMatched || isRevealed ? card.label : "Hidden association card"}>
-          {isMatched || isRevealed ? <><small>{card.side}</small><span>{card.label}</span></> : <b>✦</b>}
+        return <button key={card.id} type="button" className={"am-card" + (isMatched ? " matched" : "") + (isRevealed || isMatched ? " up" : "") + (card.side === "TERM" ? " term" : "")} style={{ "--i": i } as React.CSSProperties} onClick={() => flip(card.id)} disabled={ended || isMatched || locked} aria-label={isMatched || isRevealed ? card.label : "Hidden card"}>
+          <span className={"am-face am-back " + BACKS[i % 6]}><i>{["💊", "💓", "🧬", "🔬", "🦴", "🩸"][i % 6]}</i></span>
+          <span className="am-face am-front"><small>{card.side === "TERM" ? "TERM" : "LINK"}</small><span>{card.label}</span></span>
         </button>;
       })}
     </div>
-    <div className="association-footer"><span>{moves} turns · {mismatches} mismatches</span><span>Match streaks earn bonus points</span></div>
-    <p className="game-feedback" aria-live="polite">{note}</p>
-    {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All twelve associations found in " + moves + " turns." : matched.length + " of twelve pairs found. " + mismatches + " mismatches."} score={score + " / 1800"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
+    <p className="am-note" aria-live="polite">{note}</p>
+  </div>;
+
+  return <div className="game-layout association-game" data-own-sfx="true">
+    {!ended ? (typeof document !== "undefined" ? createPortal(ui, document.body) : null) : <>
+      {ended && <Finish title={matched.length === pairSet.length ? "Board cleared!" : "Time's up"} detail={matched.length === pairSet.length ? "All twelve associations found in " + moves + " turns." : matched.length + " of twelve pairs found. " + mismatches + " mismatches."} score={score + " / 1800"}><div className="reveal-groups">{pairSet.map(([term, meaning]) => <span key={term}><b>{term}</b>{meaning}</span>)}</div></Finish>}
+    </>}
   </div>;
 }
 
 
 /** Anagram Sprint: an endless unscramble run. Solves earn time back, misses cost time; speed and combos add points. */
 const SPRINT_START = 60, SPRINT_BONUS = 6, SPRINT_PENALTY = 4, SPRINT_TARGET = 240;
-function AnagramSprint({ seed, onDone }: Props) {
+function AnagramSprint({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
   const deck = useMemo(() => shuffle(scrambleWords, seeded(seed + 51)).filter(([w]) => w.length >= 5 && w.length <= 11), [seed]);
   const [index, setIndex] = useState(0);
   const [seconds, setSeconds] = useState(SPRINT_START);
@@ -1012,18 +1063,26 @@ function AnagramSprint({ seed, onDone }: Props) {
   }, [tiles, picked, ended]);
 
   const solved = log.filter((l) => l.points > 0).length;
+  const posOf = (i: number) => { const slot = picked.indexOf(i); return slot >= 0 ? { row: 0, k: slot } : { row: 1, k: i }; };
+  const ui = <div className="an" role="dialog" aria-label="Anagram Sprint" style={{ "--n": word.length } as React.CSSProperties}>
+    <header className="an-mast">
+      {onExit && <button className="an-icon" onClick={onExit} aria-label="Leave Anagram Sprint">✕</button>}
+      <div className="an-title"><small>THE DAILY</small><b>SPLICE SPRINT</b></div>
+      <div className={"an-clock" + (seconds <= 10 ? " urgent" : "")}>{seconds}<small>s</small></div>
+    </header>
+    <div className="an-ink"><i style={{ width: Math.min(100, seconds / 90 * 100) + "%" }} /></div>
+    <div className="an-stats"><span>WORDS <b>{solved}</b></span><span>{streak >= 2 ? "🔥 ×" + streak : "\u00a0"}</span><span>SCORE <b>{score}</b></span></div>
+    <p className="an-lead">Unscramble this medical term · {word.length} letters</p>
+    <div className={"an-stage" + (bad ? " nope" : "")} key={bad + "-" + index}>
+      <div className="an-slots">{word.split("").map((_, k) => <button key={k} className="an-slot" style={{ "--k": k } as React.CSSProperties} onClick={() => unpick(k)} aria-label={"Slot " + (k + 1)} />)}</div>
+      {tiles.map((tile, i) => { const { row, k } = posOf(i); return <button key={tile.id} className={"an-tile" + (row === 0 ? " placed" : "")} style={{ "--k": k, "--row": row } as React.CSSProperties} onClick={() => (row === 0 ? unpick(k) : pick(i))} aria-label={tile.ch + (row === 0 ? ", placed" : "")}>{tile.ch}</button>; })}
+    </div>
+    <div className="an-clue">{hint ? <p><b>CLUE</b> {definition}</p> : <button onClick={() => setHint(true)}>💡 Show the clue (−4 pts)</button>}</div>
+    <p className="an-note" aria-live="polite">{note}</p>
+    <footer className="an-dock"><button onClick={() => { setOrder((o) => o + 1); setPicked([]); }}>🔀 SHUFFLE</button><button onClick={() => setPicked((p) => p.slice(0, -1))} disabled={!picked.length}>⌫</button><button onClick={skip}>SKIP −3s</button></footer>
+  </div>;
   return <div className="game-layout anagram-sprint" data-own-sfx="true">
-    <div className="anagram-hud"><div><span className="eyebrow">WORDS</span><b>{solved}</b></div><div className={"anagram-clock" + (seconds <= 10 ? " urgent" : "")}>{seconds}s</div><div><b>{score}<small> pts</small></b>{streak >= 2 && <span className="sprint-streak">🔥 ×{streak}</span>}</div></div>
-    <div className="anagram-progress"><i style={{ width: Math.min(100, seconds / 90 * 100) + "%" }} /></div>
-    {!ended ? <>
-      <div className="anagram-board"><span className="eyebrow">UNSCRAMBLE · {word.length} LETTERS</span>
-        <div className={"ana-slots" + (bad ? "" : "")} key={bad}>{word.split("").map((_, slot) => <button key={slot} className={"ana-slot" + (picked[slot] !== undefined ? " filled" : "")} onClick={() => unpick(slot)} aria-label={picked[slot] !== undefined ? "Remove letter " + tiles[picked[slot]].ch : "Empty slot " + (slot + 1)}>{picked[slot] !== undefined ? tiles[picked[slot]].ch : ""}</button>)}</div>
-        <div className="ana-tiles">{tiles.map((tile, i) => <button key={i} className={"ana-tile" + (picked.includes(i) ? " used" : "")} disabled={picked.includes(i)} onClick={() => pick(i)}>{tile.ch}</button>)}</div>
-        {hint && <p className="ana-hint">{definition}</p>}
-      </div>
-      <div className="ana-tools"><button className="button button-quiet" onClick={() => { setOrder((o) => o + 1); setPicked([]); }}>🔀 Shuffle</button><button className="button button-quiet" onClick={() => setHint(true)} disabled={hint}>Clue (−4 pts)</button><button className="button button-quiet" onClick={skip}>Skip (−3s)</button></div>
-      <p className="game-feedback" aria-live="polite">{note}</p>
-    </> : <Finish title="Time!" detail={"You unscrambled " + solved + " term" + (solved === 1 ? "" : "s") + " in the sprint."} score={score + " pts"}><div className="reveal-groups">{log.map((l, i) => <span key={i} className={l.points ? "" : "missed"}>{l.word}{l.points ? " +" + l.points : " skipped"}</span>)}</div></Finish>}
+    {!ended ? (typeof document !== "undefined" ? createPortal(ui, document.body) : null) : <Finish title="Time!" detail={"You unscrambled " + solved + " term" + (solved === 1 ? "" : "s") + " in the sprint."} score={score + " pts"}><div className="reveal-groups">{log.map((l, i) => <span key={i} className={l.points ? "" : "missed"}>{l.word}{l.points ? " +" + l.points : " skipped"}</span>)}</div></Finish>}
   </div>;
 }
 
@@ -1348,6 +1407,9 @@ function MimeTime({ seed, onDone }: Props) {
   const [seconds, setSeconds] = useState(MIME_SECONDS);
   const [gotThisTurn, setGotThisTurn] = useState(0);
   const [skipsThisTurn, setSkipsThisTurn] = useState(0);
+  const [tilt, setTilt] = useState(false);
+  const [tiltOk, setTiltOk] = useState(false);
+  const tiltState = useRef<TiltState>({ armed: false });
   const done = useRef(false);
   const deck = useMemo(() => shuffle(mimeDeck, seeded(seed + 4242)), [seed]);
   const rounds = count === 1 ? 3 : 2;
@@ -1356,7 +1418,11 @@ function MimeTime({ seed, onDone }: Props) {
   const card = deck[cardIndex % deck.length];
 
   const begin = () => { setScores(Array(count).fill(0)); setTurn(0); setCardIndex(0); setStage("ready"); done.current = false; };
-  const startTurn = () => { setSeconds(MIME_SECONDS); setGotThisTurn(0); setSkipsThisTurn(0); setStage("play"); };
+  const startTurn = async () => {
+    if (tilt) setTiltOk(await requestTiltAccess()); else setTiltOk(false);
+    tiltState.current = { armed: false };
+    setSeconds(MIME_SECONDS); setGotThisTurn(0); setSkipsThisTurn(0); setStage("play");
+  };
   useEffect(() => {
     if (stage !== "play") return;
     const id = window.setInterval(() => setSeconds((v) => Math.max(0, v - 1)), 1000);
@@ -1369,6 +1435,19 @@ function MimeTime({ seed, onDone }: Props) {
   };
   const got = () => { blink("got"); reward(true, null, "+1"); setGotThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
   const skip = () => { blink("skip"); sfx("whoosh"); setSkipsThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
+  const actions = useRef({ got, skip });
+  actions.current = { got, skip };
+  useEffect(() => {
+    if (stage !== "play" || !tiltOk) return;
+    const onTilt = (e: DeviceOrientationEvent) => {
+      const result = tiltStep(e.beta, tiltState.current);
+      tiltState.current = result.state;
+      if (result.action === "got") actions.current.got();
+      else if (result.action === "skip") actions.current.skip();
+    };
+    window.addEventListener("deviceorientation", onTilt);
+    return () => window.removeEventListener("deviceorientation", onTilt);
+  }, [stage, tiltOk]);
   const nextTurn = () => {
     if (turn + 1 >= totalTurns) {
       setStage("done");
@@ -1393,6 +1472,7 @@ function MimeTime({ seed, onDone }: Props) {
       <p>One person acts the card on screen. Everyone else shouts guesses. Tap <b>Got it</b> when someone nails it. {MIME_SECONDS} seconds per turn.</p>
       <div className="mime-count" role="group" aria-label="Number of players">{[1, 2, 3, 4, 5, 6].map((n) => <button key={n} className={count === n ? "chosen" : ""} onClick={() => setCount(n)}>{n === 1 ? "Solo" : n}</button>)}</div>
       <div className="mime-names">{names.slice(0, count).map((name, i) => <input key={i} value={name} maxLength={14} aria-label={"Player " + (i + 1) + " name"} onChange={(e) => setNames((all) => all.map((v, j) => j === i ? e.target.value : v))} />)}</div>
+      {typeof window !== "undefined" && "DeviceOrientationEvent" in window && <label className="mime-tilt"><input type="checkbox" checked={tilt} onChange={(e) => setTilt(e.target.checked)} /> <span><b>Tilt to score</b> Hold the phone on your forehead: tip it down for Got it, up to Skip.</span></label>}
       <button className="button button-primary full-button" onClick={begin}>Start the show ▶</button>
     </div>}
     {stage === "ready" && <div className="mime-ready">
@@ -1410,7 +1490,7 @@ function MimeTime({ seed, onDone }: Props) {
       <div className="mm-card" key={cardIndex}>
         <small>{card.kind.toUpperCase()}</small>
         <h2 style={{ fontSize: card.term.length > 26 ? "clamp(26px,8vw,48px)" : card.term.length > 14 ? "clamp(34px,10.5vw,64px)" : "clamp(44px,15vw,90px)" }}>{card.term}</h2>
-        <p>Act it out. No words, no sounds.</p>
+        <p>{tiltOk ? "Tilt down = got it · tilt up = skip" : "Act it out. No words, no sounds."}</p>
       </div>
       <div className="mm-btns"><button className="mm-skip" onClick={skip}><b>↷</b>SKIP</button><button className="mm-got" onClick={got}><b>✓</b>GOT IT</button></div>
       <i className="mm-flash" aria-hidden="true">{flash === "got" ? "✓" : flash === "skip" ? "↷" : ""}</i>
@@ -1426,7 +1506,7 @@ function MimeTime({ seed, onDone }: Props) {
 }
 
 
-function RiddleLab({ seed, onDone }: Props) {
+function RiddleLab({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
   const picks = useMemo(() => {
     const bag = shuffle(riddles, seeded(seed + 991));
     const selected: typeof riddles = [];
@@ -1471,15 +1551,27 @@ function RiddleLab({ seed, onDone }: Props) {
     setRound((v) => v + 1); setShown(1); setGone([]); setSolved(null);
   };
   const total = results.reduce((n, v) => n + v, 0);
+  const KIND_ICON: Record<string, string> = { Microbe: "🦠", Drug: "💊", Organ: "🫀", Molecule: "🧪", Syndrome: "🧬", Diagnosis: "🩺", "Next step": "📋" };
+  const blur = solved !== null ? 0 : Math.max(0, 14 - shown * 4);
+  const ui = !finished ? <div className="rd" role="dialog" aria-label="Riddle Lab">
+    <header className="rd-top">
+      {onExit && <button className="rd-icon" onClick={onExit} aria-label="Leave Riddle Lab">✕</button>}
+      <div className="rd-case"><small>CASE</small><b>{Math.min(round + 1, picks.length)}<i>/{picks.length}</i></b></div>
+      <div className="rd-pips" aria-label={points(shown) + " points available"}>{[4, 3, 2, 1].map((n) => <i key={n} className={solved === null && points(shown) >= n ? "on" : ""}>{n}</i>)}</div>
+      <div className="rd-total"><b>{total}</b><small>PTS</small></div>
+    </header>
+    <div className={"rd-evidence" + (solved !== null ? (solved === "__missed" ? " missed" : " solved") : "")} key={"e" + round}>
+      <div className="rd-photo"><span style={{ filter: "brightness(" + (solved !== null ? 1 : 0.08) + ") blur(" + blur + "px)" }}>{KIND_ICON[item.kind] ?? "❓"}</span>{solved === null && <em>?</em>}</div>
+      <div className="rd-label"><small>I AM A…</small><b>{item.kind.toUpperCase()}</b></div>
+      {solved !== null && <div className="rd-stamp">{solved === "__missed" ? "UNSOLVED" : "SOLVED"}</div>}
+    </div>
+    <div className="rd-notes">{item.clues.slice(0, shown).map((clue, i) => <p key={i} className="rd-note" style={{ "--tilt": (i % 2 ? 0.7 : -0.7) + "deg" } as React.CSSProperties}><span>{i + 1}</span>{clue}</p>)}</div>
+    <p className="rd-line">{solved === null ? "Wrong answers unlock the next clue" : solved === "__missed" ? "It was " + item.answer + "." : "+" + points(shown) + " · it was " + item.answer + "!"}</p>
+    <div className="rd-options">{options.map((opt) => <button key={opt} disabled={solved !== null || gone.includes(opt)} className={(gone.includes(opt) ? "gone" : "") + (solved !== null && opt === item.answer ? " right" : "")} onClick={(e) => { guess(opt); if (opt === item.answer) reward(true, e.currentTarget as Element, "+" + points(shown)); }}>{opt}</button>)}</div>
+    {solved !== null && <footer className="rd-dock"><button onClick={next}>{round === picks.length - 1 ? "CLOSE THE FILES ▶" : "NEXT CASE ▶"}</button></footer>}
+  </div> : null;
   return <div className="game-layout riddle-game" data-own-sfx="true">
-    <div className="riddle-hud"><span>RIDDLE {Math.min(round + 1, picks.length)} / {picks.length}</span><b>{total} pts</b></div>
-    {!finished ? <>
-      <div className="riddle-kind">I am a <b>{item.kind.toLowerCase()}</b>…</div>
-      <div className="riddle-clues">{item.clues.slice(0, shown).map((clue, i) => <p key={i} className={"riddle-clue clue-" + i}><span>{i + 1}</span>{clue}</p>)}</div>
-      <p className="riddle-worth">{solved === null ? "Worth " + points(shown) + " point" + (points(shown) === 1 ? "" : "s") + " right now" : solved === "__missed" ? "Missed it. The answer was " + item.answer + "." : "+" + points(shown) + " · it was " + item.answer + "!"}</p>
-      <div className="riddle-options">{options.map((opt) => <button key={opt} disabled={solved !== null || gone.includes(opt)} className={(gone.includes(opt) ? "gone" : "") + (solved !== null && opt === item.answer ? " right" : "")} onClick={(e) => { guess(opt); if (opt === item.answer) reward(true, e.currentTarget as Element, "+" + points(shown)); }}>{opt}</button>)}</div>
-      {solved !== null && <button className="button button-primary full-button" onClick={next}>{round === picks.length - 1 ? "See my score" : "Next riddle ▶"}</button>}
-    </> : <Finish title="Case closed" detail={results.map((v, i) => picks[i].answer + " (" + v + ")").join(" · ")} score={total + " / 20"} />}
+    {!finished ? (typeof document !== "undefined" && ui ? createPortal(ui, document.body) : null) : <Finish title="Case closed" detail={results.map((v, i) => picks[i].answer + " (" + v + ")").join(" · ")} score={total + " / 20"} />}
   </div>;
 }
 
