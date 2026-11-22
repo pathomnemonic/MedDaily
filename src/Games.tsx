@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, pairsBank } from "./data";
 import { glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
-import { hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
+import { hardModeViolation, hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
 import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateMedicalLadder, letterWordPoints, transformNonogram, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, triviaRumbleResult } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
@@ -585,6 +585,10 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
   const [ended, setEnded] = useState(false);
   const [won, setWon] = useState(false);
   const [shake, setShake] = useState(0);
+  const [hard, setHard] = useState(() => { try { return localStorage.getItem("meddaily:hardmode") === "1"; } catch { return false; } });
+  const [contrast, setContrast] = useState(() => { try { return localStorage.getItem("meddaily:contrast") === "1"; } catch { return false; } });
+  useEffect(() => { document.documentElement.dataset.contrast = contrast ? "high" : ""; try { localStorage.setItem("meddaily:contrast", contrast ? "1" : "0"); } catch { /* ignore */ } }, [contrast]);
+  const toggleHard = () => { if (rows.length) { setMessage("Hard mode can only be changed before your first guess."); return; } setHard((v) => { try { localStorage.setItem("meddaily:hardmode", v ? "0" : "1"); } catch { /* ignore */ } return !v; }); };
   const done = useRef(false);
   const submit = () => {
     const word = guess.trim().toUpperCase();
@@ -593,6 +597,7 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
     if (word.length !== 5 || !/^[A-Z]{5}$/.test(word)) { invalid("Not enough letters. Five, please."); return; }
     if (!medleWords.includes(word) && !fiveLetterWords.has(word)) { invalid("That isn't a word we know. Try another."); return; }
     if (rows.includes(word)) { invalid("You've already tried that word."); return; }
+    if (hard) { const broken = hardModeViolation(rows, word, answer); if (broken) { invalid("Hard mode: " + broken); return; } }
     const next = [...rows, word]; setRows(next); setGuess("");
     const correct = word === answer, finished = correct || next.length >= 6;
     if (correct) reward(true, null, "Solved!"); else if (finished) reward(false); else sfx("pop");
@@ -627,6 +632,7 @@ function Medle({ seed, onDone, specialty = "general" }: Props) {
   }, [guess, ended, rows]);
   return <div className="game-layout medle-game">
     <div className="game-instructions"><span className="instruction-dot mint" /> Guess the five-letter medical word in six tries. Green is the right letter in the right place; gold is in the word elsewhere.</div>
+    <div className="medle-modes"><button className={hard ? "on" : ""} onClick={toggleHard} aria-pressed={hard}>{hard ? "☑" : "☐"} Hard mode</button><button className={contrast ? "on" : ""} onClick={() => setContrast((v) => !v)} aria-pressed={contrast}>{contrast ? "☑" : "☐"} High contrast</button></div>
     <div className="word-grid" aria-label="Six guess rows">{Array.from({ length: 6 }, (_, r) => {
       const word = rows[r] ?? (r === rows.length ? guess.toUpperCase() : "");
       const marks = rows[r] ? scoreWord(rows[r], answer) : [];

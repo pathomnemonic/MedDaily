@@ -1,9 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { connectionPuzzles, medleWords, diagnosisCases, nextStepCases, labPrompts, triageCases, pairsBank, microbePacks } from "./data";
 import { deductionCases, glyphPatterns, ladderDictionary, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
-import { PARTY_GAMES, LISTED_GAME_IDS, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
+import { PARTY_GAMES, LISTED_GAME_IDS, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, hardModeViolation, hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
 import { deepDiveExtras, deepDivePromptsExpanded } from "./dataDeepDiveExtra";
 import { deepDivePrompts, triviaCategories, triviaQuestions } from "./dataArcade";
+
+describe("hard mode", () => {
+  it("forces green letters into place and gold letters to reappear", () => {
+    expect(hardModeViolation(["CRANE"], "SLATE", "AROSE")).toMatch(/must be R|include/);
+    expect(hardModeViolation(["CRANE"], "ARISE", "AROSE")).toBeNull();
+    expect(hardModeViolation([], "ANYTH", "AROSE")).toBeNull();
+  });
+  it("counts duplicate letters", () => {
+    expect(hardModeViolation(["SPEED"], "STEAL", "ERASE")).toMatch(/include/);
+  });
+});
 
 describe("room game choice", () => {
   it("lets the room creator pick the game through the code", () => {
