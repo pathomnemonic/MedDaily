@@ -51,6 +51,7 @@ Checked on 2026-11-20 and left unchanged on that basis:
 - Cell Sketch vs puzzle-nonograms.com: a bare grid with an ad slot; ours has pens, auto-marking and a picture reveal.
 - Letter Rungs vs Weaver: Weaver is clean but flat tiles; ours is a themed ladder.
 - Stat Word vs free Wordle clones (wordlegame.org): plain tiles; ours already has flips and a coloured keyboard.
+Checked 2026-11-22 against the new worlds, and left unchanged on that basis: NYT Spelling Bee and Strands (flat yellow and teal splash screens), Wordle Unlimited (plain tiles on white), puzzle-nonograms.com (bare grid with ads) and Weaver (flat cards). Their play screens are plainer than our themed worlds, so none were copied; the only borrowed ideas were behavioural (hard mode, high contrast).
 No accessible reference was found for Trivia Rumble, Riddle Lab, Casefile Logic or Labline; those stay open until a good one is named.
 
 ## Ideas considered from the daily-games survey
@@ -67,3 +68,6 @@ Free-text answers (Deep Scan, Hoofbeats, Blackout Chart, Differential, Branch La
 
 ## Rooms
 A party room's first code character names its game, so whoever makes the code picks the game and everyone joining plays it.
+
+## Full-screen worlds
+All 23 listed games open in their own full-screen world (a shared `World` shell for Stat Word, Quad Squad, Differential, Theme Trail, Seven Cells, Letter Rungs and Cell Sketch; bespoke screens for the rest). Phone-width worlds scale up with CSS `zoom` on wide desktop screens where the height allows it, and stay at 1x otherwise. The home page deliberately has no hero banner (only the Dx Dash promo).
