@@ -28,6 +28,25 @@ export function scoreWord(guess:string,answer:string):LetterMark[] {
   for(let i=0;i<g.length;i++){ if(marks[i]==="correct") continue; if((remaining[g[i]]??0)>0){ marks[i]="present"; remaining[g[i]]--; } }
   return marks;
 }
+/**
+ * Wordle-style hard mode: every revealed hint must be used in later guesses. Returns the rule that was broken, or null.
+ * (Checked against public Wordle clones: green letters stay in place, gold letters must reappear, counting duplicates.)
+ */
+export function hardModeViolation(previous:readonly string[],guess:string,answer:string):string|null {
+  const g=guess.toUpperCase();
+  for(const prior of previous){
+    const marks=scoreWord(prior,answer), p=prior.toUpperCase();
+    const need:Record<string,number>={};
+    for(let i=0;i<p.length;i++){
+      if(marks[i]==="correct"){ if(g[i]!==p[i]) return "Letter "+(i+1)+" must be "+p[i]+"."; need[p[i]]=(need[p[i]]??0)+1; }
+      else if(marks[i]==="present") need[p[i]]=(need[p[i]]??0)+1;
+    }
+    for(const [letter,count] of Object.entries(need)){
+      if(g.split("").filter(ch=>ch===letter).length<count) return "Your guess must include "+(count>1?count+" × ":"")+letter+".";
+    }
+  }
+  return null;
+}
 export interface WordSearchBoard { grid:string[][]; placed:string[] }
 const DIRS:[number,number][]=[[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
 export function makeWordSearch(words:readonly string[],size:number,seed:number):WordSearchBoard {

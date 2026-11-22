@@ -2639,3 +2639,7 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .lb-pin{display:flex!important;flex-direction:column;align-items:center}.lb-pin.answer{margin-top:0}.lb-pin.you{margin-top:-62px}.lb-pin.answer::before{margin-bottom:2px}.lb-pin.you::after{margin-top:2px}
 .mime-tilt{display:flex;gap:10px;align-items:flex-start;margin:8px 0;padding:10px 12px;border:2px dashed rgba(255,255,255,.3);border-radius:12px;font:500 12px/1.4 var(--font-game);text-align:left;cursor:pointer}.mime-tilt b{display:block;font-size:13px}.mime-tilt input{margin-top:3px}
 .mime-setup .full-button{position:sticky;bottom:10px;z-index:3;box-shadow:0 5px 0 #9b6826,0 -10px 14px rgba(0,0,0,.25)}
+.medle-modes{display:flex;gap:8px;justify-content:center;margin:6px 0}.medle-modes button{padding:6px 12px;border:2px solid rgba(255,255,255,.2);border-radius:99px;background:transparent;color:inherit;font:700 11px var(--font-game);cursor:pointer}.medle-modes .on{border-color:#ffd54a;background:rgba(255,213,74,.15)}
+/* High-contrast (colour-blind friendly) Wordle palette: orange and blue instead of green and gold */
+:root[data-contrast="high"] .word-cell.correct,:root[data-contrast="high"] .medle-keyboard button.correct{background:#f5793a;border-color:#ffb27d;color:#fff}
+:root[data-contrast="high"] .word-cell.present,:root[data-contrast="high"] .medle-keyboard button.present{background:#85c0f9;border-color:#b9dcff;color:#10263d}
