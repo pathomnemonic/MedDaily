@@ -40,7 +40,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "medle": return <Medle seed={seed} onDone={onDone} specialty={specialty} />;
     case "connections": return <Connections seed={seed} onDone={onDone} specialty={specialty} />;
     case "diagnosis": return <DoctorDle seed={seed} onDone={onDone} />;
-    case "labline": return <Labline seed={seed} onDone={onDone} specialty={specialty} />;
+    case "labline": return <Labline seed={seed} onDone={onDone} onExit={onExit} specialty={specialty} />;
     case "pairs": return <MemoryMatch seed={seed} onDone={onDone} onExit={onExit} specialty={specialty} />;
     case "splice": return <AnagramSprint seed={seed} onDone={onDone} onExit={onExit} />;
     case "glyph": return <CellSketch seed={seed} onDone={onDone} practice={practice} />;
@@ -57,7 +57,7 @@ export function GameBoard({ game, seed, onDone, specialty = "general", practice 
     case "trivia": return <TriviaRumble seed={seed} onDone={onDone} onExit={onExit} />;
     case "trail": return <ThemeTrail seed={seed} onDone={onDone} specialty={specialty} />;
     case "crossword": return <CrosswordClinic seed={seed} onDone={onDone} onExit={onExit} />;
-    case "riddle": return <RiddleLab seed={seed} onDone={onDone} />;
+    case "riddle": return <RiddleLab seed={seed} onDone={onDone} onExit={onExit} />;
     case "bodymap": return <BodyMapBlitz seed={seed} onDone={onDone} />;
     case "mime": return <MimeTime seed={seed} onDone={onDone} />;
     case "lettergrid": return <LetterGridGame seed={seed} onDone={onDone} onExit={onExit} />;
@@ -763,7 +763,7 @@ function DoctorDle({ seed, onDone }: Props) {
 
 
 
-function Labline({ seed, onDone, specialty = "general" }: Props) {
+function Labline({ seed, onDone, onExit, specialty = "general" }: Props & { onExit?: () => void }) {
   const rounds = useMemo(() => {
     const pool = specialty === "neurology" ? labPrompts.filter((_, index) => [18,19,20].includes(index)) : specialty === "cardiology" ? labPrompts.filter((_, index) => [1,3,4,17].includes(index)) : labPrompts;
     return shuffle(pool.length >= 5 ? pool : labPrompts, seeded(seed + 27)).slice(0, 5);
@@ -807,14 +807,11 @@ function Labline({ seed, onDone, specialty = "general" }: Props) {
     window.setTimeout(() => setPins(true), 60);
     reward(points >= 60, null, points >= 99 ? "BULLSEYE!" : "+" + (points + streakBonus));
     if (round === rounds.length - 1) {
-      setFinished(true);
-      if (!done.current) {
-        done.current = true;
-        const squares = results.concat([{ prompt: "", estimate: guess, actual: item.value, unit: "", points }]).map((r) => r.points >= 95 ? "🟩" : r.points >= 70 ? "🟨" : r.points >= 35 ? "🟧" : "🟥").join("");
-        onDone(nextTotal, maxScore, nextTotal >= rounds.length * 100, "Labline " + nextTotal + "/" + maxScore + "\n" + squares);
-      }
+      const squares = results.concat([{ prompt: "", estimate: guess, actual: item.value, unit: "", points }]).map((r) => r.points >= 95 ? "🟩" : r.points >= 70 ? "🟨" : r.points >= 35 ? "🟧" : "🟥").join("");
+      finalPayload.current = () => { setFinished(true); if (!done.current) { done.current = true; onDone(nextTotal, maxScore, nextTotal >= rounds.length * 100, "Labline " + nextTotal + "/" + maxScore + "\n" + squares); } };
     }
   };
+  const finalPayload = useRef<(() => void) | null>(null);
   const next = () => {
     if (!submitted) return;
     const nextItem = rounds[round + 1];
@@ -830,35 +827,42 @@ function Labline({ seed, onDone, specialty = "general" }: Props) {
   const pct = (v: number) => ((v - rLo) / (rHi - rLo)) * 100;
   const verdict = earned >= 99 ? "Bullseye! 🎯" : earned >= 85 ? "Inside the window ✓" : earned >= 60 ? "Close" : earned >= 30 ? "Getting warm" : "Far off";
 
+  const lastRound = round === rounds.length - 1;
+  const ring = 2 * Math.PI * 30;
+  const ui = <div className="lb" role="dialog" aria-label="Labline">
+    <header className="lb-top">
+      {onExit && <button className="lb-icon" onClick={onExit} aria-label="Leave Labline">✕</button>}
+      <div className="lb-dots">{rounds.map((_, i) => <i key={i} className={i < round + Number(submitted) ? "done" : i === round ? "cur" : ""} />)}</div>
+      <div className={"lb-streak" + (streak >= 2 ? " on" : "")}>{streak >= 2 ? "🔥×" + streak : ""}</div>
+      <div className="lb-total"><b>{total}</b><small>PTS</small></div>
+    </header>
+    <section className="lb-label"><small>SPECIMEN {round + 1} · ESTIMATE THE VALUE</small><h2>{item.prompt}</h2></section>
+    {!submitted ? <section className="lb-panel">
+      <div className="lb-lcd">{typing === null ? <button onClick={() => setTyping(String(estimate))} aria-label="Tap to type an exact number"><b>{fmt(estimate)}</b><small>{item.unit}</small></button>
+        : <form onSubmit={(e) => { e.preventDefault(); lock(); }}><input autoFocus type="number" step="any" value={typing} onChange={(e) => setTyping(e.target.value)} onBlur={() => { const n = Number(typing); if (Number.isFinite(n) && typing.trim()) setEstimate(n); setTyping(null); }} aria-label={"Estimate in " + item.unit} /><small>{item.unit}</small></form>}</div>
+      <div className="lb-fader">
+        <button onClick={() => setEstimate((v) => snap(v - step))} aria-label="Decrease">−</button>
+        <div className="lb-track"><div className="lb-ticks" aria-hidden="true" /><input type="range" min={sMin} max={sMax} step={step} value={Math.min(sMax, Math.max(sMin, estimate))} onChange={(e) => { setEstimate(Number(e.target.value)); setTyping(null); }} aria-label={"Estimate in " + item.unit} /></div>
+        <button onClick={() => setEstimate((v) => snap(v + step))} aria-label="Increase">+</button>
+      </div>
+      <div className="lb-ends"><span>{fmt(sMin)}</span><span>drag, nudge, or tap the number to type</span><span>{fmt(sMax)}</span></div>
+      <button className="lb-lock" onClick={lock}>LOCK IN {fmt(typing !== null && Number.isFinite(Number(typing)) && typing.trim() ? Number(typing) : estimate)} {item.unit}</button>
+    </section> : <section className="lb-panel lb-rev">
+      <div className="lb-score"><svg viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="30" /><circle cx="36" cy="36" r="30" className="fg" style={{ strokeDasharray: ring, strokeDashoffset: pins ? ring * (1 - earned / 100) : ring }} /></svg><b>{earned}</b></div>
+      <div className="lb-verdict"><b>{verdict}</b><span>{bonus ? "🔥 streak bonus +" + bonus : "points this round"}</span></div>
+      <div className="lb-ruler" aria-label={"You said " + fmt(estimate) + ", the value is " + item.value}>
+        <div className="lb-axis" />
+        {item.tolerance > 0 && <i className="lb-band" style={{ left: pct(item.value - item.tolerance) + "%", width: pct(item.value + item.tolerance) - pct(item.value - item.tolerance) + "%" }} />}
+        <span className={"lb-pin you" + (pins ? " go" : "")} style={{ left: pins ? pct(estimate) + "%" : "50%" }}><em>YOU</em><b>{fmt(estimate)}</b></span>
+        <span className={"lb-pin answer" + (pins ? " go" : "")} style={{ left: pins ? pct(item.value) + "%" : "50%" }}><em>ANSWER</em><b>{item.value}</b></span>
+      </div>
+      <p className="lb-context">{item.context} <span>{item.source}</span></p>
+      <button className="lb-lock" onClick={() => (lastRound ? finalPayload.current?.() : next())}>{lastRound ? "SEE MY RESULTS ▶" : "NEXT SPECIMEN ▶"}</button>
+    </section>}
+  </div>;
   return <div className="game-layout labline-game" data-own-sfx="true">
-    <div className="labline-hud"><div><b>{round + 1}<small> / 5</small></b><span>ROUND</span></div><div><b>{total}</b><span>POINTS</span></div><div className={"hot" + (streak >= 2 ? " on" : "")}><b>{streak >= 2 ? "🔥 ×" + streak : "—"}</b><span>HOT STREAK</span></div></div>
-    <div className="labline-progress"><i style={{ width: ((round + Number(submitted)) / 5 * 100) + "%" }} /></div>
-    {!finished || submitted ? <>
-      <div className="lab-prompt"><SectionLabel>CALIBRATE YOUR CLINICAL EYE</SectionLabel><h3>{item.prompt}</h3></div>
-      {!submitted ? <div className="lab-dial">
-        <div className="lab-readout">
-          {typing === null ? <button className="lab-number" onClick={() => setTyping(String(estimate))} aria-label="Tap to type an exact number">{fmt(estimate)}<small>{item.unit}</small></button>
-            : <form onSubmit={(e) => { e.preventDefault(); lock(); }}><input className="lab-number-input" autoFocus type="number" step="any" value={typing} onChange={(e) => setTyping(e.target.value)} onBlur={() => { const n = Number(typing); if (Number.isFinite(n) && typing.trim()) setEstimate(n); setTyping(null); }} aria-label={"Estimate in " + item.unit} /><small>{item.unit}</small></form>}
-        </div>
-        <div className="lab-slider-row">
-          <button className="lab-step" onClick={() => setEstimate((v) => snap(v - step))} aria-label="Decrease">−</button>
-          <input type="range" className="lab-slider" min={sMin} max={sMax} step={step} value={Math.min(sMax, Math.max(sMin, estimate))} onChange={(e) => { setEstimate(Number(e.target.value)); setTyping(null); }} aria-label={"Estimate in " + item.unit} />
-          <button className="lab-step" onClick={() => setEstimate((v) => snap(v + step))} aria-label="Increase">+</button>
-        </div>
-        <div className="lab-scale"><span>{fmt(sMin)}</span><span>drag, nudge, or tap the number to type</span><span>{fmt(sMax)}</span></div>
-        <button className="button button-primary full-button lab-lock" onClick={lock}>Lock in {fmt(typing !== null && Number.isFinite(Number(typing)) && typing.trim() ? Number(typing) : estimate)} {item.unit}</button>
-      </div> : <div className="lab-reveal">
-        <div className="lab-verdict"><b>{verdict}</b><span>+{earned}{bonus ? " · 🔥 streak bonus +" + bonus : ""}</span></div>
-        <div className="lab-ruler" aria-label={"You said " + fmt(estimate) + ", the value is " + item.value}>
-          {item.tolerance > 0 && <i className="lab-band" style={{ left: pct(item.value - item.tolerance) + "%", width: pct(item.value + item.tolerance) - pct(item.value - item.tolerance) + "%" }} />}
-          <span className={"lab-pin you" + (pins ? " go" : "")} style={{ left: pins ? pct(estimate) + "%" : "50%" }}><em>You</em><b>{fmt(estimate)}</b></span>
-          <span className={"lab-pin answer" + (pins ? " go" : "")} style={{ left: pins ? pct(item.value) + "%" : "50%" }}><em>Answer</em><b>{item.value}</b></span>
-        </div>
-        <p className="lab-context">{item.context} <span className="source-note">{item.source}</span></p>
-        {!finished && <button className="button button-primary full-button" onClick={next}>Next estimate ▶</button>}
-      </div>}
-    </> : null}
-    {finished && submitted && <Finish title="Calibration complete" detail={"Five clinical estimates. " + (total >= 450 ? "Superb calibration." : total >= 300 ? "Your reference instincts are sharp." : "Keep building your mental reference ranges.")} score={total + " / " + maxScore}><div className="labline-results">{results.map((r, i) => <div key={i}><span>{r.prompt}</span><b>{fmt(r.estimate)} vs {r.actual} {r.unit}</b><strong>+{r.points}</strong></div>)}</div></Finish>}
+    {!finished ? (typeof document !== "undefined" ? createPortal(ui, document.body) : null) : null}
+    {finished && <Finish title="Calibration complete" detail={"Five clinical estimates. " + (total >= 450 ? "Superb calibration." : total >= 300 ? "Your reference instincts are sharp." : "Keep building your mental reference ranges.")} score={total + " / " + maxScore}><div className="labline-results">{results.map((r, i) => <div key={i}><span>{r.prompt}</span><b>{fmt(r.estimate)} vs {r.actual} {r.unit}</b><strong>+{r.points}</strong></div>)}</div></Finish>}
   </div>;
 }
 
@@ -1480,7 +1484,7 @@ function MimeTime({ seed, onDone }: Props) {
 }
 
 
-function RiddleLab({ seed, onDone }: Props) {
+function RiddleLab({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
   const picks = useMemo(() => {
     const bag = shuffle(riddles, seeded(seed + 991));
     const selected: typeof riddles = [];
@@ -1525,15 +1529,27 @@ function RiddleLab({ seed, onDone }: Props) {
     setRound((v) => v + 1); setShown(1); setGone([]); setSolved(null);
   };
   const total = results.reduce((n, v) => n + v, 0);
+  const KIND_ICON: Record<string, string> = { Microbe: "🦠", Drug: "💊", Organ: "🫀", Molecule: "🧪", Syndrome: "🧬", Diagnosis: "🩺", "Next step": "📋" };
+  const blur = solved !== null ? 0 : Math.max(0, 14 - shown * 4);
+  const ui = !finished ? <div className="rd" role="dialog" aria-label="Riddle Lab">
+    <header className="rd-top">
+      {onExit && <button className="rd-icon" onClick={onExit} aria-label="Leave Riddle Lab">✕</button>}
+      <div className="rd-case"><small>CASE</small><b>{Math.min(round + 1, picks.length)}<i>/{picks.length}</i></b></div>
+      <div className="rd-pips" aria-label={points(shown) + " points available"}>{[4, 3, 2, 1].map((n) => <i key={n} className={solved === null && points(shown) >= n ? "on" : ""}>{n}</i>)}</div>
+      <div className="rd-total"><b>{total}</b><small>PTS</small></div>
+    </header>
+    <div className={"rd-evidence" + (solved !== null ? (solved === "__missed" ? " missed" : " solved") : "")} key={"e" + round}>
+      <div className="rd-photo"><span style={{ filter: "brightness(" + (solved !== null ? 1 : 0.08) + ") blur(" + blur + "px)" }}>{KIND_ICON[item.kind] ?? "❓"}</span>{solved === null && <em>?</em>}</div>
+      <div className="rd-label"><small>I AM A…</small><b>{item.kind.toUpperCase()}</b></div>
+      {solved !== null && <div className="rd-stamp">{solved === "__missed" ? "UNSOLVED" : "SOLVED"}</div>}
+    </div>
+    <div className="rd-notes">{item.clues.slice(0, shown).map((clue, i) => <p key={i} className="rd-note" style={{ "--tilt": (i % 2 ? 0.7 : -0.7) + "deg" } as React.CSSProperties}><span>{i + 1}</span>{clue}</p>)}</div>
+    <p className="rd-line">{solved === null ? "Wrong answers unlock the next clue" : solved === "__missed" ? "It was " + item.answer + "." : "+" + points(shown) + " · it was " + item.answer + "!"}</p>
+    <div className="rd-options">{options.map((opt) => <button key={opt} disabled={solved !== null || gone.includes(opt)} className={(gone.includes(opt) ? "gone" : "") + (solved !== null && opt === item.answer ? " right" : "")} onClick={(e) => { guess(opt); if (opt === item.answer) reward(true, e.currentTarget as Element, "+" + points(shown)); }}>{opt}</button>)}</div>
+    {solved !== null && <footer className="rd-dock"><button onClick={next}>{round === picks.length - 1 ? "CLOSE THE FILES ▶" : "NEXT CASE ▶"}</button></footer>}
+  </div> : null;
   return <div className="game-layout riddle-game" data-own-sfx="true">
-    <div className="riddle-hud"><span>RIDDLE {Math.min(round + 1, picks.length)} / {picks.length}</span><b>{total} pts</b></div>
-    {!finished ? <>
-      <div className="riddle-kind">I am a <b>{item.kind.toLowerCase()}</b>…</div>
-      <div className="riddle-clues">{item.clues.slice(0, shown).map((clue, i) => <p key={i} className={"riddle-clue clue-" + i}><span>{i + 1}</span>{clue}</p>)}</div>
-      <p className="riddle-worth">{solved === null ? "Worth " + points(shown) + " point" + (points(shown) === 1 ? "" : "s") + " right now" : solved === "__missed" ? "Missed it. The answer was " + item.answer + "." : "+" + points(shown) + " · it was " + item.answer + "!"}</p>
-      <div className="riddle-options">{options.map((opt) => <button key={opt} disabled={solved !== null || gone.includes(opt)} className={(gone.includes(opt) ? "gone" : "") + (solved !== null && opt === item.answer ? " right" : "")} onClick={(e) => { guess(opt); if (opt === item.answer) reward(true, e.currentTarget as Element, "+" + points(shown)); }}>{opt}</button>)}</div>
-      {solved !== null && <button className="button button-primary full-button" onClick={next}>{round === picks.length - 1 ? "See my score" : "Next riddle ▶"}</button>}
-    </> : <Finish title="Case closed" detail={results.map((v, i) => picks[i].answer + " (" + v + ")").join(" · ")} score={total + " / 20"} />}
+    {!finished ? (typeof document !== "undefined" && ui ? createPortal(ui, document.body) : null) : <Finish title="Case closed" detail={results.map((v, i) => picks[i].answer + " (" + v + ")").join(" · ")} score={total + " / 20"} />}
   </div>;
 }
 
