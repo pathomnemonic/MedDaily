@@ -2762,3 +2762,26 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .stats-page .stats-table,.stats-page .privacy-note{background:#fffdf3;border:2px solid #2a2418;color:#2a2418}.stats-page .stats-table *{color:#2a2418}.stats-page .stats-table>div{border-color:rgba(42,36,24,.25)}
 /* contrast fixes found by an axe-core run */
 .bo-bar i{color:#b4b4b4!important}.rd-label small{opacity:.9}.rd-note span,.am-front small{color:#7a3f08}.am-card.term .am-front small{color:#1f528f}
+
+/* ---- desktop: phone-width worlds scale up so they fill a wide screen (only where the height allows it) ---- */
+@media(min-width:900px) and (min-height:700px){
+  :is(.tr,.ll,.an,.rd,.lb)>*{zoom:1.2}
+}
+@media(min-width:1200px) and (min-height:860px){
+  :is(.tr,.ll,.an,.rd,.lb)>*{zoom:1.4}
+}
+@media(min-width:1000px) and (min-height:900px){
+  .world-body>.game-layout{zoom:1.2}
+}
+
+/* ---- Settings: control panel ---- */
+.settings-page .settings-card{position:relative;border:3px solid #6a7a86;border-radius:16px;background:linear-gradient(#26343c,#1a252b);box-shadow:0 6px 0 #0d1418,inset 0 0 0 2px rgba(255,255,255,.06);padding-top:24px}
+.settings-page .settings-card::before,.settings-page .settings-card::after{content:"";position:absolute;top:9px;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#d8dde0,#6a7a86);box-shadow:inset 0 0 0 1px rgba(0,0,0,.4)}
+.settings-page .settings-card::before{left:10px}.settings-page .settings-card::after{right:10px}
+.settings-page .settings-card h2{display:flex;align-items:center;gap:10px;font-size:22px}
+.settings-page .settings-card h2::before{content:"";width:12px;height:12px;border-radius:50%;background:#52e3b0;box-shadow:0 0 10px #52e3b0,inset 0 -2px 0 rgba(0,0,0,.25)}
+.settings-page .setting-row input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;flex:none;width:52px;height:28px;border-radius:99px;background:#0d1418;border:3px solid #6a7a86;cursor:pointer;transition:background .2s,border-color .2s}
+.settings-page .setting-row input[type=checkbox]::after{content:"";position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:linear-gradient(#fff,#bcc6cc);box-shadow:0 2px 0 rgba(0,0,0,.4);transition:transform .2s}
+.settings-page .setting-row input[type=checkbox]:checked{background:#1f9d6a;border-color:#52e3b0}.settings-page .setting-row input[type=checkbox]:checked::after{transform:translateX(24px)}
+.settings-page .setting-row input[type=checkbox]:focus-visible{outline:3px solid #ffd54a;outline-offset:3px}
+.settings-page .setting-row b{font-size:13px}.settings-page .setting-row small{font-size:11px}
