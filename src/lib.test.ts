@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { connectionPuzzles, medleWords, diagnosisCases, nextStepCases, labPrompts, triageCases, pairsBank, microbePacks } from "./data";
 import { deductionCases, glyphPatterns, ladderDictionary, spellingHivePuzzles, wordLadders, scrambleWordsExtended, higherLowerPairs } from "./dataExtra";
-<<<<<<< HEAD
-import { PARTY_GAMES, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
+import { PARTY_GAMES, LISTED_GAME_IDS, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
 import { deepDiveExtras, deepDivePromptsExpanded } from "./dataDeepDiveExtra";
 import { deepDivePrompts, triviaCategories, triviaQuestions } from "./dataArcade";
 
@@ -11,17 +10,14 @@ describe("room game choice", () => {
     for (const game of PARTY_GAMES) expect(roomGame(randomRoomCode(seeded(3), game))).toBe(game);
     expect(roomGame(withRoomGame("ZZZZZZ", "blackout"))).toBe("blackout");
     expect(withRoomGame("K7MQ2X", "medle").slice(1)).toBe("7MQ2X");
-=======
-import { PARTY_GAMES, LISTED_GAME_IDS, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, hashSeed, lineCells, dailyDateKey, makeWordSearch, nonogramRuns, scoreWord, seeded, shuffle } from "./lib";
-import { deepDiveExtras, deepDivePromptsExpanded } from "./dataDeepDiveExtra";
-import { deepDivePrompts, triviaCategories, triviaQuestions } from "./dataArcade";
+  });
+});
 
 describe("visible game catalog", () => {
   it("contains 23 unique playable game IDs and excludes the hidden body-map game", () => {
     expect(LISTED_GAME_IDS).toHaveLength(23);
     expect(new Set(LISTED_GAME_IDS).size).toBe(23);
     expect(LISTED_GAME_IDS).not.toContain("bodymap");
->>>>>>> origin/main
   });
 });
 

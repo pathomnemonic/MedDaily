@@ -2403,3 +2403,86 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .room-game-chips button.on{border-color:#ffd54a;background:rgba(255,213,74,.18)}
 .room-game-chips .chip-art{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;overflow:hidden}
 .room-preview{margin:6px 0 0;font:600 13px var(--font-game);color:var(--mint,#72f0c5)}
+
+/* Accessibility baseline: visible keyboard focus, readable form controls, and reduced motion. */
+:where(button, input, select, textarea, a, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 3px solid var(--mint);
+  outline-offset: 3px;
+}
+:where(input, select, textarea) {
+  color: inherit;
+}
+:where(button, input, select, textarea) {
+  touch-action: manipulation;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    caret-color: auto !important;
+  }
+}
+
+
+/* In-game diagnostic environments: the ECG trace animates only as ambient stage art. */
+.stage-scene .ecg-trace {
+  stroke-dasharray: 520;
+  stroke-dashoffset: 520;
+  animation: stage-ecg-trace 5.2s linear infinite;
+}
+@keyframes stage-ecg-trace {
+  to { stroke-dashoffset: 0; }
+}
+
+
+/* Atmospheric stage treatment: subtle, game-specific color fields behind the board. */
+.game-stage {
+  --stage-glow: rgba(114,240,197,.16);
+  isolation: isolate;
+}
+.game-stage::before,
+.game-stage::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+.game-stage::before {
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 12% 12%, var(--stage-glow), transparent 46%),
+    radial-gradient(ellipse at 88% 84%, var(--stage-glow), transparent 48%);
+  opacity: .9;
+}
+.game-stage::after {
+  width: 460px;
+  height: 460px;
+  right: -250px;
+  bottom: -300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--stage-glow), transparent 68%);
+  filter: blur(28px);
+  animation: stage-aurora 18s ease-in-out infinite alternate;
+}
+.game-stage[data-game="diagnosis"],
+.game-stage[data-game="dive"] { --stage-glow: rgba(92,174,255,.18); }
+.game-stage[data-game="casefile"] { --stage-glow: rgba(255,165,111,.17); }
+.game-stage[data-game="blackout"] { --stage-glow: rgba(105,235,190,.18); }
+.game-stage[data-game="branch"],
+.game-stage[data-game="splice"] { --stage-glow: rgba(183,145,255,.17); }
+.game-stage[data-game="glyph"],
+.game-stage[data-game="bodymap"] { --stage-glow: rgba(115,170,255,.17); }
+.game-stage[data-game="trivia"],
+.game-stage[data-game="mime"],
+.game-stage[data-game="horses"] { --stage-glow: rgba(255,145,190,.17); }
+.game-stage[data-game="labline"],
+.game-stage[data-game="scale"],
+.game-stage[data-game="cross"] { --stage-glow: rgba(255,203,115,.16); }
+@keyframes stage-aurora {
+  from { transform: translate3d(0,0,0) scale(.92); }
+  to { transform: translate3d(-38px,-28px,0) scale(1.12); }
+}

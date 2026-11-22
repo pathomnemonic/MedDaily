@@ -13,11 +13,7 @@ import { watchStage, resetCombo } from "./juice";
 import { setHapticsEnabled, vibrate } from "./haptics";
 import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } from "./audio";
 import type { GameId } from "./lib";
-<<<<<<< HEAD
-import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, PARTY_GAMES } from "./lib";
-=======
-import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, PARTY_GAMES, LISTED_GAME_IDS } from "./lib";
->>>>>>> origin/main
+import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, PARTY_GAMES, LISTED_GAME_IDS } from "./lib";
 import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
 import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, rankRoomPlayers, submitRoomScore, watchRoom, type RoomState } from "./firebase";
 import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnected } from "./googleDrive";
