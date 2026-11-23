@@ -30,5 +30,13 @@ Well-scoped work that can be done without architectural decisions. Each item nam
 - `supabase/migrations/20261123000002_meddaily_rooms_lifecycle.sql` (rollback alongside). Adds `room_players.last_seen_at`, `touch_room`, `room_is_over`, updated `room_state_json`/`join_room`/`submit_score`/`cleanup_rooms`, and an hourly pg_cron job when the extension exists.
 - Verify: run `supabase/tests/meddaily_rls.sql` (section 9); then the two-browser check in item 4, closing one tab and waiting 5 minutes: that player disappears from the other's list; after both finish, a third join returns "round is already over".
 
+## 8. Verification and housekeeping batch (no architecture needed)
+- After each deploy: confirm footer version matches `APP_VERSION` in `src/support.ts`; run the two-browser Party check (item 4) on the live build, including Random code keeping the game, closing one tab and waiting 5 minutes (player disappears), and a third join to a finished room (message "round is already over").
+- Apply `supabase/migrations/20261123000003_...` is done; confirm no other pending migrations: `supabase migration list` against production.
+- Re-run `supabase/tests/meddaily_rls.sql` after any migration.
+- Name rule: never put the owner's personal name in any repo file. Before each PR, `grep -rniI` the repo for personal names and fix hits (use "PathoMnemonic" or "the owner").
+- Content batches (ChatGPT/Gemini panels): new Hive boards (pool is only 24 to 46, so puzzles repeat within a year), more Medle words and Connections puzzles, riddle text spot-check. Deliver as data files following the shapes in `src/dataHive*.ts`, `src/data*.ts`; send to me for review before merge.
+- CI: if the Pages deploy or tests fail, read the log and fix only mechanical causes (lint, snapshot, timeout); anything else, write it here for me.
+
 ## Not for pickup (needs my judgement)
 Pro/payments build, guided first round, archive, image share card, anything touching game logic or the database schema.

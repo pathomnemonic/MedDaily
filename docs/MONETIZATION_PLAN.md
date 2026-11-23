@@ -1,4 +1,4 @@
-# Monetization plan (decided by Mathews; nothing is built yet)
+# Monetization plan (decided by the owner; nothing is built yet)
 
 Model: Stat!'s. **Pro costs $0.99 per month or $9.99 per year. The daily round stays free.** (The annual plan works out to about $0.83 a month, roughly 16% cheaper than paying monthly.)
 
@@ -8,12 +8,12 @@ Model: Stat!'s. **Pro costs $0.99 per month or $9.99 per year. The daily round s
 - No bonus daily round. Everything that is free today stays free; nothing shipped is taken away.
 
 ## Pro (final list, decided Nov 23, 2026): two features
-Clinicle is a fun game, not a learning game, so Pro is about not losing your habit and playing what you missed. Deep stats and per-specialty breakdowns are **not** part of Pro (Mathews's decision); the basic stats stay free.
+Clinicle is a fun game, not a learning game, so Pro is about not losing your habit and playing what you missed. Deep stats and per-specialty breakdowns are **not** part of Pro (the owner's decision); the basic stats stay free.
 
 ### a) Full archive: play any past day's puzzles
 - A calendar of past days; tap a day to play that day's puzzle for any game. The daily is a pure function of the date, so no new content is needed.
 - **Free players** can open the calendar and see it (locked days show a Pro badge), and today's round is always free.
-- **Rules (confirmed by Mathews, Nov 23, 2026):**
+- **Rules (confirmed by the owner, Nov 23, 2026):**
   - **Archive plays do not change the streak and do not count toward the daily goal chest.** Otherwise the archive would be unlimited free streak repair and freezes would be pointless. They are recorded for the history, best scores and trophies, and marked as archive plays.
   - **Archive start date:** the store launch day (earlier days can be generated but would feel like filler).
   - The share text for an archive play says the date it was played for, so it cannot be mistaken for a daily.
@@ -21,7 +21,7 @@ Clinicle is a fun game, not a learning game, so Pro is about not losing your hab
 
 ### b) Streak freezes: 2 per month, applied automatically
 - A freeze bridges one missed day so a streak survives. Pro players get **2 per calendar month** (UTC, matching the daily rollover). Nothing to tap: it applies by itself.
-- **Rules (confirmed by Mathews, Nov 23, 2026):**
+- **Rules (confirmed by the owner, Nov 23, 2026):**
   - A freeze is used **only when it can save the streak**: after a gap of one or two missed days that the player's remaining freezes cover entirely. A longer gap breaks the streak and no freezes are wasted.
   - Applied at the next app open or round after the missed day, and **recorded** (`frozenDays` in the player data, synced with the account), so a later lapse of Pro never un-saves a streak already saved.
   - Unused freezes do not roll over.
