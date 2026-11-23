@@ -102,3 +102,17 @@ export function randomRoomCode(random: () => number = Math.random, game?: GameId
   const code = Array.from({ length: 6 }, () => ROOM_ALPHABET[Math.floor(random() * ROOM_ALPHABET.length)]).join("");
   return game ? withRoomGame(code, game, random) : code;
 }
+
+function gcd(a: number, b: number): number { return b === 0 ? a : gcd(b, a % b); }
+
+/**
+ * Maps a day number onto a pool position so consecutive days land far apart and no puzzle repeats until the whole pool
+ * has been used (stride is coprime with the pool size). Free-play hash seeds pass through the same mapping safely.
+ */
+export function permutedIndex(seed: number, size: number): number {
+  if (size <= 1) return 0;
+  let stride = Math.max(1, Math.round(size * 0.382));
+  while (gcd(stride, size) !== 1) stride++;
+  const n = Math.abs(Math.trunc(seed));
+  return (n * stride) % size;
+}

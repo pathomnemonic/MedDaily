@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 /** All game code and puzzle data load on first play, keeping the first screen light. */
 const GameBoard = lazy(() => import("./Games").then((m) => ({ default: m.GameBoard })));
 import GameArt from "./components/GameArt";
@@ -15,10 +15,15 @@ import { setHapticsEnabled, vibrate } from "./haptics";
 import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } from "./audio";
 import type { GameId } from "./lib";
 import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, PARTY_GAMES, LISTED_GAME_IDS } from "./lib";
-import { useAccount } from "./useAccount";
+import { accountsEnabled, useAccount } from "./useAccount";
+import { getSupabase, hasStoredSupabaseSession } from "./supabaseClient";
+import { eraseStoredData } from "./eraseData";
 import { averageByGroup, bestStreak, scoreDistribution, streakCalendar } from "./statsInsights";
-import { initNative, isNative, refreshReminders, shareText } from "./native";
+import { initNative, isNative, onBackButton, refreshReminders, shareText } from "./native";
+import { backAction } from "./backNav";
+import ErrorBoundary from "./ErrorBoundary";
 import { APP_VERSION, feedbackMailto, reportMailto } from "./support";
+import { nextDailyLabel } from "./dailyTime";
 import ReminderCard from "./ReminderCard";
 import AccountCard from "./AccountCard";
 import type { AccountController } from "./useAccount";
@@ -157,7 +162,15 @@ export default function App() {
   const [splash,setSplash] = useState(()=>{try{return sessionStorage.getItem("meddaily:splash")!=="1";}catch{return true;}});
   const [copied,setCopied] = useState(false);
 
-  const date = dailyDateKey();
+  // The daily key follows the clock: refresh it while the app stays open so a session that crosses midnight UTC never keeps yesterday's date
+  const [date,setDate] = useState(()=>dailyDateKey());
+  useEffect(()=>{
+    const tick=()=>setDate(cur=>{const now=dailyDateKey();return now===cur?cur:now;});
+    const id=window.setInterval(tick,30000);
+    document.addEventListener("visibilitychange",tick);window.addEventListener("focus",tick);
+    return ()=>{window.clearInterval(id);document.removeEventListener("visibilitychange",tick);window.removeEventListener("focus",tick);};
+  },[]);
+  const [gameDate,setGameDate] = useState(()=>dailyDateKey());
   const scope = mode === "general" ? "general" : "specialty:" + specialty;
   const selectedSpecialty = SPECIALTIES.find(s=>s.id===specialty)!;
   const selectedTitle = mode === "general" ? "Open Arcade" : selectedSpecialty.name + " Dailies";
@@ -223,14 +236,34 @@ export default function App() {
   const doneToday=completedToday(player,scope,LISTED.map((game)=>game.id));
   const streak=playStreak(player,scope);
   // Branch Lab uses a sequential UTC-day seed so its alternating organism/drug banks never repeat within a year.
-  const seedFor=(game:GameId)=>game==="branch"||game==="blackout"||game==="trail"||game==="diagnosis"||game==="ladder"||game==="crossword"
-    ? Math.floor(Date.parse(date+"T00:00:00Z")/86400000)
-    : hashSeed(date+"|"+scope+"|"+game);
+  const seedFor=(game:GameId,day:string=dailyDateKey())=>game==="branch"||game==="blackout"||game==="trail"||game==="diagnosis"||game==="ladder"||game==="crossword"||game==="medle"||game==="connections"||game==="hive"
+    ? Math.floor(Date.parse(day+"T00:00:00Z")/86400000)
+    : hashSeed(day+"|"+scope+"|"+game);
 
+  const backState = {activeGame:!!activeGame,completion:!!completion,screen};
+  const backRef = useRef(backState); backRef.current = backState;
+  const goBack = () => {
+    const act = backAction(backRef.current);
+    if (act==="close-completion") { setCompletion(null); setActiveGame(null); setPartyRun(false); setScreen(completion?.party?"friends":"home"); return true; }
+    if (act==="close-game") { setActiveGame(null); setPractice(false); return true; }
+    if (act==="go-home") { setScreen("home"); return true; }
+    return false;
+  };
+  const goBackRef = useRef(goBack); goBackRef.current = goBack;
+  const deep = !!activeGame || screen!=="home";
+  useEffect(()=>{ // browser/PWA back: one history entry while away from the arcade home
+    if (!deep) return;
+    try { window.history.pushState({clinicle:1},""); } catch { return; }
+    const onPop = () => { goBackRef.current(); };
+    window.addEventListener("popstate", onPop);
+    return ()=>{ window.removeEventListener("popstate", onPop); try { if (window.history.state?.clinicle) window.history.back(); } catch { /* ignore */ } };
+  },[deep]);
+  useEffect(()=>{ let off=()=>{}; let dead=false; void onBackButton(()=>goBackRef.current()).then(f=>{ if(dead) f(); else off=f; }); return ()=>{dead=true;off();}; },[]);
   const openGame=(id:GameId,isPractice=false,forcedSeed?:number,party=false)=>{
     sfx("start");resetCombo();vibrate(10);
     if(!player.reducedMotion){setWipe({id,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}
-    setPartyRun(party);setCompletion(null);setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??(isPractice?hashSeed(id+"-free-"+Date.now()):seedFor(id)));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
+    const dayNow=dailyDateKey();setGameDate(dayNow);setDate(dayNow);
+    setPartyRun(party);setCompletion(null);setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??(isPractice?hashSeed(id+"-free-"+Date.now()):seedFor(id,dayNow)));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
     window.scrollTo({top:0,behavior:player.reducedMotion?"auto":"smooth"});
   };
   const finishGame=(score:number,maxScore:number,perfect:boolean,share?:string)=>{
@@ -255,7 +288,7 @@ export default function App() {
       return;
     }
     if(practice){setPlayer(cur=>{const n={...cur,xp:(cur.xp??0)+gain};savePlayer(n);return n;});return;}
-    const result={date,game:activeGame!,scope,score,maxScore,perfect,durationSeconds:Math.max(0,Math.round((Date.now()-gameStartedAt)/1000))};
+    const result={date:gameDate,game:activeGame!,scope,score,maxScore,perfect,durationSeconds:Math.max(0,Math.round((Date.now()-gameStartedAt)/1000))};
     const nextPlayer = {...recordResult(player,result),xp:(player.xp??0)+gain};
     savePlayer(nextPlayer);
     setPlayer(nextPlayer);
@@ -349,7 +382,7 @@ export default function App() {
       <button className={screen==="settings"?"active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}><span><Icon name="gear" size={22}/></span>Options</button>
     </nav>
     {notice&&<button className="notice" style={{animationDuration:(/saved|synced|Syncing|Left|imported|added/i.test(notice)?2.2:5)+"s"}} onClick={()=>setNotice("")} aria-label="Dismiss message">{notice}<span>×</span></button>}
-    {room&&<div className="room-strip"><span className="room-dot" /> <b>ROOM {room.code}</b><span>{room.players.length} players · {room.players.filter(p=>p.finished).length} finished</span><button onClick={()=>setScreen("friends")}>Room details</button><button onClick={closeRoom}>Leave</button></div>}
+    {room&&<div className="room-strip"><span className="room-dot" /> <b>ROOM {room.code}</b><span>{room.players.length} players · {room.status==="finished"?"final results":room.players.filter(p=>p.finished).length+" finished"}</span><button onClick={()=>setScreen("friends")}>Room details</button><button onClick={closeRoom}>Leave</button></div>}
 
     <main>
       {activeGame?<div className={"page-enter play-page tone-"+(GAMES.find(g=>g.id===activeGame)?.wash??"lilac")}>
@@ -357,11 +390,11 @@ export default function App() {
         <div className="play-heading"><div className="play-badge" aria-hidden="true"><GameArt game={activeGame}/></div><div className="play-heading-text"><span className="eyebrow">{partyRun?"PARTY ROOM · "+roomCode:practice?"FREE PLAY":selectedTitle.toUpperCase()+" · "+date}</span><h1>{title}</h1><p>{GAMES.find(g=>g.id===activeGame)?.description}</p>{(()=>{const g=GAMES.find(x=>x.id===activeGame);return g?<Difficulty level={g.difficulty}/>:null;})()}</div>
           {!partyRun&&<div className="mode-switch" role="group" aria-label="Game mode"><button className={!practice?"selected":""} onClick={()=>{if(practice)openGame(activeGame,false,room?.seed);}}>Daily</button><button className={practice?"selected":""} onClick={()=>{if(!practice)openGame(activeGame,true,hashSeed(activeGame+"-practice-"+Date.now()));}}>Free Play</button></div>}</div>
         <section className="game-stage" data-game={activeGame}><div className="stage-orbit orbit-one"/><div className="stage-orbit orbit-two"/><StageScene game={activeGame}/><div className="stage-watermark" aria-hidden="true"><GameArt game={activeGame}/></div>
-          <Suspense fallback={<div className="game-loading" role="status"><span className="game-loading-art"><GameArt game={activeGame}/></span><b>Loading {title}…</b></div>}><GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onExit={()=>{if(!player.reducedMotion&&activeGame){setWipe({id:activeGame,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}setActiveGame(null);setPractice(false);}} onDone={finishGame}/></Suspense>
+          <ErrorBoundary label={title} resetKey={activeGame+":"+startAt} onBack={()=>{setActiveGame(null);setPractice(false);}}><Suspense fallback={<div className="game-loading" role="status"><span className="game-loading-art"><GameArt game={activeGame}/></span><b>Loading {title}…</b></div>}><GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onExit={()=>{if(!player.reducedMotion&&activeGame){setWipe({id:activeGame,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}setActiveGame(null);setPractice(false);}} onDone={finishGame}/></Suspense></ErrorBoundary>
         </section>
         {room&&<RoomScores room={room}/>}
         {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"Clinicle result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
-        <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode"}</span></div>
+        <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode · new puzzles "+nextDailyLabel().text}</span></div>
       </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak} done={doneToday}/>:screen==="settings"?<SettingsPage mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} updateTheme={updateTheme} player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} account={account} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} today={date} openGame={openGame}/>}
     </main>
     {completion&&<div className="complete-overlay" role="dialog" aria-modal="true" aria-label="Round complete" onClick={()=>setCompletion(null)}>
@@ -371,7 +404,7 @@ export default function App() {
         <div className="complete-stars" aria-label={completion.stars+" of 3 stars"}>{[1,2,3].map(n=><span key={n} className={n<=completion.stars?"on":""} style={{animationDelay:(0.25+n*0.22)+"s"}}>★</span>)}</div>
         <span className="complete-stamp">{(()=>{const f=FINALE[activeGame as GameId];return f?(completion.perfect?f[0]:completion.stars>=3?f[1]:completion.stars===0?f[3]:f[2]):(completion.perfect?"PERFECT":completion.stars>=3?"GREAT":completion.stars===0?"TRY AGAIN":"COMPLETE");})()}</span>
         <h2>{completion.title}</h2>
-        <p className="complete-sub">{completion.party?"Room "+roomCode+" · send this to your group":practice?"Free Play round finished":"Daily saved · come back tomorrow"}</p>
+        <p className="complete-sub">{completion.party?"Room "+roomCode+" · send this to your group":practice?"Free Play round finished":"Daily saved · next puzzles "+nextDailyLabel().text}</p>
         <div className="complete-xp"><b>+{completion.gain} XP</b>{completion.chest>0&&<span className="chest-pop">🎁 Daily goal reached! +{completion.chest} XP chest</span>}{completion.levelUp&&<span className="level-up">LEVEL UP! {completion.levelUp}</span>}</div>
         <pre className="share-preview">{completion.text.split("\n").filter(l=>!l.startsWith("http")).join("\n")}</pre>
         <div className="complete-actions">
@@ -435,7 +468,7 @@ function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,live,g
   return <div className="friends-page"><div className="friends-hero"><span className="eyebrow">PARTY ROOMS</span><h1>Same code, same game.</h1><p>Everyone who types the same code plays the same game and the same puzzle. No sign-up, no host. Pick any six letters or numbers, tell your friends, and compare results.</p></div>
     {room&&meta?<div className="room-card"><div className="room-code-head"><div><span className="eyebrow">ROOM CODE</span><strong>{room.code}</strong></div><div className="share-actions"><button className="button button-soft" onClick={()=>{void navigator.clipboard?.writeText(invite);setCopied(true);}}>{copied?"✓ Link copied":"Copy invite link"}</button></div></div>
       <div className="room-game"><div className="room-game-art"><GameArt game={meta.id}/></div><div><span className="eyebrow">THIS ROOM PLAYS</span><h2>{meta.title}</h2><p>{meta.description}</p><Difficulty level={meta.difficulty}/></div></div>
-      <div className="room-players">{room.players.map((p,i)=><div key={p.uid} className="room-player"><span className="player-number">{i+1}</span><b>{p.name}</b><span>{p.finished?"Finished":"Ready"}</span>{p.perfect&&<i>✦</i>}</div>)}</div>
+      <div className="room-players">{room.players.map((p,i)=><div key={p.uid} className="room-player"><span className="player-number">{i+1}</span><b>{p.name}</b><span>{p.finished?"Finished":"Waiting to play"}</span>{p.perfect&&<i>✦</i>}</div>)}</div>
       <div className="room-actions"><button className="button button-primary" onClick={()=>onPlay(room)}>▶ Play this puzzle</button><button className="button button-quiet" onClick={onLeave}>Leave room</button></div>
       <small>{live?"Live scores appear above as friends finish. You can also share your result from the finish screen.":"When you finish, tap Share result and paste it into your group chat to compare."}</small>
     </div>:<div className="friends-grid single-room-entry">
@@ -454,7 +487,7 @@ function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,live,g
 
 function RoomScores({room}:{room:RoomState}){
   const ranked=rankRoomPlayers(room.players);
-  return <section className="room-score-inline"><div className="eyebrow">FRIENDS ROOM LEADERBOARD · {room.code}</div>{ranked.map((p,index)=><span key={p.uid}><b>#{index+1}</b> {p.name}: {p.finished?(p.score??0)+" points"+(p.perfect?" · perfect":""):"playing"}</span>)}</section>;
+  return <section className="room-score-inline"><div className="eyebrow">{room.status==="finished"?"FINAL RESULTS":"FRIENDS ROOM LEADERBOARD"} · {room.code}</div>{ranked.map((p,index)=><span key={p.uid}><b>#{index+1}</b> {p.name}: {p.finished?(p.score??0)+" points"+(p.perfect?" · perfect":""):"playing"}</span>)}</section>;
 }
 
 function StatsDepth({results,streak,hide}:{results:PlayerData["results"];streak:number;hide:boolean}){
@@ -492,6 +525,18 @@ function StatsPage({player,scope,streak,done}:{player:PlayerData;scope:string;st
   </div>;
 }
 
+/** Signs out (so the account cannot quietly return and recreate a profile), clears every stored key, then reloads. */
+async function eraseEverythingHere(){
+  try{
+    if(accountsEnabled&&hasStoredSupabaseSession()){
+      const client=await Promise.race([getSupabase(),new Promise<null>(r=>window.setTimeout(()=>r(null),3000))]);
+      if(client)await client.auth.signOut({scope:"local"}).catch(()=>undefined);
+    }
+  }catch{/* offline or unavailable: the keys are removed below regardless */}
+  eraseStoredData([localStorage,sessionStorage]);
+  window.location.reload();
+}
+
 function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,driveConnected,updateSetting,exportData,importData,account,onDriveSync}:{
   account:AccountController;
   mode:Mode;specialty:Specialty;setMode:(m:Mode)=>void;setSpecialty:(s:Specialty)=>void;updateTheme:(p:Partial<ThemeSettings>)=>void;player:PlayerData;driveConnected:boolean;updateSetting:(k:"sound"|"music"|"haptics"|"reducedMotion"|"hideStreaks",v:boolean)=>void;exportData:()=>void;importData:(file:File|undefined)=>void;onDriveSync:()=>Promise<void>;
@@ -518,17 +563,17 @@ function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,dr
       <Setting label="Show Pip the mascot" detail="Pip on the title screen, level bar, and results." checked={t.mascot} onChange={v=>updateTheme({mascot:v})}/>
       <button className="button button-quiet" onClick={()=>updateTheme({...DEFAULT_THEME})}>Reset look &amp; feel</button></>;})()}</section>
     <section className="settings-card"><h2>Arcade feel</h2><Setting label="Sound effects" detail="Taps, rights and wrongs, fanfares, and wheel spins." checked={player.sound} onChange={v=>updateSetting("sound",v)}/><Setting label="Haptics" detail="Tiny vibrations on phones when you answer." checked={player.haptics!==false} onChange={v=>updateSetting("haptics",v)}/><Setting label="Music" detail="A different looping tune for the arcade and every game." checked={player.music} onChange={v=>updateSetting("music",v)}/><Setting label="Reduced motion" detail="Use quieter transitions and fewer animations." checked={player.reducedMotion} onChange={v=>updateSetting("reducedMotion",v)}/><Setting label="Hide streaks" detail="Keep the focus on playing, not maintaining a streak." checked={player.hideStreaks} onChange={v=>updateSetting("hideStreaks",v)}/></section>
-    <section className="settings-card"><h2>Google Drive backup</h2><p>Sign in only when you want your progress backed up to your private Google Drive app-data folder. Clinicle cannot read your other Drive files. You can keep playing without Google login.</p>
+    {googleDriveConfigured()&&<section className="settings-card"><h2>Google Drive backup</h2><p>Sign in only when you want your progress backed up to your private Google Drive app-data folder. Clinicle cannot read your other Drive files. You can keep playing without Google login.</p>
       <button className="button button-primary" onClick={sync} disabled={syncing||!googleDriveConfigured()}>{syncing?"Syncing…":driveConnected?"Reconnect & sync Google Drive":"Sign in with Google & sync"}</button>
       {driveConnected&&<p className="setup-hint">Drive is connected for this browser session. New game results sync automatically while the access token remains valid.</p>}
-      {!googleDriveConfigured()&&<p className="setup-hint">Set <code>VITE_GOOGLE_CLIENT_ID</code> in your deployment environment to enable this button. See <code>docs/SETUP.md</code>.</p>}
-    </section>
+      
+    </section>}
     <section className="settings-card"><h2>Local backup</h2><p>Export a portable copy of your results or restore one from another device.</p><div className="export-row"><button className="button button-soft" onClick={exportData}>Export progress</button><label className="button button-quiet file-label">Import progress<input type="file" accept="application/json,.json" onChange={e=>importData(e.target.files?.[0])}/></label></div></section>
     <section className="settings-card"><h2>Help &amp; feedback</h2><p>Found a question that looks wrong, or something that is not working? Tell us. Each puzzle has a "Report a problem" link on its result card that fills in the details for you.</p>
       <div className="account-row"><a className="button button-soft" href={import.meta.env.BASE_URL+"help.html"} target="_blank" rel="noopener noreferrer">Help &amp; FAQ</a><a className="button button-quiet" href={feedbackMailto()}>Send feedback</a></div></section>
     <section className="settings-card"><h2>Your data</h2><p>Clinicle keeps your progress on this device. It never contains patient information. Read how data is handled in the <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">privacy policy</a> and the <a href={import.meta.env.BASE_URL+"terms.html"} target="_blank" rel="noopener noreferrer">terms of service</a>, or erase everything Clinicle stored here.</p>
-      <button className="button button-quiet" onClick={()=>{if(window.confirm("Erase all Clinicle progress, settings and preferences stored on this device? This cannot be undone. Export a backup first if you want to keep it.")){try{for(const store of [localStorage,sessionStorage]){Object.keys(store).filter(k=>k.startsWith("meddaily")).forEach(k=>store.removeItem(k));}}catch{/* storage unavailable */}window.location.reload();}}}>Erase data on this device</button></section>
-    <div className="privacy-note"><b>No account wall.</b> The arcade, daily puzzles, practice mode, and local progress all work without a login. Google Drive sync and multiplayer are optional add-ons.</div>
+      <button className="button button-quiet" onClick={()=>{if(window.confirm("Erase all Clinicle progress, settings and preferences stored on this device, and sign out on this device? This cannot be undone. Export a backup first if you want to keep it.")){void eraseEverythingHere();}}}>Erase data on this device</button></section>
+    <div className="privacy-note"><b>No account wall.</b> The arcade, daily puzzles, practice mode, and local progress all work without a login. Backup to your account and multiplayer are optional add-ons.</div>
   </div>;
 }
 function Setting({label,detail,checked,onChange}:{label:string;detail:string;checked:boolean;onChange:(v:boolean)=>void}){

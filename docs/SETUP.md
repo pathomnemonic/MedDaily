@@ -47,6 +47,8 @@ For local testing, copy \`.env.example\` to \`.env.local\` and set the same vari
 
 ## Optional live scoreboard for party rooms
 
+> Production rooms use Supabase, not Firebase (Firebase is not configured and is not a fallback). See `docs/MULTIPLAYER_SETUP.md`.
+
 Rooms work without any backend: the six-character code selects the game and puzzle on every device. Firebase only adds a live scoreboard.
 
 Room play uses Firebase Authentication (anonymous guest sign-in) and Cloud Firestore. It does **not** require Google login.

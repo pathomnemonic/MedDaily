@@ -1,3 +1,5 @@
+> **Status:** production party rooms run on the shared Supabase project (see `docs/SUPABASE_API_CONTRACT.md`). Firebase is **not configured in production** and is not an automatic fallback: with no Firebase variables the build uses Supabase when its variables are set, and otherwise rooms work offline only (same puzzle from the code, no live scoreboard). The Firebase steps below apply only if you deliberately switch back.
+
 # Multiplayer room setup
 
 MedDaily's room-code flow uses Firebase Authentication (anonymous guest sessions) and Cloud Firestore. The first player to enter a new six-character code starts the room. Anyone else can enter that same code to join the existing game; the room's saved game, study track, date, and seed are authoritative.
