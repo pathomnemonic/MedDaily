@@ -1,6 +1,6 @@
 # Support and "report a question"
 
-Mathews's decision: instead of a specialist review before launch, Clinicle relies on players reporting incorrect questions.
+Owner's decision: instead of a specialist review before launch, Clinicle relies on players reporting incorrect questions.
 
 ## Built now (phase 1)
 - **Report a problem** link on every round-complete card, and **Help and feedback** in Settings. Each opens the player's email app with a message already addressed to

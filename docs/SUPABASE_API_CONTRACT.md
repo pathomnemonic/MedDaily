@@ -122,7 +122,7 @@ are set; `VITE_ACCOUNTS=off` hides it. Signed out, the app behaves exactly as be
   SPF/DKIM for the sending domain, so deliverability can suffer. It is fine for launch testing; a custom domain sender is the usual next step.
 - **Free plan.** Free projects pause after about a week of inactivity and have no backups. Move to the paid plan before any store launch.
 - **Payments divergence.** Dx Dash uses direct Stripe plus store in-app purchase. That is the standing guideline, so MedDaily should follow it unless
-  Mathews decides otherwise. The cost of the direct route is validating Apple and Google notifications ourselves; an aggregator such as RevenueCat
+  the owner decides otherwise. The cost of the direct route is validating Apple and Google notifications ourselves; an aggregator such as RevenueCat
   would remove that work at a revenue-share cost. The `entitlements` table supports both.
 - **Apple.** Offering Google sign-in on iOS requires also offering Sign in with Apple. Account deletion must be possible inside the app.
 
@@ -132,7 +132,7 @@ are set; `VITE_ACCOUNTS=off` hides it. Signed out, the app behaves exactly as be
 2. Add the Supabase adapter behind `VITE_ROOMS_PROVIDER`, keeping Firebase as the default. Cutover is a variable flip; rollback is flipping it back.
    No data moves, because rooms are ephemeral.
 3. Optional accounts UI and cloud sync.
-4. Entitlements, paywall and store packaging, after Mathews decides pricing and the free/Pro split.
+4. Entitlements, paywall and store packaging, after the owner decides pricing and the free/Pro split.
 
 
 ## Rooms lifecycle (migration 20261123000002)

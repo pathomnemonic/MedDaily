@@ -12,7 +12,7 @@ describe("Terms of Service page", () => {
     expect(text).toMatch(/six-character code/);
     expect(text).toMatch(/20 characters/);
     expect(page).toContain("https://pathomnemonic.github.io/StudyBible/privacy.html");
-    expect(text).toMatch(/Mathews Sajan/);
+    expect(text).toMatch(/between you and PathoMnemonic/);
     expect(text).toMatch(/State of Arizona/);
   });
   it("makes no promise about paid tiers or prices while monetization is undecided", () => {

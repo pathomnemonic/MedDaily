@@ -1,6 +1,6 @@
 # Clinical content review
 
-> **Status (Nov 2026): deprioritized, not a launch blocker.** Mathews decided Clinicle will rely on user reports of incorrect questions instead. These packages stay ready if that changes. The in-app report path is described in `docs/SUPPORT_AND_REPORTS.md`.
+> **Status (Nov 2026): deprioritized, not a launch blocker.** The owner decided Clinicle will rely on user reports of incorrect questions instead. These packages stay ready if that changes. The in-app report path is described in `docs/SUPPORT_AND_REPORTS.md`.
 
 MedDaily is an education and entertainment app, not a clinical decision tool, but its games state many clinical facts. This folder packages every one of them
 for specialist review before the app is promoted in the stores. Generated 2026-11-23 from the game data; **6673 items**, of which **863 are high-risk**.
@@ -55,6 +55,6 @@ a reviewer who sees an item outside their field should mark the Comment column, 
 | (none assigned yet) | | | | |
 
 ## Notes
-- Reviewers are volunteers or paid by Mathews; recruiting and any payment are his decisions. The guide asks for sources so corrections can be cited in the content audit.
+- Reviewers are volunteers or paid by PathoMnemonic; recruiting and any payment are the owner's decisions. The guide asks for sources so corrections can be cited in the content audit.
 - Reviewing a content item does not make the app a medical device. Keep the "not a clinical decision tool" wording in the app and the store listing regardless.
 - Nothing here contains patient data. Cases are fictional teaching vignettes.
