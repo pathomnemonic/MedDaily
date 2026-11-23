@@ -24,8 +24,21 @@ export function friendlyAccountError(error: unknown): AccountError {
   return new AccountError("Something went wrong. Please try again.");
 }
 
-const toUser = (u: { id: string; email?: string | null; is_anonymous?: boolean; app_metadata?: { provider?: string } } | null | undefined): AccountUser | null =>
-  u && !u.is_anonymous ? { id: u.id, email: u.email ?? null, provider: u.app_metadata?.provider ?? "email" } : null;
+interface RawUser { id: string; email?: string | null; is_anonymous?: boolean; app_metadata?: { provider?: string }; identities?: { provider?: string; last_sign_in_at?: string | null }[] | null }
+
+/**
+ * The method used for the current sign-in. `app_metadata.provider` is only the account's first method, so a person who
+ * signed up by email and later used Google would be mislabelled; the identity that signed in most recently is the one to show.
+ */
+export function signInProvider(u: RawUser): string {
+  const recent = [...(u.identities ?? [])]
+    .filter((i) => i.provider)
+    .sort((a, b) => Date.parse(b.last_sign_in_at ?? "") - Date.parse(a.last_sign_in_at ?? ""))[0];
+  return recent?.provider ?? u.app_metadata?.provider ?? "email";
+}
+
+const toUser = (u: RawUser | null | undefined): AccountUser | null =>
+  u && !u.is_anonymous ? { id: u.id, email: u.email ?? null, provider: signInProvider(u) } : null;
 
 /** Sign-in, the MedDaily profile, cloud progress and account deletion, against the shared Supabase project's `meddaily` schema. */
 export function makeAccounts(getClient: () => Promise<SupabaseClient>, redirectTo: () => string) {
