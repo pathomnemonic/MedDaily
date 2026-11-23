@@ -26,26 +26,46 @@ export function friendlyAccountError(error: unknown): AccountError {
 
 interface RawUser { id: string; email?: string | null; is_anonymous?: boolean; app_metadata?: { provider?: string }; identities?: { provider?: string; last_sign_in_at?: string | null }[] | null }
 
+/** Reads the payload of a JWT without verifying it (display only; the server verifies tokens on every request). */
+export function jwtPayload(token: string | undefined | null): Record<string, unknown> | null {
+  try {
+    const part = String(token ?? "").split(".")[1];
+    if (!part) return null;
+    const json = atob(part.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(part.length / 4) * 4, "="));
+    return JSON.parse(json) as Record<string, unknown>;
+  } catch { return null; }
+}
+
 /**
- * The method used for the current sign-in. `app_metadata.provider` is only the account's first method, so a person who
- * signed up by email and later used Google would be mislabelled; the identity that signed in most recently is the one to show.
+ * How the person signed in for THIS session. The access token's `amr` claim records the method that created the session
+ * ("otp" for an emailed code, "oauth" for Google, "password"), so it stays right for accounts that have several linked identities.
+ * Without that claim, fall back to the identity that signed in most recently, then to the account's first provider.
  */
-export function signInProvider(u: RawUser): string {
+export function signInProvider(u: RawUser, accessToken?: string | null): string {
+  const amr = jwtPayload(accessToken)?.amr;
+  const method = Array.isArray(amr) && amr.length ? String((amr[0] as { method?: string })?.method ?? amr[0]) : "";
+  if (method === "otp" || method === "magiclink" || method === "password" || method === "email" || method === "email_change") return "email";
+  if (method === "oauth" || method === "sso/saml") {
+    // Google is the only social provider today; with more, take the most recently used non-email identity
+    const social = [...(u.identities ?? [])].filter((i) => i.provider && i.provider !== "email")
+      .sort((a, b) => Date.parse(b.last_sign_in_at ?? "") - Date.parse(a.last_sign_in_at ?? ""))[0];
+    return social?.provider ?? "google";
+  }
   const recent = [...(u.identities ?? [])]
     .filter((i) => i.provider)
     .sort((a, b) => Date.parse(b.last_sign_in_at ?? "") - Date.parse(a.last_sign_in_at ?? ""))[0];
   return recent?.provider ?? u.app_metadata?.provider ?? "email";
 }
 
-const toUser = (u: RawUser | null | undefined): AccountUser | null =>
-  u && !u.is_anonymous ? { id: u.id, email: u.email ?? null, provider: signInProvider(u) } : null;
+const toUser = (u: RawUser | null | undefined, accessToken?: string | null): AccountUser | null =>
+  u && !u.is_anonymous ? { id: u.id, email: u.email ?? null, provider: signInProvider(u, accessToken) } : null;
 
 /** Sign-in, the MedDaily profile, cloud progress and account deletion, against the shared Supabase project's `meddaily` schema. */
 export function makeAccounts(getClient: () => Promise<SupabaseClient>, redirectTo: () => string) {
   const need = async () => {
     const c = await getClient();
     const { data } = await c.auth.getSession();
-    const user = toUser(data.session?.user);
+    const user = toUser(data.session?.user, data.session?.access_token);
     if (!user) throw new AccountError("Sign in to use an account.");
     return { c, user };
   };
@@ -53,12 +73,12 @@ export function makeAccounts(getClient: () => Promise<SupabaseClient>, redirectT
     async current(): Promise<AccountUser | null> {
       const c = await getClient();
       const { data } = await c.auth.getSession();
-      return toUser(data.session?.user);
+      return toUser(data.session?.user, data.session?.access_token);
     },
     /** Subscribes to sign-in and sign-out. Guest sessions are reported as signed out. */
     async onChange(cb: (user: AccountUser | null) => void): Promise<() => void> {
       const c = await getClient();
-      const { data } = c.auth.onAuthStateChange((_event, session) => cb(toUser(session?.user)));
+      const { data } = c.auth.onAuthStateChange((_event, session) => cb(toUser(session?.user, session?.access_token)));
       return () => data.subscription.unsubscribe();
     },
     async signInGoogle(): Promise<void> {

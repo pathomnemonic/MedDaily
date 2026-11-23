@@ -33,6 +33,15 @@ describe("sign-in method label", () => {
     expect(signInProvider({ id: "u", app_metadata: { provider: "google" }, identities: [
       { provider: "google", last_sign_in_at: "2026-11-01T10:00:00Z" }, { provider: "email", last_sign_in_at: "2026-11-23T09:00:00Z" }] })).toBe("email");
   });
+  it("uses the session's own sign-in method (amr claim) even when the account has several identities", () => {
+    const token = (method: string) => "h." + btoa(JSON.stringify({ amr: [{ method, timestamp: 1 }] })).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_") + ".s";
+    const both = { id: "u", app_metadata: { provider: "email" }, identities: [
+      { provider: "email", last_sign_in_at: "2026-11-23T02:53:43Z" }, { provider: "google", last_sign_in_at: "2026-11-23T01:01:00Z" }] };
+    // the real case from the live test: Google was linked earlier, then the person signed in with an emailed code
+    expect(signInProvider({ ...both, identities: [{ provider: "email", last_sign_in_at: "2026-10-05T00:00:00Z" }, { provider: "google", last_sign_in_at: "2026-11-23T02:53:43Z" }] }, token("otp"))).toBe("email");
+    expect(signInProvider(both, token("oauth"))).toBe("google");
+    expect(signInProvider(both, token("password"))).toBe("email");
+  });
   it("falls back to the account provider when identities are missing", () => {
     expect(signInProvider({ id: "u", app_metadata: { provider: "google" } })).toBe("google");
     expect(signInProvider({ id: "u" })).toBe("email");
