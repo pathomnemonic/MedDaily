@@ -12,7 +12,7 @@ export default function ReminderCard({ context }: { context: ReminderContext }) 
     try {
       const on = await applyReminder(next, context);
       setReminder({ ...next, on });
-      if (next.on && !on) setMessage("Notifications are turned off for Clinicle in your phone's settings.");
+      if (next.on && !on) setMessage("Notifications are turned off for Roundsy in your phone's settings.");
     } catch { setMessage("Couldn't change the reminder. Try again."); }
     finally { setBusy(false); }
   };

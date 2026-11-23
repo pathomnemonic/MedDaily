@@ -1,6 +1,6 @@
 # Clinical content review
 
-> **Status (Nov 2026): deprioritized, not a launch blocker.** The owner decided Clinicle will rely on user reports of incorrect questions instead. These packages stay ready if that changes. The in-app report path is described in `docs/SUPPORT_AND_REPORTS.md`.
+> **Status (Nov 2026): deprioritized, not a launch blocker.** The owner decided Roundsy will rely on user reports of incorrect questions instead. These packages stay ready if that changes. The in-app report path is described in `docs/SUPPORT_AND_REPORTS.md`.
 
 MedDaily is an education and entertainment app, not a clinical decision tool, but its games state many clinical facts. This folder packages every one of them
 for specialist review before the app is promoted in the stores. Generated 2026-11-23 from the game data; **6673 items**, of which **863 are high-risk**.

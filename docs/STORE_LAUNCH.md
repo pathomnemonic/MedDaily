@@ -1,6 +1,6 @@
-# Taking Clinicle to the App Store and Google Play
+# Taking Roundsy to the App Store and Google Play
 
-> Renamed from MedDaily. The app identifier was changed to `com.pathomnemonic.clinicle` before any store upload. See `docs/RENAME_NOTES.md`.
+> Renamed from MedDaily. The app identifier was changed to `com.pathomnemonic.roundsy` before any store upload. See `docs/RENAME_NOTES.md`.
 
 The native shell is a Capacitor wrapper around the same web app. The web build is bundled inside the app, so it works offline. Nothing about the web
 deployment changes.
@@ -16,16 +16,16 @@ deployment changes.
 | Store screenshots (iPhone 6.7in and Android phone) | `store/screenshots/`, regenerate with `node scripts/store-screenshots.mjs` |
 
 Inside the app shell the web-only pieces switch off or change: no service worker (the files are already local), Google sign-in opens the system browser and returns
-through `com.pathomnemonic.clinicle://auth`, results use the system share sheet, taps use the system haptic engine, and Settings gains an optional **Daily reminder**
+through `com.pathomnemonic.roundsy://auth`, results use the system share sheet, taps use the system haptic engine, and Settings gains an optional **Daily reminder**
 (one local notification, permission asked only when switched on). The reminder and the native-feel touches also help with Apple's "more than a website" review rule.
 
 ## What needs you (these cannot be done from a build server)
 1. **Developer accounts:** Apple Developer Program (US$99 a year) and Google Play Console (US$25 once).
 2. **A Mac with Xcode** for the iOS build and signing; Android Studio for Android. Neither is available in the cloud environment used so far, so **neither native build has been compiled yet.**
-3. **App identifier:** now `com.pathomnemonic.clinicle` (final). It cannot change after the first upload.
+3. **App identifier:** now `com.pathomnemonic.roundsy` (final). It cannot change after the first upload.
 4. **Sign in with Apple.** Apple requires it whenever another social sign-in (Google) is offered. It needs the Apple provider set up in the shared Supabase project (Orion) and a
    button in the Account card (small change once the provider exists).
-5. **Supabase redirect allow-list:** add `com.pathomnemonic.clinicle://auth` (the earlier `com.pathomnemonic.meddaily://auth` entry is no longer used and can be removed).
+5. **Supabase redirect allow-list:** add `com.pathomnemonic.roundsy://auth` (the earlier `com.pathomnemonic.meddaily://auth` entry is no longer used and can be removed).
 
 ## Build steps (on the Mac / with Android Studio)
 ```bash
@@ -37,27 +37,27 @@ npm run native:android   # builds the web app, syncs, opens Android Studio  (Bui
 Run `npm run native:sync` after any web change. `npm run native:icons` rewrites the web manifest as a side effect; the script restores it.
 
 ## Store listing draft
-- **Store title:** Clinicle - Daily Medical Games (the name, a hyphen, then what it is)
-- **App name on the home screen:** Clinicle
+- **Store title:** Roundsy - Daily Medical Games (the name, a hyphen, then what it is)
+- **App name on the home screen:** Roundsy
 - **Subtitle (iOS, 30 chars):** Daily medical games
 - **Short description (Play, 80 chars):** Daily medical word, logic and trivia games. Quick rounds, no account needed.
 - **Category:** Games > Word (secondary: Trivia). Not "Medical", which invites the regulated-health-app review track.
 - **Keywords:** medical, trivia, word game, puzzle, daily, quiz, anatomy, pharmacology, nursing student, med student
 - **Full description:**
-  Clinicle is a pocket arcade of daily medical mini-games. Every day brings a fresh puzzle in each game, so there is always something quick to play.
+  Roundsy is a pocket arcade of daily medical mini-games. Every day brings a fresh puzzle in each game, so there is always something quick to play.
   Name a diagnosis from clues, unscramble medical terms, spin the trivia wheel, race a friend in a party room, or dive for rare answers.
   No account is needed to play. Sign in only if you want your progress backed up across devices.
-  Clinicle is for education and entertainment only. It is not a clinical decision tool and never asks for patient information.
+  Roundsy is for education and entertainment only. It is not a clinical decision tool and never asks for patient information.
 - **Age rating:** 4+ / Everyone (no violence, gambling or user-generated content; contains medical terminology).
 - **Support email:** patho.mnemonic1@gmail.com
-- **Privacy and terms URLs:** privacy policy `https://pathomnemonic.github.io/StudyBible/privacy.html`; terms of service `https://pathomnemonic.github.io/Clinicle/terms.html` (see `docs/TERMS_NOTES.md`); 
+- **Privacy and terms URLs:** privacy policy `https://pathomnemonic.github.io/StudyBible/privacy.html`; terms of service `https://pathomnemonic.github.io/Roundsy/terms.html` (see `docs/TERMS_NOTES.md`); 
 
 ## Privacy answers (to confirm against the privacy policy before submitting)
 - **Without an account:** nothing is collected. Progress stays on the device.
 - **With an account:** email address and an account identifier, used for sign-in and backup; game progress. No tracking, no advertising identifiers, no data sold.
 - **Party rooms:** a nickname, a room code and scores, kept for about a day.
 - **No patient or health data** is collected or requested.
-- In-app account deletion exists (Settings > Account), as both stores require; it removes the Clinicle profile and cloud data and states that the shared sign-in itself is handled separately.
+- In-app account deletion exists (Settings > Account), as both stores require; it removes the Roundsy profile and cloud data and states that the shared sign-in itself is handled separately.
 
 ## Review notes (paste into the submission)
 No login is required; every feature except optional backup works signed out. The game content is general medical education, not diagnosis or treatment advice, and the

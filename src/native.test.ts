@@ -9,7 +9,7 @@ describe("native sign-in return link", () => {
   it("surfaces a provider error and ignores unrelated links", () => {
     expect(parseAuthCallback(NATIVE_AUTH_REDIRECT + "?error=access_denied&error_description=User+cancelled")?.error).toBe("User cancelled");
     expect(parseAuthCallback("https://example.com/?code=1")).toBeNull();
-    expect(parseAuthCallback("com.pathomnemonic.clinicle://other?code=1")).toBeNull();
+    expect(parseAuthCallback("com.pathomnemonic.roundsy://other?code=1")).toBeNull();
   });
   it("falls back to a sensible reminder when nothing valid is stored", () => {
     expect(loadReminder()).toEqual({ on: false, hour: 19, minute: 0 });

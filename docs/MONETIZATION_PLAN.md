@@ -8,7 +8,7 @@ Model: Stat!'s. **Pro costs $0.99 per month or $9.99 per year. The daily round s
 - No bonus daily round. Everything that is free today stays free; nothing shipped is taken away.
 
 ## Pro (final list, decided Nov 23, 2026): two features
-Clinicle is a fun game, not a learning game, so Pro is about not losing your habit and playing what you missed. Deep stats and per-specialty breakdowns are **not** part of Pro (the owner's decision); the basic stats stay free.
+Roundsy is a fun game, not a learning game, so Pro is about not losing your habit and playing what you missed. Deep stats and per-specialty breakdowns are **not** part of Pro (the owner's decision); the basic stats stay free.
 
 ### a) Full archive: play any past day's puzzles
 - A calendar of past days; tap a day to play that day's puzzle for any game. The daily is a pure function of the date, so no new content is needed.
@@ -34,8 +34,8 @@ Deeper stats and per-specialty stats (out of Pro, basic stats stay free), streak
 ## Plumbing (already prepared)
 - Database: `meddaily.entitlements` (plans `pro_monthly`, `pro_yearly`; the other plan values stay unused), written only by the payment webhook; `meddaily.has_pro()` for checks.
 - Web checkout: Stripe, webhook to a Supabase Edge Function that upserts the entitlement. Native: Apple and Google in-app purchase, with server notifications mapped the same way (Dx Dash's approach; no aggregator).
-- Product IDs: `com.pathomnemonic.clinicle.pro.monthly`, `com.pathomnemonic.clinicle.pro.yearly`.
-- App: a "Clinicle Pro" card in Settings with Subscribe, **Restore purchases** and **Manage subscription** (links to the store or Stripe portal), plus a soft paywall on the Pro features only. The daily round is never gated.
+- Product IDs: `com.pathomnemonic.roundsy.pro.monthly`, `com.pathomnemonic.roundsy.pro.yearly`.
+- App: a "Roundsy Pro" card in Settings with Subscribe, **Restore purchases** and **Manage subscription** (links to the store or Stripe portal), plus a soft paywall on the Pro features only. The daily round is never gated.
 - Terms of Service: add a Paid features section (prices, renewal, cancellation, refunds) and update the guard test in `src/termsPage.test.ts` when this ships.
 
 ## Other decisions (Nov 23, 2026)

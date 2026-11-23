@@ -1,4 +1,4 @@
-# Parity roadmap: Clinicle vs Stat!, Doctordle, Symptoms: Daily Diagnosis, NYT Games
+# Parity roadmap: Roundsy vs Stat!, Doctordle, Symptoms: Daily Diagnosis, NYT Games
 
 Status as of Nov 23, 2026 (app version 1.2). "Done" means shipped on main. Comparable apps were not re-surveyed here beyond Orion's list.
 
@@ -8,7 +8,7 @@ Status as of Nov 23, 2026 (app version 1.2). "Done" means shipped on main. Compa
 | 2 | Streak freezes / repair; streak calendar | **Calendar done** | Calendar (12 weeks), current and best streak on Trophies. Streak freezes are not built (Pro feature: 2 per month, automatic; repair dropped) | Freezes after Pro exists; needs a `frozenDays` record synced in `player_state`; confirmed rules in `docs/MONETIZATION_PLAN.md` | Claude |
 | 3 | Shareable, spoiler-free result cards (solo and multiplayer) | **Partly** | Every game already shares a spoiler-free emoji summary as text. Missing: an image card (square, branded) and a multiplayer variant listing all players' scores | Render a card to a canvas/PNG and share it; add room scores to the party share text | Claude |
 | 4 | First run: playable in 30 seconds, tutorial woven into round one, no sign-in wall | **Partly** | No sign-in wall; title screen then home, one tap into a game. Missing: a guided first round and per-game "how to play" overlays | Add a one-time coach overlay per game (what to do, one example), skippable | Claude (design review by the owner) |
-| 5 | Stats depth: distribution, personal bests, per-specialty | **Done, and staying free** | Score distribution, per-game best, per-family averages. "Per specialty" is by game family. The owner decided deeper stats are **not** a Pro feature and per-specialty stats are not planned (Clinicle is a fun game, not a learning game) | None; the basic stats stay free | Claude |
+| 5 | Stats depth: distribution, personal bests, per-specialty | **Done, and staying free** | Score distribution, per-game best, per-family averages. "Per specialty" is by game family. The owner decided deeper stats are **not** a Pro feature and per-specialty stats are not planned (Roundsy is a fun game, not a learning game) | None; the basic stats stay free | Claude |
 | 6 | Achievements and badges | **Done** | Trophy cabinet exists with milestones | Add a few more milestone trophies (first perfect, 30-day streak) | Orion-able |
 | 7 | Sound/haptics toggles, dark mode, reduced motion | **Done** | Sound, music, haptics, reduced-motion settings; palettes; system reduced-motion respected | None | |
 | 8 | Restore purchases / manage-subscription links | **Not started** | No payments yet | Part of the Pro build (`docs/MONETIZATION_PLAN.md`) | Claude, after payments |
@@ -25,6 +25,6 @@ Status as of Nov 23, 2026 (app version 1.2). "Done" means shipped on main. Compa
 4. Ratings prompt (10) and the accessibility device pass (12) before the store submission.
 
 ## Hidden / deferred: specialty tracks
-The owner decided (Nov 23, 2026) that **no specialty picker is visible to players in Clinicle for now.** A specialty slice inside one game is often only 20 to 50 puzzles, too thin for daily play. The picker ("Daily track" card in Settings) and
+The owner decided (Nov 23, 2026) that **no specialty picker is visible to players in Roundsy for now.** A specialty slice inside one game is often only 20 to 50 puzzles, too thin for daily play. The picker ("Daily track" card in Settings) and
 the per-specialty selection code stay in the repo but are switched off by `SPECIALTY_TRACKS_VISIBLE = false` in `src/App.tsx`, so every player is on the open daily track. It returns only after Orion's content project fills the specialty banks deeply
 enough to sustain specialty-focused daily play; Orion owns that content build-up. Nothing else (rooms, accounts, stats) depends on the picker.

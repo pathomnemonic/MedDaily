@@ -1,4 +1,4 @@
-package com.pathomnemonic.clinicle;
+package com.pathomnemonic.roundsy;
 
 import com.getcapacitor.BridgeActivity;
 

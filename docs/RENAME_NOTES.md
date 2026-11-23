@@ -36,3 +36,6 @@ The owner asked for `/Clinicle/` only if it was clean. It is not, so the address
 `pathomnemonic.github.io/Clinicle/` link for marketing without moving the real app.
 
 **URLs that did not change:** everything. No allow-list or privacy-policy change is needed for the web address; the only platform change from the rename is the native return link `com.pathomnemonic.clinicle://auth` (already listed above).
+
+## Second rename: Clinicle to Roundsy (Nov 23, 2026, final)
+"Clinicle" is already used by a daily clinician game from BMJ, so the app is now **Roundsy** (store title: **Roundsy - Daily Medical Games**). Bundle and app id: `com.pathomnemonic.roundsy`; native sign-in return link: `com.pathomnemonic.roundsy://auth`. Nothing was uploaded to a store under the old id. The repo name and the `/MedDaily/` web address do not change, nor do the `meddaily:*` storage keys or the `meddaily` database schema. Older sections above describe the previous name and are kept for history.

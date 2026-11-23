@@ -144,7 +144,7 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
       await accounts!.deleteAccount();
       setUser(null); signedInFor.current = null; setDisplayName(""); setLastSynced(null);
       try { localStorage.removeItem(FLAG_LAST); } catch { /* ignore */ }
-      setNotice({ kind: "ok", text: "Your Clinicle account and cloud progress were deleted. Progress on this device is still here." });
+      setNotice({ kind: "ok", text: "Your Roundsy account and cloud progress were deleted. Progress on this device is still here." });
     })
   };
 }

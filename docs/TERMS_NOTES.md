@@ -1,6 +1,6 @@
 # Terms of Service: decisions and open points
 
-The terms live at `public/terms.html`, published at `https://pathomnemonic.github.io/Clinicle/terms.html`. They are linked from the footer, Settings ("Your data") and the sign-in card.
+The terms live at `public/terms.html`, published at `https://pathomnemonic.github.io/Roundsy/terms.html`. They are linked from the footer, Settings ("Your data") and the sign-in card.
 `src/termsPage.test.ts` fails the build if a paid tier or price is ever mentioned before monetization is decided, or if a core section disappears.
 
 **This is a draft written by an AI assistant, not legal advice. Have a lawyer read it before the store launch.**
@@ -17,8 +17,8 @@ The terms live at `public/terms.html`, published at `https://pathomnemonic.githu
 - **Store clauses:** Apple and Google are not parties and Apple is a third-party beneficiary, as the stores expect.
 
 ## Mismatch to resolve (platform)
-The privacy policy says every app has an "Also remove my sign-in" option that deletes the shared sign-in and all app data. Clinicle has only "Delete my Clinicle account", which leaves the shared sign-in in place.
-The terms describe what the app really does (contact us to remove the shared sign-in). Either the platform adds a delete-sign-in function that Clinicle can call (it must be a server-side function with the service role), or the privacy policy wording should be softened for now.
+The privacy policy says every app has an "Also remove my sign-in" option that deletes the shared sign-in and all app data. Roundsy has only "Delete my Roundsy account", which leaves the shared sign-in in place.
+The terms describe what the app really does (contact us to remove the shared sign-in). Either the platform adds a delete-sign-in function that Roundsy can call (it must be a server-side function with the service role), or the privacy policy wording should be softened for now.
 
 ## Also for the store listing
 Use the terms URL above as the Terms of Use / EULA link. Apple will accept a custom EULA; otherwise its standard one applies.

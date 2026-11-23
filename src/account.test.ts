@@ -82,7 +82,7 @@ describe("accounts", () => {
     expect(f.log.some((l) => l.includes("ignoreDuplicates") && l.includes("user_id,day,game_id,scope"))).toBe(true);
     expect(f.log.some((l) => l.startsWith("player_state.upsert") && l.includes("user_id") && l.includes("u1"))).toBe(true);
   });
-  it("deletes the Clinicle account through delete_my_account and signs out locally", async () => {
+  it("deletes the Roundsy account through delete_my_account and signs out locally", async () => {
     const f = fake(account);
     await makeAccounts(async () => f.client, () => "").deleteAccount();
     expect(f.client.rpc).toHaveBeenCalledWith("delete_my_account");

@@ -4,7 +4,7 @@ export type MascotMood = "happy" | "cheer" | "think" | "sad" | "wave";
 const INK = "#2a1658";
 
 /**
- * Pip, the Clinicle mascot: a friendly two-tone capsule with a blink, a bob, and a handful of moods.
+ * Pip, the Roundsy mascot: a friendly two-tone capsule with a blink, a bob, and a handful of moods.
  * Original artwork, pure SVG.
  */
 export default function Mascot({ mood = "happy", size = 120, className = "" }: { mood?: MascotMood; size?: number; className?: string }) {
@@ -17,7 +17,7 @@ export default function Mascot({ mood = "happy", size = 120, className = "" }: {
   }[mood];
   const armsUp = mood === "cheer";
   const wave = mood === "wave";
-  return <svg className={"mascot mascot-" + mood + " " + className} viewBox="0 0 120 150" width={size} height={size * 1.25} role="img" aria-label="Pip the Clinicle mascot" style={{ "--s": size } as CSSProperties}>
+  return <svg className={"mascot mascot-" + mood + " " + className} viewBox="0 0 120 150" width={size} height={size * 1.25} role="img" aria-label="Pip the Roundsy mascot" style={{ "--s": size } as CSSProperties}>
     <defs><clipPath id="pipClip"><rect x="30" y="18" width="60" height="112" rx="30" /></clipPath></defs>
     <ellipse cx="60" cy="140" rx="30" ry="6" fill="#00000040" />
     {/* arms */}

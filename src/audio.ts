@@ -1,5 +1,5 @@
 /**
- * Procedural audio for Clinicle: sound effects and looping background music synthesized with the
+ * Procedural audio for Roundsy: sound effects and looping background music synthesized with the
  * Web Audio API (no asset files). Each scene name seeds its own key, scale, tempo, and melody so every
  * game has a distinct musical identity. Browsers only allow audio after a user gesture, so the engine
  * unlocks itself on the first pointer/keyboard event.
