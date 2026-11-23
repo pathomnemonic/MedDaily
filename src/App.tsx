@@ -320,7 +320,7 @@ export default function App() {
   };
   const exportData=()=>{
     const blob=new Blob([JSON.stringify(player,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");
-    a.href=url;a.download="meddaily-progress-"+date+".json";a.click();URL.revokeObjectURL(url);
+    a.href=url;a.download="meddaily-progress-"+date+".json";a.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000);setNotice("Progress exported as meddaily-progress-"+date+".json (check your downloads).");
   };
   const importData=(file:File|undefined)=>{
     if(!file)return;const reader=new FileReader();
@@ -460,7 +460,7 @@ function HomePage({player,scope,today,openGame}:{player:PlayerData;scope:string;
 
 function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,live,games,onJoin,onPlay,onLeave}:{
   room:RoomState|null;roomName:string;setRoomName:(s:string)=>void;joinCode:string;setJoinCode:(s:string)=>void;busy:boolean;live:boolean;games:GameMeta[];
-  onJoin:()=>void;onPlay:(r:RoomState)=>void;onLeave:()=>void;
+  onJoin:(code?:string)=>void;onPlay:(r:RoomState)=>void;onLeave:()=>void;
 }){
   const [copied,setCopied]=useState(false);
   const meta=room?games.find(g=>g.id===room.gameId):undefined;
@@ -477,7 +477,7 @@ function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,live,g
         <div className="room-picker"><span className="eyebrow">STARTING A NEW ROOM? PICK THE GAME</span><div className="room-game-chips" role="radiogroup" aria-label="Room game">{PARTY_GAMES.map(id=>{const g=games.find(x=>x.id===id);if(!g)return null;const on=joinCode.length===6&&roomGame(joinCode)===id;return <button key={id} role="radio" aria-checked={on} className={on?"on":""} onClick={()=>setJoinCode(withRoomGame(joinCode||randomRoomCode(),id))}><span className="chip-art"><GameArt game={id}/></span>{g.title}</button>;})}</div></div>
         <label>Six-character code<input className="room-code-input" maxLength={6} value={joinCode} onChange={e=>setJoinCode(normalizeRoomCode(e.target.value))} placeholder="ABC123" autoCapitalize="characters" autoComplete="off"/></label>
         {joinCode.length===6&&<p className="room-preview">This code plays <b>{games.find(g=>g.id===roomGame(joinCode))?.title}</b>.</p>}
-        <div className="room-entry-actions"><button className="button button-primary" onClick={onJoin} disabled={busy||joinCode.length!==6}>{busy?"Joining…":"Join room ↗"}</button><button className="button button-soft" onClick={()=>setJoinCode(randomRoomCode())}>🎲 Random code</button></div>
+        <div className="room-entry-actions"><button className="button button-primary" onClick={()=>onJoin()} disabled={busy||joinCode.length!==6}>{busy?"Joining…":"Join room ↗"}</button><button className="button button-soft" onClick={()=>setJoinCode(randomRoomCode(Math.random,joinCode.length===6?roomGame(joinCode):undefined))}>🎲 Random code</button></div>
         <p className="room-hint">Pick a game above to make a code for it, then share the code or the invite link. Anyone who joins with that code plays the same game and puzzle. Joining a friend's room? Just type their code.</p>
       </section>
     </div>}
@@ -526,6 +526,12 @@ function StatsPage({player,scope,streak,done}:{player:PlayerData;scope:string;st
 }
 
 /** Signs out (so the account cannot quietly return and recreate a profile), clears every stored key, then reloads. */
+function EraseData(){
+  const [ask,setAsk]=useState(false);const [busy,setBusy]=useState(false);
+  if(!ask)return <button className="button button-quiet" onClick={()=>setAsk(true)}>Erase data on this device</button>;
+  return <div className="erase-confirm" role="alertdialog" aria-label="Confirm erase"><p><b>Erase everything Clinicle stored on this device?</b> Progress, settings and preferences go, and you are signed out here. This cannot be undone. Export a backup first if you want to keep it.</p>
+    <div className="account-row"><button className="button account-delete" disabled={busy} onClick={()=>{setBusy(true);void eraseEverythingHere();}}>{busy?"Erasing…":"Yes, erase and sign out"}</button><button className="button button-soft" disabled={busy} onClick={()=>setAsk(false)}>Cancel</button></div></div>;
+}
 async function eraseEverythingHere(){
   try{
     if(accountsEnabled&&hasStoredSupabaseSession()){
@@ -572,7 +578,7 @@ function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,dr
     <section className="settings-card"><h2>Help &amp; feedback</h2><p>Found a question that looks wrong, or something that is not working? Tell us. Each puzzle has a "Report a problem" link on its result card that fills in the details for you.</p>
       <div className="account-row"><a className="button button-soft" href={import.meta.env.BASE_URL+"help.html"} target="_blank" rel="noopener noreferrer">Help &amp; FAQ</a><a className="button button-quiet" href={feedbackMailto()}>Send feedback</a></div></section>
     <section className="settings-card"><h2>Your data</h2><p>Clinicle keeps your progress on this device. It never contains patient information. Read how data is handled in the <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">privacy policy</a> and the <a href={import.meta.env.BASE_URL+"terms.html"} target="_blank" rel="noopener noreferrer">terms of service</a>, or erase everything Clinicle stored here.</p>
-      <button className="button button-quiet" onClick={()=>{if(window.confirm("Erase all Clinicle progress, settings and preferences stored on this device, and sign out on this device? This cannot be undone. Export a backup first if you want to keep it.")){void eraseEverythingHere();}}}>Erase data on this device</button></section>
+      <EraseData/></section>
     <div className="privacy-note"><b>No account wall.</b> The arcade, daily puzzles, practice mode, and local progress all work without a login. Backup to your account and multiplayer are optional add-ons.</div>
   </div>;
 }

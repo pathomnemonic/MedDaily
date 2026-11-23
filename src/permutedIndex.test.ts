@@ -14,3 +14,11 @@ describe("permutedIndex", () => {
     expect(permutedIndex(4_000_000_000, 30)).toBeLessThan(30);
   });
 });
+
+import { generatedRiddles } from "./dataRiddlesExpansion";
+describe("generated riddle text", () => {
+  it("has no doubled redaction words", () => {
+    const bad = generatedRiddles.flatMap((r) => r.clues).filter((c) => /the finding\s+(the\s+)?finding\b/i.test(c));
+    expect(bad).toEqual([]);
+  });
+});
