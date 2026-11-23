@@ -60,7 +60,7 @@ export function signInProvider(u: RawUser, accessToken?: string | null): string 
 const toUser = (u: RawUser | null | undefined, accessToken?: string | null): AccountUser | null =>
   u && !u.is_anonymous ? { id: u.id, email: u.email ?? null, provider: signInProvider(u, accessToken) } : null;
 
-/** Sign-in, the MedDaily profile, cloud progress and account deletion, against the shared Supabase project's `meddaily` schema. */
+/** Sign-in, the Clinicle profile, cloud progress and account deletion, against the shared Supabase project's `meddaily` schema. */
 export function makeAccounts(getClient: () => Promise<SupabaseClient>, redirectTo: () => string) {
   const need = async () => {
     const c = await getClient();
@@ -118,7 +118,7 @@ export function makeAccounts(getClient: () => Promise<SupabaseClient>, redirectT
       const c = await getClient();
       await c.auth.signOut({ scope: "local" });
     },
-    /** Creates the MedDaily profile on first sign-in (no-op afterwards) and returns the display name. */
+    /** Creates the Clinicle profile on first sign-in (no-op afterwards) and returns the display name. */
     async ensureProfile(name = ""): Promise<string> {
       const { c } = await need();
       const { data, error } = await c.rpc("ensure_profile", { p_name: name });
@@ -150,7 +150,7 @@ export function makeAccounts(getClient: () => Promise<SupabaseClient>, redirectT
         if (res.error) throw friendlyAccountError(res.error);
       }
     },
-    /** Removes the MedDaily profile and everything stored for it. The shared sign-in identity is left to the platform (other apps may use it). */
+    /** Removes the Clinicle profile and everything stored for it. The shared sign-in identity is left to the platform (other apps may use it). */
     async deleteAccount(): Promise<void> {
       const { c } = await need();
       const { error } = await c.rpc("delete_my_account");

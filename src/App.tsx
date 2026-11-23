@@ -16,7 +16,9 @@ import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } fro
 import type { GameId } from "./lib";
 import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, PARTY_GAMES, LISTED_GAME_IDS } from "./lib";
 import { useAccount } from "./useAccount";
-import { initNative, isNative, shareText } from "./native";
+import { averageByGroup, bestStreak, scoreDistribution, streakCalendar } from "./statsInsights";
+import { initNative, isNative, refreshReminders, shareText } from "./native";
+import { APP_VERSION, feedbackMailto, reportMailto } from "./support";
 import ReminderCard from "./ReminderCard";
 import AccountCard from "./AccountCard";
 import type { AccountController } from "./useAccount";
@@ -140,6 +142,9 @@ export default function App() {
   const [room,setRoom] = useState<RoomState|null>(null);
   const [roomName,setRoomName] = useState("");
   const account = useAccount(player, setPlayer);
+  /** Keep the daily reminders in step with what the player has done: skip days already played, mention the streak. */
+  useEffect(()=>{ if(!isNative()) return; void refreshReminders({playedDays:new Set(player.results.map(r=>r.date)),streak:playStreak(player)}).catch(()=>undefined); // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[player.results.length]);
   useEffect(()=>{ if(account.displayName) setRoomName(cur=>cur||account.displayName); },[account.displayName]);
   const [joinCode,setJoinCode] = useState("");
   const [roomBusy,setRoomBusy] = useState(false);
@@ -227,11 +232,11 @@ export default function App() {
     window.scrollTo({top:0,behavior:player.reducedMotion?"auto":"smooth"});
   };
   const finishGame=(score:number,maxScore:number,perfect:boolean,share?:string)=>{
-    const gameTitle=GAMES.find(g=>g.id===activeGame)?.title??"MedDaily game";
+    const gameTitle=GAMES.find(g=>g.id===activeGame)?.title??"Clinicle game";
     const filled=Math.max(0,Math.min(10,Math.round(score/Math.max(1,maxScore)*10)));
     const fallback="🟩".repeat(filled)+"⬜".repeat(10-filled)+(perfect?"\n✨ Perfect run":"");
     const where=partyRun?" · Room "+roomCode:practice?" · Free Play":" · "+date;
-    const text=share?"MedDaily"+where+"\n"+share:"MedDaily · "+gameTitle+where+"\n"+fallback+"\nhttps://pathomnemonic.github.io/MedDaily/"+(partyRun?"?room="+roomCode:"");
+    const text=share?"Clinicle"+where+"\n"+share:"Clinicle · "+gameTitle+where+"\n"+fallback+"\nhttps://pathomnemonic.github.io/MedDaily/"+(partyRun?"?room="+roomCode:"");
     setLastShare(text);setCopied(false);
     const isNewDaily=!partyRun&&!practice&&!player.results.some(r=>r.date===date&&r.game===activeGame&&r.scope===scope);
     const todayDone=player.results.filter(r=>r.date===date&&r.scope===scope).length;
@@ -276,7 +281,7 @@ export default function App() {
   const install=async()=>{
     if(!installPrompt)return;
     await installPrompt.prompt();const result=await installPrompt.userChoice;setInstallPrompt(null);
-    setNotice(result.outcome==="accepted"?"MedDaily added to your home screen.":"Use your browser menu to install MedDaily when ready.");
+    setNotice(result.outcome==="accepted"?"Clinicle added to your home screen.":"Use your browser menu to install Clinicle when ready.");
   };
   const exportData=()=>{
     const blob=new Blob([JSON.stringify(player,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");
@@ -290,11 +295,11 @@ export default function App() {
         if(!Array.isArray(parsed.results)||typeof parsed.bests!=="object")throw new Error("Invalid file");
         const next:PlayerData={results:parsed.results.filter(r=>r&&typeof r.date==="string"&&GAMES.some(g=>g.id===r.game)).map(r=>({...r,scope:r.scope??"general"})),bests:parsed.bests??{},sound:parsed.sound!==false,music:parsed.music!==false,xp:Number(parsed.xp)||0,reducedMotion:Boolean(parsed.reducedMotion),hideStreaks:Boolean(parsed.hideStreaks)};
         savePlayer(next);setPlayer(next);setNotice("Progress imported.");
-      }catch{setNotice("That file does not look like a MedDaily progress export.");}
+      }catch{setNotice("That file does not look like a Clinicle progress export.");}
     };reader.readAsText(file);
   };
-  const joinFriendsRoom=async()=>{
-    const code=normalizeRoomCode(joinCode);
+  const joinFriendsRoom=async(codeOverride?:string)=>{
+    const code=normalizeRoomCode(codeOverride??joinCode);
     if(code.length!==6){setNotice("Room codes are six letters or numbers.");return;}
     const game=roomGame(code),seed=roomSeed(code);
     setRoomBusy(true);setNotice("");
@@ -306,6 +311,14 @@ export default function App() {
     }
     setRoomBusy(false);
   };
+  /** After a party round: leave the finished room and open a fresh one for the same game, ready to share. */
+  const rematch=async()=>{
+    if(!activeGame)return;
+    const next=withRoomGame(randomRoomCode(),activeGame);
+    if(roomCode&&multiplayerConfigured()){try{await leaveRoom(roomCode);}catch{/* no network */}}
+    setCompletion(null);setActiveGame(null);setPartyRun(false);setScreen("friends");setJoinCode(next);
+    await joinFriendsRoom(next);
+  };
   const closeRoom=async()=>{
     if(roomCode&&multiplayerConfigured()){try{await leaveRoom(roomCode);}catch{/* no network */}}
     setRoomCode("");setRoom(null);setActiveGame(null);setPartyRun(false);setScreen("home");setNotice("Left the room.");
@@ -315,8 +328,8 @@ export default function App() {
 
   return <div className="app-shell">
     <header className="topbar">
-      <button className="brand" onClick={()=>{setActiveGame(null);setScreen("home");}} aria-label="MedDaily home">
-        <span className="brand-mark"><i>+</i><b>·</b></span><span className="brand-name">meddaily<span>.</span><small>THE MEDICAL MINI-GAME ARCADE</small></span>
+      <button className="brand" onClick={()=>{setActiveGame(null);setScreen("home");}} aria-label="Clinicle home">
+        <span className="brand-mark"><i>+</i><b>·</b></span><span className="brand-name">clinicle<span>.</span><small>THE MEDICAL MINI-GAME ARCADE</small></span>
       </button>
       <nav className="top-nav" aria-label="Main navigation">
         <button className={!activeGame&&screen==="home"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("home");}}>Arcade</button>
@@ -345,7 +358,7 @@ export default function App() {
           <Suspense fallback={<div className="game-loading" role="status"><span className="game-loading-art"><GameArt game={activeGame}/></span><b>Loading {title}…</b></div>}><GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onExit={()=>{if(!player.reducedMotion&&activeGame){setWipe({id:activeGame,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}setActiveGame(null);setPractice(false);}} onDone={finishGame}/></Suspense>
         </section>
         {room&&<RoomScores room={room}/>}
-        {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"MedDaily result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
+        {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"Clinicle result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
         <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode"}</span></div>
       </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak} done={doneToday}/>:screen==="settings"?<SettingsPage mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} updateTheme={updateTheme} player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} account={account} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} today={date} openGame={openGame}/>}
     </main>
@@ -363,14 +376,16 @@ export default function App() {
           {nextUp&&<button className="button button-primary next-up" onClick={()=>openGame(nextUp.id,completion.party?false:practice,undefined,false)}><span className="next-up-art"><GameArt game={nextUp.id}/></span><span><small>NEXT UP</small><b>{nextUp.title}</b></span><i>▶</i></button>}
           <button className="button button-soft" onClick={()=>void shareResult()}>{copied?"✓ Copied!":"Share result ↗"}</button>
           {!completion.party&&<button className="button button-soft" onClick={()=>openGame(activeGame!,true,hashSeed(activeGame+"-again-"+Date.now()))}>Play again ∞</button>}
+          {completion.party&&<button className="button button-soft" onClick={()=>void rematch()}>Rematch ↻</button>}
           <button className="button button-quiet" onClick={()=>{setCompletion(null);setActiveGame(null);setScreen(completion.party?"friends":"home");}}>{completion.party?"Back to party":"All games"}</button>
+          <a className="complete-report" href={reportMailto({game:GAMES.find(g=>g.id===activeGame)?.title??"Clinicle",date,seed:startAt,mode:completion.party?"party":practice?"free play":"daily"})}>Report a problem with this puzzle</a>
         </div>
         <button className="complete-close" aria-label="Close" onClick={()=>setCompletion(null)}>×</button>
       </div>
     </div>}
     {wipe&&<div key={wipe.key} className={"game-wipe tone-"+(GAMES.find(g=>g.id===wipe.id)?.wash??"lilac")} aria-hidden="true"><div className="game-wipe-art"><GameArt game={wipe.id}/></div><b>{GAMES.find(g=>g.id===wipe.id)?.title}</b></div>}
     {splash&&<Splash onStart={()=>{try{sessionStorage.setItem("meddaily:splash","1");}catch{/* ignore */}sfx("start");setSplash(false);}}/>}
-    <footer className="site-footer"><div><span className="footer-mark">✳</span><b>meddaily.</b><span>PRESS START · FIND YOUR NEXT FAVORITE</span></div><p>For education only · Not a clinical decision tool · Verify care decisions against current guidance.</p><span className="version">v1.1 · Local-first · <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">Privacy policy</a> · <a href={import.meta.env.BASE_URL+"terms.html"} target="_blank" rel="noopener noreferrer">Terms</a></span></footer>
+    <footer className="site-footer"><div><span className="footer-mark">✳</span><b>clinicle.</b><span>PRESS START · FIND YOUR NEXT FAVORITE</span></div><p>For education only · Not a clinical decision tool · Verify care decisions against current guidance.</p><span className="version">v{APP_VERSION} · Local-first · <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">Privacy policy</a> · <a href={import.meta.env.BASE_URL+"terms.html"} target="_blank" rel="noopener noreferrer">Terms</a> · <a href={import.meta.env.BASE_URL+"help.html"} target="_blank" rel="noopener noreferrer">Help</a></span></footer>
   </div>;
 }
 
@@ -440,6 +455,26 @@ function RoomScores({room}:{room:RoomState}){
   return <section className="room-score-inline"><div className="eyebrow">FRIENDS ROOM LEADERBOARD · {room.code}</div>{ranked.map((p,index)=><span key={p.uid}><b>#{index+1}</b> {p.name}: {p.finished?(p.score??0)+" points"+(p.perfect?" · perfect":""):"playing"}</span>)}</section>;
 }
 
+function StatsDepth({results,streak,hide}:{results:PlayerData["results"];streak:number;hide:boolean}){
+  const today=dailyDateKey();
+  const grid=streakCalendar(results,today,12);
+  const best=bestStreak(results);
+  const dist=scoreDistribution(results);
+  const top=Math.max(1,...dist);
+  const families=averageByGroup(results,g=>GAMES.find(x=>x.id===g)?.category);
+  const level=(n:number)=>n===0?0:n===1?1:n<=3?2:n<=6?3:4;
+  return <section className="stats-depth" aria-label="Your history">
+    <h2>Streak calendar</h2>
+    <p className="stats-sub">{hide?"Streaks are hidden in your settings.":"Current streak "+streak+" days · best "+best+" days. Each square is a day; darker means more games."}</p>
+    <div className="cal" role="img" aria-label="Calendar of the last twelve weeks">{grid.map((week,i)=><div className="cal-week" key={i}>{week.map(d=><i key={d.date} title={d.date+": "+d.plays+" played"} className={"cal-day lv"+level(d.plays)+(d.future?" future":"")+(d.today?" today":"")}/>)}</div>)}</div>
+    <div className="cal-legend"><span>Less</span>{[0,1,2,3,4].map(n=><i key={n} className={"cal-day lv"+n}/>)}<span>More</span></div>
+    <h2>Score distribution</h2>
+    <p className="stats-sub">How your finished rounds spread across the score range.</p>
+    <div className="dist" role="img" aria-label="Histogram of round scores">{dist.map((n,i)=><div key={i} className="dist-col"><b style={{height:Math.round(n/top*100)+"%"}}/><small>{i*10}</small><span>{n}</span></div>)}</div>
+    {families.length>1&&<><h2>By game family</h2><div className="fam">{families.map(f=><div key={f.group}><span>{f.group}</span><i><b style={{width:f.average+"%"}}/></i><em>{f.average}% · {f.rounds}</em></div>)}</div></>}
+  </section>;
+}
+
 function StatsPage({player,scope,streak,done}:{player:PlayerData;scope:string;streak:number;done:number}){
   const lvl=levelFor(player.xp??0);
   const trophies=computeTrophies(player,LISTED.map((game) => game.id));
@@ -448,6 +483,7 @@ function StatsPage({player,scope,streak,done}:{player:PlayerData;scope:string;st
   return <div className="stats-page"><section className="profile-card"><Mascot mood="happy" size={84}/><div className="profile-main"><span className="eyebrow">YOUR PROFILE</span><h1>Lv {lvl.level} · {lvl.title}</h1><i className="profile-bar" role="progressbar" aria-valuenow={lvl.pct} aria-valuemin={0} aria-valuemax={100}><span style={{width:lvl.pct+"%"}}/></i><small>{lvl.into} / {lvl.span} XP to the next level</small>
         <div className="profile-chips"><span><Icon name="flame" size={22}/> {player.hideStreaks?"—":streak}-day streak</span><span><Icon name="star" size={22}/> {done}/{LISTED.length} cleared today</span><span className="profile-goal" title="Finish three daily games for a bonus chest">{[0,1,2].map(i=><i key={i} className={i<Math.min(done,3)?"on":""}/>)} {done>=3?"🎁 chest claimed":"daily goal"}</span></div></div></section>
     <span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div></div>
+    {results.length>0&&<StatsDepth results={player.results.filter(r=>r.scope===scope)} streak={streak} hide={!!player.hideStreaks}/>}
     <section className="trophy-cabinet"><h2>Trophy cabinet <small>{trophies.filter(t=>t.earned).length} / {trophies.length}</small></h2><div className="trophy-grid">{trophies.map(t=><div key={t.id} className={"trophy"+(t.earned?" earned":"")}><span className="trophy-icon">{t.earned?t.icon:"🔒"}</span><b>{t.name}</b><small>{t.hint}</small></div>)}</div></section>
     <section className="stats-table"><h2>Game shelf</h2>{LISTED.map(g=>{const played=results.filter(r=>r.game===g.id);return <div key={g.id}><span>{g.title}</span><span>{played.length} played</span><b>Best run {Math.max(0,...played.map(r=>r.score))}</b></div>;})}</section>
     <p className="privacy-note">Progress and achievements are calculated from this device's saved results for the current arcade mode. Records stay local unless you choose Google Drive sync in Settings. Room leaderboards are private to the six-character room code.</p>
@@ -462,7 +498,7 @@ function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,dr
   const sync=async()=>{setSyncing(true);try{await onDriveSync();}finally{setSyncing(false);}};
   return <div className="settings-page"><span className="eyebrow">MAKE IT YOURS</span><h1>Preferences & backup</h1>
     <AccountCard account={account}/>
-    <ReminderCard/>
+    <ReminderCard context={{playedDays:new Set(player.results.map(r=>r.date)),streak:playStreak(player)}}/>
     <section className="settings-card"><h2>Daily track</h2><p>Everyone on the same track gets the same daily puzzles. Open Arcade is the broad mix; pick a specialty to play your own field's dailies.</p>
       <div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialties</button></div>
       {mode==="specialty"&&<div className="specialty-picker"><div className="specialty-chips">{SPECIALTIES.map(sp=><button key={sp.id} onClick={()=>setSpecialty(sp.id)} className={specialty===sp.id?"selected":""}><span>{sp.icon}</span>{sp.short}</button>)}</div><div className="specialty-selected"><b>{SPECIALTIES.find(sp=>sp.id===specialty)?.name}</b><span>{SPECIALTIES.find(sp=>sp.id===specialty)?.blurb}</span></div></div>}
@@ -480,14 +516,16 @@ function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,dr
       <Setting label="Show Pip the mascot" detail="Pip on the title screen, level bar, and results." checked={t.mascot} onChange={v=>updateTheme({mascot:v})}/>
       <button className="button button-quiet" onClick={()=>updateTheme({...DEFAULT_THEME})}>Reset look &amp; feel</button></>;})()}</section>
     <section className="settings-card"><h2>Arcade feel</h2><Setting label="Sound effects" detail="Taps, rights and wrongs, fanfares, and wheel spins." checked={player.sound} onChange={v=>updateSetting("sound",v)}/><Setting label="Haptics" detail="Tiny vibrations on phones when you answer." checked={player.haptics!==false} onChange={v=>updateSetting("haptics",v)}/><Setting label="Music" detail="A different looping tune for the arcade and every game." checked={player.music} onChange={v=>updateSetting("music",v)}/><Setting label="Reduced motion" detail="Use quieter transitions and fewer animations." checked={player.reducedMotion} onChange={v=>updateSetting("reducedMotion",v)}/><Setting label="Hide streaks" detail="Keep the focus on playing, not maintaining a streak." checked={player.hideStreaks} onChange={v=>updateSetting("hideStreaks",v)}/></section>
-    <section className="settings-card"><h2>Google Drive backup</h2><p>Sign in only when you want your progress backed up to your private Google Drive app-data folder. MedDaily cannot read your other Drive files. You can keep playing without Google login.</p>
+    <section className="settings-card"><h2>Google Drive backup</h2><p>Sign in only when you want your progress backed up to your private Google Drive app-data folder. Clinicle cannot read your other Drive files. You can keep playing without Google login.</p>
       <button className="button button-primary" onClick={sync} disabled={syncing||!googleDriveConfigured()}>{syncing?"Syncing…":driveConnected?"Reconnect & sync Google Drive":"Sign in with Google & sync"}</button>
       {driveConnected&&<p className="setup-hint">Drive is connected for this browser session. New game results sync automatically while the access token remains valid.</p>}
       {!googleDriveConfigured()&&<p className="setup-hint">Set <code>VITE_GOOGLE_CLIENT_ID</code> in your deployment environment to enable this button. See <code>docs/SETUP.md</code>.</p>}
     </section>
     <section className="settings-card"><h2>Local backup</h2><p>Export a portable copy of your results or restore one from another device.</p><div className="export-row"><button className="button button-soft" onClick={exportData}>Export progress</button><label className="button button-quiet file-label">Import progress<input type="file" accept="application/json,.json" onChange={e=>importData(e.target.files?.[0])}/></label></div></section>
-    <section className="settings-card"><h2>Your data</h2><p>MedDaily keeps your progress on this device. It never contains patient information. Read how data is handled in the <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">privacy policy</a> and the <a href={import.meta.env.BASE_URL+"terms.html"} target="_blank" rel="noopener noreferrer">terms of service</a>, or erase everything MedDaily stored here.</p>
-      <button className="button button-quiet" onClick={()=>{if(window.confirm("Erase all MedDaily progress, settings and preferences stored on this device? This cannot be undone. Export a backup first if you want to keep it.")){try{for(const store of [localStorage,sessionStorage]){Object.keys(store).filter(k=>k.startsWith("meddaily")).forEach(k=>store.removeItem(k));}}catch{/* storage unavailable */}window.location.reload();}}}>Erase data on this device</button></section>
+    <section className="settings-card"><h2>Help &amp; feedback</h2><p>Found a question that looks wrong, or something that is not working? Tell us. Each puzzle has a "Report a problem" link on its result card that fills in the details for you.</p>
+      <div className="account-row"><a className="button button-soft" href={import.meta.env.BASE_URL+"help.html"} target="_blank" rel="noopener noreferrer">Help &amp; FAQ</a><a className="button button-quiet" href={feedbackMailto()}>Send feedback</a></div></section>
+    <section className="settings-card"><h2>Your data</h2><p>Clinicle keeps your progress on this device. It never contains patient information. Read how data is handled in the <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">privacy policy</a> and the <a href={import.meta.env.BASE_URL+"terms.html"} target="_blank" rel="noopener noreferrer">terms of service</a>, or erase everything Clinicle stored here.</p>
+      <button className="button button-quiet" onClick={()=>{if(window.confirm("Erase all Clinicle progress, settings and preferences stored on this device? This cannot be undone. Export a backup first if you want to keep it.")){try{for(const store of [localStorage,sessionStorage]){Object.keys(store).filter(k=>k.startsWith("meddaily")).forEach(k=>store.removeItem(k));}}catch{/* storage unavailable */}window.location.reload();}}}>Erase data on this device</button></section>
     <div className="privacy-note"><b>No account wall.</b> The arcade, daily puzzles, practice mode, and local progress all work without a login. Google Drive sync and multiplayer are optional add-ons.</div>
   </div>;
 }

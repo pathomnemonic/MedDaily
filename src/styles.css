@@ -2798,3 +2798,16 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .account-notice{margin:10px 0 0;padding:9px 12px;border-radius:10px;font:600 12px/1.4 var(--font-game)!important;cursor:pointer}.account-notice.ok{background:rgba(47,207,159,.16);color:#bdfce4}.account-notice.error{background:rgba(255,93,115,.18);color:#ffd0d6}
 .account-danger{margin-top:16px;padding-top:12px;border-top:1px dashed rgba(255,255,255,.25)}.account-danger h3{margin:0 0 4px;font:400 17px var(--font-display);color:#ffb3bd}
 .account-delete{background:#c62839!important;color:#fff!important;border:0;border-radius:10px;padding:10px 14px;font:700 13px var(--font-game);cursor:pointer}.account-delete:disabled{opacity:.45}
+
+/* ---- stats depth ---- */
+.stats-depth{margin-top:18px}.stats-depth h2{font:400 22px var(--font-display);margin:18px 0 4px}.stats-sub{margin:0 0 10px;font:500 12px/1.5 var(--font-game);opacity:.75}
+.cal{display:flex;gap:4px;overflow-x:auto;padding-bottom:4px}.cal-week{display:grid;grid-template-rows:repeat(7,1fr);gap:4px}
+.cal-day{display:block;width:17px;height:17px;border-radius:4px;background:rgba(120,120,120,.18);font-style:normal}
+.cal-day.lv1{background:#bfe9d6}.cal-day.lv2{background:#7fd3b0}.cal-day.lv3{background:#2fa97c}.cal-day.lv4{background:#146b4e}.cal-day.future{opacity:.25}.cal-day.today{outline:2px solid #ffd54a;outline-offset:1px}
+.cal-legend{display:flex;align-items:center;gap:4px;margin-top:8px;font:600 10px var(--font-game);opacity:.8}.cal-legend .cal-day{width:12px;height:12px}
+.dist{display:flex;align-items:flex-end;gap:6px;height:130px;padding-top:6px}.dist-col{position:relative;flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.dist-col b{display:block;width:100%;min-height:2px;border-radius:5px 5px 0 0;background:linear-gradient(#ffd54a,#e49a1f)}.dist-col small{font:600 9px var(--font-game);opacity:.7;margin-top:3px}.dist-col span{position:absolute;top:0;font:700 10px var(--font-game);opacity:.85}
+.fam{display:grid;gap:7px}.fam>div{display:grid;grid-template-columns:110px 1fr 84px;align-items:center;gap:8px;font:600 12px var(--font-game)}.fam i{display:block;height:9px;border-radius:99px;background:rgba(120,120,120,.2);overflow:hidden}.fam i b{display:block;height:100%;background:linear-gradient(90deg,#2fcf9f,#4cc9f0)}.fam em{font-style:normal;opacity:.75;text-align:right;font-size:11px}
+.stats-page .stats-depth h2{color:#2a2418}.stats-page .stats-sub,.stats-page .fam>div,.stats-page .cal-legend{color:#2a2418}
+
+.complete-report{display:block;margin-top:2px;text-align:center;font:600 12px var(--font-game);color:#fff;opacity:.8;text-decoration:underline}

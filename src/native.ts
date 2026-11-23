@@ -5,9 +5,9 @@ export const isNative = (): boolean => { try { return Capacitor.isNativePlatform
 export const nativePlatform = (): "ios" | "android" | "web" => { try { return Capacitor.getPlatform() as "ios" | "android" | "web"; } catch { return "web"; } };
 
 /** Custom URL scheme the system browser returns to after Google sign-in. Must be on the Supabase redirect allow-list. */
-export const NATIVE_AUTH_REDIRECT = "com.pathomnemonic.meddaily://auth";
+export const NATIVE_AUTH_REDIRECT = "com.pathomnemonic.clinicle://auth";
 
-/** Reads a sign-in return link such as `com.pathomnemonic.meddaily://auth?code=abc` (or `#error=...`). Other links return null. */
+/** Reads a sign-in return link such as `com.pathomnemonic.clinicle://auth?code=abc` (or `#error=...`). Other links return null. */
 export function parseAuthCallback(url: string): { code?: string; error?: string } | null {
   if (!url.startsWith(NATIVE_AUTH_REDIRECT)) return null;
   try {
@@ -48,7 +48,7 @@ export async function initNative(): Promise<void> {
 }
 
 /** System share sheet in the app; the browser's own share otherwise. Returns false when nothing was shared. */
-export async function shareText(text: string, title = "MedDaily result"): Promise<boolean> {
+export async function shareText(text: string, title = "Clinicle result"): Promise<boolean> {
   if (isNative()) {
     try { const { Share } = await import("@capacitor/share"); await Share.share({ title, text, dialogTitle: title }); return true; } catch { return false; }
   }
@@ -66,22 +66,55 @@ export function loadReminder(): Reminder {
     return { on: parsed?.on === true, hour: Number.isInteger(hour) && hour >= 0 && hour < 24 ? hour : 19, minute: Number.isInteger(minute) && minute >= 0 && minute < 60 ? minute : 0 };
   } catch { return defaultReminder(); }
 }
-/** Turns the daily "puzzles are ready" notification on or off. Returns whether it is on (false if permission was refused). */
-export async function applyReminder(next: Reminder): Promise<boolean> {
+
+export interface ReminderContext {
+  /** Dates (YYYY-MM-DD, the app's UTC daily key) on which the player already finished a round. */
+  playedDays: ReadonlySet<string>;
+  /** Current daily streak in days. */
+  streak: number;
+}
+export interface PlannedReminder { id: number; at: Date; title: string; body: string }
+
+/**
+ * One notification per upcoming day at the chosen local time, for the next week. A day on which the player has already played is skipped,
+ * and the first reminder mentions the streak when there is one worth protecting. The plan is rebuilt whenever the app opens or a round
+ * finishes, so a reminder never nags someone who already played.
+ */
+export function planReminders(now: Date, reminder: Reminder, ctx: ReminderContext, days = 7): PlannedReminder[] {
+  if (!reminder.on) return [];
+  const out: PlannedReminder[] = [];
+  for (let d = 0; d < days + 1 && out.length < days; d++) {
+    const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, reminder.hour, reminder.minute, 0, 0);
+    if (at.getTime() <= now.getTime() + 30000) continue;
+    if (ctx.playedDays.has(at.toISOString().slice(0, 10))) continue;
+    const first = out.length === 0;
+    const atRisk = first && ctx.streak >= 2;
+    out.push({ id: out.length + 1, at, title: "Clinicle", body: atRisk ? "Keep your " + ctx.streak + "-day streak alive. Today's puzzles are waiting." : "Today's puzzles are ready." });
+  }
+  return out;
+}
+
+/** Replaces the scheduled reminders with a fresh plan (native only). Returns whether reminders are on. */
+export async function refreshReminders(ctx: ReminderContext, reminder: Reminder = loadReminder()): Promise<boolean> {
   if (!isNative()) return false;
   const { LocalNotifications } = await import("@capacitor/local-notifications");
-  await LocalNotifications.cancel({ notifications: [{ id: 1 }] });
+  await LocalNotifications.cancel({ notifications: Array.from({ length: 8 }, (_, i) => ({ id: i + 1 })) });
+  if (!reminder.on) return false;
+  const plan = planReminders(new Date(), reminder, ctx);
+  if (plan.length) await LocalNotifications.schedule({ notifications: plan.map((p) => ({ id: p.id, title: p.title, body: p.body, schedule: { at: p.at } })) });
+  return true;
+}
+
+/** Turns the daily reminder on or off. Asks for notification permission only when switching on. Returns whether it is on. */
+export async function applyReminder(next: Reminder, ctx: ReminderContext = { playedDays: new Set(), streak: 0 }): Promise<boolean> {
+  if (!isNative()) return false;
   let on = next.on;
   if (on) {
-    const perm = await LocalNotifications.requestPermissions();
-    on = perm.display === "granted";
-    if (on) {
-      await LocalNotifications.schedule({ notifications: [{
-        id: 1, title: "MedDaily", body: "Today's puzzles are ready. Keep your streak going.",
-        schedule: { on: { hour: next.hour, minute: next.minute } }
-      }] });
-    }
+    const { LocalNotifications } = await import("@capacitor/local-notifications");
+    on = (await LocalNotifications.requestPermissions()).display === "granted";
   }
-  try { localStorage.setItem(REMINDER_KEY, JSON.stringify({ ...next, on })); } catch { /* storage unavailable */ }
+  const saved = { ...next, on };
+  try { localStorage.setItem(REMINDER_KEY, JSON.stringify(saved)); } catch { /* storage unavailable */ }
+  await refreshReminders(ctx, saved);
   return on;
 }

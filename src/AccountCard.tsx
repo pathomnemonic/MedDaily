@@ -30,14 +30,14 @@ export default function AccountCard({ account }: { account: AccountController })
         <button className="button button-primary" type="submit" disabled={busy || !code.trim()}>{account.busy === "verify" ? "Checking…" : "Sign in"}</button>
         <button className="text-button" type="button" onClick={() => { setCode(""); account.cancelEmail(); }}>Use a different email</button>
       </form>}
-      <p className="account-fine">By continuing you agree to the <a href={import.meta.env.BASE_URL + "terms.html"} target="_blank" rel="noopener noreferrer">terms of service</a> and the <a href={PRIVACY} target="_blank" rel="noopener noreferrer">privacy policy</a>. A MedDaily account is separate from any other app's, even with the same email.</p>
+      <p className="account-fine">By continuing you agree to the <a href={import.meta.env.BASE_URL + "terms.html"} target="_blank" rel="noopener noreferrer">terms of service</a> and the <a href={PRIVACY} target="_blank" rel="noopener noreferrer">privacy policy</a>. A Clinicle account is separate from any other app's, even with the same email.</p>
     </> : <>
       <p className="account-who"><b>{user.email ?? "Signed in"}</b><span>{user.provider === "google" ? "Google" : "Email"}</span></p>
       <form className="account-row" onSubmit={(e) => { e.preventDefault(); void account.saveName(name || account.displayName); }}>
         <input value={name || account.displayName} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder="Name shown in party rooms" aria-label="Display name" />
         <button className="button button-quiet" type="submit" disabled={busy}>Save name</button>
       </form>
-      <label className="setting-row"><span><b>Back up automatically</b><small>Sends results and progress to your MedDaily account after each round.</small></span>
+      <label className="setting-row"><span><b>Back up automatically</b><small>Sends results and progress to your Clinicle account after each round.</small></span>
         <input type="checkbox" checked={account.auto} onChange={(e) => account.setAuto(e.target.checked)} /></label>
       <div className="account-row">
         <button className="button button-primary" onClick={() => void account.syncNow()} disabled={busy}>{account.busy === "sync" ? "Syncing…" : "Back up now"}</button>
@@ -45,9 +45,9 @@ export default function AccountCard({ account }: { account: AccountController })
       </div>
       <p className="account-fine">{account.lastSynced ? "Last backed up " + new Date(account.lastSynced).toLocaleString() + "." : "Not backed up yet."}</p>
       <div className="account-danger">
-        <h3>Delete MedDaily account</h3>
-        <p>Removes your MedDaily profile, cloud progress and room history. Progress on this device stays until you erase it. Your sign-in itself is not removed here.</p>
-        {!confirming ? <button className="button button-quiet" onClick={() => setConfirming(true)}>Delete my MedDaily account…</button> : <form className="account-row" onSubmit={(e) => { e.preventDefault(); if (typed.trim().toUpperCase() === "DELETE") { void account.deleteAccount(); setConfirming(false); setTyped(""); } }}>
+        <h3>Delete Clinicle account</h3>
+        <p>Removes your Clinicle profile, cloud progress and room history. Progress on this device stays until you erase it. Your sign-in itself is not removed here.</p>
+        {!confirming ? <button className="button button-quiet" onClick={() => setConfirming(true)}>Delete my Clinicle account…</button> : <form className="account-row" onSubmit={(e) => { e.preventDefault(); if (typed.trim().toUpperCase() === "DELETE") { void account.deleteAccount(); setConfirming(false); setTyped(""); } }}>
           <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Type DELETE to confirm" aria-label="Type DELETE to confirm" autoComplete="off" />
           <button className="button account-delete" type="submit" disabled={busy || typed.trim().toUpperCase() !== "DELETE"}>{account.busy === "delete" ? "Deleting…" : "Delete forever"}</button>
           <button className="text-button" type="button" onClick={() => { setConfirming(false); setTyped(""); }}>Cancel</button>
