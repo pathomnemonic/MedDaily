@@ -16,6 +16,8 @@ import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } fro
 import type { GameId } from "./lib";
 import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, PARTY_GAMES, LISTED_GAME_IDS } from "./lib";
 import { useAccount } from "./useAccount";
+import { initNative, isNative, shareText } from "./native";
+import ReminderCard from "./ReminderCard";
 import AccountCard from "./AccountCard";
 import type { AccountController } from "./useAccount";
 import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
@@ -163,7 +165,7 @@ export default function App() {
     return ()=>window.removeEventListener("beforeinstallprompt",handler);
   },[]);
   useEffect(()=>{
-    if("serviceWorker" in navigator) navigator.serviceWorker.register(import.meta.env.BASE_URL+"sw.js").catch(()=>setNotice("Offline caching could not be enabled in this browser."));
+    if(isNative()){void initNative();}else if("serviceWorker" in navigator) navigator.serviceWorker.register(import.meta.env.BASE_URL+"sw.js").catch(()=>setNotice("Offline caching could not be enabled in this browser."));
   },[]);
   useEffect(()=>{
     installAudioUnlock();
@@ -258,7 +260,7 @@ export default function App() {
   };
   const shareResult=async()=>{
     if(!completion)return;
-    if(navigator.share){try{await navigator.share({text:completion.text});return;}catch{/* fall through to copy */}}
+    if(await shareText(completion.text))return;
     try{await navigator.clipboard?.writeText(completion.text);setCopied(true);}catch{setNotice("Copy was blocked by the browser. Select the preview text instead.");}
   };
   const updateTheme=(patch:Partial<ThemeSettings>)=>{
@@ -460,6 +462,7 @@ function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,dr
   const sync=async()=>{setSyncing(true);try{await onDriveSync();}finally{setSyncing(false);}};
   return <div className="settings-page"><span className="eyebrow">MAKE IT YOURS</span><h1>Preferences & backup</h1>
     <AccountCard account={account}/>
+    <ReminderCard/>
     <section className="settings-card"><h2>Daily track</h2><p>Everyone on the same track gets the same daily puzzles. Open Arcade is the broad mix; pick a specialty to play your own field's dailies.</p>
       <div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialties</button></div>
       {mode==="specialty"&&<div className="specialty-picker"><div className="specialty-chips">{SPECIALTIES.map(sp=><button key={sp.id} onClick={()=>setSpecialty(sp.id)} className={specialty===sp.id?"selected":""}><span>{sp.icon}</span>{sp.short}</button>)}</div><div className="specialty-selected"><b>{SPECIALTIES.find(sp=>sp.id===specialty)?.name}</b><span>{SPECIALTIES.find(sp=>sp.id===specialty)?.blurb}</span></div></div>}
