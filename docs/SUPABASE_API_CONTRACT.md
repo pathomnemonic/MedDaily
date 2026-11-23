@@ -81,7 +81,7 @@ Cleanup: rooms are ephemeral. Enable `pg_cron` and run
 - Cloud progress: `upsert` into `player_state` and `insert ... on conflict do nothing` into `results`. The client merges by taking the higher
   XP and the union of results, so localStorage stays the offline source of truth and the game works with no account.
 - In-app account deletion calls `rpc("delete_my_account")`. It refuses while a store or Stripe subscription is active
-  (`cancel_subscription_first`); lifetime and Ko-fi entitlements do not block it.
+  (`cancel_subscription_first`); lifetime entitlements do not block it. (Tips are not entitlements; the `kofi` source value is unused and tips never grant Pro.).
 
 ### Accounts UI (shipped)
 Settings has an optional Account card (`src/AccountCard.tsx`, `src/useAccount.ts`, `src/account.ts`, `src/accountSync.ts`). It appears when the Supabase variables

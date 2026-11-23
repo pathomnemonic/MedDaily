@@ -24,6 +24,7 @@ import { backAction } from "./backNav";
 import ErrorBoundary from "./ErrorBoundary";
 import { APP_VERSION, feedbackMailto, reportMailto } from "./support";
 import { nextDailyLabel } from "./dailyTime";
+import { TIP_URL, tipLink } from "./tip";
 import ReminderCard from "./ReminderCard";
 import AccountCard from "./AccountCard";
 import type { AccountController } from "./useAccount";
@@ -577,6 +578,7 @@ function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,dr
     <section className="settings-card"><h2>Local backup</h2><p>Export a portable copy of your results or restore one from another device.</p><div className="export-row"><button className="button button-soft" onClick={exportData}>Export progress</button><label className="button button-quiet file-label">Import progress<input type="file" accept="application/json,.json" onChange={e=>importData(e.target.files?.[0])}/></label></div></section>
     <section className="settings-card"><h2>Help &amp; feedback</h2><p>Found a question that looks wrong, or something that is not working? Tell us. Each puzzle has a "Report a problem" link on its result card that fills in the details for you.</p>
       <div className="account-row"><a className="button button-soft" href={import.meta.env.BASE_URL+"help.html"} target="_blank" rel="noopener noreferrer">Help &amp; FAQ</a><a className="button button-quiet" href={feedbackMailto()}>Send feedback</a></div></section>
+    {(()=>{const tip=tipLink(TIP_URL,isNative());return tip?<section className="settings-card"><h2>Support Roundsy</h2><p>Roundsy is free and always will be. If it made your day a little better, you can leave a tip. It is entirely optional, unlocks nothing, and is separate from Pro.</p><div className="account-row"><a className="button button-soft" href={tip} target="_blank" rel="noopener noreferrer">Leave a tip ↗</a></div></section>:null;})()}
     <section className="settings-card"><h2>Your data</h2><p>Roundsy keeps your progress on this device. It never contains patient information. Read how data is handled in the <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">privacy policy</a> and the <a href={import.meta.env.BASE_URL+"terms.html"} target="_blank" rel="noopener noreferrer">terms of service</a>, or erase everything Roundsy stored here.</p>
       <EraseData/></section>
     <div className="privacy-note"><b>No account wall.</b> The arcade, daily puzzles, practice mode, and local progress all work without a login. Backup to your account and multiplayer are optional add-ons.</div>
