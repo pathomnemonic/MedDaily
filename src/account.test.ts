@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "./supabaseClient";
-import { AccountError, friendlyAccountError, makeAccounts } from "./account";
+import { AccountError, friendlyAccountError, makeAccounts, signInProvider } from "./account";
 
 function fake(user: unknown, handlers: Record<string, (args?: unknown) => { data?: unknown; error?: { message: string } | null }> = {}) {
   const log: string[] = [];
@@ -25,6 +25,19 @@ function fake(user: unknown, handlers: Record<string, (args?: unknown) => { data
   return { client, log };
 }
 const account = { id: "u1", email: "a@b.co", app_metadata: { provider: "google" }, is_anonymous: false };
+
+describe("sign-in method label", () => {
+  it("shows the identity used most recently, not the account's first method", () => {
+    expect(signInProvider({ id: "u", app_metadata: { provider: "email" }, identities: [
+      { provider: "email", last_sign_in_at: "2026-11-01T10:00:00Z" }, { provider: "google", last_sign_in_at: "2026-11-23T09:00:00Z" }] })).toBe("google");
+    expect(signInProvider({ id: "u", app_metadata: { provider: "google" }, identities: [
+      { provider: "google", last_sign_in_at: "2026-11-01T10:00:00Z" }, { provider: "email", last_sign_in_at: "2026-11-23T09:00:00Z" }] })).toBe("email");
+  });
+  it("falls back to the account provider when identities are missing", () => {
+    expect(signInProvider({ id: "u", app_metadata: { provider: "google" } })).toBe("google");
+    expect(signInProvider({ id: "u" })).toBe("email");
+  });
+});
 
 describe("accounts", () => {
   it("treats guest sessions as signed out", async () => {
