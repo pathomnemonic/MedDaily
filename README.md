@@ -1,4 +1,6 @@
-# MedDaily
+# Clinicle
+
+*Formerly MedDaily.* Store title: **Clinicle - Daily Medical Games**.
 
 **A little curiosity. A lot of medicine.**  
 A mobile-first medical mini-game arcade built with React, TypeScript, and Vite.

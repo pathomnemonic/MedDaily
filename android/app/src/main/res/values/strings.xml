@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">MedDaily</string>
-    <string name="title_activity_main">MedDaily</string>
-    <string name="package_name">com.pathomnemonic.meddaily</string>
-    <string name="custom_url_scheme">com.pathomnemonic.meddaily</string>
+    <string name="app_name">Clinicle</string>
+    <string name="title_activity_main">Clinicle</string>
+    <string name="package_name">com.pathomnemonic.clinicle</string>
+    <string name="custom_url_scheme">com.pathomnemonic.clinicle</string>
 </resources>

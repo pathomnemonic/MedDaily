@@ -1,4 +1,4 @@
-package com.pathomnemonic.meddaily;
+package com.pathomnemonic.clinicle;
 
 import com.getcapacitor.BridgeActivity;
 

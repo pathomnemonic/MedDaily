@@ -79,6 +79,14 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
     return listening.current;
   }, [accounts, handleSignedIn]);
 
+  // A result recorded while offline is uploaded as soon as the connection comes back
+  useEffect(() => {
+    if (!accounts) return;
+    const onOnline = () => { if (signedInFor.current && read(FLAG_AUTO) !== "0") void sync(true); };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [accounts, sync]);
+
   // In the app shell, the system browser hands the sign-in code back through a link that opens the app
   useEffect(() => {
     if (!accounts || !isNative()) return;
@@ -136,7 +144,7 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
       await accounts!.deleteAccount();
       setUser(null); signedInFor.current = null; setDisplayName(""); setLastSynced(null);
       try { localStorage.removeItem(FLAG_LAST); } catch { /* ignore */ }
-      setNotice({ kind: "ok", text: "Your MedDaily account and cloud progress were deleted. Progress on this device is still here." });
+      setNotice({ kind: "ok", text: "Your Clinicle account and cloud progress were deleted. Progress on this device is still here." });
     })
   };
 }
