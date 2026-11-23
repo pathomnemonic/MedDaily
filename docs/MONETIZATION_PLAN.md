@@ -58,3 +58,6 @@ Deeper stats and per-specialty stats (out of Pro, basic stats stay free), streak
 ## Still open
 1. Regional pricing and tax handling (the stores handle tax; Stripe needs Stripe Tax or a decision).
 2. Pro itself is still unbuilt. Suggested build order: account-gated trial and entitlement plumbing, then archive, then freezes, then the Settings card with restore purchases and manage subscription, then Stripe and store purchases, then the Terms update.
+
+## Tip jar (owner direction, Nov 23, 2026)
+A quiet "Support Roundsy" card in Options links out to a Stripe payment link, set once in `src/tip.ts` (`TIP_URL`; the card is hidden while it is empty). Rules: voluntary, no nags or pop-ups, gates nothing, separate from Pro, and tracked per app. It is **web only**: the store apps do not show it, because Apple and Google restrict links to outside payments inside apps. The Ko-fi page is reserved for a different app and is refused by the code. Tips never convert to Pro.
