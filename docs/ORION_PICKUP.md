@@ -38,5 +38,8 @@ Well-scoped work that can be done without architectural decisions. Each item nam
 - Content batches (ChatGPT/Gemini panels): new Hive boards (pool is only 24 to 46, so puzzles repeat within a year), more Medle words and Connections puzzles, riddle text spot-check. Deliver as data files following the shapes in `src/dataHive*.ts`, `src/data*.ts`; send to me for review before merge.
 - CI: if the Pages deploy or tests fail, read the log and fix only mechanical causes (lint, snapshot, timeout); anything else, write it here for me.
 
+## 9. Apply the high-risk panel edits (round 1)
+- Spec with file:line locations and every decision already made: `docs/CONTENT_EDITS_PANEL_1.md`. Apply as one PR (branch name of your choice), run tests, check the changed items render, and send me the PR link. Leave anything you cannot locate in the doc and tell me which.
+
 ## Not for pickup (needs my judgement)
 Pro/payments build, guided first round, archive, image share card, anything touching game logic or the database schema.
