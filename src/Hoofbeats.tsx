@@ -132,6 +132,7 @@ export default function Hoofbeats({ seed, onDone, onExit }: { seed: number; onDo
           </li>;
         })}
       </ol>
+      {(() => { const rest = Math.round((100 - board.reduce((n, a) => n + a.pct, 0)) * 10) / 10; return rest > 0.4 ? <p className="hn-note">Everything else, spread across less common answers: {rest}%</p> : null; })()}
       <p className="hn-note">{prompt.note}</p>
       <button className="hn-next" onClick={next}>{round === HOOF_ROUNDS - 1 ? "See my altitude →" : "Next question →"}</button>
     </footer>}

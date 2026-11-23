@@ -782,7 +782,7 @@ function DoctorDle({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
     setNote("Optional clue revealed. This costs 5 points.");
   };
   const view = <div className="game-layout doctordle-game">
-    <div className="case-banner"><span>DOCTORDLE · CASE {item.id.toUpperCase()}</span><strong>{item.title}</strong><small>{clueCount} of {item.clues.length} clues revealed · {6 - guesses.length} guesses left</small></div>
+    <div className="case-banner"><span>DOCTORDLE · CASE #{100 + (hashSeed(item.id) % 900)}</span><strong>{item.title}</strong><small>{clueCount} of {item.clues.length} clues revealed · {6 - guesses.length} guesses left</small></div>
     <div className="doctordle-attempts" aria-label="Six diagnosis attempts">{Array.from({length:6},(_,i)=><span key={i} className={i < guesses.length ? "used" : ""}>{i < guesses.length ? guesses[i] : "Diagnosis "+(i+1)}</span>)}</div>
     <div className="clue-stack">{item.clues.slice(0, clueCount).map((clue, i) => <div className="clue-card" key={i}><span>{String(i + 1).padStart(2, "0")}</span><p>{clue}</p></div>)}</div>
     {!ended ? <>
@@ -1130,7 +1130,7 @@ interface SketchItem { name: string; hint: string; pattern: number[][] }
 interface SketchResult { name: string; points: number; hints: number; secs: number; solved: boolean }
 
 /** One nonogram. Reports back when the grid satisfies every clue (or the player gives up). */
-function SketchBoard({ item, index, total, seed, onFinished }: { item: SketchItem; index: number; total: number; seed: number; onFinished: (r: SketchResult) => void }) {
+function SketchBoard({ item, index, total, seed, onFinished, onScored }: { item: SketchItem; index: number; total: number; seed: number; onFinished: (r: SketchResult) => void; onScored?: (points: number) => void }) {
   const [cells, setCells] = useState<number[][]>(() => item.pattern.map((row) => row.map(() => 0)));
   const [history, setHistory] = useState<number[][][]>([]);
   const [autoMark, setAutoMark] = useState(true);
@@ -1154,7 +1154,7 @@ function SketchBoard({ item, index, total, seed, onFinished }: { item: SketchIte
   const finish = (solved: boolean, grid: number[][]) => {
     const points = solved ? Math.max(40, 100 - hints * 8 - Math.max(0, Math.floor((secs - 60) / 10))) : giveUpPoints(item.pattern, grid);
     const r = { name: item.name, points, hints, secs, solved };
-    setResult(r);
+    setResult(r); onScored?.(points);
     if (solved) { reward(true, null, "SOLVED!"); window.setTimeout(() => sfx("badge"), 350); } else sfx("wrong");
   };
   /** When a line's filled runs already match its clue, the remaining unknown cells in it must be empty. */
@@ -1224,7 +1224,9 @@ function CellSketch({ seed, onDone, onExit, practice = false }: Props & { practi
   const [finished, setFinished] = useState(false);
   const done = useRef(false);
   const total = results.reduce((n, r) => n + r.points, 0);
+  const [live, setLive] = useState(0); // points of the picture just solved, shown before "Next picture" is pressed
   const advance = (r: SketchResult) => {
+    setLive(0);
     const all = [...results, r];
     setResults(all);
     if (all.length === items.length) {
@@ -1237,8 +1239,8 @@ function CellSketch({ seed, onDone, onExit, practice = false }: Props & { practi
     } else setIndex((i) => i + 1);
   };
   const view = <div className="game-layout">
-    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY SET" : generated ? "GENERATED DAILY SET" : "CURATED DAILY SET"} · {total} pts</div>
-    {!finished ? <SketchBoard key={index} item={items[index]} index={index} total={items.length} seed={seed + index * 7} onFinished={advance} />
+    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY SET" : generated ? "GENERATED DAILY SET" : "CURATED DAILY SET"} · {total + live} pts</div>
+    {!finished ? <SketchBoard key={index} item={items[index]} index={index} total={items.length} seed={seed + index * 7} onFinished={advance} onScored={setLive} />
       : <Finish title="Gallery complete" detail={results.map((r) => r.name + (r.solved ? " (" + r.secs + "s)" : " (revealed)")).join(" · ")} score={total + " / " + items.length * 100} />}
   </div>;
   return finished ? view : <World id="cs" title="CELL SKETCH" kicker="LIGHTBOX" onExit={onExit}>{view}</World>;

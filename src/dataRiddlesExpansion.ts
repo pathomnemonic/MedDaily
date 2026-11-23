@@ -7,7 +7,7 @@ const hideAnswer = (text: string, answer: string) => {
   for (const part of answer.split(/[^A-Za-z0-9]+/).filter((word) => word.length >= 3)) {
     result = result.replace(new RegExp("\\b" + escapeRegExp(part) + "[A-Za-z]*\\b", "gi"), "the finding");
   }
-  return result;
+  return result.replace(/\bthe finding(?:\s+(?:the\s+)?finding)+\b/gi, "the finding");
 };
 
 export const generatedRiddles: Riddle[] = [

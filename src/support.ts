@@ -1,6 +1,6 @@
 import { nativePlatform } from "./native";
 
-export const APP_VERSION = "1.2";
+export const APP_VERSION = "1.3";
 export const SUPPORT_EMAIL = "patho.mnemonic1@gmail.com";
 
 export interface ReportContext { game: string; date: string; seed: number; mode: "daily" | "free play" | "party"; note?: string }
