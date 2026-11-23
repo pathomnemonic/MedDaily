@@ -46,7 +46,7 @@ Run `npm run native:sync` after any web change. `npm run native:icons` rewrites 
   No account is needed to play. Sign in only if you want your progress backed up across devices.
   MedDaily is for education and entertainment only. It is not a clinical decision tool and never asks for patient information.
 - **Age rating:** 4+ / Everyone (no violence, gambling or user-generated content; contains medical terminology).
-- **Support and privacy URLs:** privacy policy `https://pathomnemonic.github.io/StudyBible/privacy.html`; a support page or email is still needed.
+- **Support, privacy and terms URLs:** privacy policy `https://pathomnemonic.github.io/StudyBible/privacy.html`; terms of service `https://pathomnemonic.github.io/MedDaily/terms.html` (see `docs/TERMS_NOTES.md`); a support page or email is still needed.
 
 ## Privacy answers (to confirm against the privacy policy before submitting)
 - **Without an account:** nothing is collected. Progress stays on the device.
