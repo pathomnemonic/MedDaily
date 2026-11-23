@@ -136,6 +136,13 @@ select pg_temp.assert(meddaily.get_room_state('LIFE01')->>'status' = 'finished',
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000a3', false);
 select pg_temp.fails($$select meddaily.submit_score('LIFE01', 1, 10, false)$$, 'room_finished');
 select pg_temp.fails($$select meddaily.join_room('LIFE01', 'medle', 'party', 'general', current_date, 1, 'Late')$$, 'room_finished');
+-- a quiet unfinished member rejoining (or heartbeating) must not reopen the room
+select pg_temp.fails($$select meddaily.join_room('LIFE01', 'medle', 'party', 'general', current_date, 1, 'Gone')$$, 'room_finished');
+select meddaily.touch_room('LIFE01');
+select pg_temp.assert(meddaily.get_room_state('LIFE01')->>'status' = 'finished', 'heartbeat from a quiet member does not reopen a finished room');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a2', false);
+select meddaily.join_room('LIFE01', 'medle', 'party', 'general', current_date, 1, 'Two');
+select pg_temp.assert(meddaily.get_room_state('LIFE01')->>'status' = 'finished', 'a finished member may rejoin to read results');
 reset role;
 delete from meddaily.rooms where code = 'LIFE01';
 
