@@ -1,0 +1,1 @@
+-- Undo 20261123000003: re-run the touch_room and join_room bodies from 20261123000002_meddaily_rooms_lifecycle.sql.
