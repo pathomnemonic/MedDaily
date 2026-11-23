@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, pairsBank } from "./data";
 import { glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
-import { hardModeViolation, hashSeed, nonogramRuns, normalize, scoreWord, seeded, shuffle, type GameId } from "./lib";
+import { hardModeViolation, hashSeed, nonogramRuns, normalize, permutedIndex, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
 import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateMedicalLadder, letterWordPoints, transformNonogram, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, triviaRumbleResult } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
@@ -29,6 +29,7 @@ import "@fontsource/pixelify-sans/latin-600.css";
 import "@fontsource/silkscreen/latin-400.css";
 import "@fontsource/silkscreen/latin-700.css";
 import { reward } from "./juice";
+import { giveUpPoints } from "./sketchScore";
 import { requestTiltAccess, tiltStep, type TiltState } from "./mimeTilt";
 import { sfx } from "./audio";
 import { vibrate } from "./haptics";
@@ -100,7 +101,7 @@ function pick<T>(items: readonly T[], seed: number, specialty: Specialty, key: s
   const allowed = SPECIALTY_INDEX[specialty]?.[key];
   const valid = allowed?.map((i) => items[i]).filter((v): v is T => v !== undefined);
   const pool = valid?.length ? valid : items;
-  return pool[Math.abs(seed) % pool.length];
+  return pool[(key === "connections" ? permutedIndex(seed, pool.length) : Math.abs(seed) % pool.length)];
 }
 
 /** Full-screen shell for a game: its own backdrop, a slim top bar with exit, and a centred scrolling column. Unmounted when a round ends so the completion card can show. */
@@ -608,7 +609,7 @@ function LetterGridGame({ seed, onDone, onExit }: Props & { onExit?: () => void 
 
 function Medle({ seed, onDone, onExit, specialty = "general" }: Props & { onExit?: () => void }) {
   const pool = specialty === "general" ? medleWords : medleWords.filter((w) => specialty === "neurology" ? ["BRAIN","NERVE","OPTIC","VAGUS","ULNAR","SPASM","MOTOR","COMAS"].includes(w) : specialty === "cardiology" ? ["AORTA","VALVE","SHOCK","RALES","SPASM","ACUTE"].includes(w) : specialty === "infectious" ? ["STAPH","STREP","VIRAL","YEAST","SPORE","TITER","COCCI","PRION"].includes(w) : true);
-  const answer = pool[seed % pool.length] ?? "ACUTE";
+  const answer = pool[permutedIndex(seed, pool.length)] ?? "ACUTE";
   const [guess, setGuess] = useState("");
   const [rows, setRows] = useState<string[]>([]);
   const [message, setMessage] = useState("Six tries. Every guess must be five letters.");
@@ -1151,8 +1152,7 @@ function SketchBoard({ item, index, total, seed, onFinished }: { item: SketchIte
   }, [result]);
 
   const finish = (solved: boolean, grid: number[][]) => {
-    const correct = item.pattern.reduce((n, row, r) => n + row.reduce((m, v, c) => m + ((v === 1 && grid[r][c] === 1) || (v === 0 && grid[r][c] !== 1) ? 1 : 0), 0), 0);
-    const points = solved ? Math.max(40, 100 - hints * 8 - Math.max(0, Math.floor((secs - 60) / 10))) : Math.round(correct / 25 * 45);
+    const points = solved ? Math.max(40, 100 - hints * 8 - Math.max(0, Math.floor((secs - 60) / 10))) : giveUpPoints(item.pattern, grid);
     const r = { name: item.name, points, hints, secs, solved };
     setResult(r);
     if (solved) { reward(true, null, "SOLVED!"); window.setTimeout(() => sfx("badge"), 350); } else sfx("wrong");
@@ -1363,7 +1363,7 @@ function WordLadder({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
 
 const MEDICAL_HIVE_PUZZLES = spellingHivePuzzles.filter((puzzle) => !["Practice Round","Capture the Clue","Tricone Terms"].includes(puzzle.title));
 function SpellingHive({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
-  const puzzle = MEDICAL_HIVE_PUZZLES[seed % MEDICAL_HIVE_PUZZLES.length];
+  const puzzle = MEDICAL_HIVE_PUZZLES[permutedIndex(seed, MEDICAL_HIVE_PUZZLES.length)];
   const letters = useMemo(() => shuffle(puzzle.letters, seeded(seed + 83)), [puzzle, seed]);
   const [entry, setEntry] = useState("");
   const [found, setFound] = useState<string[]>([]);

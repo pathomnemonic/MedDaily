@@ -118,5 +118,26 @@ select pg_temp.assert((select count(*) from meddaily.entitlements where user_id 
 select pg_temp.assert((select count(*) from auth.users where id = '00000000-0000-0000-0000-0000000000a4') = 1, 'shared auth user untouched');
 select pg_temp.assert((select count(*) from meddaily.rooms where code = 'EMPTY1') = 1, 'unrelated empty room survives account deletion');
 
+-- 9. rooms lifecycle (20261123000002): stale players hide, finished rooms close
+reset role;
+insert into meddaily.rooms (code, game_id, scope, specialty, day, seed, host_id) values ('LIFE01', 'medle', 'party', 'general', current_date, 1, '00000000-0000-0000-0000-0000000000a1');
+insert into meddaily.room_players (room_code, user_id, name, last_seen_at) values
+  ('LIFE01', '00000000-0000-0000-0000-0000000000a1', 'One', now()),
+  ('LIFE01', '00000000-0000-0000-0000-0000000000a2', 'Two', now()),
+  ('LIFE01', '00000000-0000-0000-0000-0000000000a3', 'Gone', now() - interval '10 minutes');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1', false);
+select pg_temp.assert(jsonb_array_length(meddaily.get_room_state('LIFE01')->'players') = 2, 'stale unfinished player is hidden');
+select meddaily.touch_room('LIFE01');
+select meddaily.submit_score('LIFE01', 5, 10, false);
+select pg_temp.assert(meddaily.get_room_state('LIFE01')->>'status' = 'playing', 'room still open while someone is playing');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a2', false);
+select meddaily.submit_score('LIFE01', 6, 10, false);
+select pg_temp.assert(meddaily.get_room_state('LIFE01')->>'status' = 'finished', 'room finished when all active players are done');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a3', false);
+select pg_temp.fails($$select meddaily.submit_score('LIFE01', 1, 10, false)$$, 'room_finished');
+select pg_temp.fails($$select meddaily.join_room('LIFE01', 'medle', 'party', 'general', current_date, 1, 'Late')$$, 'room_finished');
+reset role;
+delete from meddaily.rooms where code = 'LIFE01';
+
 rollback;
 select 'meddaily_rls: all checks passed' as result;

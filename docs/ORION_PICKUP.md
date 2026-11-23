@@ -23,8 +23,12 @@ Well-scoped work that can be done without architectural decisions. Each item nam
 - Rebuild icon, feature graphic and social image with the Clinicle name. In-app icon sources are in `assets/` (`npm run native:icons` regenerates the native sizes and restores the web manifest). Screenshots: `node scripts/store-screenshots.mjs` after `npx vite preview --port 4180`.
 
 ## 6. Support inbox
-- Reports arrive at patho.mnemonic1@gmail.com with the game, date and puzzle seed. To find a puzzle from a report, open the game in Free Play is not enough; the seed is `hashSeed(date + "|" + scope + "|" + game)` for dailies (see `seedFor` in `src/App.tsx`).
+- Reports arrive at patho.mnemonic1@gmail.com with the game, date and puzzle seed. To find a puzzle from a report, open the game in Free Play is not enough; the seed is the UTC day number for branch, blackout, trail, diagnosis, ladder, crossword, medle, connections and hive (the puzzle is then `permutedIndex(seed, poolSize)` in `src/lib.ts`), and `hashSeed(date + "|" + scope + "|" + game)` for the others (see `seedFor` in `src/App.tsx`).
 - Suggested: keep a running list of reports and fixes in `docs/CONTENT_AUDIT.md`.
+
+## 7. Apply the rooms lifecycle migration (B-06)
+- `supabase/migrations/20261123000002_meddaily_rooms_lifecycle.sql` (rollback alongside). Adds `room_players.last_seen_at`, `touch_room`, `room_is_over`, updated `room_state_json`/`join_room`/`submit_score`/`cleanup_rooms`, and an hourly pg_cron job when the extension exists.
+- Verify: run `supabase/tests/meddaily_rls.sql` (section 9); then the two-browser check in item 4, closing one tab and waiting 5 minutes: that player disappears from the other's list; after both finish, a third join returns "round is already over".
 
 ## Not for pickup (needs my judgement)
 Pro/payments build, guided first round, archive, image share card, anything touching game logic or the database schema.

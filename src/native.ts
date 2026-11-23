@@ -36,6 +36,14 @@ export async function onAppUrl(handler: (url: string) => void): Promise<() => vo
   return () => { void sub.remove(); };
 }
 
+/** Android hardware Back. `handler` returns true when it consumed the press; otherwise the app minimises. */
+export async function onBackButton(handler: () => boolean): Promise<() => void> {
+  if (!isNative()) return () => undefined;
+  const { App } = await import("@capacitor/app");
+  const sub = await App.addListener("backButton", () => { if (!handler()) void App.exitApp(); });
+  return () => { void sub.remove(); };
+}
+
 /** One-time shell setup: status bar colours and hiding the launch screen once the app is ready. */
 export async function initNative(): Promise<void> {
   if (!isNative()) return;

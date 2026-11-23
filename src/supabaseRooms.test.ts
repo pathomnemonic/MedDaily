@@ -118,4 +118,20 @@ describe("Supabase rooms adapter", () => {
     stop();
     expect(seen[0]).toBeNull();
   });
+
+  it("sends a heartbeat while watching and stops when unwatched", async () => {
+    const f = fakeClient({ rpc: () => ({ data: state }) });
+    const rooms = makeSupabaseRooms({ configured: true, getClient: async () => f.client, heartbeatMs: 20, refreshMs: 60000 });
+    const stop = rooms.watch("ABC123", () => undefined);
+    await new Promise((r) => setTimeout(r, 90));
+    stop();
+    const beats = f.calls.filter((c) => c.fn === "touch_room").length;
+    expect(beats).toBeGreaterThan(0);
+    await new Promise((r) => setTimeout(r, 60));
+    expect(f.calls.filter((c) => c.fn === "touch_room").length).toBe(beats);
+  });
+
+  it("explains a room that is already over", () => {
+    expect(friendlyRoomError({ message: "room_finished" }).message).toMatch(/already over/);
+  });
 });

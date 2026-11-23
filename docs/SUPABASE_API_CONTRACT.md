@@ -133,3 +133,10 @@ are set; `VITE_ACCOUNTS=off` hides it. Signed out, the app behaves exactly as be
    No data moves, because rooms are ephemeral.
 3. Optional accounts UI and cloud sync.
 4. Entitlements, paywall and store packaging, after Mathews decides pricing and the free/Pro split.
+
+
+## Rooms lifecycle (migration 20261123000002)
+- `status` is `waiting | playing | finished`; `finished` is derived (two or more active players, all finished) and is not stored.
+- A player is active while finished or seen within 5 minutes. `touch_room(p_code)` is the heartbeat (the client calls it every 60 s while watching); the player list hides quiet, unfinished players (the caller always sees themselves).
+- New error `room_finished` (errcode 55000): joining a finished room as a new player, or submitting a score after the room is over.
+- `cleanup_rooms()` also removes unfinished players quiet for over an hour and rooms left empty; scheduled hourly through pg_cron in the migration when available.

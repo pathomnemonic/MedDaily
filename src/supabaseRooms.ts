@@ -8,6 +8,7 @@ export function friendlyRoomError(error: unknown): Error {
   if (text.includes("room_full")) return new RoomError("This room is full (maximum eight players).");
   if (text.includes("bad_room_code")) return new RoomError("Room codes are six letters or numbers.");
   if (text.includes("already_submitted")) return new RoomError("Your score for this room is already in.");
+  if (text.includes("room_finished")) return new RoomError("That room's round is already over. Start a new room with a different code.");
   if (text.includes("not_in_room")) return new RoomError("You are no longer in this room.");
   return error instanceof Error ? error : new Error(text || "Room request failed.");
 }
@@ -20,12 +21,14 @@ export interface SupabaseRoomsOptions {
   getClient: () => Promise<SupabaseClient>;
   /** Fallback refresh in case a realtime message is missed. */
   refreshMs?: number;
+  /** How often a watching player tells the room they are still here; players quiet for 5 minutes drop off the board. */
+  heartbeatMs?: number;
   /** Coalesces bursts of realtime events into one fetch. */
   debounceMs?: number;
 }
 
 /** Party rooms on the shared Supabase project, using the `meddaily` schema's functions. */
-export function makeSupabaseRooms({ configured, getClient, refreshMs = 8000, debounceMs = 120 }: SupabaseRoomsOptions): RoomsBackend {
+export function makeSupabaseRooms({ configured, getClient, refreshMs = 8000, debounceMs = 120, heartbeatMs = 60000 }: SupabaseRoomsOptions): RoomsBackend {
   /**
    * Guests sign in anonymously, exactly like the Firebase flow; a signed-in account keeps its own session.
    * The sign-in is shared: joining and watching start together, and two parallel anonymous sign-ins would create two
@@ -85,6 +88,7 @@ export function makeSupabaseRooms({ configured, getClient, refreshMs = 8000, deb
       let stopped = false;
       let timer: ReturnType<typeof setTimeout> | null = null;
       let poll: ReturnType<typeof setInterval> | null = null;
+      let beat: ReturnType<typeof setInterval> | null = null;
       let cleanup: (() => void) | null = null;
       const refresh = async (c: SupabaseClient) => {
         try { const state = await fetchState(c, code); if (!stopped) callback(state); }
@@ -102,6 +106,7 @@ export function makeSupabaseRooms({ configured, getClient, refreshMs = 8000, deb
             // anything that changed between the first fetch and the subscription going live would otherwise be missed
             .subscribe((status: string) => { if (status === "SUBSCRIBED") schedule(); });
           poll = setInterval(() => void refresh(c), refreshMs);
+          beat = setInterval(() => { void call("touch_room", { p_code: code }).catch(() => undefined); }, heartbeatMs);
           cleanup = () => { void c.removeChannel(channel); };
           if (stopped) cleanup();
         } catch { if (!stopped) callback(null); }
@@ -110,6 +115,7 @@ export function makeSupabaseRooms({ configured, getClient, refreshMs = 8000, deb
         stopped = true;
         if (timer) clearTimeout(timer);
         if (poll) clearInterval(poll);
+        if (beat) clearInterval(beat);
         cleanup?.();
       };
     },

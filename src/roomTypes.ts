@@ -20,7 +20,7 @@ export interface RoomPlayer {
 export interface RoomState extends RoomInfo {
   hostUid: string;
   players: RoomPlayer[];
-  status: "waiting" | "playing";
+  status: "waiting" | "playing" | "finished";
 }
 export type JoinInput = Omit<RoomInfo, "code"> & { name: string };
 export type Unwatch = () => void;
