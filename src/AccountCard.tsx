@@ -30,7 +30,7 @@ export default function AccountCard({ account }: { account: AccountController })
         <button className="button button-primary" type="submit" disabled={busy || !code.trim()}>{account.busy === "verify" ? "Checking…" : "Sign in"}</button>
         <button className="text-button" type="button" onClick={() => { setCode(""); account.cancelEmail(); }}>Use a different email</button>
       </form>}
-      <p className="account-fine">By continuing you agree to the <a href={PRIVACY} target="_blank" rel="noopener noreferrer">privacy policy</a>. A MedDaily account is separate from any other app's, even with the same email.</p>
+      <p className="account-fine">By continuing you agree to the <a href={import.meta.env.BASE_URL + "terms.html"} target="_blank" rel="noopener noreferrer">terms of service</a> and the <a href={PRIVACY} target="_blank" rel="noopener noreferrer">privacy policy</a>. A MedDaily account is separate from any other app's, even with the same email.</p>
     </> : <>
       <p className="account-who"><b>{user.email ?? "Signed in"}</b><span>{user.provider === "google" ? "Google" : "Email"}</span></p>
       <form className="account-row" onSubmit={(e) => { e.preventDefault(); void account.saveName(name || account.displayName); }}>
