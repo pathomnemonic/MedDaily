@@ -10,10 +10,10 @@ function fakeClient(opts: { session?: boolean; rpc?: (fn: string, args: Record<s
   const handlers: Handler[] = [];
   const removed: unknown[] = [];
   const signIn = vi.fn(async () => ({ error: null }));
-  const channel: { on: (...a: unknown[]) => typeof channel; subscribe: () => typeof channel; handlers: Handler[] } = {
+  const channel: { on: (...a: unknown[]) => typeof channel; subscribe: (cb?: (status: string) => void) => typeof channel; handlers: Handler[] } = {
     handlers,
     on(_type, _filter, cb) { handlers.push(cb as Handler); return channel; },
-    subscribe() { return channel; }
+    subscribe(cb) { if (cb) setTimeout(() => cb("SUBSCRIBED"), 0); return channel; }
   };
   const client = {
     auth: { getSession: async () => ({ data: { session: opts.session === false ? null : { user: { id: "u1" } } } }), signInAnonymously: signIn },
@@ -96,15 +96,17 @@ describe("Supabase rooms adapter", () => {
     expect(seen).toHaveLength(1);
     expect((seen[0] as RoomState).players).toHaveLength(1);
     expect(f.handlers).toHaveLength(2); // room_players and rooms subscriptions
+    await vi.advanceTimersByTimeAsync(60); // the subscription going live triggers one catch-up fetch
+    expect(seen).toHaveLength(2);
     players = 2;
     f.handlers[0](); f.handlers[0](); f.handlers[1](); // a burst of events
     await vi.advanceTimersByTimeAsync(60);
-    expect(seen).toHaveLength(2); // coalesced into one refresh
-    expect((seen[1] as RoomState).players).toHaveLength(2);
+    expect(seen).toHaveLength(3); // coalesced into one refresh
+    expect((seen[2] as RoomState).players).toHaveLength(2);
     stop();
     expect(f.removed).toHaveLength(1);
     f.handlers[0](); await vi.advanceTimersByTimeAsync(200);
-    expect(seen).toHaveLength(2); // nothing after unsubscribe
+    expect(seen).toHaveLength(3); // nothing after unsubscribe
     vi.useRealTimers();
   });
   it("reports null to the watcher when the room can no longer be read", async () => {

@@ -29,7 +29,7 @@ export interface SupabaseRoomsOptions {
 }
 
 /** Party rooms on the shared Supabase project, using the `meddaily` schema's functions. */
-export function makeSupabaseRooms({ configured, getClient, refreshMs = 20000, debounceMs = 120 }: SupabaseRoomsOptions): RoomsBackend {
+export function makeSupabaseRooms({ configured, getClient, refreshMs = 8000, debounceMs = 120 }: SupabaseRoomsOptions): RoomsBackend {
   /**
    * Guests sign in anonymously, exactly like the Firebase flow; a signed-in account keeps its own session.
    * The sign-in is shared: joining and watching start together, and two parallel anonymous sign-ins would create two
@@ -103,7 +103,8 @@ export function makeSupabaseRooms({ configured, getClient, refreshMs = 20000, de
           const channel = c.channel("meddaily-room-" + code)
             .on("postgres_changes", { event: "*", schema: "meddaily", table: "room_players", filter: "room_code=eq." + code }, schedule)
             .on("postgres_changes", { event: "*", schema: "meddaily", table: "rooms", filter: "code=eq." + code }, schedule)
-            .subscribe();
+            // anything that changed between the first fetch and the subscription going live would otherwise be missed
+            .subscribe((status: string) => { if (status === "SUBSCRIBED") schedule(); });
           poll = setInterval(() => void refresh(c), refreshMs);
           cleanup = () => { void c.removeChannel(channel); };
           if (stopped) cleanup();
