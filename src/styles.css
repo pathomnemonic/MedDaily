@@ -2785,3 +2785,4 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .settings-page .setting-row input[type=checkbox]:checked{background:#1f9d6a;border-color:#52e3b0}.settings-page .setting-row input[type=checkbox]:checked::after{transform:translateX(24px)}
 .settings-page .setting-row input[type=checkbox]:focus-visible{outline:3px solid #ffd54a;outline-offset:3px}
 .settings-page .setting-row b{font-size:13px}.settings-page .setting-row small{font-size:11px}
+.game-loading{display:grid;place-items:center;gap:14px;padding:60px 20px;text-align:center;color:#fff}.game-loading-art{width:min(52vw,220px);animation:coverBob 1.6s ease-in-out infinite}.game-loading b{font:400 22px var(--font-display)}

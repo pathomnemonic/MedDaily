@@ -42,6 +42,21 @@ describe("Supabase rooms adapter", () => {
     stop();
     expect(f.signIn).toHaveBeenCalledOnce();
   });
+  it("recovers when the stored guest session was removed server-side", async () => {
+    let first = true;
+    const f = fakeClient({ rpc: () => { if (first) { first = false; return { error: { message: "JWT: User from sub claim in JWT does not exist" } }; } return { data: state }; } });
+    let signedIn = true;
+    const auth = f.client.auth as unknown as { signOut: () => Promise<unknown>; getSession: () => Promise<unknown> };
+    const signOut = vi.fn(async () => { signedIn = false; return { error: null }; });
+    auth.signOut = signOut;
+    auth.getSession = async () => ({ data: { session: signedIn ? { user: { id: "u1" } } : null } });
+    const rooms = makeSupabaseRooms({ configured: true, getClient: async () => f.client });
+    const joined = await rooms.join("ABC123", { gameId: "medle", scope: "party", specialty: "general", date: "2026-11-23", seed: 7, name: "Ann" });
+    expect(signOut).toHaveBeenCalledOnce();
+    expect(f.signIn).toHaveBeenCalledOnce(); // a fresh guest after the stale one was dropped
+    expect(f.calls.map((c) => c.fn)).toEqual(["join_room", "join_room"]);
+    expect(joined.code).toBe("ABC123");
+  });
   it("keeps an existing session instead of signing in again", async () => {
     const f = fakeClient({ rpc: () => ({ data: state }) });
     const rooms = makeSupabaseRooms({ configured: true, getClient: async () => f.client });

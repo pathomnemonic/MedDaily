@@ -1,4 +1,4 @@
-const CACHE = "meddaily-shell-v3";
+const CACHE = "meddaily-shell-v4";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./meddaily-icon.svg", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 const shellUrl = new URL("./index.html", self.registration.scope).toString();
 const rootUrl = new URL("./", self.registration.scope).toString();
@@ -13,6 +13,14 @@ self.addEventListener("install", (event) => {
           const html = await (await fetch(shellUrl, { cache: "reload" })).text();
           const assets = [...html.matchAll(/(?:src|href)="(\.\/assets\/[^"]+)"/g)].map((m) => new URL(m[1], self.registration.scope).toString());
           await Promise.all(assets.map((asset) => cache.add(asset).catch(() => undefined)));
+          // Lazy chunks named inside the entry script (all game code lives in one); room backends are online-only, so skip those.
+          for (const asset of assets.filter((a) => a.endsWith(".js"))) {
+            const js = await (await fetch(asset)).text();
+            const chunks = [...new Set([...js.matchAll(/"\.\/([A-Za-z0-9_.-]+\.(?:js|css))"/g)].map((m) => m[1]))]
+              .filter((name) => !/^(firebase|dist)-/.test(name))
+              .map((name) => new URL(name, asset).toString());
+            await Promise.all(chunks.map((chunk) => cache.add(chunk).catch(() => undefined)));
+          }
           // Fonts and images referenced from the built CSS.
           for (const asset of assets.filter((a) => a.endsWith(".css"))) {
             const css = await (await fetch(asset)).text();

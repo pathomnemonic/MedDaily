@@ -1,11 +1,10 @@
-import * as firebase from "./firebase";
 import { makeSupabaseRooms, createSupabaseClient } from "./supabaseRooms";
 import type { JoinInput, RoomsBackend, RoomState, Unwatch } from "./roomTypes";
 
 import { RoomError } from "./roomTypes";
 export { RoomError };
 export type { RoomInfo, RoomPlayer, RoomState } from "./roomTypes";
-export { rankRoomPlayers } from "./firebase";
+export { rankRoomPlayers } from "./roomRank";
 
 const env = import.meta.env;
 const supabaseReady = Boolean(env.VITE_SUPABASE_URL && env.VITE_SUPABASE_ANON_KEY);
@@ -19,16 +18,29 @@ const backend: RoomsBackend = roomsProvider === "supabase"
       configured: true,
       getClient: () => (supabaseClient ??= createSupabaseClient(env.VITE_SUPABASE_URL as string, env.VITE_SUPABASE_ANON_KEY as string))
     })
-  : {
-      configured: firebase.multiplayerConfigured,
-      join: (code, input: JoinInput) => firebase.joinOrCreateRoom(code, input).catch((e: unknown) => {
+  : makeFirebaseRooms();
+
+/** Firebase loads only when a room is used, so its library is out of the startup bundle. */
+function makeFirebaseRooms(): RoomsBackend {
+  const fb = () => import("./firebase");
+  return {
+    configured: () => Boolean(env.VITE_FIREBASE_API_KEY && env.VITE_FIREBASE_PROJECT_ID && env.VITE_FIREBASE_APP_ID),
+    join: async (code, input: JoinInput) => {
+      try { return await (await fb()).joinOrCreateRoom(code, input); }
+      catch (e) {
         // Firebase already words these for the player; surface them instead of the generic "unavailable" notice
         throw e instanceof Error && /different game|room is full|six-character/i.test(e.message) ? new RoomError(e.message) : e;
-      }),
-      watch: (code, cb): Unwatch => firebase.watchRoom(code, cb),
-      submitScore: firebase.submitRoomScore,
-      leave: firebase.leaveRoom
-    };
+      }
+    },
+    watch: (code, cb): Unwatch => {
+      let stop: Unwatch | null = null, stopped = false;
+      void fb().then((m) => { if (!stopped) stop = m.watchRoom(code, cb); }).catch(() => { if (!stopped) cb(null); });
+      return () => { stopped = true; stop?.(); };
+    },
+    submitScore: async (code, score, maxScore, perfect) => (await fb()).submitRoomScore(code, score, maxScore, perfect),
+    leave: async (code) => (await fb()).leaveRoom(code)
+  };
+}
 
 export const multiplayerConfigured = (): boolean => backend.configured();
 export const joinOrCreateRoom = (code: string, input: JoinInput): Promise<RoomState> => backend.join(code, input);
