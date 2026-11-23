@@ -1,0 +1,170 @@
+{
+  "generated": "2026-11-23",
+  "total": 6673,
+  "specialties": [
+    {
+      "name": "General / unrouted",
+      "file": "by-specialty/general-unrouted.csv",
+      "total": 1035,
+      "high": 181
+    },
+    {
+      "name": "Infectious disease",
+      "file": "by-specialty/infectious-disease.csv",
+      "total": 767,
+      "high": 51
+    },
+    {
+      "name": "Gastroenterology & hepatology",
+      "file": "by-specialty/gastroenterology-hepatology.csv",
+      "total": 645,
+      "high": 57
+    },
+    {
+      "name": "Hematology & oncology",
+      "file": "by-specialty/hematology-oncology.csv",
+      "total": 522,
+      "high": 63
+    },
+    {
+      "name": "Cardiology",
+      "file": "by-specialty/cardiology.csv",
+      "total": 517,
+      "high": 59
+    },
+    {
+      "name": "Pulmonology",
+      "file": "by-specialty/pulmonology.csv",
+      "total": 516,
+      "high": 43
+    },
+    {
+      "name": "Nephrology & urology",
+      "file": "by-specialty/nephrology-urology.csv",
+      "total": 493,
+      "high": 73
+    },
+    {
+      "name": "Pharmacology",
+      "file": "by-specialty/pharmacology.csv",
+      "total": 403,
+      "high": 54
+    },
+    {
+      "name": "Rheumatology, dermatology & musculoskeletal",
+      "file": "by-specialty/rheumatology-dermatology-musculoskeletal.csv",
+      "total": 321,
+      "high": 31
+    },
+    {
+      "name": "Endocrinology & metabolism",
+      "file": "by-specialty/endocrinology-metabolism.csv",
+      "total": 309,
+      "high": 75
+    },
+    {
+      "name": "Neurology",
+      "file": "by-specialty/neurology.csv",
+      "total": 284,
+      "high": 22
+    },
+    {
+      "name": "Anatomy, physiology & basic science",
+      "file": "by-specialty/anatomy-physiology-basic-science.csv",
+      "total": 244,
+      "high": 23
+    },
+    {
+      "name": "Obstetrics, gynecology & pediatrics",
+      "file": "by-specialty/obstetrics-gynecology-pediatrics.csv",
+      "total": 241,
+      "high": 59
+    },
+    {
+      "name": "Psychiatry & toxicology",
+      "file": "by-specialty/psychiatry-toxicology.csv",
+      "total": 200,
+      "high": 23
+    },
+    {
+      "name": "Emergency & critical care",
+      "file": "by-specialty/emergency-critical-care.csv",
+      "total": 176,
+      "high": 49
+    }
+  ],
+  "games": {
+    "Casefile Logic": {
+      "n": 75,
+      "risk": "High"
+    },
+    "Crossmatch": {
+      "n": 45,
+      "risk": "High"
+    },
+    "Differential family (next-step cases)": {
+      "n": 240,
+      "risk": "High"
+    },
+    "Hoofbeats": {
+      "n": 53,
+      "risk": "High"
+    },
+    "Labline": {
+      "n": 365,
+      "risk": "High"
+    },
+    "Triage": {
+      "n": 42,
+      "risk": "High"
+    },
+    "What Has More?": {
+      "n": 43,
+      "risk": "High"
+    },
+    "Blackout Chart": {
+      "n": 523,
+      "risk": "Medium"
+    },
+    "Branch Lab": {
+      "n": 191,
+      "risk": "Medium"
+    },
+    "Deep Scan": {
+      "n": 79,
+      "risk": "Medium"
+    },
+    "Differential": {
+      "n": 436,
+      "risk": "Medium"
+    },
+    "Riddle Lab": {
+      "n": 681,
+      "risk": "Medium"
+    },
+    "Scale Lab": {
+      "n": 126,
+      "risk": "Medium"
+    },
+    "Trivia Rumble": {
+      "n": 1091,
+      "risk": "Medium"
+    },
+    "Anagram Sprint": {
+      "n": 451,
+      "risk": "Low"
+    },
+    "Association Blitz": {
+      "n": 367,
+      "risk": "Low"
+    },
+    "Crossword Clinic": {
+      "n": 365,
+      "risk": "Low"
+    },
+    "Quad Squad": {
+      "n": 1500,
+      "risk": "Low"
+    }
+  }
+}
