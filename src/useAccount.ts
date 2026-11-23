@@ -3,6 +3,7 @@ import { friendlyAccountError, makeAccounts, type AccountUser } from "./account"
 import { fromResultRows, mergePlayerData, resultKey, toResultRows, toStateRow } from "./accountSync";
 import { getSupabase, hasStoredSupabaseSession, supabaseConfigured } from "./supabaseClient";
 import { savePlayer, type PlayerData } from "./storage";
+import { isNative, onAppUrl, parseAuthCallback } from "./native";
 
 /** Accounts appear when the Supabase variables are set; VITE_ACCOUNTS=off hides them without a code change. */
 export const accountsEnabled: boolean = supabaseConfigured && import.meta.env.VITE_ACCOUNTS !== "off";
@@ -77,6 +78,20 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
     })().catch(() => { listening.current = null; });
     return listening.current;
   }, [accounts, handleSignedIn]);
+
+  // In the app shell, the system browser hands the sign-in code back through a link that opens the app
+  useEffect(() => {
+    if (!accounts || !isNative()) return;
+    let stop: (() => void) | null = null, gone = false;
+    void onAppUrl(async (url) => {
+      const back = parseAuthCallback(url);
+      if (!back) return;
+      if (back.error) { fail(new Error(back.error)); return; }
+      if (back.code) { await listen(); try { await accounts.completeNativeSignIn(back.code); } catch (e) { fail(e); } }
+    }).then((off) => { if (gone) off(); else stop = off; });
+    return () => { gone = true; stop?.(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accounts, listen]);
 
   // Returning visitors (a stored session) and sign-in redirects start the client straight away; everyone else never loads it.
   useEffect(() => {

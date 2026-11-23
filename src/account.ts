@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "./supabaseClient";
 import type { ResultRow, StateRow } from "./accountSync";
+import { NATIVE_AUTH_REDIRECT, closeSystemBrowser, isNative, openInSystemBrowser } from "./native";
 
 export interface AccountUser { id: string; email: string | null; provider: string }
 export interface RemoteProgress { state: StateRow | null; results: ResultRow[] }
@@ -49,14 +50,28 @@ export function makeAccounts(getClient: () => Promise<SupabaseClient>, redirectT
     },
     async signInGoogle(): Promise<void> {
       const c = await getClient();
+      if (isNative()) {
+        // Google refuses embedded web views: run sign-in in the system browser and come back through the app's own link
+        const { data, error } = await c.auth.signInWithOAuth({ provider: "google", options: { redirectTo: NATIVE_AUTH_REDIRECT, skipBrowserRedirect: true } });
+        if (error || !data?.url) throw friendlyAccountError(error ?? new Error("no url"));
+        await openInSystemBrowser(data.url);
+        return;
+      }
       const { error } = await c.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo() } });
+      if (error) throw friendlyAccountError(error);
+    },
+    /** Finishes a native sign-in from the code in the return link. */
+    async completeNativeSignIn(code: string): Promise<void> {
+      const c = await getClient();
+      const { error } = await c.auth.exchangeCodeForSession(code);
+      await closeSystemBrowser();
       if (error) throw friendlyAccountError(error);
     },
     async sendEmailCode(email: string): Promise<void> {
       const clean = email.trim().toLowerCase();
       if (!/^\S+@\S+\.\S+$/.test(clean)) throw new AccountError("That email address doesn't look right.");
       const c = await getClient();
-      const { error } = await c.auth.signInWithOtp({ email: clean, options: { shouldCreateUser: true, emailRedirectTo: redirectTo() } });
+      const { error } = await c.auth.signInWithOtp({ email: clean, options: { shouldCreateUser: true, emailRedirectTo: isNative() ? NATIVE_AUTH_REDIRECT : redirectTo() } });
       if (error) throw friendlyAccountError(error);
     },
     async verifyEmailCode(email: string, code: string): Promise<void> {
