@@ -1,6 +1,6 @@
 # MedDaily on the shared Supabase project: API contract
 
-Status: **proposal for review. Nothing in this document has been applied to the live project.**
+Status: the base migration (`20261122000000`) is **applied to the live project** (reviewed by Orion). The adapter ships in the app behind `VITE_ROOMS_PROVIDER`, which is not set, so Firebase stays the default. The hardening migration (`20261123000000`) is **proposed, not yet applied**.
 Project: `https://replaqmcwynrxclunkck.supabase.co` (shared by all apps). MedDaily owns the `meddaily` schema only.
 
 ## 1. Account model (confirmed)
@@ -18,6 +18,7 @@ Project: `https://replaqmcwynrxclunkck.supabase.co` (shared by all apps). MedDai
 |---|---|
 | `supabase/migrations/20261122000000_meddaily_schema.sql` | Creates the schema, tables, row-level security, functions, grants and the Realtime publication entries. Re-runnable. |
 | `supabase/migrations/20261122000001_meddaily_rollback.sql` | `drop schema meddaily cascade` plus publication cleanup. Destroys MedDaily data only. |
+| `supabase/migrations/20261123000000_meddaily_hardening.sql` (+ `...000001_..._rollback.sql`) | From Orion's review: `delete_my_account()` now removes only empty rooms the caller belonged to, and every security-definer function runs with an empty `search_path`. Re-runnable. |
 | `supabase/tests/meddaily_rls.sql` | Behavioural checks (run in a rolled-back transaction). It covers guests, room rules, privacy between users, entitlements and deletion. |
 
 Verified locally on Postgres 18 (PGlite) with stand-ins for `auth.users`, `auth.uid()`, `auth.jwt()` and the Supabase roles: apply, apply again,
@@ -47,6 +48,12 @@ Client: `createClient(url, key, { db: { schema: "meddaily" } })`. `multiplayerCo
 and the provider is `supabase`. The five exported functions of `src/firebase.ts` keep their signatures and `RoomState` shape, so `App.tsx` does not change.
 
 ## 5. Rooms (replaces Firestore `rooms` and `players`)
+
+Implemented in `src/supabaseRooms.ts` (adapter), `src/rooms.ts` (picks the backend) and `src/roomTypes.ts` (shared types). The Supabase library is loaded on
+first use, so it is not in the startup bundle, and no network call is made until a player joins a room. Tests: `src/supabaseRooms.test.ts` (scripted client).
+
+To switch on: set the repo variable `VITE_ROOMS_PROVIDER=supabase` (the URL and key variables already exist) and redeploy. To switch back: clear it.
+When CAPTCHA is enabled for anonymous sign-ins, `signInAnonymously` will need a `captchaToken`; the adapter has a single place to add it.
 
 Guests sign in once with `supabase.auth.signInAnonymously()` (same experience as today's anonymous Firebase auth).
 

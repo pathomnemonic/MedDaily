@@ -105,12 +105,18 @@ update meddaily.entitlements set status = 'canceled' where user_id = '00000000-0
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000a4', false);
 select pg_temp.assert(meddaily.has_pro() = false, 'canceled is not pro');
 
+-- 7b. deleting an account must not remove other people's empty rooms
+reset role;
+insert into meddaily.rooms (code, game_id, scope, specialty, day, seed, host_id) values ('EMPTY1', 'medle', 'party', 'general', current_date, 1, '00000000-0000-0000-0000-0000000000a1');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a4', false);
+
 -- 8. deleting a MedDaily account removes MedDaily rows only
 select meddaily.delete_my_account();
 reset role;
 select pg_temp.assert((select count(*) from meddaily.profiles where user_id = '00000000-0000-0000-0000-0000000000a4') = 0, 'profile gone');
 select pg_temp.assert((select count(*) from meddaily.entitlements where user_id = '00000000-0000-0000-0000-0000000000a4') = 0, 'entitlement gone');
 select pg_temp.assert((select count(*) from auth.users where id = '00000000-0000-0000-0000-0000000000a4') = 1, 'shared auth user untouched');
+select pg_temp.assert((select count(*) from meddaily.rooms where code = 'EMPTY1') = 1, 'unrelated empty room survives account deletion');
 
 rollback;
 select 'meddaily_rls: all checks passed' as result;

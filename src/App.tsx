@@ -15,7 +15,7 @@ import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } fro
 import type { GameId } from "./lib";
 import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, PARTY_GAMES, LISTED_GAME_IDS } from "./lib";
 import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
-import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, rankRoomPlayers, submitRoomScore, watchRoom, type RoomState } from "./firebase";
+import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, rankRoomPlayers, RoomError, submitRoomScore, watchRoom, type RoomState } from "./rooms";
 import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnected } from "./googleDrive";
 
 type Mode = "general" | "specialty";
@@ -293,7 +293,7 @@ export default function App() {
     setRoomCode(code);setRoom(local);
     if(multiplayerConfigured()){
       try{const joined=await joinOrCreateRoom(code,{gameId:game,scope:"party",specialty:"general",date,seed,name:roomName||"Guest"});setRoom(joined);}
-      catch{setNotice("Live scoreboard is unavailable right now. You can still play the same puzzle and compare shared results.");}
+      catch(e){setNotice(e instanceof RoomError?e.message:"Live scoreboard is unavailable right now. You can still play the same puzzle and compare shared results.");}
     }
     setRoomBusy(false);
   };
