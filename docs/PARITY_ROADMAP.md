@@ -23,3 +23,8 @@ Status as of Nov 23, 2026 (app version 1.2). "Done" means shipped on main. Compa
 2. Image share card (3), the growth loop.
 3. Pro build (feature list is final: archive and streak freezes) with restore purchases (2, 8, 13), with the archive and freeze rules already confirmed in `docs/MONETIZATION_PLAN.md`.
 4. Ratings prompt (10) and the accessibility device pass (12) before the store submission.
+
+## Hidden / deferred: specialty tracks
+Mathews decided (Nov 23, 2026) that **no specialty picker is visible to players in Clinicle for now.** A specialty slice inside one game is often only 20 to 50 puzzles, too thin for daily play. The picker ("Daily track" card in Settings) and
+the per-specialty selection code stay in the repo but are switched off by `SPECIALTY_TRACKS_VISIBLE = false` in `src/App.tsx`, so every player is on the open daily track. It returns only after Orion's content project fills the specialty banks deeply
+enough to sustain specialty-focused daily play; Orion owns that content build-up. Nothing else (rooms, accounts, stats) depends on the picker.
