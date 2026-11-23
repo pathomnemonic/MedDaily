@@ -11,6 +11,6 @@ describe("report a problem", () => {
     expect(body).toContain("Date: 2026-11-23");
     expect(body).toContain("Mode: daily");
     expect(body).toContain("App version: " + APP_VERSION + " (ios)");
-    expect(decodeURIComponent(url.split("subject=")[1].split("&")[0])).toBe("Clinicle: problem with Trivia Rumble");
+    expect(decodeURIComponent(url.split("subject=")[1].split("&")[0])).toBe("Roundsy: problem with Trivia Rumble");
   });
 });

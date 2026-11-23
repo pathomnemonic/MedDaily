@@ -1,6 +1,6 @@
-# Clinicle
+# Roundsy
 
-*Formerly MedDaily.* Store title: **Clinicle - Daily Medical Games**.
+*Formerly MedDaily.* Store title: **Roundsy - Daily Medical Games**.
 
 **A little curiosity. A lot of medicine.**  
 A mobile-first medical mini-game arcade built with React, TypeScript, and Vite.

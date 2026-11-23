@@ -12,6 +12,6 @@ applyTheme(loadPlayer().theme); // before first paint, so there is no flash of t
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Atmosphere />
-    <ErrorBoundary label="Clinicle"><App /></ErrorBoundary>
+    <ErrorBoundary label="Roundsy"><App /></ErrorBoundary>
   </React.StrictMode>
 );

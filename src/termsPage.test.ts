@@ -8,7 +8,7 @@ describe("Terms of Service page", () => {
   it("covers the standard clauses and the app's actual features", () => {
     for (const id of ["education", "guest", "account", "rooms", "names", "use", "delete", "ip", "liability", "changes", "law", "contact"]) expect(page).toContain('id="' + id + '"');
     expect(text).toMatch(/not medical advice/i);
-    expect(text).toMatch(/Delete my Clinicle account/);
+    expect(text).toMatch(/Delete my Roundsy account/);
     expect(text).toMatch(/six-character code/);
     expect(text).toMatch(/20 characters/);
     expect(page).toContain("https://pathomnemonic.github.io/StudyBible/privacy.html");

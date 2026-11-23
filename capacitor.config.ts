@@ -5,8 +5,8 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * The bundle identifier is final (renamed from the provisional meddaily id before any store upload); it cannot change after the first upload.
  */
 const config: CapacitorConfig = {
-  appId: "com.pathomnemonic.clinicle",
-  appName: "Clinicle",
+  appId: "com.pathomnemonic.roundsy",
+  appName: "Roundsy",
   webDir: "dist",
   backgroundColor: "#100b2e",
   ios: { contentInset: "never", limitsNavigationsToAppBoundDomains: false },

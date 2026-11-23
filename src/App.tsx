@@ -253,10 +253,10 @@ export default function App() {
   const deep = !!activeGame || screen!=="home";
   useEffect(()=>{ // browser/PWA back: one history entry while away from the arcade home
     if (!deep) return;
-    try { window.history.pushState({clinicle:1},""); } catch { return; }
+    try { window.history.pushState({roundsy:1},""); } catch { return; }
     const onPop = () => { goBackRef.current(); };
     window.addEventListener("popstate", onPop);
-    return ()=>{ window.removeEventListener("popstate", onPop); try { if (window.history.state?.clinicle) window.history.back(); } catch { /* ignore */ } };
+    return ()=>{ window.removeEventListener("popstate", onPop); try { if (window.history.state?.roundsy) window.history.back(); } catch { /* ignore */ } };
   },[deep]);
   useEffect(()=>{ let off=()=>{}; let dead=false; void onBackButton(()=>goBackRef.current()).then(f=>{ if(dead) f(); else off=f; }); return ()=>{dead=true;off();}; },[]);
   const openGame=(id:GameId,isPractice=false,forcedSeed?:number,party=false)=>{
@@ -267,11 +267,11 @@ export default function App() {
     window.scrollTo({top:0,behavior:player.reducedMotion?"auto":"smooth"});
   };
   const finishGame=(score:number,maxScore:number,perfect:boolean,share?:string)=>{
-    const gameTitle=GAMES.find(g=>g.id===activeGame)?.title??"Clinicle game";
+    const gameTitle=GAMES.find(g=>g.id===activeGame)?.title??"Roundsy game";
     const filled=Math.max(0,Math.min(10,Math.round(score/Math.max(1,maxScore)*10)));
     const fallback="🟩".repeat(filled)+"⬜".repeat(10-filled)+(perfect?"\n✨ Perfect run":"");
     const where=partyRun?" · Room "+roomCode:practice?" · Free Play":" · "+date;
-    const text=share?"Clinicle"+where+"\n"+share:"Clinicle · "+gameTitle+where+"\n"+fallback+"\nhttps://pathomnemonic.github.io/MedDaily/"+(partyRun?"?room="+roomCode:"");
+    const text=share?"Roundsy"+where+"\n"+share:"Roundsy · "+gameTitle+where+"\n"+fallback+"\nhttps://pathomnemonic.github.io/MedDaily/"+(partyRun?"?room="+roomCode:"");
     setLastShare(text);setCopied(false);
     const isNewDaily=!partyRun&&!practice&&!player.results.some(r=>r.date===date&&r.game===activeGame&&r.scope===scope);
     const todayDone=player.results.filter(r=>r.date===date&&r.scope===scope).length;
@@ -316,7 +316,7 @@ export default function App() {
   const install=async()=>{
     if(!installPrompt)return;
     await installPrompt.prompt();const result=await installPrompt.userChoice;setInstallPrompt(null);
-    setNotice(result.outcome==="accepted"?"Clinicle added to your home screen.":"Use your browser menu to install Clinicle when ready.");
+    setNotice(result.outcome==="accepted"?"Roundsy added to your home screen.":"Use your browser menu to install Roundsy when ready.");
   };
   const exportData=()=>{
     const blob=new Blob([JSON.stringify(player,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");
@@ -330,7 +330,7 @@ export default function App() {
         if(!Array.isArray(parsed.results)||typeof parsed.bests!=="object")throw new Error("Invalid file");
         const next:PlayerData={results:parsed.results.filter(r=>r&&typeof r.date==="string"&&GAMES.some(g=>g.id===r.game)).map(r=>({...r,scope:r.scope??"general"})),bests:parsed.bests??{},sound:parsed.sound!==false,music:parsed.music!==false,xp:Number(parsed.xp)||0,reducedMotion:Boolean(parsed.reducedMotion),hideStreaks:Boolean(parsed.hideStreaks)};
         savePlayer(next);setPlayer(next);setNotice("Progress imported.");
-      }catch{setNotice("That file does not look like a Clinicle progress export.");}
+      }catch{setNotice("That file does not look like a Roundsy progress export.");}
     };reader.readAsText(file);
   };
   const joinFriendsRoom=async(codeOverride?:string)=>{
@@ -363,8 +363,8 @@ export default function App() {
 
   return <div className="app-shell">
     <header className="topbar">
-      <button className="brand" onClick={()=>{setActiveGame(null);setScreen("home");}} aria-label="Clinicle home">
-        <span className="brand-mark"><i>+</i><b>·</b></span><span className="brand-name">clinicle<span>.</span><small>THE MEDICAL MINI-GAME ARCADE</small></span>
+      <button className="brand" onClick={()=>{setActiveGame(null);setScreen("home");}} aria-label="Roundsy home">
+        <span className="brand-mark"><i>+</i><b>·</b></span><span className="brand-name">roundsy<span>.</span><small>THE MEDICAL MINI-GAME ARCADE</small></span>
       </button>
       <nav className="top-nav" aria-label="Main navigation">
         <button className={!activeGame&&screen==="home"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("home");}}>Arcade</button>
@@ -393,7 +393,7 @@ export default function App() {
           <ErrorBoundary label={title} resetKey={activeGame+":"+startAt} onBack={()=>{setActiveGame(null);setPractice(false);}}><Suspense fallback={<div className="game-loading" role="status"><span className="game-loading-art"><GameArt game={activeGame}/></span><b>Loading {title}…</b></div>}><GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onExit={()=>{if(!player.reducedMotion&&activeGame){setWipe({id:activeGame,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}setActiveGame(null);setPractice(false);}} onDone={finishGame}/></Suspense></ErrorBoundary>
         </section>
         {room&&<RoomScores room={room}/>}
-        {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"Clinicle result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
+        {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"Roundsy result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
         <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode · new puzzles "+nextDailyLabel().text}</span></div>
       </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak} done={doneToday}/>:screen==="settings"?<SettingsPage mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} updateTheme={updateTheme} player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} account={account} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} today={date} openGame={openGame}/>}
     </main>
@@ -413,14 +413,14 @@ export default function App() {
           {!completion.party&&<button className="button button-soft" onClick={()=>openGame(activeGame!,true,hashSeed(activeGame+"-again-"+Date.now()))}>Play again ∞</button>}
           {completion.party&&<button className="button button-soft" onClick={()=>void rematch()}>Rematch ↻</button>}
           <button className="button button-quiet" onClick={()=>{setCompletion(null);setActiveGame(null);setScreen(completion.party?"friends":"home");}}>{completion.party?"Back to party":"All games"}</button>
-          <a className="complete-report" href={reportMailto({game:GAMES.find(g=>g.id===activeGame)?.title??"Clinicle",date,seed:startAt,mode:completion.party?"party":practice?"free play":"daily"})}>Report a problem with this puzzle</a>
+          <a className="complete-report" href={reportMailto({game:GAMES.find(g=>g.id===activeGame)?.title??"Roundsy",date,seed:startAt,mode:completion.party?"party":practice?"free play":"daily"})}>Report a problem with this puzzle</a>
         </div>
         <button className="complete-close" aria-label="Close" onClick={()=>setCompletion(null)}>×</button>
       </div>
     </div>}
     {wipe&&<div key={wipe.key} className={"game-wipe tone-"+(GAMES.find(g=>g.id===wipe.id)?.wash??"lilac")} aria-hidden="true"><div className="game-wipe-art"><GameArt game={wipe.id}/></div><b>{GAMES.find(g=>g.id===wipe.id)?.title}</b></div>}
     {splash&&<Splash onStart={()=>{try{sessionStorage.setItem("meddaily:splash","1");}catch{/* ignore */}sfx("start");setSplash(false);}}/>}
-    <footer className="site-footer"><div><span className="footer-mark">✳</span><b>clinicle.</b><span>PRESS START · FIND YOUR NEXT FAVORITE</span></div><p>For education only · Not a clinical decision tool · Verify care decisions against current guidance.</p><span className="version">v{APP_VERSION} · Local-first · <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">Privacy policy</a> · <a href={import.meta.env.BASE_URL+"terms.html"} target="_blank" rel="noopener noreferrer">Terms</a> · <a href={import.meta.env.BASE_URL+"help.html"} target="_blank" rel="noopener noreferrer">Help</a></span></footer>
+    <footer className="site-footer"><div><span className="footer-mark">✳</span><b>roundsy.</b><span>PRESS START · FIND YOUR NEXT FAVORITE</span></div><p>For education only · Not a clinical decision tool · Verify care decisions against current guidance.</p><span className="version">v{APP_VERSION} · Local-first · <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">Privacy policy</a> · <a href={import.meta.env.BASE_URL+"terms.html"} target="_blank" rel="noopener noreferrer">Terms</a> · <a href={import.meta.env.BASE_URL+"help.html"} target="_blank" rel="noopener noreferrer">Help</a></span></footer>
   </div>;
 }
 
@@ -529,7 +529,7 @@ function StatsPage({player,scope,streak,done}:{player:PlayerData;scope:string;st
 function EraseData(){
   const [ask,setAsk]=useState(false);const [busy,setBusy]=useState(false);
   if(!ask)return <button className="button button-quiet" onClick={()=>setAsk(true)}>Erase data on this device</button>;
-  return <div className="erase-confirm" role="alertdialog" aria-label="Confirm erase"><p><b>Erase everything Clinicle stored on this device?</b> Progress, settings and preferences go, and you are signed out here. This cannot be undone. Export a backup first if you want to keep it.</p>
+  return <div className="erase-confirm" role="alertdialog" aria-label="Confirm erase"><p><b>Erase everything Roundsy stored on this device?</b> Progress, settings and preferences go, and you are signed out here. This cannot be undone. Export a backup first if you want to keep it.</p>
     <div className="account-row"><button className="button account-delete" disabled={busy} onClick={()=>{setBusy(true);void eraseEverythingHere();}}>{busy?"Erasing…":"Yes, erase and sign out"}</button><button className="button button-soft" disabled={busy} onClick={()=>setAsk(false)}>Cancel</button></div></div>;
 }
 async function eraseEverythingHere(){
@@ -569,7 +569,7 @@ function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,dr
       <Setting label="Show Pip the mascot" detail="Pip on the title screen, level bar, and results." checked={t.mascot} onChange={v=>updateTheme({mascot:v})}/>
       <button className="button button-quiet" onClick={()=>updateTheme({...DEFAULT_THEME})}>Reset look &amp; feel</button></>;})()}</section>
     <section className="settings-card"><h2>Arcade feel</h2><Setting label="Sound effects" detail="Taps, rights and wrongs, fanfares, and wheel spins." checked={player.sound} onChange={v=>updateSetting("sound",v)}/><Setting label="Haptics" detail="Tiny vibrations on phones when you answer." checked={player.haptics!==false} onChange={v=>updateSetting("haptics",v)}/><Setting label="Music" detail="A different looping tune for the arcade and every game." checked={player.music} onChange={v=>updateSetting("music",v)}/><Setting label="Reduced motion" detail="Use quieter transitions and fewer animations." checked={player.reducedMotion} onChange={v=>updateSetting("reducedMotion",v)}/><Setting label="Hide streaks" detail="Keep the focus on playing, not maintaining a streak." checked={player.hideStreaks} onChange={v=>updateSetting("hideStreaks",v)}/></section>
-    {googleDriveConfigured()&&<section className="settings-card"><h2>Google Drive backup</h2><p>Sign in only when you want your progress backed up to your private Google Drive app-data folder. Clinicle cannot read your other Drive files. You can keep playing without Google login.</p>
+    {googleDriveConfigured()&&<section className="settings-card"><h2>Google Drive backup</h2><p>Sign in only when you want your progress backed up to your private Google Drive app-data folder. Roundsy cannot read your other Drive files. You can keep playing without Google login.</p>
       <button className="button button-primary" onClick={sync} disabled={syncing||!googleDriveConfigured()}>{syncing?"Syncing…":driveConnected?"Reconnect & sync Google Drive":"Sign in with Google & sync"}</button>
       {driveConnected&&<p className="setup-hint">Drive is connected for this browser session. New game results sync automatically while the access token remains valid.</p>}
       
@@ -577,7 +577,7 @@ function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,dr
     <section className="settings-card"><h2>Local backup</h2><p>Export a portable copy of your results or restore one from another device.</p><div className="export-row"><button className="button button-soft" onClick={exportData}>Export progress</button><label className="button button-quiet file-label">Import progress<input type="file" accept="application/json,.json" onChange={e=>importData(e.target.files?.[0])}/></label></div></section>
     <section className="settings-card"><h2>Help &amp; feedback</h2><p>Found a question that looks wrong, or something that is not working? Tell us. Each puzzle has a "Report a problem" link on its result card that fills in the details for you.</p>
       <div className="account-row"><a className="button button-soft" href={import.meta.env.BASE_URL+"help.html"} target="_blank" rel="noopener noreferrer">Help &amp; FAQ</a><a className="button button-quiet" href={feedbackMailto()}>Send feedback</a></div></section>
-    <section className="settings-card"><h2>Your data</h2><p>Clinicle keeps your progress on this device. It never contains patient information. Read how data is handled in the <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">privacy policy</a> and the <a href={import.meta.env.BASE_URL+"terms.html"} target="_blank" rel="noopener noreferrer">terms of service</a>, or erase everything Clinicle stored here.</p>
+    <section className="settings-card"><h2>Your data</h2><p>Roundsy keeps your progress on this device. It never contains patient information. Read how data is handled in the <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">privacy policy</a> and the <a href={import.meta.env.BASE_URL+"terms.html"} target="_blank" rel="noopener noreferrer">terms of service</a>, or erase everything Roundsy stored here.</p>
       <EraseData/></section>
     <div className="privacy-note"><b>No account wall.</b> The arcade, daily puzzles, practice mode, and local progress all work without a login. Backup to your account and multiplayer are optional add-ons.</div>
   </div>;

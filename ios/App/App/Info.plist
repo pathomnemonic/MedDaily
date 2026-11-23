@@ -10,17 +10,17 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.pathomnemonic.clinicle</string>
+			<string>com.pathomnemonic.roundsy</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.pathomnemonic.clinicle</string>
+				<string>com.pathomnemonic.roundsy</string>
 			</array>
 		</dict>
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>CFBundleDisplayName</key>
-        <string>Clinicle</string>
+        <string>Roundsy</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

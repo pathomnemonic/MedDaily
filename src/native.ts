@@ -5,9 +5,9 @@ export const isNative = (): boolean => { try { return Capacitor.isNativePlatform
 export const nativePlatform = (): "ios" | "android" | "web" => { try { return Capacitor.getPlatform() as "ios" | "android" | "web"; } catch { return "web"; } };
 
 /** Custom URL scheme the system browser returns to after Google sign-in. Must be on the Supabase redirect allow-list. */
-export const NATIVE_AUTH_REDIRECT = "com.pathomnemonic.clinicle://auth";
+export const NATIVE_AUTH_REDIRECT = "com.pathomnemonic.roundsy://auth";
 
-/** Reads a sign-in return link such as `com.pathomnemonic.clinicle://auth?code=abc` (or `#error=...`). Other links return null. */
+/** Reads a sign-in return link such as `com.pathomnemonic.roundsy://auth?code=abc` (or `#error=...`). Other links return null. */
 export function parseAuthCallback(url: string): { code?: string; error?: string } | null {
   if (!url.startsWith(NATIVE_AUTH_REDIRECT)) return null;
   try {
@@ -56,7 +56,7 @@ export async function initNative(): Promise<void> {
 }
 
 /** System share sheet in the app; the browser's own share otherwise. Returns false when nothing was shared. */
-export async function shareText(text: string, title = "Clinicle result"): Promise<boolean> {
+export async function shareText(text: string, title = "Roundsy result"): Promise<boolean> {
   if (isNative()) {
     try { const { Share } = await import("@capacitor/share"); await Share.share({ title, text, dialogTitle: title }); return true; } catch { return false; }
   }
@@ -97,7 +97,7 @@ export function planReminders(now: Date, reminder: Reminder, ctx: ReminderContex
     if (ctx.playedDays.has(at.toISOString().slice(0, 10))) continue;
     const first = out.length === 0;
     const atRisk = first && ctx.streak >= 2;
-    out.push({ id: out.length + 1, at, title: "Clinicle", body: atRisk ? "Keep your " + ctx.streak + "-day streak alive. Today's puzzles are waiting." : "Today's puzzles are ready." });
+    out.push({ id: out.length + 1, at, title: "Roundsy", body: atRisk ? "Keep your " + ctx.streak + "-day streak alive. Today's puzzles are waiting." : "Today's puzzles are ready." });
   }
   return out;
 }
