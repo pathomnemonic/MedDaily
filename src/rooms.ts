@@ -1,4 +1,5 @@
-import { makeSupabaseRooms, createSupabaseClient } from "./supabaseRooms";
+import { makeSupabaseRooms } from "./supabaseRooms";
+import { getSupabase } from "./supabaseClient";
 import type { JoinInput, RoomsBackend, RoomState, Unwatch } from "./roomTypes";
 
 import { RoomError } from "./roomTypes";
@@ -12,11 +13,10 @@ const supabaseReady = Boolean(env.VITE_SUPABASE_URL && env.VITE_SUPABASE_ANON_KE
 /** Rooms stay on Firebase unless VITE_ROOMS_PROVIDER=supabase and the Supabase variables are present. */
 export const roomsProvider: "firebase" | "supabase" = env.VITE_ROOMS_PROVIDER === "supabase" && supabaseReady ? "supabase" : "firebase";
 
-let supabaseClient: Promise<Awaited<ReturnType<typeof createSupabaseClient>>> | null = null;
 const backend: RoomsBackend = roomsProvider === "supabase"
   ? makeSupabaseRooms({
       configured: true,
-      getClient: () => (supabaseClient ??= createSupabaseClient(env.VITE_SUPABASE_URL as string, env.VITE_SUPABASE_ANON_KEY as string))
+      getClient: getSupabase
     })
   : makeFirebaseRooms();
 
