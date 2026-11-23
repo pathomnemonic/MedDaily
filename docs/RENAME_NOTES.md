@@ -22,3 +22,17 @@ Decided by Mathews (final). Store title at publishing: **Clinicle - Daily Medica
 4. **Store developer consoles:** create the apps with the new identifier from the start.
 5. **Web users:** the installed web app picks up the new name on the next update; no action. A link or bookmark to `/MedDaily/` keeps working.
 6. **Dx Dash promo banner and any cross-links** are unaffected.
+
+## Web address: /MedDaily/ is staying (decided Nov 23, 2026)
+Mathews asked for `/Clinicle/` only if it was clean. It is not, so the address stays `https://pathomnemonic.github.io/MedDaily/`. Reasons:
+1. **GitHub does not redirect Pages addresses after a repository rename.** The old `/MedDaily/` address would return 404 the moment the repo is renamed. Installed web apps (scoped to `/MedDaily/`), bookmarks and every share link already sent
+   (they contain the old address) would stop working, and the service worker would serve the error page instead of the cached app when a player is online.
+2. **Sign-in returns would break** until the Supabase redirect allow-list, the Google consent configuration and the privacy and terms links were all switched at the same moment.
+3. **Tooling is scoped to the repository name** (deploy workflow, the access this assistant and Orion use, the GitHub Actions variables), so a rename risks a gap where nothing can deploy.
+4. It buys little: the name players see everywhere is already Clinicle.
+
+**If a branded address is wanted later**, do it once, properly: register a domain (for example a clinicle address; this costs money, so it is Mathews's call), point GitHub Pages at it, add it to the Supabase redirect list and the Terms/privacy links, and keep
+`/MedDaily/` working through a redirect page until old links have faded. The app needs no code change beyond the share-link constant in `src/App.tsx`. A cheaper partial option is a tiny separate repository named `Clinicle` whose Pages site only redirects to `/MedDaily/`, giving a pretty
+`pathomnemonic.github.io/Clinicle/` link for marketing without moving the real app.
+
+**URLs that did not change:** everything. No allow-list or privacy-policy change is needed for the web address; the only platform change from the rename is the native return link `com.pathomnemonic.clinicle://auth` (already listed above).
