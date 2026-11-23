@@ -83,6 +83,19 @@ Cleanup: rooms are ephemeral. Enable `pg_cron` and run
 - In-app account deletion calls `rpc("delete_my_account")`. It refuses while a store or Stripe subscription is active
   (`cancel_subscription_first`); lifetime and Ko-fi entitlements do not block it.
 
+### Accounts UI (shipped)
+Settings has an optional Account card (`src/AccountCard.tsx`, `src/useAccount.ts`, `src/account.ts`, `src/accountSync.ts`). It appears when the Supabase variables
+are set; `VITE_ACCOUNTS=off` hides it. Signed out, the app behaves exactly as before and the Supabase library is not loaded until it is needed.
+- **Sign-in:** "Continue with Google" (`signInWithOAuth`, PKCE, redirect `origin + pathname`) or an emailed code (`signInWithOtp` then `verifyOtp`, so it works even when the
+  link is opened on another device). The email template should include the `{{ .Token }}` code, otherwise only the link works.
+- **First sign-in:** `ensure_profile()`, then a merge sync. Returning visitors with a stored session restore quietly.
+- **Sync:** pull `player_state` and `results`; merge (union of results, higher XP and bests; preferences adopted only on a device with no history); push the state row and only
+  the results the cloud lacks (`on conflict do nothing`, so a recorded result never changes). Runs after sign-in, after each round (2.5 s debounce, can be switched off) and on demand.
+- **Delete:** `delete_my_account()` removes the MedDaily profile and cloud data, then signs out locally. Local progress stays. The shared auth identity is not deleted
+  (other apps may use it), which the in-app text states plainly.
+- Verified with a mocked Supabase backend in a browser (sign-in, profile, merge, push, delete, sign-out) and with the exact upsert SQL under row-level security. **A real
+  Google or email sign-in against the live project has not been run yet.**
+
 ## 7. Entitlements (payments plumbing only; pricing and free/Pro split are not decided)
 
 - Table `meddaily.entitlements`: `plan` (`free`, `pro_monthly`, `pro_quarterly`, `pro_yearly`, `pro_lifetime`), `source` (`stripe`, `apple`, `google`,

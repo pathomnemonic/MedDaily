@@ -1,8 +1,4 @@
-import type { SupabaseClient as BaseClient } from "@supabase/supabase-js";
-
-/** The client is scoped to the `meddaily` schema, which the generic default ("public") does not know about. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SupabaseClient = BaseClient<any, any, any>;
+import type { SupabaseClient } from "./supabaseClient";
 import { RoomError, type JoinInput, type RoomsBackend, type RoomState, type Unwatch } from "./roomTypes";
 
 /** What the database functions raise (see supabase/migrations) mapped to messages a player can act on. */
@@ -128,10 +124,4 @@ export function makeSupabaseRooms({ configured, getClient, refreshMs = 8000, deb
       if (error) throw friendlyRoomError(error);
     }
   };
-}
-
-/** Real client: loaded on first use so the Supabase library never ships in the startup path. */
-export async function createSupabaseClient(url: string, anonKey: string): Promise<SupabaseClient> {
-  const { createClient } = await import("@supabase/supabase-js");
-  return createClient(url, anonKey, { db: { schema: "meddaily" }, auth: { persistSession: true, autoRefreshToken: true } });
 }
