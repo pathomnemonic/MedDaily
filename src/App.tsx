@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { GameBoard } from "./Games";
+import { Suspense, lazy, useEffect, useState } from "react";
+/** All game code and puzzle data load on first play, keeping the first screen light. */
+const GameBoard = lazy(() => import("./Games").then((m) => ({ default: m.GameBoard })));
 import GameArt from "./components/GameArt";
 import { computeTrophies } from "./achievements";
 import Mascot from "./components/Mascot";
@@ -333,7 +334,7 @@ export default function App() {
         <div className="play-heading"><div className="play-badge" aria-hidden="true"><GameArt game={activeGame}/></div><div className="play-heading-text"><span className="eyebrow">{partyRun?"PARTY ROOM · "+roomCode:practice?"FREE PLAY":selectedTitle.toUpperCase()+" · "+date}</span><h1>{title}</h1><p>{GAMES.find(g=>g.id===activeGame)?.description}</p>{(()=>{const g=GAMES.find(x=>x.id===activeGame);return g?<Difficulty level={g.difficulty}/>:null;})()}</div>
           {!partyRun&&<div className="mode-switch" role="group" aria-label="Game mode"><button className={!practice?"selected":""} onClick={()=>{if(practice)openGame(activeGame,false,room?.seed);}}>Daily</button><button className={practice?"selected":""} onClick={()=>{if(!practice)openGame(activeGame,true,hashSeed(activeGame+"-practice-"+Date.now()));}}>Free Play</button></div>}</div>
         <section className="game-stage" data-game={activeGame}><div className="stage-orbit orbit-one"/><div className="stage-orbit orbit-two"/><StageScene game={activeGame}/><div className="stage-watermark" aria-hidden="true"><GameArt game={activeGame}/></div>
-          <GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onExit={()=>{if(!player.reducedMotion&&activeGame){setWipe({id:activeGame,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}setActiveGame(null);setPractice(false);}} onDone={finishGame}/>
+          <Suspense fallback={<div className="game-loading" role="status"><span className="game-loading-art"><GameArt game={activeGame}/></span><b>Loading {title}…</b></div>}><GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onExit={()=>{if(!player.reducedMotion&&activeGame){setWipe({id:activeGame,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}setActiveGame(null);setPractice(false);}} onDone={finishGame}/></Suspense>
         </section>
         {room&&<RoomScores room={room}/>}
         {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"MedDaily result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
@@ -361,7 +362,7 @@ export default function App() {
     </div>}
     {wipe&&<div key={wipe.key} className={"game-wipe tone-"+(GAMES.find(g=>g.id===wipe.id)?.wash??"lilac")} aria-hidden="true"><div className="game-wipe-art"><GameArt game={wipe.id}/></div><b>{GAMES.find(g=>g.id===wipe.id)?.title}</b></div>}
     {splash&&<Splash onStart={()=>{try{sessionStorage.setItem("meddaily:splash","1");}catch{/* ignore */}sfx("start");setSplash(false);}}/>}
-    <footer className="site-footer"><div><span className="footer-mark">✳</span><b>meddaily.</b><span>PRESS START · FIND YOUR NEXT FAVORITE</span></div><p>For education only · Not a clinical decision tool · Verify care decisions against current guidance.</p><span className="version">v1.1 · Local-first · Optional Drive sync</span></footer>
+    <footer className="site-footer"><div><span className="footer-mark">✳</span><b>meddaily.</b><span>PRESS START · FIND YOUR NEXT FAVORITE</span></div><p>For education only · Not a clinical decision tool · Verify care decisions against current guidance.</p><span className="version">v1.1 · Local-first · <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">Privacy policy</a></span></footer>
   </div>;
 }
 
@@ -474,6 +475,8 @@ function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,dr
       {!googleDriveConfigured()&&<p className="setup-hint">Set <code>VITE_GOOGLE_CLIENT_ID</code> in your deployment environment to enable this button. See <code>docs/SETUP.md</code>.</p>}
     </section>
     <section className="settings-card"><h2>Local backup</h2><p>Export a portable copy of your results or restore one from another device.</p><div className="export-row"><button className="button button-soft" onClick={exportData}>Export progress</button><label className="button button-quiet file-label">Import progress<input type="file" accept="application/json,.json" onChange={e=>importData(e.target.files?.[0])}/></label></div></section>
+    <section className="settings-card"><h2>Your data</h2><p>MedDaily keeps your progress on this device. It never contains patient information. Read how data is handled in the <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">privacy policy</a>, or erase everything MedDaily stored here.</p>
+      <button className="button button-quiet" onClick={()=>{if(window.confirm("Erase all MedDaily progress, settings and preferences stored on this device? This cannot be undone. Export a backup first if you want to keep it.")){try{for(const store of [localStorage,sessionStorage]){Object.keys(store).filter(k=>k.startsWith("meddaily")).forEach(k=>store.removeItem(k));}}catch{/* storage unavailable */}window.location.reload();}}}>Erase data on this device</button></section>
     <div className="privacy-note"><b>No account wall.</b> The arcade, daily puzzles, practice mode, and local progress all work without a login. Google Drive sync and multiplayer are optional add-ons.</div>
   </div>;
 }

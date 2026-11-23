@@ -48,8 +48,24 @@ export function makeSupabaseRooms({ configured, getClient, refreshMs = 20000, de
     })().catch((error) => { ready = null; throw error; });
     return ready;
   }
+  /**
+   * Calls a database function. If the stored guest session is no longer valid (for example the guest user was removed by a
+   * stale-account cleanup), drop it, sign in as a fresh guest once, and retry.
+   */
+  const call = async (fn: string, args: Record<string, unknown>): Promise<{ data: unknown; error: { message: string } | null }> => {
+    let c = await client();
+    let result = await c.rpc(fn, args);
+    if (result.error && /jwt|session|not_signed_in|sub claim|invalid claim|401/i.test(String(result.error.message))) {
+      ready = null;
+      await c.auth.signOut({ scope: "local" }).catch(() => undefined);
+      c = await client();
+      result = await c.rpc(fn, args);
+    }
+    return result as { data: unknown; error: { message: string } | null };
+  };
   const fetchState = async (c: SupabaseClient, code: string): Promise<RoomState | null> => {
-    const { data, error } = await c.rpc("get_room_state", { p_code: code });
+    void c;
+    const { data, error } = await call("get_room_state", { p_code: code });
     if (error) throw friendlyRoomError(error);
     return (data as RoomState | null) ?? null;
   };
@@ -60,8 +76,7 @@ export function makeSupabaseRooms({ configured, getClient, refreshMs = 20000, de
     async join(codeInput, input: JoinInput) {
       const code = normalizeCode(codeInput);
       if (code.length !== 6) throw new RoomError("Enter a six-character room code.");
-      const c = await client();
-      const { data, error } = await c.rpc("join_room", {
+      const { data, error } = await call("join_room", {
         p_code: code, p_game_id: input.gameId, p_scope: input.scope, p_specialty: input.specialty,
         p_day: input.date, p_seed: input.seed, p_name: input.name
       });
@@ -103,14 +118,12 @@ export function makeSupabaseRooms({ configured, getClient, refreshMs = 20000, de
     },
 
     async submitScore(codeInput, score, maxScore, perfect) {
-      const c = await client();
-      const { error } = await c.rpc("submit_score", { p_code: normalizeCode(codeInput), p_score: Math.round(score), p_max: Math.round(maxScore), p_perfect: perfect });
+      const { error } = await call("submit_score", { p_code: normalizeCode(codeInput), p_score: Math.round(score), p_max: Math.round(maxScore), p_perfect: perfect });
       if (error) throw friendlyRoomError(error);
     },
 
     async leave(codeInput) {
-      const c = await client();
-      const { error } = await c.rpc("leave_room", { p_code: normalizeCode(codeInput) });
+      const { error } = await call("leave_room", { p_code: normalizeCode(codeInput) });
       if (error) throw friendlyRoomError(error);
     }
   };
