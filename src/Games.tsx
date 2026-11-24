@@ -782,7 +782,7 @@ function DoctorDle({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
     setNote("Optional clue revealed. This costs 5 points.");
   };
   const view = <div className="game-layout doctordle-game">
-    <div className="case-banner"><span>DOCTORDLE · CASE #{100 + (hashSeed(item.id) % 900)}</span><strong>{item.title}</strong><small>{clueCount} of {item.clues.length} clues revealed · {6 - guesses.length} guesses left</small></div>
+    <div className="case-banner"><span>DOCTORDLE · CASE #{100 + (hashSeed(item.id) % 900)}</span>{ended && <strong>{item.title}</strong>}<small>{clueCount} of {item.clues.length} clues revealed · {6 - guesses.length} guesses left</small></div>
     <div className="doctordle-attempts" aria-label="Six diagnosis attempts">{Array.from({length:6},(_,i)=><span key={i} className={i < guesses.length ? "used" : ""}>{i < guesses.length ? guesses[i] : "Diagnosis "+(i+1)}</span>)}</div>
     <div className="clue-stack">{item.clues.slice(0, clueCount).map((clue, i) => <div className="clue-card" key={i}><span>{String(i + 1).padStart(2, "0")}</span><p>{clue}</p></div>)}</div>
     {!ended ? <>
