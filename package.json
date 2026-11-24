@@ -25,8 +25,10 @@
     "@fontsource/pixelify-sans": "^5.3.0",
     "@fontsource/silkscreen": "^5.3.0",
     "@fontsource/special-elite": "^5.3.0",
+    "@sentry/browser": "^11.17.0",
     "@supabase/supabase-js": "^2.119.2",
     "firebase": "^13.4.0",
+    "posthog-js": "^1.454.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
