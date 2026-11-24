@@ -1,3 +1,4 @@
+import { reportCrash } from "./monitoring";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
 interface Props { children: ReactNode; label?: string; onBack?: () => void; resetKey?: string }
@@ -7,7 +8,7 @@ interface State { failed: boolean }
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { failed: false };
   static getDerivedStateFromError(): State { return { failed: true }; }
-  componentDidCatch(error: Error, info: ErrorInfo) { console.error("Roundsy crashed:", error, info.componentStack); }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error("Roundsy crashed:", error, info.componentStack); reportCrash(error); }
   componentDidUpdate(prev: Props) { if (this.state.failed && prev.resetKey !== this.props.resetKey) this.setState({ failed: false }); }
   render() {
     if (!this.state.failed) return this.props.children;

@@ -120,7 +120,7 @@ export default function Hoofbeats({ seed, onDone, onExit }: { seed: number; onDo
         <input ref={input} value={entry} onChange={(e) => setEntry(e.target.value)} placeholder="What would most clinicians say?" autoComplete="off" autoCapitalize="off" spellCheck={false} aria-label="Your answer" />
         <button type="submit" className="hn-go" disabled={!entry.trim()} aria-label="Submit answer">→</button>
       </form>
-    </footer> : <footer className="hn-sheet">
+    </footer> : <footer className={"hn-sheet" + (board.length > 12 ? " dense denser" : board.length > 8 ? " dense" : "")}>
       <div className="hn-verdict"><span>{r ? r.icon : "⬛"}</span><b>{r ? r.label.toUpperCase() : "NO ANSWER"}</b><strong>+{current?.points ?? 0} m</strong></div>
       <p className="hn-flavor">{r ? FLAVOR[r.label] : "The most common answer was " + board[0].name + " (" + board[0].pct + "%)."} {message}</p>
       <ol className="hn-list">

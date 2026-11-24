@@ -2813,3 +2813,18 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .stats-page .stats-depth h2{color:#2a2418}.stats-page .stats-sub,.stats-page .fam>div,.stats-page .cal-legend{color:#2a2418}
 
 .complete-report{display:block;margin-top:2px;text-align:center;font:600 12px var(--font-game);color:#fff;opacity:.8;text-decoration:underline}
+
+/* Hoofbeats: long answer boards (9 to 16 rows) are packed tighter so the whole board and the Next button stay on screen */
+.hn-sheet.dense{max-height:94dvh}
+.hn-sheet.dense .hn-list{gap:3px;margin-bottom:6px}
+.hn-sheet.dense .hn-list li{padding:3px 8px;border-radius:8px}
+.hn-sheet.dense .hn-list .ic{font-size:13px}
+.hn-sheet.dense .hn-list .nm{font-size:12px;line-height:1.15}
+.hn-sheet.dense .hn-list .pc{display:flex;align-items:baseline;gap:5px;font-size:12px}
+.hn-sheet.dense .hn-list .pc small{font-size:9px}
+.hn-sheet.dense .hn-flavor{margin:2px 0 6px;font-size:12px}
+.hn-sheet.dense .hn-note{margin:0 0 6px;font-size:11px}
+.hn-sheet.dense .hn-verdict span{font-size:20px}.hn-sheet.dense .hn-verdict b,.hn-sheet.dense .hn-verdict strong{font-size:16px}
+.hn-sheet.denser .hn-list li{padding:2px 8px}
+.hn-sheet.denser .hn-list .nm{font-size:11.5px}
+@media(min-width:560px){.hn-sheet.dense .hn-list{grid-template-columns:1fr 1fr}}
