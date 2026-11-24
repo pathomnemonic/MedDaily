@@ -320,12 +320,18 @@ const associationTrivia: TriviaQuestion[] = pairsBank.map(([term, definition], i
   };
 });
 
+/** Some cases reveal one sentence in growing pieces ("Skin commensal that sticks to…" then a longer start of the same text). In a single question card only the fullest version should print. */
+export function distinctClues(clues: readonly string[]): string[] {
+  const stem = (clue: string) => clue.replace(/…$/, "").trim();
+  return clues.filter((clue, i) => !clues.slice(i + 1).some((later) => later.startsWith(stem(clue))));
+}
+
 const diagnosisTrivia: TriviaQuestion[] = diagnosisCases
   .filter((item) => item.options.length === 4 && item.options.includes(item.answer))
   .map((item) => ({
     id: "diagnosis-" + item.id,
     category: classifyTriviaTopic(item.title + " " + item.clues.join(" ") + " " + item.explanation),
-    question: "Which diagnosis best fits this presentation? " + item.clues.slice(0, 3).join(" "),
+    question: "Which diagnosis best fits this presentation? " + distinctClues(item.clues.slice(0, 3)).join(" "),
     options: [...item.options] as [string,string,string,string],
     answer: item.options.indexOf(item.answer),
     explanation: item.explanation + " Reference: " + item.source,
