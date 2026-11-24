@@ -22,3 +22,6 @@ The terms describe what the app really does (contact us to remove the shared sig
 
 ## Also for the store listing
 Use the terms URL above as the Terms of Use / EULA link. Apple will accept a custom EULA; otherwise its standard one applies.
+
+## Contributions clause (Nov 24, 2026)
+Section 7 covers user-submitted questions and content for the crowd-sourced pipeline: own work, no copied material, no patient identifiers, accuracy in good faith, age 18+, worldwide perpetual royalty-free licence to PathoMnemonic, no payment, acceptance at our discretion, AI checking disclosed, email used only for review and contact, withdrawal honored before publication. Modeled on the Dx Dash Terms section 6. The privacy policy is hosted on the StudyBible site, not in this repo, so its matching paragraph (contributor email used only for review and contact, never published) must be added there.

@@ -6,7 +6,7 @@ const text = page.replace(/<style[\s\S]*?<\/style>/g, "").replace(/<[^>]+>/g, " 
 
 describe("Terms of Service page", () => {
   it("covers the standard clauses and the app's actual features", () => {
-    for (const id of ["education", "guest", "account", "rooms", "names", "use", "delete", "ip", "liability", "changes", "law", "contact"]) expect(page).toContain('id="' + id + '"');
+    for (const id of ["education", "guest", "account", "rooms", "names", "contribute", "use", "delete", "ip", "liability", "changes", "law", "contact"]) expect(page).toContain('id="' + id + '"');
     expect(text).toMatch(/not medical advice/i);
     expect(text).toMatch(/Delete my Roundsy account/);
     expect(text).toMatch(/six-character code/);
@@ -14,6 +14,15 @@ describe("Terms of Service page", () => {
     expect(page).toContain("https://pathomnemonic.github.io/StudyBible/privacy.html");
     expect(text).toMatch(/between you and PathoMnemonic/);
     expect(text).toMatch(/State of Arizona/);
+  });
+  it("covers user contributions with the key protections", () => {
+    expect(text).toMatch(/own original work/);
+    expect(text).toMatch(/no information that identifies a real patient/);
+    expect(text).toMatch(/18 or older/);
+    expect(text).toMatch(/worldwide, perpetual, royalty-free/);
+    expect(text).toMatch(/AI tools/);
+    expect(text).toMatch(/do not publish it/);
+    expect(text).toMatch(/before it is published/);
   });
   it("makes no promise about paid tiers or prices while monetization is undecided", () => {
     expect(text).not.toMatch(/\bPro\b/);
