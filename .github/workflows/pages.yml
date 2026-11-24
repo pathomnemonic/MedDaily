@@ -43,6 +43,7 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
           VITE_ROOMS_PROVIDER: ${{ vars.VITE_ROOMS_PROVIDER }}
+          VITE_AUTH_APPLE: ${{ vars.VITE_AUTH_APPLE }}
       - name: Configure Pages
         uses: actions/configure-pages@v6
       - name: Upload artifact

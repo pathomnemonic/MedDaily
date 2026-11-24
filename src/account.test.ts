@@ -26,6 +26,17 @@ function fake(user: unknown, handlers: Record<string, (args?: unknown) => { data
 }
 const account = { id: "u1", email: "a@b.co", app_metadata: { provider: "google" }, is_anonymous: false };
 
+describe("Sign in with Apple", () => {
+  it("starts the Apple OAuth flow with the redirect URL and labels the session", async () => {
+    const signInWithOAuth = vi.fn(async () => ({ data: {}, error: null }));
+    const client = { auth: { signInWithOAuth } } as unknown as Parameters<typeof makeAccounts>[0] extends () => Promise<infer C> ? C : never;
+    const a = makeAccounts(async () => client, () => "https://example.test/app/");
+    await a.signInApple();
+    expect(signInWithOAuth).toHaveBeenCalledWith({ provider: "apple", options: { redirectTo: "https://example.test/app/" } });
+    expect(signInProvider({ id: "u", identities: [{ provider: "apple", last_sign_in_at: "2026-11-24T00:00:00Z" }] }, null)).toBe("apple");
+  });
+});
+
 describe("sign-in method label", () => {
   it("shows the identity used most recently, not the account's first method", () => {
     expect(signInProvider({ id: "u", app_metadata: { provider: "email" }, identities: [

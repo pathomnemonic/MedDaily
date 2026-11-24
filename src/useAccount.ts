@@ -6,9 +6,11 @@ import { savePlayer, type PlayerData } from "./storage";
 import { isNative, onAppUrl, parseAuthCallback } from "./native";
 
 /** Accounts appear when the Supabase variables are set; VITE_ACCOUNTS=off hides them without a code change. */
+/** Sign in with Apple appears only once the Apple provider is configured in Supabase (set VITE_AUTH_APPLE=on in the build). */
+export const appleSignInEnabled: boolean = import.meta.env.VITE_AUTH_APPLE === "on";
 export const accountsEnabled: boolean = supabaseConfigured && import.meta.env.VITE_ACCOUNTS !== "off";
 
-type Busy = "google" | "email" | "verify" | "sync" | "delete" | "name" | null;
+type Busy = "google" | "apple" | "email" | "verify" | "sync" | "delete" | "name" | null;
 export interface Notice { kind: "ok" | "error"; text: string }
 
 const read = (key: string): string | null => { try { return localStorage.getItem(key); } catch { return null; } };
@@ -127,6 +129,7 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
     user, displayName, busy, notice, emailSent, lastSynced, auto,
     dismissNotice: () => setNotice(null),
     signInGoogle: () => run("google", () => accounts!.signInGoogle()),
+    signInApple: () => run("apple", () => accounts!.signInApple()),
     sendEmailCode: (email: string) => run("email", async () => { await accounts!.sendEmailCode(email); setEmailSent(email.trim().toLowerCase()); setNotice({ kind: "ok", text: "Check your email for a sign-in code." }); }),
     verifyEmailCode: (code: string) => run("verify", async () => { if (!emailSent) return; await accounts!.verifyEmailCode(emailSent, code); setEmailSent(null); }),
     cancelEmail: () => { setEmailSent(null); setNotice(null); },

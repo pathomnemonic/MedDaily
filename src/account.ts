@@ -14,12 +14,12 @@ export function friendlyAccountError(error: unknown): AccountError {
   const text = String((error as { message?: string; code?: string } | null)?.message ?? error ?? "");
   const code = String((error as { code?: string } | null)?.code ?? "");
   if (error instanceof AccountError) return error;
-  if (/over_email_send_rate_limit|email rate limit|rate limit/i.test(text + code)) return new AccountError("Too many sign-in emails right now. Wait a little and try again, or continue with Google.");
+  if (/over_email_send_rate_limit|email rate limit|rate limit/i.test(text + code)) return new AccountError("Too many sign-in emails right now. Wait a little and try again, or use another sign-in option.");
   if (/otp_expired|token has expired|invalid.*(token|otp|code)|otp.*invalid/i.test(text + code)) return new AccountError("That code didn't work or has expired. Request a new one.");
   if (/invalid.*email|unable to validate email|email_address_invalid/i.test(text + code)) return new AccountError("That email address doesn't look right.");
   if (/cancel_subscription_first/.test(text)) return new AccountError("Cancel your active subscription with its provider first, then delete the account.");
   if (/guest_cannot_create_account|not_signed_in/.test(text)) return new AccountError("Sign in to use an account.");
-  if (/provider is not enabled|unsupported provider/i.test(text)) return new AccountError("Google sign-in isn't available right now. Try the email option.");
+  if (/provider is not enabled|unsupported provider/i.test(text)) return new AccountError("That sign-in option isn't available right now. Try the email option.");
   if (/failed to fetch|network|load failed/i.test(text)) return new AccountError("No connection right now. Your progress is safe on this device.");
   return new AccountError("Something went wrong. Please try again.");
 }
@@ -46,7 +46,7 @@ export function signInProvider(u: RawUser, accessToken?: string | null): string 
   const method = Array.isArray(amr) && amr.length ? String((amr[0] as { method?: string })?.method ?? amr[0]) : "";
   if (method === "otp" || method === "magiclink" || method === "password" || method === "email" || method === "email_change") return "email";
   if (method === "oauth" || method === "sso/saml") {
-    // Google is the only social provider today; with more, take the most recently used non-email identity
+    // take the most recently used non-email identity (Google or Apple)
     const social = [...(u.identities ?? [])].filter((i) => i.provider && i.provider !== "email")
       .sort((a, b) => Date.parse(b.last_sign_in_at ?? "") - Date.parse(a.last_sign_in_at ?? ""))[0];
     return social?.provider ?? "google";
@@ -81,18 +81,21 @@ export function makeAccounts(getClient: () => Promise<SupabaseClient>, redirectT
       const { data } = c.auth.onAuthStateChange((_event, session) => cb(toUser(session?.user, session?.access_token)));
       return () => data.subscription.unsubscribe();
     },
-    async signInGoogle(): Promise<void> {
+    /** Sign-in with a social provider. In the native apps it runs in the system browser and returns through the app's own link. */
+    async signInWith(provider: "google" | "apple"): Promise<void> {
       const c = await getClient();
       if (isNative()) {
-        // Google refuses embedded web views: run sign-in in the system browser and come back through the app's own link
-        const { data, error } = await c.auth.signInWithOAuth({ provider: "google", options: { redirectTo: NATIVE_AUTH_REDIRECT, skipBrowserRedirect: true } });
+        // Google refuses embedded web views, and Apple's web flow also runs best in the system browser
+        const { data, error } = await c.auth.signInWithOAuth({ provider, options: { redirectTo: NATIVE_AUTH_REDIRECT, skipBrowserRedirect: true } });
         if (error || !data?.url) throw friendlyAccountError(error ?? new Error("no url"));
         await openInSystemBrowser(data.url);
         return;
       }
-      const { error } = await c.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo() } });
+      const { error } = await c.auth.signInWithOAuth({ provider, options: { redirectTo: redirectTo() } });
       if (error) throw friendlyAccountError(error);
     },
+    signInGoogle(): Promise<void> { return this.signInWith("google"); },
+    signInApple(): Promise<void> { return this.signInWith("apple"); },
     /** Finishes a native sign-in from the code in the return link. */
     async completeNativeSignIn(code: string): Promise<void> {
       const c = await getClient();

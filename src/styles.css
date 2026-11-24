@@ -2828,3 +2828,5 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .hn-sheet.denser .hn-list li{padding:2px 8px}
 .hn-sheet.denser .hn-list .nm{font-size:11.5px}
 @media(min-width:560px){.hn-sheet.dense .hn-list{grid-template-columns:1fr 1fr}}
+
+.account-apple{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin:10px 0;padding:13px;background:#000!important;color:#fff!important;border:1px solid #fff4!important;border-radius:12px;font:700 15px var(--font-game);cursor:pointer}.account-apple:disabled{opacity:.6}.a-mark{flex:none}

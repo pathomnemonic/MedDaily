@@ -13,7 +13,7 @@ workflows:
       node: 22
       xcode: latest
       groups:
-        - roundsy_build   # secure variables: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_GOOGLE_CLIENT_ID, VITE_ROOMS_PROVIDER (same values as the GitHub Pages build)
+        - roundsy_build   # secure variables: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_GOOGLE_CLIENT_ID, VITE_ROOMS_PROVIDER, VITE_AUTH_APPLE=on (same values as the GitHub Pages build)
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.pathomnemonic.roundsy

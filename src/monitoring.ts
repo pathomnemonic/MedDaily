@@ -17,11 +17,37 @@ export function scrubUrl(url: string | undefined): string | undefined {
   return url.replace(/[?#].*$/, "");
 }
 
+const PREF_KEY = "meddaily:monitoring";
+
+/** True unless the person switched crash reports and analytics off (Options > Your data). Default is on. */
+export function monitoringPreference(storage: Pick<Storage, "getItem"> | null = safeStorage()): boolean {
+  try { return storage?.getItem(PREF_KEY) !== "off"; } catch { return true; }
+}
+function currentHost(): string { return typeof window === "undefined" ? "localhost" : window.location.hostname; }
+function safeStorage(): Storage | null { try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; } }
+
+/** Whether this build reports at all (production web only); the Options switch is shown only then. */
+export function monitoringAvailable(prod: boolean = import.meta.env.PROD, host: string = currentHost()): boolean {
+  return monitoringEnabled(prod, host);
+}
+
+type PostHogLike = { opt_out_capturing: () => void; opt_in_capturing: () => void };
 let sentry: typeof import("@sentry/browser") | null = null;
+let posthogInstance: PostHogLike | null = null;
+let started = false;
+
+/** Applies the Options switch right away: stops sending now, or starts if it was off at load. */
+export function setMonitoringPreference(on: boolean, storage: Pick<Storage, "setItem" | "removeItem"> | null = safeStorage()): void {
+  try { if (on) storage?.removeItem(PREF_KEY); else storage?.setItem(PREF_KEY, "off"); } catch { /* storage blocked */ }
+  if (!monitoringAvailable()) return;
+  if (on) { if (started) posthogInstance?.opt_in_capturing(); else startMonitoring(); }
+  else { posthogInstance?.opt_out_capturing(); void sentry?.close(); sentry = null; started = false; }
+}
 
 /** Starts crash reporting and anonymous pageview/error analytics after the app has painted. Failures here must never affect the app. */
-export function startMonitoring(prod: boolean = import.meta.env.PROD, host: string = window.location.hostname): void {
-  if (!monitoringEnabled(prod, host)) return;
+export function startMonitoring(prod: boolean = import.meta.env.PROD, host: string = currentHost()): void {
+  if (!monitoringEnabled(prod, host) || !monitoringPreference() || started) return;
+  started = true;
   const run = () => { void startSentry().catch(() => undefined); void startPostHog().catch(() => undefined); };
   const idle = (window as unknown as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback;
   if (idle) idle(run); else window.setTimeout(run, 1500);
@@ -36,6 +62,7 @@ async function startSentry(): Promise<void> {
     tracesSampleRate: 0,
     initialScope: { tags: { app: APP_TAG } },
     beforeSend(event) {
+      if (!monitoringPreference()) return null;
       delete event.user;
       if (event.request) { event.request.url = scrubUrl(event.request.url); delete event.request.cookies; delete event.request.query_string; }
       return event;
@@ -70,6 +97,8 @@ async function startPostHog(): Promise<void> {
     }
   });
   posthog.register({ app: APP_TAG });
+  posthogInstance = posthog;
+  if (!monitoringPreference()) posthog.opt_out_capturing();
 }
 
 /** Called from the error boundaries so a crash that React caught still reaches Sentry. */
