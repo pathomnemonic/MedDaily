@@ -1,0 +1,60 @@
+# Codemagic builds the Roundsy iOS app on a cloud Mac (no Mac needed) and sends it to TestFlight / App Store Connect.
+# Modeled on the Dx Dash setup. One-time setup is in docs/IOS_RELEASE.md. This file has NOT been run yet: the Apple
+# Developer account is not active, so expect to fix a small thing or two on the first build and read the log when a step fails.
+# There is deliberately no `triggering:` block, so nothing runs on push; start the workflow by hand in Codemagic.
+workflows:
+  ios-release:
+    name: Roundsy iOS (TestFlight)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: PathoMnemonic App Store Connect   # must match the name of the API key under Codemagic > Teams > Integrations
+    environment:
+      node: 22
+      xcode: latest
+      groups:
+        - roundsy_build   # secure variables: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_GOOGLE_CLIENT_ID, VITE_ROOMS_PROVIDER (same values as the GitHub Pages build)
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.pathomnemonic.roundsy
+    scripts:
+      - name: Install and test
+        script: |
+          npm ci
+          npm test
+      - name: Build the web app
+        script: |
+          npm run build
+      - name: Sync the iOS project (the project is committed; this copies the web build in and refreshes the Swift package list)
+        script: |
+          npx cap sync ios
+      - name: Build number
+        script: |
+          # The Xcode project does not use agvtool versioning, so set the build number in the project settings directly
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/g" ios/App/App.xcodeproj/project.pbxproj
+          grep -n "CURRENT_PROJECT_VERSION" ios/App/App.xcodeproj/project.pbxproj
+      - name: Privacy manifest (App Store requirement)
+        script: |
+          plutil -lint ios-config/PrivacyInfo.xcprivacy
+          plutil -lint ios/App/App/Info.plist
+          cp ios-config/PrivacyInfo.xcprivacy ios/App/App/PrivacyInfo.xcprivacy
+          ruby -e '
+            require "xcodeproj"
+            proj = Xcodeproj::Project.open("ios/App/App.xcodeproj")
+            target = proj.targets.find { |t| t.name == "App" }
+            group = proj.main_group.find_subpath("App", true)
+            ref = group.new_file("PrivacyInfo.xcprivacy")
+            target.resources_build_phase.add_file_reference(ref, true)
+            proj.save'
+      - name: Set up code signing
+        script: |
+          xcode-project use-profiles
+      - name: Build the signed app
+        script: |
+          xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

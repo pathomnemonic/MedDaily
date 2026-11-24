@@ -69,3 +69,7 @@ app says so in the footer and store text. Notifications are optional and off by 
 - **Medical-content scrutiny:** keep the "not a clinical decision tool" wording in the listing, and have the clinical content reviewed by a specialist before launch (already on the list).
 - **Payments:** none are wired. When pricing is decided, digital subscriptions in the apps must use the stores' in-app purchase; this is separate work.
 - **Android back button and keyboard:** not yet exercised on a device. Plan a pass on a real phone for the back button, keyboard-covered inputs and notches before submitting.
+
+
+## iOS cloud build
+See `docs/IOS_RELEASE.md` and `codemagic.yaml`: the iOS build and signing run on Codemagic cloud Macs, so the "Mac with Xcode" requirement above is not needed for iOS.
