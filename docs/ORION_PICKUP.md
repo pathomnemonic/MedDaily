@@ -41,5 +41,8 @@ Well-scoped work that can be done without architectural decisions. Each item nam
 ## 9. Apply the high-risk panel edits (round 1)
 - Spec with file:line locations and every decision already made: `docs/CONTENT_EDITS_PANEL_1.md`. Apply as one PR (branch name of your choice), run tests, check the changed items render, and send me the PR link. Leave anything you cannot locate in the doc and tell me which.
 
+## 10. iOS release setup (account-gated)
+- Everything is staged in `codemagic.yaml` and `docs/IOS_RELEASE.md`; do not run the workflow until the Apple Developer account is active. Then follow "One-time setup" in that doc, including the Supabase redirect `com.pathomnemonic.roundsy://auth`. Report the first build log to me; Sign in with Apple is the open design item.
+
 ## Not for pickup (needs my judgement)
 Pro/payments build, guided first round, archive, image share card, anything touching game logic or the database schema.
