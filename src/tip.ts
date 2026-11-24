@@ -3,7 +3,7 @@
  * This is Roundsy's own link. Never use the Ko-fi page, which is reserved for a different app.
  * Tips are voluntary, unlock nothing, and are separate from Pro.
  */
-export const TIP_URL = "";
+export const TIP_URL = "https://buy.stripe.com/5kQ8wQ2bS9HH8rx1bq3wQ01";
 
 /** The tip card shows only on the web build: the iOS and Android stores restrict links to outside payments inside apps. */
 export function tipLink(url: string = TIP_URL, native = false): string | null {
