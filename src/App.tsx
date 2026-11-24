@@ -25,6 +25,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import { APP_VERSION, feedbackMailto, reportMailto } from "./support";
 import { nextDailyLabel } from "./dailyTime";
 import { TIP_URL, tipLink } from "./tip";
+import { monitoringAvailable, monitoringPreference, setMonitoringPreference } from "./monitoring";
 import ReminderCard from "./ReminderCard";
 import AccountCard from "./AccountCard";
 import type { AccountController } from "./useAccount";
@@ -527,6 +528,11 @@ function StatsPage({player,scope,streak,done}:{player:PlayerData;scope:string;st
 }
 
 /** Signs out (so the account cannot quietly return and recreate a profile), clears every stored key, then reloads. */
+function MonitoringSwitch(){
+  const [on,setOn]=useState(()=>monitoringPreference());
+  if(!monitoringAvailable())return null;
+  return <Setting label="Crash reports and anonymous analytics" detail="Web version only. Sends crash reports and anonymous page-view counts so we can fix problems. On by default; turn it off any time. The iPhone and Android apps never send them." checked={on} onChange={v=>{setOn(v);setMonitoringPreference(v);}}/>;
+}
 function EraseData(){
   const [ask,setAsk]=useState(false);const [busy,setBusy]=useState(false);
   if(!ask)return <button className="button button-quiet" onClick={()=>setAsk(true)}>Erase data on this device</button>;
@@ -580,6 +586,7 @@ function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,dr
       <div className="account-row"><a className="button button-soft" href={import.meta.env.BASE_URL+"help.html"} target="_blank" rel="noopener noreferrer">Help &amp; FAQ</a><a className="button button-quiet" href={feedbackMailto()}>Send feedback</a></div></section>
     {(()=>{const tip=tipLink(TIP_URL,isNative());return tip?<section className="settings-card"><h2>Support Roundsy</h2><p>Roundsy is free and always will be. If it made your day a little better, you can leave a tip. It is entirely optional, unlocks nothing, and is separate from Pro.</p><div className="account-row"><a className="button button-soft" href={tip} target="_blank" rel="noopener noreferrer">Leave a tip ↗</a></div></section>:null;})()}
     <section className="settings-card"><h2>Your data</h2><p>Roundsy keeps your progress on this device. It never contains patient information. Read how data is handled in the <a href="https://pathomnemonic.github.io/StudyBible/privacy.html" target="_blank" rel="noopener noreferrer">privacy policy</a> and the <a href={import.meta.env.BASE_URL+"terms.html"} target="_blank" rel="noopener noreferrer">terms of service</a>, or erase everything Roundsy stored here.</p>
+      <MonitoringSwitch/>
       <EraseData/></section>
     <div className="privacy-note"><b>No account wall.</b> The arcade, daily puzzles, practice mode, and local progress all work without a login. Backup to your account and multiplayer are optional add-ons.</div>
   </div>;

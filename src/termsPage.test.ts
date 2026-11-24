@@ -32,7 +32,8 @@ describe("Terms of Service page", () => {
     expect(text).toMatch(/"as is" and "as available"/);
     expect(text).toMatch(/Sentry/);
     expect(text).toMatch(/PostHog/);
-    expect(text).toMatch(/without a separate consent switch/);
+    expect(text).toMatch(/turn them off at any time in Options/);
+    expect(text).toMatch(/Copyright complaints/);
     expect(text).toMatch(/iPhone and Android apps do not send crash reports or analytics/);
     expect(text).toMatch(/never be lost, reset or changed/);
     expect(text).toMatch(/take effect when we post them/);

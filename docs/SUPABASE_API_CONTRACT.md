@@ -140,3 +140,6 @@ are set; `VITE_ACCOUNTS=off` hides it. Signed out, the app behaves exactly as be
 - A player is active while finished or seen within 5 minutes. `touch_room(p_code)` is the heartbeat (the client calls it every 60 s while watching); the player list hides quiet, unfinished players (the caller always sees themselves).
 - New error `room_finished` (errcode 55000): joining a finished room as a new player, or submitting a score after the room is over.
 - `cleanup_rooms()` also removes unfinished players quiet for over an hour and rooms left empty; scheduled hourly through pg_cron in the migration when available.
+
+## Sign in with Apple
+The app calls `signInWithOAuth({ provider: "apple" })` (web redirect on the web, system browser with the `com.pathomnemonic.roundsy://auth` return link in the native apps). The Apple provider must be enabled in Supabase (Services ID and a signed secret that expires within six months) before `VITE_AUTH_APPLE=on` is set. The sign-in badge reads "Apple" when the session's most recent social identity is Apple.

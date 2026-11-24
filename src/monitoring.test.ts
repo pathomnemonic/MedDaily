@@ -18,3 +18,19 @@ describe("monitoring", () => {
     expect(SENTRY_DSN).toMatch(/^https:\/\/[0-9a-f]+@o\d+\.ingest\.us\.sentry\.io\/\d+$/);
   });
 });
+
+import { monitoringPreference, setMonitoringPreference } from "./monitoring";
+describe("monitoring switch", () => {
+  const store = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k) }; };
+  it("is on by default and remembers being switched off and on again", () => {
+    const st = store();
+    expect(monitoringPreference(st)).toBe(true);
+    setMonitoringPreference(false, st);
+    expect(monitoringPreference(st)).toBe(false);
+    setMonitoringPreference(true, st);
+    expect(monitoringPreference(st)).toBe(true);
+  });
+  it("falls back to on when storage is blocked", () => {
+    expect(monitoringPreference({ getItem: () => { throw new Error("blocked"); } })).toBe(true);
+  });
+});

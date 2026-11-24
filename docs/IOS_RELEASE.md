@@ -27,7 +27,7 @@
 6. Start `ios-release`. Expect to fix a line or two on the first run.
 
 ## Still blocks a first App Store submission (not the first TestFlight build)
-- **Sign in with Apple is not built.** Roundsy offers Google sign-in, and App Review guideline 4.8 requires an equivalent privacy-preserving option such as Sign in with Apple. Needs the Apple provider in Supabase plus the button and native flow in the app. Without it, expect rejection.
+- **Sign in with Apple is built but not switched on.** The button and flow are in the app (system-browser OAuth, so it works on web, iPhone and iPad). It stays hidden until `VITE_AUTH_APPLE=on` is set in the GitHub Pages variables and the Codemagic `roundsy_build` group, which should happen only after the steps in "Sign in with Apple setup" below. Without the button, expect rejection (guideline 4.8).
 - Supabase must have `com.pathomnemonic.roundsy://auth` in its redirect allow-list (native Google sign-in cannot return to the app otherwise).
 - App Store Connect: App Privacy answers (match the manifest: email, name, user id, gameplay content, all linked, none for tracking), age rating, category, support and privacy policy URLs, screenshots (iPhone 6.9 inch and iPad 13 inch, because the app is set to run on iPad; `node scripts/store-screenshots.mjs` makes phone shots), description, keywords, reviewer notes.
 - The privacy policy (StudyBible site) needs the contribution, monitoring and analytics wording.
@@ -35,3 +35,16 @@
 ## Decisions for the owner
 - **Monitoring is off in the iOS app.** Capacitor serves the app from `localhost`, which the monitoring code skips on purpose, so neither Sentry nor PostHog runs natively. Turning it on needs a small code change and a privacy manifest update (crash data, product interaction).
 - **iPad.** The project targets iPhone and iPad, so Apple will want iPad screenshots. Setting `TARGETED_DEVICE_FAMILY` to `1` makes it iPhone only and skips them.
+
+## Sign in with Apple setup (needs the active Apple account)
+1. Apple Developer > Identifiers: create a Services ID (for example `com.pathomnemonic.roundsy.signin`), enable Sign in with Apple, set the domain to the Supabase project host and the return URL to `https://<project-ref>.supabase.co/auth/v1/callback`.
+2. Keys: create a Sign in with Apple key (download the `.p8`, note the Key ID and Team ID).
+3. Supabase > Authentication > Providers > Apple: enable, Client ID = the Services ID, secret = the signed token built from the key. **That secret expires after at most six months; put a renewal reminder in the calendar.**
+4. Confirm the redirect allow-list holds the web address and `com.pathomnemonic.roundsy://auth`.
+5. Set `VITE_AUTH_APPLE=on` (GitHub Pages variable and Codemagic group), redeploy, and test on a real iPhone.
+- The app uses Apple's web flow in the system browser. A fully native Apple sheet (`signInWithIdToken` plus the Sign in with Apple capability and entitlement) is a possible later upgrade; it is not needed for review.
+- **Known gap: token revocation.** Apple asks apps with Sign in with Apple to revoke the Apple token when the account is deleted. "Delete my Roundsy account" removes Roundsy data but leaves the shared PathoMnemonic sign-in, so no revocation happens. If review flags it, the fix is a small Edge Function that revokes the token when the shared sign-in is removed.
+- The privacy answers should add "name" and "email" (Apple may hide the email behind a relay address; the display name is only shared on first sign-in).
+
+## iPad and tablets
+iPad support stays on (iPhone and iPad). Layouts were checked on tablet-sized screens (820x1180 and 1180x820); see the report for what was found. iPad screenshots are required for the listing.
