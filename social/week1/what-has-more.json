@@ -1,0 +1,59 @@
+[
+  {
+    "date": "2026-11-24",
+    "weekday": "Tue",
+    "post": {
+      "publishOn": "2026-11-24",
+      "question": "Which has more?",
+      "a": "Red blood cells your marrow makes each second (about 2.4 million)",
+      "b": "Seconds in one day",
+      "unit": "count"
+    },
+    "reveal": {
+      "publishOn": "2026-11-25",
+      "answer": "A",
+      "a": 2400000,
+      "b": 86400,
+      "explanation": "Marrow produces roughly 2 to 3 million red cells every second, dwarfing the 86,400 seconds in a day.",
+      "source": "Typical hematology estimates of erythropoiesis."
+    }
+  },
+  {
+    "date": "2026-11-26",
+    "weekday": "Thu",
+    "post": {
+      "publishOn": "2026-11-26",
+      "question": "Which has more?",
+      "a": "Radiation dose from one chest X-ray (about 0.1 mSv)",
+      "b": "Radiation dose from eating 100 bananas (about 0.1 µSv each)",
+      "unit": "µSv"
+    },
+    "reveal": {
+      "publishOn": "2026-11-27",
+      "answer": "A",
+      "a": 100,
+      "b": 10,
+      "explanation": "The 'banana equivalent dose' is a playful unit: a chest X-ray is about a thousand bananas, so a hundred bananas is a tenth of that.",
+      "source": "Typical effective doses; banana equivalent dose is an informal teaching unit."
+    }
+  },
+  {
+    "date": "2026-11-28",
+    "weekday": "Sat",
+    "post": {
+      "publishOn": "2026-11-28",
+      "question": "Which has more?",
+      "a": "Bacteria in the human gut (approximate)",
+      "b": "Stars in the Milky Way (approximate)",
+      "unit": "trillions"
+    },
+    "reveal": {
+      "publishOn": "2026-11-29",
+      "answer": "A",
+      "a": 38,
+      "b": 0.2,
+      "explanation": "The gut microbiome is often estimated at tens of trillions of microbial cells; the Milky Way contains hundreds of billions of stars.",
+      "source": "Common microbiome and astronomy estimates; both are approximate."
+    }
+  }
+]

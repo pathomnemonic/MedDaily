@@ -1,0 +1,588 @@
+[
+  {
+    "date": "2026-11-24",
+    "weekday": "Tue",
+    "id": "d50",
+    "post": {
+      "publishOn": "2026-11-24",
+      "prompt": "Name a medication associated with drug-induced lupus.",
+      "caption": "Today's scan. One prompt, one answer. Rarer answer, deeper layer. Drop ONE answer in the comments. The deepest valid answer gets credited in tomorrow's reveal. Layers come from our question bank, not from other players. Seven new scans every day in Roundsy."
+    },
+    "reveal": {
+      "publishOn": "2026-11-25",
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "Skin deep",
+          "points": 10,
+          "answers": [
+            "Hydralazine"
+          ]
+        },
+        {
+          "tier": 2,
+          "name": "Subcutaneous",
+          "points": 15,
+          "answers": [
+            "Procainamide",
+            "Isoniazid"
+          ]
+        },
+        {
+          "tier": 3,
+          "name": "Fascia",
+          "points": 30,
+          "answers": [
+            "Minocycline",
+            "Methyldopa"
+          ]
+        },
+        {
+          "tier": 4,
+          "name": "Muscle",
+          "points": 60,
+          "answers": [
+            "Chlorpromazine",
+            "Quinidine",
+            "Penicillamine",
+            "Carbamazepine",
+            "Phenytoin"
+          ]
+        },
+        {
+          "tier": 5,
+          "name": "Bone",
+          "points": 85,
+          "answers": [
+            "TNF inhibitor-associated lupus-like syndrome",
+            "Sulfasalazine",
+            "Propylthiouracil",
+            "Terbinafine",
+            "Statins",
+            "Lithium"
+          ]
+        },
+        {
+          "tier": 6,
+          "name": "Marrow",
+          "points": 100,
+          "answers": [
+            "Interferon alfa",
+            "Chlorthalidone",
+            "Ticlopidine",
+            "Hydrochlorothiazide",
+            "Griseofulvin",
+            "Practolol",
+            "Atenolol",
+            "Captopril",
+            "Nitrofurantoin"
+          ]
+        }
+      ],
+      "explanation": "Drug-induced lupus is associated with several medications; antihistone antibodies are common but not universal.",
+      "rule": "Answers not on this key are judge's call and are placed in the next day's reveal.",
+      "caption": "Yesterday's scan: Name a medication associated with drug-induced lupus. How deep did you go?"
+    },
+    "inTodaysAppSet": false
+  },
+  {
+    "date": "2026-11-25",
+    "weekday": "Wed",
+    "id": "d05",
+    "post": {
+      "publishOn": "2026-11-25",
+      "prompt": "Name an organism associated with urease production.",
+      "caption": "Today's scan. One prompt, one answer. Rarer answer, deeper layer. Drop ONE answer in the comments. The deepest valid answer gets credited in tomorrow's reveal. Layers come from our question bank, not from other players. Seven new scans every day in Roundsy."
+    },
+    "reveal": {
+      "publishOn": "2026-11-26",
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "Skin deep",
+          "points": 10,
+          "answers": [
+            "Proteus mirabilis"
+          ]
+        },
+        {
+          "tier": 2,
+          "name": "Subcutaneous",
+          "points": 15,
+          "answers": [
+            "Helicobacter pylori",
+            "Klebsiella species",
+            "Proteus vulgaris"
+          ]
+        },
+        {
+          "tier": 3,
+          "name": "Fascia",
+          "points": 30,
+          "answers": [
+            "Morganella morganii",
+            "Providencia species"
+          ]
+        },
+        {
+          "tier": 4,
+          "name": "Muscle",
+          "points": 60,
+          "answers": [
+            "Ureaplasma urealyticum",
+            "Corynebacterium urealyticum",
+            "Brucella species",
+            "Staphylococcus epidermidis"
+          ]
+        },
+        {
+          "tier": 5,
+          "name": "Bone",
+          "points": 85,
+          "answers": [
+            "Cryptococcus neoformans",
+            "Nocardia species",
+            "Yersinia enterocolitica"
+          ]
+        },
+        {
+          "tier": 6,
+          "name": "Marrow",
+          "points": 100,
+          "answers": [
+            "Staphylococcus saprophyticus",
+            "Bordetella bronchiseptica"
+          ]
+        }
+      ],
+      "explanation": "Urease hydrolyzes urea to ammonia and carbon dioxide. Proteus is the classic urinary pathogen.",
+      "rule": "Answers not on this key are judge's call and are placed in the next day's reveal.",
+      "caption": "Yesterday's scan: Name an organism associated with urease production. How deep did you go?"
+    },
+    "inTodaysAppSet": false
+  },
+  {
+    "date": "2026-11-26",
+    "weekday": "Thu",
+    "id": "d36",
+    "post": {
+      "publishOn": "2026-11-26",
+      "prompt": "Name a medication or exposure associated with serotonin syndrome.",
+      "caption": "Today's scan. One prompt, one answer. Rarer answer, deeper layer. Drop ONE answer in the comments. The deepest valid answer gets credited in tomorrow's reveal. Layers come from our question bank, not from other players. Seven new scans every day in Roundsy."
+    },
+    "reveal": {
+      "publishOn": "2026-11-27",
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "Skin deep",
+          "points": 10,
+          "answers": [
+            "SSRI"
+          ]
+        },
+        {
+          "tier": 2,
+          "name": "Subcutaneous",
+          "points": 15,
+          "answers": [
+            "SNRI",
+            "MAO inhibitor"
+          ]
+        },
+        {
+          "tier": 3,
+          "name": "Fascia",
+          "points": 30,
+          "answers": [
+            "Tramadol",
+            "Linezolid",
+            "Meperidine",
+            "Fentanyl",
+            "Triptans",
+            "Ondansetron",
+            "Trazodone"
+          ]
+        },
+        {
+          "tier": 4,
+          "name": "Muscle",
+          "points": 60,
+          "answers": [
+            "Dextromethorphan",
+            "Lithium",
+            "Cocaine",
+            "Amphetamines",
+            "Buspirone",
+            "Tricyclic antidepressants"
+          ]
+        },
+        {
+          "tier": 5,
+          "name": "Bone",
+          "points": 85,
+          "answers": [
+            "MDMA",
+            "St. John's wort",
+            "Metoclopramide",
+            "Methadone",
+            "LSD",
+            "Tryptophan supplements"
+          ]
+        },
+        {
+          "tier": 6,
+          "name": "Marrow",
+          "points": 100,
+          "answers": [
+            "Methylene blue",
+            "Valproate",
+            "Carbamazepine"
+          ]
+        }
+      ],
+      "explanation": "Serotonergic toxicity follows combinations or overdose of serotonergic agents; clonus and hyperreflexia are useful clues.",
+      "rule": "Answers not on this key are judge's call and are placed in the next day's reveal.",
+      "caption": "Yesterday's scan: Name a medication or exposure associated with serotonin syndrome. How deep did you go?"
+    },
+    "inTodaysAppSet": false
+  },
+  {
+    "date": "2026-11-27",
+    "weekday": "Fri",
+    "id": "d30",
+    "post": {
+      "publishOn": "2026-11-27",
+      "prompt": "Name an organism associated with foodborne illness or a neurotoxin.",
+      "caption": "Today's scan. One prompt, one answer. Rarer answer, deeper layer. Drop ONE answer in the comments. The deepest valid answer gets credited in tomorrow's reveal. Layers come from our question bank, not from other players. Seven new scans every day in Roundsy."
+    },
+    "reveal": {
+      "publishOn": "2026-11-28",
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "Skin deep",
+          "points": 10,
+          "answers": [
+            "Clostridium botulinum",
+            "Salmonella species"
+          ]
+        },
+        {
+          "tier": 2,
+          "name": "Subcutaneous",
+          "points": 15,
+          "answers": [
+            "Listeria monocytogenes",
+            "Campylobacter jejuni",
+            "Norovirus"
+          ]
+        },
+        {
+          "tier": 3,
+          "name": "Fascia",
+          "points": 30,
+          "answers": [
+            "Clostridium perfringens",
+            "Bacillus cereus",
+            "Staphylococcus aureus",
+            "Shigella species",
+            "Hepatitis A virus"
+          ]
+        },
+        {
+          "tier": 4,
+          "name": "Muscle",
+          "points": 60,
+          "answers": [
+            "Vibrio vulnificus",
+            "E. coli producing Shiga toxin",
+            "Vibrio parahaemolyticus",
+            "Yersinia enterocolitica",
+            "Cryptosporidium",
+            "Giardia"
+          ]
+        },
+        {
+          "tier": 5,
+          "name": "Bone",
+          "points": 85,
+          "answers": [
+            "Anisakis simplex",
+            "Cyclospora cayetanensis",
+            "Toxoplasma gondii",
+            "Trichinella spiralis",
+            "Scombroid toxin",
+            "Ciguatera toxin"
+          ]
+        },
+        {
+          "tier": 6,
+          "name": "Marrow",
+          "points": 100,
+          "answers": [
+            "Tetrodotoxin",
+            "Paralytic shellfish poisoning"
+          ]
+        }
+      ],
+      "explanation": "Foodborne illness can involve neurotoxins or organisms with characteristic neurologic complications.",
+      "rule": "Answers not on this key are judge's call and are placed in the next day's reveal.",
+      "caption": "Yesterday's scan: Name an organism associated with foodborne illness or a neurotoxin. How deep did you go?"
+    },
+    "inTodaysAppSet": false
+  },
+  {
+    "date": "2026-11-28",
+    "weekday": "Sat",
+    "id": "d32",
+    "post": {
+      "publishOn": "2026-11-28",
+      "prompt": "Name a disease associated with a granuloma.",
+      "caption": "Today's scan. One prompt, one answer. Rarer answer, deeper layer. Drop ONE answer in the comments. The deepest valid answer gets credited in tomorrow's reveal. Layers come from our question bank, not from other players. Seven new scans every day in Roundsy."
+    },
+    "reveal": {
+      "publishOn": "2026-11-29",
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "Skin deep",
+          "points": 10,
+          "answers": [
+            "Tuberculosis"
+          ]
+        },
+        {
+          "tier": 2,
+          "name": "Subcutaneous",
+          "points": 15,
+          "answers": [
+            "Sarcoidosis",
+            "Crohn disease"
+          ]
+        },
+        {
+          "tier": 3,
+          "name": "Fascia",
+          "points": 30,
+          "answers": [
+            "Histoplasmosis",
+            "Berylliosis",
+            "Foreign body reaction",
+            "Hypersensitivity pneumonitis"
+          ]
+        },
+        {
+          "tier": 4,
+          "name": "Muscle",
+          "points": 60,
+          "answers": [
+            "Granulomatosis with polyangiitis",
+            "Cat-scratch disease",
+            "Coccidioidomycosis",
+            "Blastomycosis",
+            "Schistosomiasis",
+            "Syphilis",
+            "Giant cell arteritis",
+            "Granuloma annulare"
+          ]
+        },
+        {
+          "tier": 5,
+          "name": "Bone",
+          "points": 85,
+          "answers": [
+            "Leprosy",
+            "Cryptococcosis",
+            "Primary biliary cholangitis",
+            "Takayasu arteritis",
+            "Eosinophilic granulomatosis with polyangiitis",
+            "Brucellosis",
+            "Q fever",
+            "Tularemia"
+          ]
+        },
+        {
+          "tier": 6,
+          "name": "Marrow",
+          "points": 100,
+          "answers": [
+            "Chronic granulomatous disease",
+            "Common variable immunodeficiency",
+            "Lymphogranuloma venereum"
+          ]
+        }
+      ],
+      "explanation": "Granulomatous inflammation is seen in infections, immune-mediated disease, foreign-body reactions, and selected malignancies.",
+      "rule": "Answers not on this key are judge's call and are placed in the next day's reveal.",
+      "caption": "Yesterday's scan: Name a disease associated with a granuloma. How deep did you go?"
+    },
+    "inTodaysAppSet": false
+  },
+  {
+    "date": "2026-11-29",
+    "weekday": "Sun",
+    "id": "d17",
+    "post": {
+      "publishOn": "2026-11-29",
+      "prompt": "Name a disease associated with an autoantibody.",
+      "caption": "Today's scan. One prompt, one answer. Rarer answer, deeper layer. Drop ONE answer in the comments. The deepest valid answer gets credited in tomorrow's reveal. Layers come from our question bank, not from other players. Seven new scans every day in Roundsy."
+    },
+    "reveal": {
+      "publishOn": "2026-11-30",
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "Skin deep",
+          "points": 10,
+          "answers": [
+            "Systemic lupus erythematosus"
+          ]
+        },
+        {
+          "tier": 2,
+          "name": "Subcutaneous",
+          "points": 15,
+          "answers": [
+            "Rheumatoid arthritis",
+            "Graves disease",
+            "Myasthenia gravis",
+            "Hashimoto thyroiditis"
+          ]
+        },
+        {
+          "tier": 3,
+          "name": "Fascia",
+          "points": 30,
+          "answers": [
+            "Systemic sclerosis",
+            "Sjögren syndrome",
+            "Type 1 diabetes mellitus",
+            "Celiac disease",
+            "Pernicious anemia",
+            "Bullous pemphigoid",
+            "Dermatomyositis",
+            "Antiphospholipid syndrome"
+          ]
+        },
+        {
+          "tier": 4,
+          "name": "Muscle",
+          "points": 60,
+          "answers": [
+            "Anti-GBM disease",
+            "Pemphigus vulgaris",
+            "Granulomatosis with polyangiitis",
+            "Polymyositis",
+            "Goodpasture syndrome"
+          ]
+        },
+        {
+          "tier": 5,
+          "name": "Bone",
+          "points": 85,
+          "answers": [
+            "Autoimmune hepatitis",
+            "Primary biliary cholangitis",
+            "Autoimmune encephalitis",
+            "Neuromyelitis optica",
+            "Pemphigus foliaceus"
+          ]
+        },
+        {
+          "tier": 6,
+          "name": "Marrow",
+          "points": 100,
+          "answers": [
+            "Lambert-Eaton myasthenic syndrome",
+            "Stiff person syndrome"
+          ]
+        }
+      ],
+      "explanation": "Autoantibodies support diagnosis in the right clinical context; they are not always independently diagnostic.",
+      "rule": "Answers not on this key are judge's call and are placed in the next day's reveal.",
+      "caption": "Yesterday's scan: Name a disease associated with an autoantibody. How deep did you go?"
+    },
+    "inTodaysAppSet": false
+  },
+  {
+    "date": "2026-11-30",
+    "weekday": "Mon",
+    "id": "d23",
+    "post": {
+      "publishOn": "2026-11-30",
+      "prompt": "Name a medication class that can cause QT prolongation.",
+      "caption": "Today's scan. One prompt, one answer. Rarer answer, deeper layer. Drop ONE answer in the comments. The deepest valid answer gets credited in tomorrow's reveal. Layers come from our question bank, not from other players. Seven new scans every day in Roundsy."
+    },
+    "reveal": {
+      "publishOn": "2026-12-01",
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "Skin deep",
+          "points": 10,
+          "answers": [
+            "Class IA antiarrhythmics"
+          ]
+        },
+        {
+          "tier": 2,
+          "name": "Subcutaneous",
+          "points": 15,
+          "answers": [
+            "Class III antiarrhythmics",
+            "Macrolide antibiotics",
+            "Antipsychotics"
+          ]
+        },
+        {
+          "tier": 3,
+          "name": "Fascia",
+          "points": 30,
+          "answers": [
+            "Fluoroquinolones",
+            "Citalopram and escitalopram"
+          ]
+        },
+        {
+          "tier": 4,
+          "name": "Muscle",
+          "points": 60,
+          "answers": [
+            "Methadone",
+            "Tricyclic antidepressants",
+            "Azole antifungals",
+            "Anti-malarials"
+          ]
+        },
+        {
+          "tier": 5,
+          "name": "Bone",
+          "points": 85,
+          "answers": [
+            "Ondansetron",
+            "Domperidone",
+            "Pentamidine",
+            "Cisapride",
+            "Loperamide in overdose"
+          ]
+        },
+        {
+          "tier": 6,
+          "name": "Marrow",
+          "points": 100,
+          "answers": [
+            "Arsenic trioxide",
+            "Vandetanib",
+            "Tacrolimus",
+            "Propofol"
+          ]
+        }
+      ],
+      "explanation": "QT prolongation is associated with multiple medication classes; risk rises with interacting drugs and electrolyte abnormalities.",
+      "rule": "Answers not on this key are judge's call and are placed in the next day's reveal.",
+      "caption": "Yesterday's scan: Name a medication class that can cause QT prolongation. How deep did you go?"
+    },
+    "inTodaysAppSet": false
+  }
+]

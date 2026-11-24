@@ -77,7 +77,7 @@ export const deepDivePrompts: DeepPrompt[] = [
     ["Volume depletion"],["Acute tubular necrosis","Urinary obstruction"],["Acute interstitial nephritis","Glomerulonephritis"],["Rhabdomyolysis","Hepatorenal syndrome"],["Thrombotic microangiopathy"],["Atheroembolic renal disease"]
   ]),
   dive("d23","Name a medication class that can cause QT prolongation.","Pharmacology","QT prolongation is associated with multiple medication classes; risk rises with interacting drugs and electrolyte abnormalities.",[
-    ["Class IA antiarrhythmics"],["Class III antiarrhythmics","Macrolide antibiotics"],["Fluoroquinolones","Antipsychotics"],["Methadone","Tricyclic antidepressants"],["Ondansetron"],["Arsenic trioxide"]
+    ["Class IA antiarrhythmics"],["Class III antiarrhythmics","Macrolide antibiotics","Antipsychotics"],["Fluoroquinolones"],["Methadone","Tricyclic antidepressants"],["Ondansetron"],["Arsenic trioxide"]
   ]),
   dive("d24","Name a medication used to reverse an anticoagulant.","Pharmacology","Reversal depends on the agent, urgency, bleeding severity, and availability of specific antidotes or factor replacement.",[
     ["Vitamin K"],["Protamine","Idarucizumab"],["Andexanet alfa","Four-factor PCC"],["Dabigatran-specific idarucizumab","Desmopressin for selected antiplatelet-associated bleeding"],["Activated charcoal after recent ingestion"],["Ciraparantag (investigational)"]
@@ -98,7 +98,7 @@ export const deepDivePrompts: DeepPrompt[] = [
     ["Glucocorticoid exposure"],["Hyperthyroidism","Hyperparathyroidism"],["Hypogonadism","Celiac disease"],["Multiple myeloma","Chronic kidney disease"],["Systemic mastocytosis"],["Osteogenesis imperfecta"]
   ]),
   dive("d30","Name an organism associated with foodborne illness or a neurotoxin.","Microbiology","Foodborne illness can involve neurotoxins or organisms with characteristic neurologic complications.",[
-    ["Clostridium botulinum"],["Listeria monocytogenes","Campylobacter jejuni"],["Clostridium perfringens","Bacillus cereus"],["Vibrio vulnificus","E. coli producing Shiga toxin"],["Anisakis simplex"],["Staphylococcus aureus"]
+    ["Clostridium botulinum"],["Listeria monocytogenes","Campylobacter jejuni"],["Clostridium perfringens","Bacillus cereus","Staphylococcus aureus"],["Vibrio vulnificus","E. coli producing Shiga toxin"],["Anisakis simplex"],[]
   ]),
   dive("d31","Name a cause of acute vision loss.","Ophthalmology","Differentiate monocular from binocular loss and painful from painless loss; retinal and optic nerve disorders are urgent.",[
     ["Central retinal artery occlusion"],["Retinal detachment","Optic neuritis"],["Central retinal vein occlusion","Vitreous hemorrhage"],["Giant cell arteritis","Acute angle-closure glaucoma"],["Nonarteritic anterior ischemic optic neuropathy"],["Endophthalmitis"]
