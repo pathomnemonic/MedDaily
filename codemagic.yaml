@@ -48,6 +48,8 @@ workflows:
             proj.save'
       - name: Set up code signing
         script: |
+          keychain initialize
+          keychain add-certificates
           xcode-project use-profiles
       - name: Build the signed app
         script: |
