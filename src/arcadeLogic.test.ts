@@ -198,13 +198,18 @@ describe("Deep Dive rarity scoring", () => {
 
 
 describe("Trivia Rumble result scoring", () => {
-  it("uses the full turn count for solo play", () => {
-    expect(triviaRumbleResult([24], "solo", 24)).toEqual({ score: 2400, maxScore: 2400, perfect: true });
+  it("scores a flawless solo win against the questions actually faced, not the round limit", () => {
+    // a perfect solo game ends when the sixth wedge completes, after as few as 18 questions
+    expect(triviaRumbleResult([18], [18])).toEqual({ score: 1800, maxScore: 1800, perfect: true });
+    expect(triviaRumbleResult([24], [24])).toEqual({ score: 2400, maxScore: 2400, perfect: true });
+    expect(triviaRumbleResult([20], [24])).toEqual({ score: 2000, maxScore: 2400, perfect: false });
   });
 
   it("uses each player's actual turn count for pass-and-play", () => {
-    expect(triviaRumbleResult([18, 15], "pass", 36)).toEqual({ score: 1800, maxScore: 1800, perfect: true });
-    expect(triviaRumbleResult([12, 10], "pass", 36)).toEqual({ score: 1200, maxScore: 1800, perfect: false });
+    // a correct answer keeps the turn, so one player can face far more questions than the other
+    expect(triviaRumbleResult([18, 2], [18, 2])).toEqual({ score: 1800, maxScore: 1800, perfect: true });
+    expect(triviaRumbleResult([12, 10], [20, 16])).toEqual({ score: 1200, maxScore: 2000, perfect: false });
+    expect(triviaRumbleResult([30, 6], [30, 6])).toEqual({ score: 3000, maxScore: 3000, perfect: true });
   });
 });
 
