@@ -285,7 +285,7 @@ export default function App() {
     if(after.level>before.level)window.setTimeout(()=>sfx("badge"),900);
     if(partyRun){
       setRoom(current=>current?{...current,players:current.players.map(p=>p.uid==="me"?{...p,score,maxScore,perfect,finished:true}:p)}:current);
-      if(multiplayerConfigured()&&roomCode) void submitRoomScore(roomCode,score,maxScore,perfect).catch(()=>{/* local result still shown */});
+      if(multiplayerConfigured()&&roomCode) void submitRoomScore(roomCode,score,maxScore,perfect).catch((e)=>{setNotice("Your result is saved on this device, but the room scoreboard did not accept it: "+(e instanceof Error?e.message:"Unknown error"));});
       setPlayer(cur=>{const n={...cur,xp:(cur.xp??0)+gain};savePlayer(n);return n;});
       return;
     }

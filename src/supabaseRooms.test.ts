@@ -74,6 +74,7 @@ describe("Supabase rooms adapter", () => {
     const rooms = makeSupabaseRooms({ configured: true, getClient: async () => f.client });
     await expect(rooms.join("ABC123", { gameId: "hive", scope: "party", specialty: "general", date: "2026-11-23", seed: 7, name: "A" })).rejects.toThrow(/different game, date, or study track/);
     expect(friendlyRoomError({ message: "room_full" }).message).toMatch(/full/);
+    expect(friendlyRoomError({ message: "bad_score" }).message).toMatch(/could not accept that score/);
     expect(friendlyRoomError({ message: "already_submitted" })).toBeInstanceOf(RoomError);
   });
   it("submits rounded scores and leaves through the functions", async () => {
