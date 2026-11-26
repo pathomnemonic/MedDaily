@@ -18,7 +18,7 @@ const hideAnswer = (text: string, answer: string): string => {
       result = result.replace(new RegExp("\\b" + escapeRegExp(variant) + "(?:s|es|ed|ing)?\\b", "gi"), "the finding");
     }
   }
-  return result.replace(/\bthe finding(?:\s+(?:the\s+)?finding)+\b/gi, "the finding").split(/\s+/).slice(0, 125).join(" ");
+  return result.replace(/\bthe finding(?:\s+[A-Za-z]\s+the finding)+\b/gi, "the finding").replace(/\bthe finding(?:[\s-]+(?:the\s+)?finding)+\b/gi, "the finding").replace(/\bthe\s+the finding\b/gi, "the finding").replace(/\b(?:a|an)\s+the finding\b/gi, "the finding").split(/\s+/).slice(0, 125).join(" ");
 };
 
 /**
