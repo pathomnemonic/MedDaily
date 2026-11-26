@@ -384,10 +384,22 @@ export function generateMedicalLadder(seed: number, dictionary: readonly string[
   return { start: path[0], end: path[path.length - 1], path, note: "Medical ladder: both ends are medical words." };
 }
 
-export function triviaRumbleResult(correctCounts: readonly number[], mode: "solo" | "pass", totalTurns: number): { score: number; maxScore: number; perfect: boolean } {
-  const best = Math.max(0, ...correctCounts);
-  const perPlayerTurns = mode === "solo" ? totalTurns : Math.ceil(totalTurns / 2);
-  return { score: best * 100, maxScore: perPlayerTurns * 100, perfect: best === perPlayerTurns };
+/**
+ * Trivia Rumble result for the leading player (most correct answers). Turns are not dealt evenly:
+ * a correct answer keeps the wheel in pass and play, and a solo game ends the moment the sixth wedge
+ * completes, so the only honest denominator is the number of questions that player actually faced.
+ * Perfect means the leader answered every question they faced correctly (a flawless solo win can
+ * take as few as 18 questions, not the full 24-round limit).
+ */
+export function triviaRumbleResult(correctCounts: readonly number[], attempts: readonly number[]): { score: number; maxScore: number; perfect: boolean } {
+  let leader = -1;
+  for (let i = 0; i < correctCounts.length; i++) {
+    if (leader < 0 || correctCounts[i] > correctCounts[leader]) leader = i;
+  }
+  if (leader < 0) return { score: 0, maxScore: 0, perfect: false };
+  const best = Math.max(0, correctCounts[leader]);
+  const faced = Math.max(best, Math.max(0, attempts[leader] ?? 0));
+  return { score: best * 100, maxScore: faced * 100, perfect: faced > 0 && best === faced };
 }
 
 /**
