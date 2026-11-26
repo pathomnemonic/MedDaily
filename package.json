@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "native:sync": "npm run build && cap sync",
-    "native:icons": "capacitor-assets generate --ios --android --iconBackgroundColor '#1b0f45' --splashBackgroundColor '#100b2e' && node scripts/restore-web-assets.mjs",
+    "native:icons": "capacitor-assets generate --ios --android --iconBackgroundColor '#d9432c' --splashBackgroundColor '#100b2e' && node scripts/restore-web-assets.mjs",
     "native:android": "npm run native:sync && cap open android",
     "native:ios": "npm run native:sync && cap open ios"
   },
