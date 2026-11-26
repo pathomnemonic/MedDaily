@@ -6,6 +6,7 @@ export function friendlyRoomError(error: unknown): Error {
   const text = String((error as { message?: string } | null)?.message ?? error ?? "");
   if (text.includes("room_mismatch")) return new RoomError("That room belongs to a different game, date, or study track. Check the game and mode before joining.");
   if (text.includes("room_full")) return new RoomError("This room is full (maximum eight players).");
+  if (text.includes("bad_score")) return new RoomError("The room could not accept that score.");
   if (text.includes("bad_room_code")) return new RoomError("Room codes are six letters or numbers.");
   if (text.includes("already_submitted")) return new RoomError("Your score for this room is already in.");
   if (text.includes("room_finished")) return new RoomError("That room's round is already over. Start a new room with a different code.");
