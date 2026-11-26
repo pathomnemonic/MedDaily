@@ -1,11 +1,11 @@
 import type { BranchLeaf, BranchSet } from "./dataBranch";
-import { candidatesUnder, sharedDepth } from "./branchLogic";
+import { branchTwigHeight, candidatesUnder, sharedDepth } from "./branchLogic";
 
 /**
  * The Branch Lab tree: a vertical trunk of the mystery item's lineage (revealed as far as your guesses have proved it)
  * ending in a "???" box, with every wrong guess hanging off the trunk at the point where it diverges.
  */
-const W = 360, TRUNK_X = 180, TRUNK_W = 150, TWIG_W = 140, TRUNK_H = 32, TWIG_H = 46;
+const W = 360, TRUNK_X = 180, TRUNK_W = 150, TWIG_W = 140, TRUNK_H = 32;
 
 export default function BranchTree({ set, guesses, target }: { set: BranchSet; guesses: BranchLeaf[]; target: BranchLeaf }) {
   const noun = set === "microbe" ? "microbe" : "drug";
@@ -16,14 +16,31 @@ export default function BranchTree({ set, guesses, target }: { set: BranchSet; g
   const trunk = [rootName, ...target.path.slice(0, deepest)];
 
   // Vertical layout: each trunk node owns a band tall enough for the twigs hanging from it.
+  // Twig heights are sized to their content so long lineage paths wrap in full (issue 123).
   const twigsAt: BranchLeaf[][] = trunk.map(() => []);
   for (const g of wrong) twigsAt[Math.min(sharedDepth(g.path, target.path), trunk.length - 1)].push(g);
+  const twigMid = (g: BranchLeaf): string => g.path.slice(sharedDepth(g.path, target.path), -1).join(" › ");
+  const twigHeights: number[][] = twigsAt.map((list) => list.map((g) => branchTwigHeight(g.name, twigMid(g))));
+  const rowHeights: number[][] = twigsAt.map((list, i) => {
+    const rows: number[] = [];
+    for (let k = 0; k < list.length; k += 2) rows.push(Math.max(twigHeights[i][k], twigHeights[i][k + 1] ?? 0));
+    return rows;
+  });
   const ys: number[] = [];
   let y = 26;
   trunk.forEach((_, i) => {
     ys.push(y);
-    const rows = Math.ceil(twigsAt[i].length / 2);
-    y += Math.max(62, 44 + rows * 54);
+    const rowsTotal = rowHeights[i].reduce((n, h) => n + h, 0) + Math.max(0, rowHeights[i].length - 1) * 8;
+    y += Math.max(62, TRUNK_H + 16 + rowsTotal);
+  });
+  const twigYs: number[][] = twigsAt.map((list, i) => {
+    const out: number[] = [];
+    let rowY = ys[i] + TRUNK_H + 6;
+    list.forEach((_, k) => {
+      if (k > 0 && k % 2 === 0) rowY += rowHeights[i][k / 2 - 1] + 8;
+      out.push(rowY);
+    });
+    return out;
   });
   const mysteryY = won ? 0 : y + 6;
   const height = (won ? y : mysteryY + 70) + 6;
@@ -35,16 +52,15 @@ export default function BranchTree({ set, guesses, target }: { set: BranchSet; g
     {!won && <line x1={TRUNK_X} y1={ys[ys.length - 1] + TRUNK_H} x2={TRUNK_X} y2={mysteryY} className="bt-trunk dashed" />}
     {/* twigs */}
     {twigsAt.map((list, i) => list.map((g, k) => {
-      const left = k % 2 === 0, row = Math.floor(k / 2);
+      const left = k % 2 === 0;
       const cx = left ? TWIG_W / 2 + 2 : W - TWIG_W / 2 - 2;
-      const ty = ys[i] + TRUNK_H + 6 + row * 54;
+      const ty = twigYs[i][k], th = twigHeights[i][k];
       const sx = TRUNK_X, sy = ys[i] + TRUNK_H;
-      const ex = left ? cx + TWIG_W / 2 : cx - TWIG_W / 2, ey = ty + TWIG_H / 2;
-      const s = sharedDepth(g.path, target.path);
-      const mid = g.path.slice(s, -1).join(" › ");
+      const ex = left ? cx + TWIG_W / 2 : cx - TWIG_W / 2, ey = ty + th / 2;
+      const mid = twigMid(g);
       return <g key={g.name}>
         <path d={"M" + sx + " " + sy + " Q" + sx + " " + ey + " " + ex + " " + ey} className="bt-link" />
-        <foreignObject x={cx - TWIG_W / 2} y={ty} width={TWIG_W} height={TWIG_H}><div className="bt-twig"><b>✕ {g.name}</b>{mid && <small>{mid}</small>}</div></foreignObject>
+        <foreignObject x={cx - TWIG_W / 2} y={ty} width={TWIG_W} height={th}><div className="bt-twig"><b>✕ {g.name}</b>{mid && <small>{mid}</small>}</div></foreignObject>
       </g>;
     }))}
     {/* trunk nodes */}
