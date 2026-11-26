@@ -976,6 +976,9 @@ function MemoryMatch({ seed, onDone, onExit, specialty = "general" }: Props & { 
         const finalScore = nextScore + associationTimeBonus(seconds);
         done.current = true;
         setEnded(true);
+        // The finale renders the score state, so fold the time bonus into it: the player
+        // must see the same final score that onDone records (they differed by up to 150).
+        setScore(finalScore);
         setNote("All twelve pairs found. Time bonus: " + associationTimeBonus(seconds) + " points.");
         onDone(finalScore, 1800, mismatches === 0);
       }
