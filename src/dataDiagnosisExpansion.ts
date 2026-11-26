@@ -4,8 +4,14 @@ import { hashSeed, seeded, shuffle } from "./lib";
 
 const progressiveClues = (clue: string): string[] => {
   const words = clue.split(/\s+/);
-  const first = Math.min(words.length - 2, Math.max(3, Math.ceil(words.length * 0.36)));
-  const second = Math.min(words.length - 1, Math.max(first + 2, Math.ceil(words.length * 0.72)));
+  /** A fragment must never end right after a measurement ("Grows in bile and 6.5%…"): extend the cut past the word the number belongs to. */
+  const extendPastMeasure = (cut: number): number => {
+    let end = cut;
+    while (end < words.length - 1 && /\d/.test(words[end - 1])) end += 1;
+    return end;
+  };
+  const first = extendPastMeasure(Math.min(words.length - 2, Math.max(3, Math.ceil(words.length * 0.36))));
+  const second = extendPastMeasure(Math.min(words.length - 1, Math.max(first + 2, Math.ceil(words.length * 0.72))));
   return [words.slice(0, first).join(" ") + "…", words.slice(0, second).join(" ") + "…", clue];
 };
 
