@@ -331,7 +331,7 @@ const diagnosisTrivia: TriviaQuestion[] = diagnosisCases
   .map((item) => ({
     id: "diagnosis-" + item.id,
     category: classifyTriviaTopic(item.title + " " + item.clues.join(" ") + " " + item.explanation),
-    question: "Which diagnosis best fits this presentation? " + distinctClues(item.clues.slice(0, 3)).join(" "),
+    question: (item.id.startsWith("microbe-") ? "Which organism best fits this presentation? " : "Which diagnosis best fits this presentation? ") + distinctClues(item.clues.slice(0, 3)).join(" "),
     options: [...item.options] as [string,string,string,string],
     answer: item.options.indexOf(item.answer),
     explanation: item.explanation + " Reference: " + item.source,
