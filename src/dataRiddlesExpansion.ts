@@ -35,7 +35,9 @@ const increments = (clues: readonly string[]): string[] => clues.map((clue, i) =
 export const generatedRiddles: Riddle[] = [
   ...diagnosisCases.map((item) => ({
     id: "dx-" + item.id,
-    kind: "Diagnosis" as const,
+    // Microbe cases ask the player to name an organism, so the "I am a…" header and the same-kind
+    // distractor pool must say Microbe, not Diagnosis (issue 129).
+    kind: item.id.startsWith("microbe-") ? "Microbe" as const : "Diagnosis" as const,
     answer: item.answer,
     clues: [
       "My story begins: " + hideAnswer(increments(item.clues)[0], item.answer),
