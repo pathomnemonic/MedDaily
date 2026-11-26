@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import HoofScene from "./components/HoofScene";
 import type { HoofAnswer } from "./dataHoofbeats";
 import { HOOF_ROUNDS, HOOF_SECONDS, hoofPoints, hoofRank, hoofScore, matchHoof, pickHoofPrompts, promptMax, sortedAnswers } from "./hoofLogic";
+import { ptsText } from "./lib";
 import { reward } from "./juice";
 import { sfx } from "./audio";
 
@@ -128,7 +129,7 @@ export default function Hoofbeats({ seed, onDone, onExit }: { seed: number; onDo
           const mine = current?.answer?.name === a.name;
           return <li key={a.name} className={mine ? "mine" : ""} style={{ animationDelay: i * 70 + "ms" }}>
             <i style={{ width: Math.max(3, a.pct * 2) + "%" }} />
-            <span className="ic">{hoofRank(a.pct).icon}</span><span className="nm">{a.name}{mine && <em>YOU</em>}</span><span className="pc">{a.pct}%<small>{hoofPoints(a.pct)} pts</small></span>
+            <span className="ic">{hoofRank(a.pct).icon}</span><span className="nm">{a.name}{mine && <em>YOU</em>}</span><span className="pc">{a.pct}%<small>{ptsText(hoofPoints(a.pct))}</small></span>
           </li>;
         })}
       </ol>

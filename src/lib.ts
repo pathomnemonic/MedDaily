@@ -103,6 +103,11 @@ export function randomRoomCode(random: () => number = Math.random, game?: GameId
   return game ? withRoomGame(code, game, random) : code;
 }
 
+/** Singular for exactly 1, plural otherwise: points labels must never render "1 pts" or "1 points". */
+export const pluralize = (count: number, singular: string, plural: string = singular + "s"): string => count === 1 ? singular : plural;
+export const ptsText = (count: number): string => count + " " + pluralize(count, "pt", "pts");
+export const pointsText = (count: number): string => count + " " + pluralize(count, "point");
+
 function gcd(a: number, b: number): number { return b === 0 ? a : gcd(b, a % b); }
 
 /**

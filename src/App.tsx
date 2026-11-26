@@ -14,7 +14,7 @@ import { watchStage, resetCombo } from "./juice";
 import { setHapticsEnabled, vibrate } from "./haptics";
 import { installAudioUnlock, setMusicEnabled, setScene, setSfxEnabled, sfx } from "./audio";
 import type { GameId } from "./lib";
-import { hashSeed, dailyDateKey, normalizeRoomCode, randomRoomCode, roomGame, roomSeed, withRoomGame, PARTY_GAMES, LISTED_GAME_IDS } from "./lib";
+import { hashSeed, dailyDateKey, normalizeRoomCode, pointsText, randomRoomCode, roomGame, roomSeed, withRoomGame, PARTY_GAMES, LISTED_GAME_IDS } from "./lib";
 import { accountsEnabled, useAccount } from "./useAccount";
 import { getSupabase, hasStoredSupabaseSession } from "./supabaseClient";
 import { eraseStoredData } from "./eraseData";
@@ -489,7 +489,7 @@ function FriendsPage({room,roomName,setRoomName,joinCode,setJoinCode,busy,live,g
 
 function RoomScores({room}:{room:RoomState}){
   const ranked=rankRoomPlayers(room.players);
-  return <section className="room-score-inline"><div className="eyebrow">{room.status==="finished"?"FINAL RESULTS":"FRIENDS ROOM LEADERBOARD"} · {room.code}</div>{ranked.map((p,index)=><span key={p.uid}><b>#{index+1}</b> {p.name}: {p.finished?(p.score??0)+" points"+(p.perfect?" · perfect":""):"playing"}</span>)}</section>;
+  return <section className="room-score-inline"><div className="eyebrow">{room.status==="finished"?"FINAL RESULTS":"FRIENDS ROOM LEADERBOARD"} · {room.code}</div>{ranked.map((p,index)=><span key={p.uid}><b>#{index+1}</b> {p.name}: {p.finished?pointsText(p.score??0)+(p.perfect?" · perfect":""):"playing"}</span>)}</section>;
 }
 
 function StatsDepth({results,streak,hide}:{results:PlayerData["results"];streak:number;hide:boolean}){
