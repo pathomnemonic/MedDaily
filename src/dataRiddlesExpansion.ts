@@ -2,12 +2,27 @@ import { diagnosisCases, nextStepCases } from "./data";
 import type { Riddle } from "./dataRiddles";
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/**
+ * Function words are never the answer-bearing part of a phrase, so they are never redacted: replacing them
+ * garbles the sentence ("mass with shoulder pain" became "mass the finding shoulder pain", and "What is the
+ * next diagnostic step?" became "What is the finding next diagnostic step?" when an answer phrase happened
+ * to contain "with" or "the"). Mirrors the stopword filtering already used by dataBlackoutExpansion.
+ */
+const redactionStopWords = new Set([
+  "a", "an", "the", "of", "in", "on", "at", "to", "for", "by", "with", "and", "or", "but", "nor", "as", "from", "into", "onto", "over", "under", "after", "before", "during", "than", "then", "that", "this", "these", "those", "it", "its", "is", "was", "were", "are", "be", "been", "being", "has", "have", "had", "he", "she", "his", "her", "him", "they", "them", "their", "we", "you", "i", "not", "no", "yes", "who", "whom", "whose", "which", "what", "when", "where", "while", "until", "so", "if", "per", "via", "also", "may", "can", "could", "would", "should", "will"
+]);
+/** Collapse the artifacts adjacent redactions leave behind: repeated tokens, hyphen-joined repeats, and an article doubled by a redaction ("the the finding"). */
+const cleanRedactions = (text: string): string => text
+  .replace(/\bthe finding(?:\s+[A-Za-z]\s+the finding)+\b/gi, "the finding")
+  .replace(/\bthe finding(?:[\s-]+(?:the\s+)?finding)+\b/gi, "the finding")
+  .replace(/\bthe\s+the finding\b/gi, "the finding")
+  .replace(/\b(?:a|an)\s+the finding\b/gi, "the finding");
 const hideAnswer = (text: string, answer: string) => {
   let result = text.replace(/\s+/g, " ").trim();
-  for (const part of answer.split(/[^A-Za-z0-9]+/).filter((word) => word.length >= 3)) {
+  for (const part of answer.split(/[^A-Za-z0-9]+/).filter((word) => word.length >= 3 && !redactionStopWords.has(word.toLowerCase()))) {
     result = result.replace(new RegExp("\\b" + escapeRegExp(part) + "[A-Za-z]*\\b", "gi"), "the finding");
   }
-  return result.replace(/\bthe finding(?:\s+(?:the\s+)?finding)+\b/gi, "the finding");
+  return cleanRedactions(result);
 };
 
 /** Cases that reveal one sentence in growing pieces would repeat the same opening in every riddle clue; give each clue only its new words. */
