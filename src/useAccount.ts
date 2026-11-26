@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type 
 import { friendlyAccountError, makeAccounts, type AccountUser } from "./account";
 import { fromResultRows, mergePlayerData, resultKey, toResultRows, toStateRow } from "./accountSync";
 import { getSupabase, hasStoredSupabaseSession, supabaseConfigured } from "./supabaseClient";
-import { savePlayer, type PlayerData } from "./storage";
+import { loadPlayer, savePlayer, type PlayerData } from "./storage";
 import { isNative, onAppUrl, parseAuthCallback } from "./native";
 
 /** Accounts appear when the Supabase variables are set; VITE_ACCOUNTS=off hides them without a code change. */
@@ -43,7 +43,14 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
     if (!quiet) setBusy("sync");
     try {
       const remote = await accounts.pull();
-      const { merged, changedLocal } = mergePlayerData(playerRef.current, { state: remote.state, results: fromResultRows(remote.results) });
+      // A result recorded while the pull was in flight is already in local storage
+      // (finishGame saves synchronously), but playerRef only advances when React
+      // re-renders, so it can still predate that result here. Re-read the stored
+      // state after the pull and merge from it; otherwise the save below clobbers
+      // the new result locally and the state row pushed afterwards predates it too.
+      const localNow = loadPlayer();
+      playerRef.current = localNow;
+      const { merged, changedLocal } = mergePlayerData(localNow, { state: remote.state, results: fromResultRows(remote.results) });
       if (changedLocal) { savePlayer(merged); setPlayer(() => merged); playerRef.current = merged; }
       const have = new Set(remote.results.map((r) => resultKey({ date: r.day, game: r.game_id, scope: r.scope })));
       await accounts.push(toStateRow(merged), toResultRows(merged.results.filter((r) => !have.has(resultKey(r)))));
