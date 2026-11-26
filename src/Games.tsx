@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { connectionPuzzles, diagnosisCases, labPrompts, medleWords, pairsBank } from "./data";
 import { glyphPatterns, higherLowerPairs, scrambleWordsExtended as scrambleWords, spellingHivePuzzles, wordLadders } from "./dataExtra";
-import { hardModeViolation, hashSeed, nonogramRuns, normalize, permutedIndex, scoreWord, seeded, shuffle, type GameId } from "./lib";
+import { hardModeViolation, hashSeed, nonogramRuns, normalize, permutedIndex, pluralize, pointsText, ptsText, scoreWord, seeded, shuffle, type GameId } from "./lib";
 import { triviaCategories, triviaQuestions, type TriviaCategory, type TriviaCategoryId } from "./dataArcade";
 import { bodyTapPoints, labRange, labScore, labStreakBonus, associationPairPoints, associationTimeBonus, deepDiveAnswerAward, generateMedicalLadder, letterWordPoints, transformNonogram, makeLetterGrid, matchAnswer, rumbleNextTurn, traceGridWord, triviaRumbleResult } from "./arcadeLogic";
 import { deepDivePromptsExpanded as deepDivePrompts } from "./dataDeepDiveExtra";
@@ -543,7 +543,7 @@ function LetterGridGame({ seed, onDone, onExit }: Props & { onExit?: () => void 
     setFound(next);
     setFoundPaths((current) => [...current, path]);
     setPath([]);
-    setNote("+" + letterWordPoints(word) + " points · " + word);
+    setNote("+" + pointsText(letterWordPoints(word)) + " · " + word);
     if (next.length === board.words.length) finish(next);
   };
 
@@ -582,7 +582,7 @@ function LetterGridGame({ seed, onDone, onExit }: Props & { onExit?: () => void 
   const ui = <div className="ll" role="dialog" aria-label="Letter Lab">
     <header className="ll-top">
       {onExit && <button className="ll-icon" onClick={onExit} aria-label="Leave Letter Lab">✕</button>}
-      <div className="ll-score"><b>{score}</b><small>pts · {found.length}/{board.words.length} words</small></div>
+      <div className="ll-score"><b>{score}</b><small>{pluralize(score, "pt", "pts")} · {found.length}/{board.words.length} words</small></div>
       <div className={"ll-clock" + (seconds <= 10 ? " urgent" : "")}><i style={{ height: (seconds / 75 * 100) + "%" }} /><b>{mm}:{ss}</b></div>
     </header>
     <div className="ll-slip"><span>{currentWord || (started ? "…" : "READY?")}</span><small>{started ? note : "Shake the tray to begin. The clock starts when the cubes land."}</small></div>
@@ -1245,7 +1245,7 @@ function CellSketch({ seed, onDone, onExit, practice = false }: Props & { practi
     } else setIndex((i) => i + 1);
   };
   const view = <div className="game-layout">
-    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY SET" : generated ? "GENERATED DAILY SET" : "CURATED DAILY SET"} · {total + live} pts</div>
+    <div className="eyebrow ladder-mode-label">{practice ? "GENERATED FREE-PLAY SET" : generated ? "GENERATED DAILY SET" : "CURATED DAILY SET"} · {ptsText(total + live)}</div>
     {!finished ? <SketchBoard key={index} item={items[index]} index={index} total={items.length} seed={seed + index * 7} onFinished={advance} onScored={setLive} />
       : <Finish title="Gallery complete" detail={results.map((r) => r.name + (r.solved ? " (" + r.secs + "s)" : " (revealed)")).join(" · ")} score={total + " / " + items.length * 100} />}
   </div>;
@@ -1396,7 +1396,7 @@ function SpellingHive({ seed, onDone, onExit }: Props & { onExit?: () => void })
     reward(true, null, word === puzzle.pangram ? "PANGRAM!" : "+" + points(word));
     setFound(next);
     setEntry("");
-    setNote(word === puzzle.pangram ? "Pangram! You used all seven letters." : "+" + points(word) + " points. Keep exploring.");
+    setNote(word === puzzle.pangram ? "Pangram! You used all seven letters." : "+" + pointsText(points(word)) + ". Keep exploring.");
     if (next.length === puzzle.words.length) {
       setEnded(true);
       onDone(maximum, maximum, true);
@@ -1409,7 +1409,7 @@ function SpellingHive({ seed, onDone, onExit }: Props & { onExit?: () => void })
   };
   const view = <div className="game-layout">
     <div className="game-instructions"><span className="instruction-dot mint" /> Find as many words as you can using the seven hive letters. Words need at least four letters and must include the center letter. Use all seven for a pangram bonus.</div>
-    <div className="hive-header"><span className="eyebrow">TODAY'S HIVE</span><strong>{puzzle.title}</strong><small>{found.length} / {puzzle.words.length} words found · {score} points</small></div>
+    <div className="hive-header"><span className="eyebrow">TODAY'S HIVE</span><strong>{puzzle.title}</strong><small>{found.length} / {puzzle.words.length} words found · {pointsText(score)}</small></div>
     {(() => {
       const ratio = score / Math.max(1, maximum);
       const ranks = [["Premed", 0], ["Student", 0.1], ["Intern", 0.25], ["Resident", 0.4], ["Fellow", 0.6], ["Attending", 0.8]] as const;
@@ -1614,7 +1614,7 @@ function RiddleLab({ seed, onDone, onExit }: Props & { onExit?: () => void }) {
     <header className="rd-top">
       {onExit && <button className="rd-icon" onClick={onExit} aria-label="Leave Riddle Lab">✕</button>}
       <div className="rd-case"><small>CASE</small><b>{Math.min(round + 1, picks.length)}<i>/{picks.length}</i></b></div>
-      <div className="rd-pips" aria-label={points(shown) + " points available"}>{[4, 3, 2, 1].map((n) => <i key={n} className={solved === null && points(shown) >= n ? "on" : ""}>{n}</i>)}</div>
+      <div className="rd-pips" aria-label={pointsText(points(shown)) + " available"}>{[4, 3, 2, 1].map((n) => <i key={n} className={solved === null && points(shown) >= n ? "on" : ""}>{n}</i>)}</div>
       <div className="rd-total"><b>{total}</b><small>PTS</small></div>
     </header>
     <div className={"rd-evidence" + (solved !== null ? (solved === "__missed" ? " missed" : " solved") : "")} key={"e" + round}>
