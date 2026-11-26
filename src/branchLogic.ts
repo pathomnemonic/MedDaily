@@ -31,6 +31,17 @@ export function branchScore(won: boolean, guesses: number, clueUsed: boolean, be
   return Math.min(35, bestShared * 7);
 }
 
+/**
+ * Pixel height a guess twig needs so its name and divergent lineage path wrap in full instead of
+ * truncating (issue 123). Must stay in step with the .bt-twig styles in styles.css: 124px of text
+ * width, the name at 11px bold wraps to at most 2 lines, the path at 9px to at most 3 lines.
+ */
+export function branchTwigHeight(name: string, mid: string): number {
+  const nameLines = Math.min(2, Math.max(1, Math.ceil(name.length / 20)));
+  const midLines = mid ? Math.min(3, Math.max(1, Math.ceil(mid.length / 26))) : 0;
+  return 6 + nameLines * 13 + (mid ? 2 + midLines * 11 : 0);
+}
+
 /** Share-grid square for a guess by how far down the lineage it matched. */
 export function branchSquare(shared: number, pathLength: number, correct: boolean): string {
   if (correct) return "🟩";

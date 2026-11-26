@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { branchSets, microbeLeaves, drugLeaves } from "./dataBranch";
-import { BRANCH_GUESSES, branchScore, branchSquare, candidatesUnder, pickBranchTarget, sharedDepth } from "./branchLogic";
+import { BRANCH_GUESSES, branchScore, branchSquare, branchTwigHeight, candidatesUnder, pickBranchTarget, sharedDepth } from "./branchLogic";
 
 describe("Branch Lab lineage maths", () => {
   it("counts shared ancestors", () => {
@@ -62,5 +62,36 @@ describe("Branch Lab content", () => {
     expect(drugLeaves.length + microbeLeaves.length).toBeGreaterThan(160);
     expect(branchSets.microbe.length).toBeGreaterThanOrEqual(180);
     expect(branchSets.drug.length).toBeGreaterThanOrEqual(180);
+  });
+});
+
+describe("Branch Lab twig sizing (issue 123)", () => {
+  it("sizes a twig to fit its wrapped name and lineage path", () => {
+    expect(branchTwigHeight("Aspirin", "")).toBe(19);
+    expect(branchTwigHeight("Metformin", "Endocrine › Diabetes agents › Biguanides")).toBe(43);
+    expect(branchTwigHeight("Aggregatibacter actinomycetemcomitans", "Bacteria › Gram-negative › Rods › Fastidious and zoonotic")).toBe(67);
+  });
+  it("never shrinks as the path grows", () => {
+    const mid = "Immunology and oncology › Cancer therapies › Tyrosine kinase inhibitors";
+    let last = 0;
+    for (let n = 0; n <= mid.length; n += 7) {
+      const h = branchTwigHeight("Imatinib", mid.slice(0, n));
+      expect(h).toBeGreaterThanOrEqual(last);
+      last = h;
+    }
+  });
+  it("fits every real name and divergent path in the content within the wrap limits", () => {
+    // The twig styles wrap names to 2 lines (20 chars each) and paths to 3 lines (26 chars each);
+    // longer content than that would truncate again, so fail loudly here instead.
+    for (const set of ["microbe", "drug"] as const) {
+      for (const leaf of branchSets[set]) {
+        expect(leaf.name.length, leaf.name).toBeLessThanOrEqual(40);
+        for (let s = 0; s < leaf.path.length; s++) {
+          const mid = leaf.path.slice(s, -1).join(" › ");
+          expect(mid.length, mid).toBeLessThanOrEqual(78);
+          expect(branchTwigHeight(leaf.name, mid)).toBeGreaterThan(0);
+        }
+      }
+    }
   });
 });
