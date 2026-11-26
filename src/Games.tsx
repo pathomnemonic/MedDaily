@@ -298,12 +298,14 @@ interface RumblePlayer {
   crowns: TriviaCategoryId[];
   progress: Record<TriviaCategoryId, number>;
   correct: number;
+  attempts: number;
 }
 const newRumblePlayer = (name: string): RumblePlayer => ({
   name,
   crowns: [],
   progress: Object.fromEntries(triviaCategories.map((category) => [category.id, 0])) as Record<TriviaCategoryId, number>,
-  correct: 0
+  correct: 0,
+  attempts: 0
 });
 
 const RUMBLE_SECONDS = 20;
@@ -382,10 +384,11 @@ function TriviaRumble({ seed, onDone, onExit }: Props & { onExit?: () => void })
     const correct = index === question.answer;
     reward(correct, null, correct ? "+1" : undefined);
     const nextPlayers = players.map((player, playerIndex) => {
-      if (playerIndex !== turn || !correct) return player;
+      if (playerIndex !== turn) return player;
+      if (!correct) return { ...player, attempts: player.attempts + 1 };
       const progress = { ...player.progress, [category.id]: Math.min(3, player.progress[category.id] + 1) };
       const crowns = progress[category.id] >= 3 && !player.crowns.includes(category.id) ? [...player.crowns, category.id] : player.crowns;
-      return { ...player, progress, crowns, correct: player.correct + 1 };
+      return { ...player, progress, crowns, correct: player.correct + 1, attempts: player.attempts + 1 };
     });
     setPlayers(nextPlayers);
     if (nextPlayers[turn].crowns.length > players[turn].crowns.length) window.setTimeout(() => sfx("badge"), 350);
@@ -395,7 +398,7 @@ function TriviaRumble({ seed, onDone, onExit }: Props & { onExit?: () => void })
   };
 
   const finish = () => {
-    const result = triviaRumbleResult(players.map((player) => player.correct), mode, limit);
+    const result = triviaRumbleResult(players.map((player) => player.correct), players.map((player) => player.attempts));
     setStage("done");
     if (!done.current) {
       done.current = true;
