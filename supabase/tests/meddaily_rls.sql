@@ -146,5 +146,21 @@ select pg_temp.assert(meddaily.get_room_state('LIFE01')->>'status' = 'finished',
 reset role;
 delete from meddaily.rooms where code = 'LIFE01';
 
+-- 10. endless sprint scores (20261126000000): Splice Sprint has no score cap, so a
+-- score above the reported 240 target is accepted in a splice room only
+reset role;
+insert into meddaily.rooms (code, game_id, scope, specialty, day, seed, host_id) values ('SPLI01', 'splice', 'party', 'general', current_date, 1, '00000000-0000-0000-0000-0000000000a1');
+insert into meddaily.room_players (room_code, user_id, name, last_seen_at) values
+  ('SPLI01', '00000000-0000-0000-0000-0000000000a1', 'One', now()),
+  ('SPLI01', '00000000-0000-0000-0000-0000000000a2', 'Two', now());
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1', false);
+select meddaily.submit_score('SPLI01', 300, 240, true);
+select pg_temp.assert((select score from meddaily.room_players where room_code = 'SPLI01' and user_id = '00000000-0000-0000-0000-0000000000a1') = 300, 'sprint score above the target is stored');
+select pg_temp.assert((select perfect from meddaily.room_players where room_code = 'SPLI01' and user_id = '00000000-0000-0000-0000-0000000000a1') = true, 'reaching the sprint target stores perfect');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a2', false);
+select pg_temp.fails($$select meddaily.submit_score('SPLI01', 1000001, 240, false)$$, 'bad_score');
+reset role;
+delete from meddaily.rooms where code = 'SPLI01';
+
 rollback;
 select 'meddaily_rls: all checks passed' as result;
