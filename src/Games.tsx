@@ -1453,6 +1453,7 @@ function MimeTime({ seed, onDone }: Props) {
   const [stage, setStage] = useState<MimeStage>("setup");
   const [turn, setTurn] = useState(0);
   const [scores, setScores] = useState<number[]>([]);
+  const [faced, setFaced] = useState<number[]>([]);
   const [cardIndex, setCardIndex] = useState(0);
   const [seconds, setSeconds] = useState(MIME_SECONDS);
   const [gotThisTurn, setGotThisTurn] = useState(0);
@@ -1467,7 +1468,7 @@ function MimeTime({ seed, onDone }: Props) {
   const player = turn % count;
   const card = deck[cardIndex % deck.length];
 
-  const begin = () => { setScores(Array(count).fill(0)); setTurn(0); setCardIndex(0); setStage("ready"); done.current = false; };
+  const begin = () => { setScores(Array(count).fill(0)); setFaced(Array(count).fill(0)); setTurn(0); setCardIndex(0); setStage("ready"); done.current = false; };
   const startTurn = async () => {
     if (tilt) setTiltOk(await requestTiltAccess()); else setTiltOk(false);
     tiltState.current = { armed: false };
@@ -1481,6 +1482,7 @@ function MimeTime({ seed, onDone }: Props) {
   useEffect(() => { if (stage === "play" && seconds > 0 && seconds <= 5) sfx("tick"); if (stage === "play" && seconds === 0) { sfx("whoosh"); endTurn(); } /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [seconds, stage]);
   const endTurn = () => {
     setScores((all) => all.map((v, i) => i === player ? v + gotThisTurn : v));
+    setFaced((all) => all.map((v, i) => i === player ? v + gotThisTurn + skipsThisTurn : v));
     setStage("between");
   };
   const got = () => { blink("got"); reward(true, null, "+1"); setGotThisTurn((v) => v + 1); setCardIndex((v) => v + 1); };
@@ -1503,10 +1505,15 @@ function MimeTime({ seed, onDone }: Props) {
       setStage("done");
       if (!done.current) {
         done.current = true;
-        const ranked = names.slice(0, count).map((name, i) => ({ name: name.trim() || "Player " + (i + 1), score: scores[i] })).sort((a, b) => b.score - a.score);
+        const ranked = names.slice(0, count).map((name, i) => ({ name: name.trim() || "Player " + (i + 1), score: scores[i], faced: faced[i] ?? 0 })).sort((a, b) => b.score - a.score);
         const top = ranked[0].score;
+        // The honest maximum is the number of cards the winner was actually shown across
+        // their rounds: every card they faced was one they could have scored. The old
+        // Math.max(12, top) collapsed the maximum onto the score itself, so any win of
+        // 12 or more recorded as 100 percent with 3 stars and full XP.
+        const maxScore = Math.max(1, ranked[0].faced);
         const medals = ["🥇", "🥈", "🥉"];
-        onDone(top, Math.max(12, top), false, "Mime Time · " + count + (count === 1 ? " player" : " players") + "\n" + ranked.map((r, i) => (medals[i] ?? "▫️") + " " + r.name + " " + r.score).join("\n"));
+        onDone(top, maxScore, top > 0 && top === maxScore, "Mime Time · " + count + (count === 1 ? " player" : " players") + "\n" + ranked.map((r, i) => (medals[i] ?? "▫️") + " " + r.name + " " + r.score).join("\n"));
       }
       return;
     }
