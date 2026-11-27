@@ -6,7 +6,7 @@ const text = page.replace(/<style[\s\S]*?<\/style>/g, "").replace(/<[^>]+>/g, " 
 
 describe("Terms of Service page", () => {
   it("covers the standard clauses and the app's actual features", () => {
-    for (const id of ["education", "guest", "account", "rooms", "names", "contribute", "use", "delete", "ip", "liability", "changes", "law", "contact"]) expect(page).toContain('id="' + id + '"');
+    for (const id of ["education", "guest", "account", "rooms", "names", "contribute", "use", "delete", "ip", "paid", "liability", "changes", "law", "contact"]) expect(page).toContain('id="' + id + '"');
     expect(text).toMatch(/not medical advice/i);
     expect(text).toMatch(/Delete my Roundsy account/);
     expect(text).toMatch(/six-character code/);
@@ -43,10 +43,16 @@ describe("Terms of Service page", () => {
     expect(text).not.toMatch(/sole proprietor|LLC|incorporated/i);
     expect(page).toContain("patho.mnemonic1@gmail.com");
   });
-  it("makes no promise about paid tiers or prices while monetization is undecided", () => {
-    expect(text).not.toMatch(/\bPro\b/);
-    expect(text).not.toMatch(/subscription|per month|per year|lifetime|free trial|\$\s?\d/i);
-    expect(text).toMatch(/currently free/i);
+  it("describes the paid Pro features with prices, trial, renewal and refunds", () => {
+    expect(page).toContain('id="paid"');
+    expect(text).toMatch(/Roundsy Pro/);
+    expect(text).toMatch(/USD 0\.99 per month/);
+    expect(text).toMatch(/USD 9\.99 per year/);
+    expect(text).toMatch(/one free trial of 7 days/);
+    expect(text).toMatch(/renew automatically/);
+    expect(text).toMatch(/daily round is free forever/i);
+    expect(text).not.toMatch(/currently free/i);
+    expect(text).not.toMatch(/If we ever offer paid features/);
   });
 });
 
