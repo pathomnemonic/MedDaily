@@ -2825,6 +2825,24 @@ button,.button{transition:transform .1s,filter .15s,box-shadow .15s}
 .archive-game-copy b{display:block;font:700 14px var(--font-game)}
 .archive-game-copy small{opacity:.75;font-size:11px}
 .archive-lock h2{margin:6px 0 8px}
+.paywall-page{max-width:880px;margin:34px auto}
+.paywall-benefits{display:grid;gap:16px}
+.paywall-benefit{display:grid;grid-template-columns:52px 1fr;gap:13px;align-items:start}
+.paywall-benefit-icon{display:grid;place-items:center;width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.14);font-size:26px}
+.paywall-benefit b{display:block;font:700 17px var(--font-game)}
+.paywall-benefit small{display:block;opacity:.8;font-size:12px;line-height:1.6;margin-top:3px}
+.paywall-plan-list{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.paywall-plan{display:grid;gap:5px;padding:16px;border:1px solid var(--line);border-radius:16px;background:hsl(calc(var(--hue) - 30) calc(47% * var(--sat)) 22% / .85);color:inherit;cursor:pointer;text-align:left}
+.paywall-plan:disabled{opacity:.55;cursor:default}
+.paywall-plan-head{display:flex;align-items:center;gap:8px}
+.paywall-plan-head b{font:700 16px var(--font-game)}
+.paywall-badge{padding:2px 8px;border-radius:99px;background:#ffd54a;color:#2a1658;font:800 9px var(--font-game)}
+.paywall-plan-price{font:700 24px var(--font-game)}
+.paywall-plan small{opacity:.75;font-size:11px}
+.paywall-plan-cta{margin-top:6px;font:800 12px var(--font-game);color:#ffd54a}
+.paywall-trial-button{width:100%;margin-top:10px}
+.paywall-fine{margin-top:16px;line-height:1.7}
+@media(max-width:760px){.paywall-plan-list{grid-template-columns:1fr}}
 @media(max-width:760px){.archive-layout{grid-template-columns:1fr}.archive-days{grid-template-columns:repeat(2,1fr);max-height:none;overflow:visible}.archive-banner{grid-template-columns:auto 1fr}.archive-banner .dx-play{grid-column:1/-1;justify-content:center}}
 .cal-legend{display:flex;align-items:center;gap:4px;margin-top:8px;font:600 10px var(--font-game);opacity:.8}.cal-legend .cal-day{width:12px;height:12px}.cal-legend .cal-day.frozen{line-height:12px;font-size:9px}
 .dist{display:flex;align-items:flex-end;gap:6px;height:130px;padding-top:6px}.dist-col{position:relative;flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
