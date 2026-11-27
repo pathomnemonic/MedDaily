@@ -84,8 +84,8 @@ workflows:
           npx cap sync android
       - name: Set the version code
         script: |
-          sed -i "s/versionCode [0-9]*/versionCode $BUILD_NUMBER/" android/app/build.gradle
-          grep -n "versionCode" android/app/build.gradle
+          perl -pi -e "s/versionCode [0-9]*/versionCode $BUILD_NUMBER/" android/app/build.gradle
+          grep -n "versionCode $BUILD_NUMBER" android/app/build.gradle
       - name: Build the Android app bundle
         script: |
           chmod +x android/gradlew
