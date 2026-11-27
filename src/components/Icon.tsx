@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export type IconName = "flame" | "star" | "home" | "party" | "trophy" | "gear" | "music" | "musicOff" | "speaker" | "speakerOff" | "palette" | "dice" | "bolt" | "brain" | "letters" | "steth" | "all";
+export type IconName = "flame" | "star" | "home" | "party" | "trophy" | "gear" | "music" | "musicOff" | "speaker" | "speakerOff" | "palette" | "dice" | "bolt" | "brain" | "letters" | "steth" | "all" | "calendar";
 const INK = "#2a1658";
 const ICONS: Record<IconName, ReactNode> = {
   flame: <><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-4 3-7 1 1 2 1 3-5z" fill="#ff8a3d" stroke={INK} /><path d="M12 12c1 2 3 3 3 5a3 3 0 0 1-6 0c0-2 2-3 3-5z" fill="#ffd54a" stroke={INK} /></>,
@@ -19,7 +19,8 @@ const ICONS: Record<IconName, ReactNode> = {
   brain: <><path d="M9 4a3.5 3.5 0 0 0-3.5 3.5A3.5 3.5 0 0 0 3 11a3.5 3.5 0 0 0 2 3.2A3.5 3.5 0 0 0 9 19.5a3 3 0 0 0 3-2V6a3 3 0 0 0-3-2z" fill="#ff9fc2" stroke={INK} /><path d="M15 4a3.5 3.5 0 0 1 3.5 3.5A3.5 3.5 0 0 1 21 11a3.5 3.5 0 0 1-2 3.2 3.5 3.5 0 0 1-4 5.3 3 3 0 0 1-3-2V6a3 3 0 0 1 3-2z" fill="#ffb3d0" stroke={INK} /></>,
   letters: <><rect x="2.5" y="4" width="19" height="16" rx="3.5" fill="#fff7ea" stroke={INK} /><text x="12" y="16.5" textAnchor="middle" fontFamily="Lilita One, sans-serif" fontSize="11" fill={INK} stroke="none">Aa</text></>,
   steth: <><path d="M6 3v6a4 4 0 0 0 8 0V3" fill="none" stroke="#fff7ea" strokeWidth={2.2} /><path d="M10 13v2a5 5 0 0 0 10 0v-2" fill="none" stroke="#fff7ea" strokeWidth={2.2} /><circle cx="20" cy="11.5" r="2.2" fill="#52e3b0" stroke={INK} /><circle cx="6" cy="3" r="1.3" fill="#ff5d9e" stroke="none" /><circle cx="14" cy="3" r="1.3" fill="#ff5d9e" stroke="none" /></>,
-  all: <><rect x="3" y="3" width="8" height="8" rx="2.5" fill="#ff63a9" stroke={INK} /><rect x="13" y="3" width="8" height="8" rx="2.5" fill="#52e3b0" stroke={INK} /><rect x="3" y="13" width="8" height="8" rx="2.5" fill="#ffd54a" stroke={INK} /><rect x="13" y="13" width="8" height="8" rx="2.5" fill="#36bdf5" stroke={INK} /></>
+  all: <><rect x="3" y="3" width="8" height="8" rx="2.5" fill="#ff63a9" stroke={INK} /><rect x="13" y="3" width="8" height="8" rx="2.5" fill="#52e3b0" stroke={INK} /><rect x="3" y="13" width="8" height="8" rx="2.5" fill="#ffd54a" stroke={INK} /><rect x="13" y="13" width="8" height="8" rx="2.5" fill="#36bdf5" stroke={INK} /></>,
+  calendar: <><rect x="3" y="5" width="18" height="16" rx="3" fill="#fff7ea" stroke={INK} /><path d="M3 10h18" stroke={INK} /><path d="M8 3v4M16 3v4" stroke={INK} /><circle cx="8" cy="14" r="1.4" fill="#ff5d9e" stroke="none" /><circle cx="12" cy="14" r="1.4" fill="#52e3b0" stroke="none" /><circle cx="16" cy="14" r="1.4" fill="#36bdf5" stroke="none" /><circle cx="8" cy="17.5" r="1.4" fill="#ffd54a" stroke="none" /><circle cx="12" cy="17.5" r="1.4" fill="#ff8a3d" stroke="none" /></>
 };
 /** Original duotone icon set; consistent on every platform, unlike emoji. */
 export default function Icon({ name, size = 22, className = "" }: { name: IconName; size?: number; className?: string }) {
