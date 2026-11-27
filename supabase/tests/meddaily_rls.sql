@@ -175,5 +175,32 @@ select pg_temp.fails($$select meddaily.submit_score('SPLI01', 1000001, 240, fals
 reset role;
 delete from meddaily.rooms where code = 'SPLI01';
 
+-- 11. Pro plumbing (20261128000000): the trial is once per account and the
+-- ledger survives account deletion; archive writes need current Pro
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a4', true);
+select pg_temp.fails($$select meddaily.start_trial()$$, 'guest_cannot_start_trial');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a4', false);
+select pg_temp.fails($$select meddaily.start_trial()$$, 'no_profile');
+select meddaily.ensure_profile('Pro');
+select meddaily.start_trial();
+select pg_temp.assert(meddaily.has_pro(), 'trial grants Pro');
+select pg_temp.assert((select status from meddaily.entitlements where user_id = '00000000-0000-0000-0000-0000000000a4') = 'trialing', 'trial row is trialing');
+select pg_temp.assert((select trial_ends_at > now() + interval '6 days' from meddaily.entitlements where user_id = '00000000-0000-0000-0000-0000000000a4'), 'trial runs seven days');
+select pg_temp.fails($$select meddaily.start_trial()$$, 'trial_already_used');
+insert into meddaily.results (user_id, day, game_id, scope, score, max_score, perfect, duration_seconds, archive)
+  values ('00000000-0000-0000-0000-0000000000a4', date '2026-11-20', 'medle', 'general', 10, 10, true, 60, true);
+reset role;
+update meddaily.entitlements set status = 'expired', trial_ends_at = now() - interval '1 day' where user_id = '00000000-0000-0000-0000-0000000000a4';
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a4', false);
+select pg_temp.assert(not meddaily.has_pro(), 'expired trial is not Pro');
+select pg_temp.fails($$insert into meddaily.results (user_id, day, game_id, scope, score, max_score, perfect, duration_seconds, archive) values ('00000000-0000-0000-0000-0000000000a4', date '2026-11-19', 'medle', 'general', 5, 10, false, 30, true)$$, 'row-level security');
+select meddaily.delete_my_account();
+reset role;
+select pg_temp.assert((select count(*) from meddaily.trial_ledger where user_id = '00000000-0000-0000-0000-0000000000a4') = 1, 'ledger survives account deletion');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a4', false);
+select meddaily.ensure_profile('Pro again');
+select pg_temp.fails($$select meddaily.start_trial()$$, 'trial_already_used');
+reset role;
+
 rollback;
 select 'meddaily_rls: all checks passed' as result;
