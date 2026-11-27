@@ -91,6 +91,12 @@ export function makeSupabaseRooms({ configured, getClient, refreshMs = 8000, deb
       let poll: ReturnType<typeof setInterval> | null = null;
       let beat: ReturnType<typeof setInterval> | null = null;
       let cleanup: (() => void) | null = null;
+      const teardown = () => {
+        if (timer) { clearTimeout(timer); timer = null; }
+        if (poll) { clearInterval(poll); poll = null; }
+        if (beat) { clearInterval(beat); beat = null; }
+        cleanup?.();
+      };
       const refresh = async (c: SupabaseClient) => {
         try { const state = await fetchState(c, code); if (!stopped) callback(state); }
         catch { if (!stopped) callback(null); }
@@ -100,6 +106,8 @@ export function makeSupabaseRooms({ configured, getClient, refreshMs = 8000, deb
           const c = await client();
           if (stopped) return;
           await refresh(c);
+          // Unsubscribed while the first fetch was in flight: start nothing.
+          if (stopped) return;
           const schedule = () => { if (timer) clearTimeout(timer); timer = setTimeout(() => void refresh(c), debounceMs); };
           const channel = c.channel("meddaily-room-" + code)
             .on("postgres_changes", { event: "*", schema: "meddaily", table: "room_players", filter: "room_code=eq." + code }, schedule)
@@ -109,15 +117,12 @@ export function makeSupabaseRooms({ configured, getClient, refreshMs = 8000, deb
           poll = setInterval(() => void refresh(c), refreshMs);
           beat = setInterval(() => { void call("touch_room", { p_code: code }).catch(() => undefined); }, heartbeatMs);
           cleanup = () => { void c.removeChannel(channel); };
-          if (stopped) cleanup();
+          if (stopped) teardown();
         } catch { if (!stopped) callback(null); }
       })();
       return () => {
         stopped = true;
-        if (timer) clearTimeout(timer);
-        if (poll) clearInterval(poll);
-        if (beat) clearInterval(beat);
-        cleanup?.();
+        teardown();
       };
     },
 
