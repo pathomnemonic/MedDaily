@@ -30,6 +30,7 @@ import ReminderCard from "./ReminderCard";
 import AccountCard from "./AccountCard";
 import type { AccountController } from "./useAccount";
 import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
+import { planFreezes } from "./freezes";
 import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, rankRoomPlayers, RoomError, submitRoomScore, watchRoom, type RoomState } from "./rooms";
 import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnected } from "./googleDrive";
 
@@ -155,6 +156,18 @@ export default function App() {
   useEffect(()=>{ if(!isNative()) return; void refreshReminders({playedDays:new Set(player.results.map(r=>r.date)),streak:playStreak(player)}).catch(()=>undefined); // eslint-disable-next-line react-hooks/exhaustive-deps
   },[player.results.length]);
   useEffect(()=>{ if(account.displayName) setRoomName(cur=>cur||account.displayName); },[account.displayName]);
+  // Streak freezes (Pro): once the server confirms this account has Pro, cover
+  // a one or two day gap with this month freezes before the streak is read.
+  useEffect(()=>{
+    if(account.pro!==true) return;
+    const add = planFreezes(player.results, player.frozenDays ?? [], date, true);
+    if(!add.length) return;
+    const next={...player,frozenDays:[...(player.frozenDays??[]),...add].sort()};
+    savePlayer(next); setPlayer(next);
+    setNotice(add.length===1 ? "A streak freeze saved your streak ❄" : "Streak freezes saved your streak ❄");
+    account.afterResult();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[account.pro, player.results, player.frozenDays, date]);
   const [joinCode,setJoinCode] = useState("");
   const [roomBusy,setRoomBusy] = useState(false);
   const [lastShare,setLastShare] = useState("");
@@ -492,10 +505,10 @@ function RoomScores({room}:{room:RoomState}){
   return <section className="room-score-inline"><div className="eyebrow">{room.status==="finished"?"FINAL RESULTS":"FRIENDS ROOM LEADERBOARD"} · {room.code}</div>{ranked.map((p,index)=><span key={p.uid}><b>#{index+1}</b> {p.name}: {p.finished?pointsText(p.score??0)+(p.perfect?" · perfect":""):"playing"}</span>)}</section>;
 }
 
-function StatsDepth({results,streak,hide}:{results:PlayerData["results"];streak:number;hide:boolean}){
+function StatsDepth({results,streak,hide,frozenDays=[]}:{results:PlayerData["results"];streak:number;hide:boolean;frozenDays?:readonly string[]}){
   const today=dailyDateKey();
-  const grid=streakCalendar(results,today,12);
-  const best=bestStreak(results);
+  const grid=streakCalendar(results,today,12,frozenDays);
+  const best=bestStreak(results,frozenDays);
   const dist=scoreDistribution(results);
   const top=Math.max(1,...dist);
   const families=averageByGroup(results,g=>GAMES.find(x=>x.id===g)?.category);
@@ -503,8 +516,8 @@ function StatsDepth({results,streak,hide}:{results:PlayerData["results"];streak:
   return <section className="stats-depth" aria-label="Your history">
     <h2>Streak calendar</h2>
     <p className="stats-sub">{hide?"Streaks are hidden in your settings.":"Current streak "+streak+" days · best "+best+" days. Each square is a day; darker means more games."}</p>
-    <div className="cal" role="img" aria-label="Calendar of the last twelve weeks">{grid.map((week,i)=><div className="cal-week" key={i}>{week.map(d=><i key={d.date} title={d.date+": "+d.plays+" played"} className={"cal-day lv"+level(d.plays)+(d.future?" future":"")+(d.today?" today":"")}/>)}</div>)}</div>
-    <div className="cal-legend"><span>Less</span>{[0,1,2,3,4].map(n=><i key={n} className={"cal-day lv"+n}/>)}<span>More</span></div>
+    <div className="cal" role="img" aria-label="Calendar of the last twelve weeks">{grid.map((week,i)=><div className="cal-week" key={i}>{week.map(d=><i key={d.date} title={d.date+": "+(d.frozen&&d.plays===0?"streak freeze":d.plays+" played")} className={"cal-day lv"+level(d.plays)+(d.future?" future":"")+(d.today?" today":"")+(d.frozen&&d.plays===0?" frozen":"")}>{d.frozen&&d.plays===0?"❄":""}</i>)}</div>)}</div>
+    <div className="cal-legend"><span>Less</span>{[0,1,2,3,4].map(n=><i key={n} className={"cal-day lv"+n}/>)}<span>More</span><i className="cal-day frozen">❄</i><span>streak freeze</span></div>
     <h2>Score distribution</h2>
     <p className="stats-sub">How your finished rounds spread across the score range.</p>
     <div className="dist" role="img" aria-label="Histogram of round scores">{dist.map((n,i)=><div key={i} className="dist-col"><b style={{height:Math.round(n/top*100)+"%"}}/><small>{i*10}</small><span>{n}</span></div>)}</div>
@@ -520,7 +533,7 @@ function StatsPage({player,scope,streak,done}:{player:PlayerData;scope:string;st
   return <div className="stats-page"><section className="profile-card"><Mascot mood="happy" size={84}/><div className="profile-main"><span className="eyebrow">YOUR PROFILE</span><h1>Lv {lvl.level} · {lvl.title}</h1><i className="profile-bar" role="progressbar" aria-valuenow={lvl.pct} aria-valuemin={0} aria-valuemax={100}><span style={{width:lvl.pct+"%"}}/></i><small>{lvl.into} / {lvl.span} XP to the next level</small>
         <div className="profile-chips"><span><Icon name="flame" size={22}/> {player.hideStreaks?"—":streak}-day streak</span><span><Icon name="star" size={22}/> {done}/{LISTED.length} cleared today</span><span className="profile-goal" title="Finish three daily games for a bonus chest">{[0,1,2].map(i=><i key={i} className={i<Math.min(done,3)?"on":""}/>)} {done>=3?"🎁 chest claimed":"daily goal"}</span></div></div></section>
     <span className="eyebrow">YOUR LITTLE LAB BOOK</span><h1>Progress, not pressure.</h1><div className="stats-grid"><div><b>{results.length}</b><span>rounds played</span></div><div><b>{player.hideStreaks?"—":streak}</b><span>day streak</span></div><div><b>{perfect}</b><span>perfect rounds</span></div></div>
-    {results.length>0&&<StatsDepth results={player.results.filter(r=>r.scope===scope)} streak={streak} hide={!!player.hideStreaks}/>}
+    {results.length>0&&<StatsDepth results={player.results.filter(r=>r.scope===scope)} streak={streak} hide={!!player.hideStreaks} frozenDays={player.frozenDays??[]}/>}
     <section className="trophy-cabinet"><h2>Trophy cabinet <small>{trophies.filter(t=>t.earned).length} / {trophies.length}</small></h2><div className="trophy-grid">{trophies.map(t=><div key={t.id} className={"trophy"+(t.earned?" earned":"")}><span className="trophy-icon">{t.earned?t.icon:"🔒"}</span><b>{t.name}</b><small>{t.hint}</small></div>)}</div></section>
     <section className="stats-table"><h2>Game shelf</h2>{LISTED.map(g=>{const played=results.filter(r=>r.game===g.id);return <div key={g.id}><span>{g.title}</span><span>{played.length} played</span><b>Best run {Math.max(0,...played.map(r=>r.score))}</b></div>;})}</section>
     <p className="privacy-note">Progress and achievements are calculated from this device's saved results for the current arcade mode. Records stay local unless you choose Google Drive sync in Settings. Room leaderboards are private to the six-character room code.</p>
