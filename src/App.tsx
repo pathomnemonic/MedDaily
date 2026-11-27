@@ -156,18 +156,6 @@ export default function App() {
   useEffect(()=>{ if(!isNative()) return; void refreshReminders({playedDays:new Set(player.results.map(r=>r.date)),streak:playStreak(player)}).catch(()=>undefined); // eslint-disable-next-line react-hooks/exhaustive-deps
   },[player.results.length]);
   useEffect(()=>{ if(account.displayName) setRoomName(cur=>cur||account.displayName); },[account.displayName]);
-  // Streak freezes (Pro): once the server confirms this account has Pro, cover
-  // a one or two day gap with this month freezes before the streak is read.
-  useEffect(()=>{
-    if(account.pro!==true) return;
-    const add = planFreezes(player.results, player.frozenDays ?? [], date, true);
-    if(!add.length) return;
-    const next={...player,frozenDays:[...(player.frozenDays??[]),...add].sort()};
-    savePlayer(next); setPlayer(next);
-    setNotice(add.length===1 ? "A streak freeze saved your streak ❄" : "Streak freezes saved your streak ❄");
-    account.afterResult();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[account.pro, player.results, player.frozenDays, date]);
   const [joinCode,setJoinCode] = useState("");
   const [roomBusy,setRoomBusy] = useState(false);
   const [lastShare,setLastShare] = useState("");
@@ -185,6 +173,18 @@ export default function App() {
     document.addEventListener("visibilitychange",tick);window.addEventListener("focus",tick);
     return ()=>{window.clearInterval(id);document.removeEventListener("visibilitychange",tick);window.removeEventListener("focus",tick);};
   },[]);
+  // Streak freezes (Pro): once the server confirms this account has Pro, cover
+  // a one or two day gap with this month freezes before the streak is read.
+  useEffect(()=>{
+    if(account.pro!==true) return;
+    const add = planFreezes(player.results, player.frozenDays ?? [], date, true);
+    if(!add.length) return;
+    const next={...player,frozenDays:[...(player.frozenDays??[]),...add].sort()};
+    savePlayer(next); setPlayer(next);
+    setNotice(add.length===1 ? "A streak freeze saved your streak ❄" : "Streak freezes saved your streak ❄");
+    account.afterResult();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[account.pro, player.results, player.frozenDays, date]);
   const [gameDate,setGameDate] = useState(()=>dailyDateKey());
   const scope = mode === "general" ? "general" : "specialty:" + specialty;
   const selectedSpecialty = SPECIALTIES.find(s=>s.id===specialty)!;
