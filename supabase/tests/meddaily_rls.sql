@@ -1,6 +1,9 @@
 -- Behavioural checks for the meddaily schema. Run inside a transaction that is rolled back, e.g. in the SQL editor
 -- of a scratch branch, or locally against a database where the migration has been applied.
 -- Each check raises an exception on failure, so a clean run means everything passed.
+-- Stop on the first error: without this, psql continues past a failed assert, the closing rollback still
+-- succeeds, and the success line at the end prints anyway, so a failing run can look green (issue 152).
+\set ON_ERROR_STOP on
 begin;
 
 create or replace function pg_temp.as_user(uid uuid, anon boolean default false) returns void language plpgsql as $$
