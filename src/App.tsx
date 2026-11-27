@@ -31,6 +31,7 @@ import AccountCard from "./AccountCard";
 import type { AccountController } from "./useAccount";
 import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
 import { planFreezes } from "./freezes";
+import { archiveDays, resultsForDay } from "./archive";
 import { joinOrCreateRoom, leaveRoom, multiplayerConfigured, rankRoomPlayers, RoomError, submitRoomScore, watchRoom, type RoomState } from "./rooms";
 import { connectAndSync, googleDriveConfigured, hasDriveConnection, syncIfConnected } from "./googleDrive";
 
@@ -38,7 +39,7 @@ type Mode = "general" | "specialty";
 /** Specialty-focused daily tracks are built but hidden: the per-specialty puzzle banks are too thin to sustain them (decided Nov 2026). Flip on only after the content is deep enough. */
 const SPECIALTY_TRACKS_VISIBLE = false;
 type Specialty = "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
-type Screen = "home" | "stats" | "settings" | "friends";
+type Screen = "home" | "stats" | "settings" | "friends" | "archive";
 interface GameMeta { id: GameId; title: string; subtitle: string; description: string; icon: string; wash: string; time: string; category: string; difficulty: 1 | 2 | 3; hidden?: boolean; }
 /** Per-game finale stamps: [perfect, great, complete, try again]. */
 const FINALE: Partial<Record<GameId,[string,string,string,string]>> = {
@@ -161,7 +162,7 @@ export default function App() {
   const [lastShare,setLastShare] = useState("");
   const [partyRun,setPartyRun] = useState(false);
   const [wipe,setWipe] = useState<{id:GameId;key:number}|null>(null);
-  const [completion,setCompletion] = useState<{title:string;score:number;maxScore:number;perfect:boolean;text:string;party:boolean;stars:number;gain:number;levelUp:string|null;chest:number}|null>(null);
+  const [completion,setCompletion] = useState<{title:string;score:number;maxScore:number;perfect:boolean;text:string;party:boolean;stars:number;gain:number;levelUp:string|null;chest:number;archiveDay:string|null}|null>(null);
   const [splash,setSplash] = useState(()=>{try{return sessionStorage.getItem("meddaily:splash")!=="1";}catch{return true;}});
   const [copied,setCopied] = useState(false);
 
@@ -186,6 +187,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[account.pro, player.results, player.frozenDays, date]);
   const [gameDate,setGameDate] = useState(()=>dailyDateKey());
+  const [archiveRunDay,setArchiveRunDay] = useState<string|null>(null);
   const scope = mode === "general" ? "general" : "specialty:" + specialty;
   const selectedSpecialty = SPECIALTIES.find(s=>s.id===specialty)!;
   const selectedTitle = mode === "general" ? "Open Arcade" : selectedSpecialty.name + " Dailies";
@@ -277,23 +279,32 @@ export default function App() {
   const openGame=(id:GameId,isPractice=false,forcedSeed?:number,party=false)=>{
     sfx("start");resetCombo();vibrate(10);
     if(!player.reducedMotion){setWipe({id,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}
-    const dayNow=dailyDateKey();setGameDate(dayNow);setDate(dayNow);
+    const dayNow=dailyDateKey();setGameDate(dayNow);setDate(dayNow);setArchiveRunDay(null);
     setPartyRun(party);setCompletion(null);setActiveGame(id);setPractice(isPractice);setStartAt(forcedSeed??(isPractice?hashSeed(id+"-free-"+Date.now()):seedFor(id,dayNow)));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
+    window.scrollTo({top:0,behavior:player.reducedMotion?"auto":"smooth"});
+  };
+  /** Starts a past day round from the archive (Pro). The round is the official daily for that day: same seed, recorded once, marked as an archive play. */
+  const openArchiveGame=(id:GameId,day:string)=>{
+    sfx("start");resetCombo();vibrate(10);
+    if(!player.reducedMotion){setWipe({id,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}
+    setGameDate(day);setArchiveRunDay(day);
+    setPartyRun(false);setCompletion(null);setActiveGame(id);setPractice(false);setStartAt(seedFor(id,day));setGameStartedAt(Date.now());setLastShare("");setScreen("home");setNotice("");
     window.scrollTo({top:0,behavior:player.reducedMotion?"auto":"smooth"});
   };
   const finishGame=(score:number,maxScore:number,perfect:boolean,share?:string)=>{
     const gameTitle=GAMES.find(g=>g.id===activeGame)?.title??"Roundsy game";
     const filled=Math.max(0,Math.min(10,Math.round(score/Math.max(1,maxScore)*10)));
     const fallback="🟩".repeat(filled)+"⬜".repeat(10-filled)+(perfect?"\n✨ Perfect run":"");
-    const where=partyRun?" · Room "+roomCode:practice?" · Free Play":" · "+date;
+    const archiveDay=partyRun||practice?null:archiveRunDay;
+    const where=partyRun?" · Room "+roomCode:practice?" · Free Play":archiveDay?" · Archive "+archiveDay:" · "+date;
     const text=share?"Roundsy"+where+"\n"+share:"Roundsy · "+gameTitle+where+"\n"+fallback+"\nhttps://pathomnemonic.github.io/MedDaily/"+(partyRun?"?room="+roomCode:"");
     setLastShare(text);setCopied(false);
-    const isNewDaily=!partyRun&&!practice&&!player.results.some(r=>r.date===date&&r.game===activeGame&&r.scope===scope);
-    const todayDone=player.results.filter(r=>r.date===date&&r.scope===scope).length;
-    const chest=isNewDaily&&todayDone+1===3?60:0; // daily goal: finish three games for a bonus chest
+    const isNewDaily=!partyRun&&!practice&&!player.results.some(r=>r.date===gameDate&&r.game===activeGame&&r.scope===scope);
+    const todayDone=player.results.filter(r=>r.date===gameDate&&r.scope===scope).length;
+    const chest=isNewDaily&&!archiveDay&&todayDone+1===3?60:0; // daily goal: finish three games for a bonus chest; archive plays never count toward it
     const gain=xpForResult({score,maxScore,perfect,practice:!partyRun&&!isNewDaily,party:partyRun})+chest;
     const before=levelFor(player.xp??0),after=levelFor((player.xp??0)+gain);
-    setCompletion({title:gameTitle,score,maxScore,perfect,text,party:partyRun,stars:starsFor(score,maxScore,perfect),gain,chest,levelUp:after.level>before.level?after.title+" · Level "+after.level:null});
+    setCompletion({title:gameTitle,score,maxScore,perfect,text,party:partyRun,stars:starsFor(score,maxScore,perfect),gain,chest,levelUp:after.level>before.level?after.title+" · Level "+after.level:null,archiveDay});
     sfx(perfect?"perfect":"win");
     if(after.level>before.level)window.setTimeout(()=>sfx("badge"),900);
     if(partyRun){
@@ -303,12 +314,13 @@ export default function App() {
       return;
     }
     if(practice){setPlayer(cur=>{const n={...cur,xp:(cur.xp??0)+gain};savePlayer(n);return n;});return;}
-    const result={date:gameDate,game:activeGame!,scope,score,maxScore,perfect,durationSeconds:Math.max(0,Math.round((Date.now()-gameStartedAt)/1000))};
+    const result={date:gameDate,game:activeGame!,scope,score,maxScore,perfect,durationSeconds:Math.max(0,Math.round((Date.now()-gameStartedAt)/1000)),...(archiveDay?{archive:true}:{})};
     const nextPlayer = {...recordResult(player,result),xp:(player.xp??0)+gain};
     savePlayer(nextPlayer);
     setPlayer(nextPlayer);
     account.afterResult();
-    setNotice(hasDriveConnection() ? "Result saved. Syncing your private Drive copy…" : "Daily result saved on this device.");
+    setArchiveRunDay(null);
+    setNotice(archiveDay?"Archive result saved on this device.":hasDriveConnection() ? "Result saved. Syncing your private Drive copy…" : "Daily result saved on this device.");
     if (hasDriveConnection()) {
       void syncIfConnected(nextPlayer).then((merged: PlayerData | null)=>{ if (merged) { savePlayer(merged); setPlayer(merged); setNotice("Daily result saved and synced to your private Google Drive data."); } }).catch((error: unknown)=>setNotice("Saved locally; Google Drive needs reconnecting: "+(error instanceof Error ? error.message : "Unknown sync error")));
     }
@@ -373,7 +385,7 @@ export default function App() {
     if(roomCode&&multiplayerConfigured()){try{await leaveRoom(roomCode);}catch{/* no network */}}
     setRoomCode("");setRoom(null);setActiveGame(null);setPartyRun(false);setScreen("home");setNotice("Left the room.");
   };
-  const nextUp=completion?(()=>{const left=LISTED.filter(g=>g.id!==activeGame&&!player.results.some(r=>r.date===date&&r.game===g.id&&r.scope===scope));const pool=left.length?left:LISTED.filter(g=>g.id!==activeGame);if(!pool.length)return null;return practice||completion.party?pool[hashSeed(String(completion.score)+activeGame)%pool.length]:pool[0];})():null;
+  const nextUp=completion?(()=>{const refDay=completion.archiveDay??date;const left=LISTED.filter(g=>g.id!==activeGame&&!player.results.some(r=>r.date===refDay&&r.game===g.id&&r.scope===scope));const pool=left.length?left:LISTED.filter(g=>g.id!==activeGame);if(!pool.length)return null;return practice||completion.party?pool[hashSeed(String(completion.score)+activeGame)%pool.length]:pool[0];})():null;
   const title=activeGame?GAMES.find(g=>g.id===activeGame)?.title??"Game":screen==="stats"?"Your progress":screen==="settings"?"Preferences":screen==="friends"?"Play with friends":selectedTitle;
 
   return <div className="app-shell">
@@ -383,6 +395,7 @@ export default function App() {
       </button>
       <nav className="top-nav" aria-label="Main navigation">
         <button className={!activeGame&&screen==="home"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("home");}}>Arcade</button>
+        <button className={screen==="archive"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("archive");}}>Archive</button>
         <button className={screen==="friends"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("friends");}}>Party</button>
         <button className={screen==="stats"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}>Trophies</button>
         <button className={screen==="settings"?"nav-active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}>Options</button>
@@ -392,6 +405,7 @@ export default function App() {
 
     <nav className="mobile-nav" aria-label="Mobile navigation">
       <button className={!activeGame&&screen==="home"?"active":""} onClick={()=>{setActiveGame(null);setScreen("home");}}><span><Icon name="home" size={22}/></span>Arcade</button>
+      <button className={screen==="archive"?"active":""} onClick={()=>{setActiveGame(null);setScreen("archive");}}><span><Icon name="calendar" size={22}/></span>Archive</button>
       <button className={screen==="friends"?"active":""} onClick={()=>{setActiveGame(null);setScreen("friends");}}><span><Icon name="party" size={22}/></span>Party</button>
       <button className={screen==="stats"?"active":""} onClick={()=>{setActiveGame(null);setScreen("stats");}}><span><Icon name="trophy" size={22}/></span>Trophies</button>
       <button className={screen==="settings"?"active":""} onClick={()=>{setActiveGame(null);setScreen("settings");}}><span><Icon name="gear" size={22}/></span>Options</button>
@@ -401,16 +415,16 @@ export default function App() {
 
     <main>
       {activeGame?<div className={"page-enter play-page tone-"+(GAMES.find(g=>g.id===activeGame)?.wash??"lilac")}>
-        <div className="breadcrumb"><button onClick={()=>{setActiveGame(null);setPractice(false);}}>← All games</button><span>/</span><span>{title}</span>{!completion&&<PipCompanion/>}</div>
-        <div className="play-heading"><div className="play-badge" aria-hidden="true"><GameArt game={activeGame}/></div><div className="play-heading-text"><span className="eyebrow">{partyRun?"PARTY ROOM · "+roomCode:practice?"FREE PLAY":selectedTitle.toUpperCase()+" · "+date}</span><h1>{title}</h1><p>{GAMES.find(g=>g.id===activeGame)?.description}</p>{(()=>{const g=GAMES.find(x=>x.id===activeGame);return g?<Difficulty level={g.difficulty}/>:null;})()}</div>
-          {!partyRun&&<div className="mode-switch" role="group" aria-label="Game mode"><button className={!practice?"selected":""} onClick={()=>{if(practice)openGame(activeGame,false,room?.seed);}}>Daily</button><button className={practice?"selected":""} onClick={()=>{if(!practice)openGame(activeGame,true,hashSeed(activeGame+"-practice-"+Date.now()));}}>Free Play</button></div>}</div>
+        <div className="breadcrumb"><button onClick={()=>{setActiveGame(null);setPractice(false);setArchiveRunDay(null);}}>← All games</button><span>/</span><span>{title}</span>{!completion&&<PipCompanion/>}</div>
+        <div className="play-heading"><div className="play-badge" aria-hidden="true"><GameArt game={activeGame}/></div><div className="play-heading-text"><span className="eyebrow">{partyRun?"PARTY ROOM · "+roomCode:practice?"FREE PLAY":archiveRunDay?"ARCHIVE · "+archiveRunDay:selectedTitle.toUpperCase()+" · "+date}</span><h1>{title}</h1><p>{GAMES.find(g=>g.id===activeGame)?.description}</p>{(()=>{const g=GAMES.find(x=>x.id===activeGame);return g?<Difficulty level={g.difficulty}/>:null;})()}</div>
+          {!partyRun&&!archiveRunDay&&<div className="mode-switch" role="group" aria-label="Game mode"><button className={!practice?"selected":""} onClick={()=>{if(practice)openGame(activeGame,false,room?.seed);}}>Daily</button><button className={practice?"selected":""} onClick={()=>{if(!practice)openGame(activeGame,true,hashSeed(activeGame+"-practice-"+Date.now()));}}>Free Play</button></div>}</div>
         <section className="game-stage" data-game={activeGame}><div className="stage-orbit orbit-one"/><div className="stage-orbit orbit-two"/><StageScene game={activeGame}/><div className="stage-watermark" aria-hidden="true"><GameArt game={activeGame}/></div>
-          <ErrorBoundary label={title} resetKey={activeGame+":"+startAt} onBack={()=>{setActiveGame(null);setPractice(false);}}><Suspense fallback={<div className="game-loading" role="status"><span className="game-loading-art"><GameArt game={activeGame}/></span><b>Loading {title}…</b></div>}><GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onExit={()=>{if(!player.reducedMotion&&activeGame){setWipe({id:activeGame,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}setActiveGame(null);setPractice(false);}} onDone={finishGame}/></Suspense></ErrorBoundary>
+          <ErrorBoundary label={title} resetKey={activeGame+":"+startAt} onBack={()=>{setActiveGame(null);setPractice(false);}}><Suspense fallback={<div className="game-loading" role="status"><span className="game-loading-art"><GameArt game={activeGame}/></span><b>Loading {title}…</b></div>}><GameBoard key={activeGame+"-"+String(practice)+"-"+String(startAt)} game={activeGame} seed={startAt} specialty={(partyRun||mode==="general"?"general":specialty) as never} practice={practice} onExit={()=>{if(!player.reducedMotion&&activeGame){setWipe({id:activeGame,key:Date.now()});window.setTimeout(()=>setWipe(null),900);}setActiveGame(null);setPractice(false);setArchiveRunDay(null);}} onDone={finishGame}/></Suspense></ErrorBoundary>
         </section>
         {room&&<RoomScores room={room}/>}
         {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"Roundsy result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
         <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode · new puzzles "+nextDailyLabel().text}</span></div>
-      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak} done={doneToday}/>:screen==="settings"?<SettingsPage mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} updateTheme={updateTheme} player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} account={account} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:<HomePage player={player} scope={scope} today={date} openGame={openGame}/>}
+      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak} done={doneToday}/>:screen==="settings"?<SettingsPage mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} updateTheme={updateTheme} player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} account={account} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:screen==="archive"?<ArchivePage player={player} scope={scope} pro={account.pro} today={date} onPlay={openArchiveGame} onSeePro={()=>setScreen("settings")}/>:<HomePage player={player} scope={scope} today={date} openGame={openGame} onArchive={()=>setScreen("archive")}/>}
     </main>
     {completion&&<div className="complete-overlay" role="dialog" aria-modal="true" aria-label="Round complete" onClick={()=>setCompletion(null)}>
       <div className={"complete-card tone-"+(GAMES.find(g=>g.id===activeGame)?.wash??"lilac")+(completion.perfect?" perfect":"")} onClick={e=>e.stopPropagation()}>
@@ -419,15 +433,15 @@ export default function App() {
         <div className="complete-stars" aria-label={completion.stars+" of 3 stars"}>{[1,2,3].map(n=><span key={n} className={n<=completion.stars?"on":""} style={{animationDelay:(0.25+n*0.22)+"s"}}>★</span>)}</div>
         <span className="complete-stamp">{(()=>{const f=FINALE[activeGame as GameId];return f?(completion.perfect?f[0]:completion.stars>=3?f[1]:completion.stars===0?f[3]:f[2]):(completion.perfect?"PERFECT":completion.stars>=3?"GREAT":completion.stars===0?"TRY AGAIN":"COMPLETE");})()}</span>
         <h2>{completion.title}</h2>
-        <p className="complete-sub">{completion.party?"Room "+roomCode+" · send this to your group":practice?"Free Play round finished":"Daily saved · next puzzles "+nextDailyLabel().text}</p>
+        <p className="complete-sub">{completion.party?"Room "+roomCode+" · send this to your group":practice?"Free Play round finished":completion.archiveDay?"Archive saved · played for "+completion.archiveDay:"Daily saved · next puzzles "+nextDailyLabel().text}</p>
         <div className="complete-xp"><b>+{completion.gain} XP</b>{completion.chest>0&&<span className="chest-pop">🎁 Daily goal reached! +{completion.chest} XP chest</span>}{completion.levelUp&&<span className="level-up">LEVEL UP! {completion.levelUp}</span>}</div>
         <pre className="share-preview">{completion.text.split("\n").filter(l=>!l.startsWith("http")).join("\n")}</pre>
         <div className="complete-actions">
-          {nextUp&&<button className="button button-primary next-up" onClick={()=>openGame(nextUp.id,completion.party?false:practice,undefined,false)}><span className="next-up-art"><GameArt game={nextUp.id}/></span><span><small>NEXT UP</small><b>{nextUp.title}</b></span><i>▶</i></button>}
+          {nextUp&&<button className="button button-primary next-up" onClick={()=>completion.archiveDay?openArchiveGame(nextUp.id,completion.archiveDay):openGame(nextUp.id,completion.party?false:practice,undefined,false)}><span className="next-up-art"><GameArt game={nextUp.id}/></span><span><small>NEXT UP</small><b>{nextUp.title}</b></span><i>▶</i></button>}
           <button className="button button-soft" onClick={()=>void shareResult()}>{copied?"✓ Copied!":"Share result ↗"}</button>
           {!completion.party&&<button className="button button-soft" onClick={()=>openGame(activeGame!,true,hashSeed(activeGame+"-again-"+Date.now()))}>Play again ∞</button>}
           {completion.party&&<button className="button button-soft" onClick={()=>void rematch()}>Rematch ↻</button>}
-          <button className="button button-quiet" onClick={()=>{setCompletion(null);setActiveGame(null);setScreen(completion.party?"friends":"home");}}>{completion.party?"Back to party":"All games"}</button>
+          <button className="button button-quiet" onClick={()=>{setCompletion(null);setActiveGame(null);setScreen(completion.party?"friends":completion.archiveDay?"archive":"home");}}>{completion.party?"Back to party":completion.archiveDay?"Back to the archive":"All games"}</button>
           <a className="complete-report" href={reportMailto({game:GAMES.find(g=>g.id===activeGame)?.title??"Roundsy",date,seed:startAt,mode:completion.party?"party":practice?"free play":"daily"})}>Report a problem with this puzzle</a>
         </div>
         <button className="complete-close" aria-label="Close" onClick={()=>setCompletion(null)}>×</button>
@@ -439,7 +453,7 @@ export default function App() {
   </div>;
 }
 
-function HomePage({player,scope,today,openGame}:{player:PlayerData;scope:string;today:string;openGame:(id:GameId,practice?:boolean)=>void}){
+function HomePage({player,scope,today,openGame,onArchive}:{player:PlayerData;scope:string;today:string;openGame:(id:GameId,practice?:boolean)=>void;onArchive:()=>void}){
   const featuredId=featuredToday(today);
   const ordered=[...LISTED.filter(g=>g.id===featuredId),...LISTED.filter(g=>g.id!==featuredId)];
   const surprise=()=>{
@@ -470,6 +484,40 @@ function HomePage({player,scope,today,openGame}:{player:PlayerData;scope:string;
       })}
       <div className="game-card-wrap"><button className="game-card surprise-card" onClick={surprise} aria-label="Surprise me with a random game"><div className="game-cover"><Icon name="dice" size={64}/></div><div className="game-card-body"><span className="game-category">Can't decide?</span><h3>Surprise me</h3><span className="game-subtitle">A random game you haven't cleared</span></div><div className="game-card-footer"><span>🎲 random</span><span className="card-play">GO ▶</span></div></button></div>
     </div>
+    <button className="archive-banner" onClick={onArchive} aria-label="Open the round archive">
+      <span className="archive-banner-icon"><Icon name="calendar" size={34}/></span>
+      <span className="archive-banner-copy"><b>Missed a day?</b><small>Past rounds live in the archive · a Roundsy Pro perk</small></span>
+      <span className="dx-play">OPEN<i>▶</i></span>
+    </button>
+  </div>;
+}
+
+function ArchivePage({player,scope,pro,today,onPlay,onSeePro}:{player:PlayerData;scope:string;pro:boolean|null;today:string;onPlay:(id:GameId,day:string)=>void;onSeePro:()=>void}){
+  const days=archiveDays(today);
+  const [selected,setSelected]=useState<string|null>(null);
+  const dayLabel=(d:string)=>new Date(d+"T00:00:00Z").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric",timeZone:"UTC"});
+  const openDay=selected&&days.includes(selected)?selected:days[0];
+  return <div className="archive-page page-enter">
+    <div className="friends-hero"><span className="eyebrow">ROUND ARCHIVE</span><h1>Every day, still playable.</h1><p>Each past daily round since launch, exactly as it ran. Archive plays are recorded and marked as archive plays: they count toward your history, best scores and trophies, and they never change your streak or your daily goal.</p></div>
+    {pro!==true&&<section className="settings-card archive-lock">
+      <span className="eyebrow">ROUNDSY PRO</span>
+      <h2>The archive is a Pro perk</h2>
+      <p>{pro===null?"Sign in with a Pro account to open past rounds.":"Your account does not have Pro yet. Join Pro to open the archive, and to keep your streak safe with monthly streak freezes."}</p>
+      <button className="button button-primary" onClick={onSeePro}>See Roundsy Pro</button>
+    </section>}
+    {days.length===0?<p className="privacy-note">The archive opens the day after launch: today is the first daily, and it joins the archive tomorrow.</p>:
+    <div className="archive-layout">
+      <div className="archive-days" role="list" aria-label="Archive days">
+        {days.map(d=>{const done=resultsForDay(player.results,d,scope).length;return <button key={d} role="listitem" className={"archive-day"+(d===openDay?" on":"")} onClick={()=>setSelected(d)} aria-pressed={d===openDay}><b>{dayLabel(d)}</b><small>{done>0?done+" of "+LISTED.length+" played":"not played"}</small>{pro!==true&&<span className="archive-lock-badge">PRO</span>}</button>;})}
+      </div>
+      {openDay&&<section className="settings-card archive-day-detail">
+        <span className="eyebrow">PLAYING FOR</span>
+        <h2>{dayLabel(openDay)}</h2>
+        <div className="archive-games">
+          {LISTED.map(g=>{const played=resultsForDay(player.results,openDay,scope).find(r=>r.game===g.id);return <div key={g.id} className="archive-game-row"><span className="archive-game-art"><GameArt game={g.id}/></span><span className="archive-game-copy"><b>{g.title}</b><small>{played?pointsText(played.score)+(played.perfect?" · perfect":"")+(played.archive?" · archive play":" · played on the day"):"not played yet"}</small></span>{!played&&(pro===true?<button className="button button-primary" onClick={()=>onPlay(g.id,openDay)}>Play ▶</button>:<button className="button button-soft" onClick={onSeePro}>Pro 🔒</button>)}</div>;})}
+        </div>
+      </section>}
+    </div>}
   </div>;
 }
 
