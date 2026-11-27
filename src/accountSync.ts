@@ -2,7 +2,7 @@ import type { GameId } from "./lib";
 import type { GameResult, PlayerData } from "./storage";
 
 /** Row shapes of meddaily.results and meddaily.player_state. */
-export interface ResultRow { day: string; game_id: string; scope: string; score: number; max_score: number; perfect: boolean; duration_seconds: number; archive: boolean }
+export interface ResultRow { day: string; game_id: string; scope: string; score: number; max_score: number; perfect: boolean; duration_seconds: number; archive?: boolean }
 export interface StateRow { xp: number; bests: Record<string, number>; settings: Record<string, unknown> }
 
 const clampInt = (value: unknown, max = 1_000_000): number => {
