@@ -215,5 +215,26 @@ select meddaily.start_trial();
 select pg_temp.assert(not meddaily.trial_available(), 'trial unavailable while trialing');
 reset role;
 
+-- 13. Pro grants (20261128020000): the summary is rebuilt from per source
+-- grants, and a store purchase belongs to one account only
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a2', false);
+select meddaily.ensure_profile('Second');
+reset role;
+select meddaily.grant_pro('00000000-0000-0000-0000-0000000000a2', 'pro_monthly', 'apple', 'active', now() + interval '30 days');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a2', false);
+select pg_temp.assert(meddaily.has_pro(), 'apple grant gives Pro');
+reset role;
+select meddaily.grant_pro('00000000-0000-0000-0000-0000000000a2', 'pro_yearly', 'stripe', 'active', now() + interval '365 days');
+select meddaily.grant_pro('00000000-0000-0000-0000-0000000000a2', 'pro_monthly', 'google', 'active', now() + interval '10 days');
+select pg_temp.assert((select source from meddaily.entitlements where user_id = '00000000-0000-0000-0000-0000000000a2') = 'stripe', 'longest grant wins the summary');
+select meddaily.revoke_pro_source('00000000-0000-0000-0000-0000000000a2', 'stripe');
+select pg_temp.assert((select source from meddaily.entitlements where user_id = '00000000-0000-0000-0000-0000000000a2') = 'apple', 'revoking one source reveals the grant underneath');
+select meddaily.revoke_pro_source('00000000-0000-0000-0000-0000000000a2', 'apple');
+select meddaily.revoke_pro_source('00000000-0000-0000-0000-0000000000a2', 'google');
+select pg_temp.assert(not exists (select 1 from meddaily.entitlements where user_id = '00000000-0000-0000-0000-0000000000a2'), 'summary removed when no grants remain');
+select pg_temp.assert(meddaily.claim_store_purchase('ios', 'suite-key', '00000000-0000-0000-0000-0000000000a2', 'roundsy_pro_yearly', now() + interval '365 days', false) = 'ok', 'first store claim ok');
+select pg_temp.assert(meddaily.claim_store_purchase('ios', 'suite-key', '00000000-0000-0000-0000-0000000000a4', 'roundsy_pro_yearly', now() + interval '365 days', false) = 'other_account', 'another account cannot claim the same purchase');
+reset role;
+
 rollback;
 select 'meddaily_rls: all checks passed' as result;
