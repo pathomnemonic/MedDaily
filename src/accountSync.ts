@@ -2,7 +2,7 @@ import type { GameId } from "./lib";
 import type { GameResult, PlayerData } from "./storage";
 
 /** Row shapes of meddaily.results and meddaily.player_state. */
-export interface ResultRow { day: string; game_id: string; scope: string; score: number; max_score: number; perfect: boolean; duration_seconds: number }
+export interface ResultRow { day: string; game_id: string; scope: string; score: number; max_score: number; perfect: boolean; duration_seconds: number; archive: boolean }
 export interface StateRow { xp: number; bests: Record<string, number>; settings: Record<string, unknown> }
 
 const clampInt = (value: unknown, max = 1_000_000): number => {
@@ -18,11 +18,15 @@ export function toResultRows(results: readonly GameResult[]): ResultRow[] {
     .filter((r) => r && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && typeof r.game === "string" && r.game.length > 0 && r.game.length <= 32)
     .map((r) => ({
       day: r.date, game_id: r.game, scope: String(r.scope || "general").slice(0, 32),
-      score: clampInt(r.score), max_score: clampInt(r.maxScore), perfect: Boolean(r.perfect), duration_seconds: clampInt(r.durationSeconds, 86400)
+      score: clampInt(r.score), max_score: clampInt(r.maxScore), perfect: Boolean(r.perfect), duration_seconds: clampInt(r.durationSeconds, 86400),
+      archive: r.archive === true
     }));
 }
 export const fromResultRows = (rows: readonly ResultRow[]): GameResult[] =>
-  rows.map((r) => ({ date: r.day, game: r.game_id as GameId, scope: r.scope, score: r.score, maxScore: r.max_score, perfect: r.perfect, durationSeconds: r.duration_seconds }));
+  rows.map((r) => ({ date: r.day, game: r.game_id as GameId, scope: r.scope, score: r.score, maxScore: r.max_score, perfect: r.perfect, durationSeconds: r.duration_seconds, ...(r.archive ? { archive: true } : {}) }));
+
+const cleanDays = (value: unknown): string[] =>
+  Array.isArray(value) ? [...new Set(value.filter((d): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)))].sort().slice(-400) : [];
 
 /** The preferences worth carrying to another device. */
 export function toStateRow(player: PlayerData): StateRow {
@@ -30,7 +34,7 @@ export function toStateRow(player: PlayerData): StateRow {
   for (const [game, value] of Object.entries(player.bests ?? {})) if (typeof value === "number" && Number.isFinite(value)) bests[game] = clampInt(value);
   return {
     xp: clampInt(player.xp, 1_000_000_000), bests,
-    settings: { sound: player.sound, music: player.music, haptics: player.haptics, reducedMotion: player.reducedMotion, hideStreaks: player.hideStreaks, theme: player.theme }
+    settings: { sound: player.sound, music: player.music, haptics: player.haptics, reducedMotion: player.reducedMotion, hideStreaks: player.hideStreaks, theme: player.theme, frozenDays: cleanDays(player.frozenDays) }
   };
 }
 
@@ -53,7 +57,14 @@ export function mergePlayerData(local: PlayerData, remote: { state: StateRow | n
   }
   const xp = Math.max(local.xp ?? 0, remote.state?.xp ?? 0);
 
-  let merged: PlayerData = { ...local, results, bests, xp };
+  // Frozen days are facts, not preferences: a freeze spent on any device
+  // counts everywhere, so the merged set is always the union.
+  const localFrozen = cleanDays(local.frozenDays);
+  const remoteFrozen = cleanDays(remote.state?.settings?.frozenDays);
+  const frozenDays = [...new Set([...localFrozen, ...remoteFrozen])].sort();
+  const frozenChanged = frozenDays.length !== localFrozen.length;
+
+  let merged: PlayerData = { ...local, results, bests, xp, frozenDays };
   const freshDevice = local.results.length === 0 && (local.xp ?? 0) === 0;
   let settingsAdopted = false;
   if (freshDevice && remote.state?.settings) {
@@ -69,5 +80,5 @@ export function mergePlayerData(local: PlayerData, remote: { state: StateRow | n
     };
     settingsAdopted = true;
   }
-  return { merged, changedLocal: added > 0 || bestsChanged || xp !== (local.xp ?? 0) || settingsAdopted };
+  return { merged, changedLocal: added > 0 || bestsChanged || xp !== (local.xp ?? 0) || settingsAdopted || frozenChanged };
 }
