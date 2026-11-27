@@ -28,6 +28,9 @@ import { TIP_URL, tipLink } from "./tip";
 import { monitoringAvailable, monitoringPreference, setMonitoringPreference } from "./monitoring";
 import ReminderCard from "./ReminderCard";
 import AccountCard from "./AccountCard";
+import ProCard from "./ProCard";
+import PaywallPage from "./Paywall";
+import { usePurchases, type PurchasesController } from "./usePurchases";
 import type { AccountController } from "./useAccount";
 import { completedToday, loadPlayer, playStreak, recordResult, savePlayer, type PlayerData } from "./storage";
 import { planFreezes } from "./freezes";
@@ -39,7 +42,7 @@ type Mode = "general" | "specialty";
 /** Specialty-focused daily tracks are built but hidden: the per-specialty puzzle banks are too thin to sustain them (decided Nov 2026). Flip on only after the content is deep enough. */
 const SPECIALTY_TRACKS_VISIBLE = false;
 type Specialty = "internal" | "familymed" | "neurology" | "cardiology" | "emergency" | "criticalcare" | "anesthesia" | "surgery" | "orthopedics" | "urology" | "otolaryngology" | "ophthalmology" | "pediatrics" | "obgyn" | "psychiatry" | "infectious" | "allergy" | "nephrology" | "pulmonology" | "endocrine" | "dermatology" | "rheumatology" | "hemeonc" | "gastro" | "geriatrics" | "radiology" | "anatomy" | "pathology" | "pharmacology" | "biostatistics";
-type Screen = "home" | "stats" | "settings" | "friends" | "archive";
+type Screen = "home" | "stats" | "settings" | "friends" | "archive" | "pro";
 interface GameMeta { id: GameId; title: string; subtitle: string; description: string; icon: string; wash: string; time: string; category: string; difficulty: 1 | 2 | 3; hidden?: boolean; }
 /** Per-game finale stamps: [perfect, great, complete, try again]. */
 const FINALE: Partial<Record<GameId,[string,string,string,string]>> = {
@@ -153,6 +156,16 @@ export default function App() {
   const [room,setRoom] = useState<RoomState|null>(null);
   const [roomName,setRoomName] = useState("");
   const account = useAccount(player, setPlayer);
+  const purchases = usePurchases(account);
+  // Returning from web checkout: refresh the Pro state and say what happened.
+  useEffect(()=>{
+    const params=new URLSearchParams(window.location.search);
+    const pro=params.get("pro");
+    if(pro==="success"){ setNotice("Welcome to Roundsy Pro. Your subscription is on."); void account.refreshPro(); }
+    else if(pro==="cancelled"){ setNotice("Checkout was cancelled. Nothing was charged."); }
+    if(pro){ params.delete("pro"); const q=params.toString(); window.history.replaceState(null,"",window.location.pathname+(q?"?"+q:"")+window.location.hash); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
   /** Keep the daily reminders in step with what the player has done: skip days already played, mention the streak. */
   useEffect(()=>{ if(!isNative()) return; void refreshReminders({playedDays:new Set(player.results.map(r=>r.date)),streak:playStreak(player)}).catch(()=>undefined); // eslint-disable-next-line react-hooks/exhaustive-deps
   },[player.results.length]);
@@ -424,7 +437,7 @@ export default function App() {
         {room&&<RoomScores room={room}/>}
         {lastShare&&<div className="result-share-row"><span>ROUND COMPLETE</span><button className="button button-soft" onClick={()=>{if(navigator.share)void navigator.share({title:"Roundsy result",text:lastShare}).catch(()=>{});else void navigator.clipboard?.writeText(lastShare);}}>Share result ↗</button></div>}
         <div className="under-game"><span>♡ Take a breath between rounds.</span><span>{practice?"Practice runs are not recorded":roomCode?"Your result is shared with this room":"One daily result per game and mode · new puzzles "+nextDailyLabel().text}</span></div>
-      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak} done={doneToday}/>:screen==="settings"?<SettingsPage mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} updateTheme={updateTheme} player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} account={account} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:screen==="archive"?<ArchivePage player={player} scope={scope} pro={account.pro} today={date} onPlay={openArchiveGame} onSeePro={()=>setScreen("settings")}/>:<HomePage player={player} scope={scope} today={date} openGame={openGame} onArchive={()=>setScreen("archive")}/>}
+      </div>:screen==="stats"?<StatsPage player={player} scope={scope} streak={streak} done={doneToday}/>:screen==="settings"?<SettingsPage mode={mode} specialty={specialty} setMode={setMode} setSpecialty={setSpecialty} updateTheme={updateTheme} player={player} driveConnected={hasDriveConnection()} updateSetting={updateSetting} exportData={exportData} importData={importData} account={account} purchases={purchases} onOpenPaywall={()=>setScreen("pro")} onDriveSync={async()=>{setNotice("Connecting to Google Drive…");try{const merged=await connectAndSync(player);savePlayer(merged);setPlayer(merged);setNotice("Google Drive sync complete. Your progress is backed up privately.");}catch(e){setNotice((e as Error).message);}}}/>:screen==="friends"?<FriendsPage room={room} roomName={roomName} setRoomName={setRoomName} joinCode={joinCode} setJoinCode={setJoinCode} busy={roomBusy} live={multiplayerConfigured()} games={GAMES} onJoin={joinFriendsRoom} onPlay={(r)=>openGame(r.gameId,true,r.seed,true)} onLeave={closeRoom} />:screen==="archive"?<ArchivePage player={player} scope={scope} pro={account.pro} today={date} onPlay={openArchiveGame} onSeePro={()=>setScreen("pro")}/>:screen==="pro"?<PaywallPage account={account} purchases={purchases} onSignIn={()=>setScreen("settings")}/>:<HomePage player={player} scope={scope} today={date} openGame={openGame} onArchive={()=>setScreen("archive")}/>}
     </main>
     {completion&&<div className="complete-overlay" role="dialog" aria-modal="true" aria-label="Round complete" onClick={()=>setCompletion(null)}>
       <div className={"complete-card tone-"+(GAMES.find(g=>g.id===activeGame)?.wash??"lilac")+(completion.perfect?" perfect":"")} onClick={e=>e.stopPropagation()}>
@@ -611,14 +624,16 @@ async function eraseEverythingHere(){
   window.location.reload();
 }
 
-function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,driveConnected,updateSetting,exportData,importData,account,onDriveSync}:{
+function SettingsPage({mode,specialty,setMode,setSpecialty,updateTheme,player,driveConnected,updateSetting,exportData,importData,account,onDriveSync,purchases,onOpenPaywall}:{
   account:AccountController;
+  purchases:PurchasesController;onOpenPaywall:()=>void;
   mode:Mode;specialty:Specialty;setMode:(m:Mode)=>void;setSpecialty:(s:Specialty)=>void;updateTheme:(p:Partial<ThemeSettings>)=>void;player:PlayerData;driveConnected:boolean;updateSetting:(k:"sound"|"music"|"haptics"|"reducedMotion"|"hideStreaks",v:boolean)=>void;exportData:()=>void;importData:(file:File|undefined)=>void;onDriveSync:()=>Promise<void>;
 }){
   const [syncing,setSyncing]=useState(false);
   const sync=async()=>{setSyncing(true);try{await onDriveSync();}finally{setSyncing(false);}};
   return <div className="settings-page"><span className="eyebrow">MAKE IT YOURS</span><h1>Preferences & backup</h1>
     <AccountCard account={account}/>
+    <ProCard account={account} purchases={purchases} onOpenPaywall={onOpenPaywall}/>
     <ReminderCard context={{playedDays:new Set(player.results.map(r=>r.date)),streak:playStreak(player)}}/>
     {SPECIALTY_TRACKS_VISIBLE&&<section className="settings-card"><h2>Daily track</h2><p>Everyone on the same track gets the same daily puzzles. Open Arcade is the broad mix; pick a specialty to play your own field's dailies.</p>
       <div className="mode-tabs"><button className={mode==="general"?"active":""} onClick={()=>setMode("general")}>Open Arcade</button><button className={mode==="specialty"?"active":""} onClick={()=>setMode("specialty")}>Specialties</button></div>
