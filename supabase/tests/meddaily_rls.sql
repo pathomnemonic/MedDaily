@@ -137,12 +137,22 @@ select pg_temp.as_user('00000000-0000-0000-0000-0000000000a2', false);
 select meddaily.submit_score('LIFE01', 6, 10, false);
 select pg_temp.assert(meddaily.get_room_state('LIFE01')->>'status' = 'finished', 'room finished when all active players are done');
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000a3', false);
-select pg_temp.fails($$select meddaily.submit_score('LIFE01', 1, 10, false)$$, 'room_finished');
-select pg_temp.fails($$select meddaily.join_room('LIFE01', 'medle', 'party', 'general', current_date, 1, 'Late')$$, 'room_finished');
--- a quiet unfinished member rejoining (or heartbeating) must not reopen the room
-select pg_temp.fails($$select meddaily.join_room('LIFE01', 'medle', 'party', 'general', current_date, 1, 'Gone')$$, 'room_finished');
+-- round two (20261127000002): an existing member may come back to a finished
+-- room, heartbeat, and record a late score; the room stays finished
+select meddaily.join_room('LIFE01', 'medle', 'party', 'general', current_date, 1, 'Gone');
+select pg_temp.assert(meddaily.get_room_state('LIFE01')->>'status' = 'finished', 'a stale member rejoining does not reopen a finished room');
 select meddaily.touch_room('LIFE01');
-select pg_temp.assert(meddaily.get_room_state('LIFE01')->>'status' = 'finished', 'heartbeat from a quiet member does not reopen a finished room');
+select pg_temp.assert(meddaily.get_room_state('LIFE01')->>'status' = 'finished', 'heartbeat from a stale member does not reopen a finished room');
+select meddaily.submit_score('LIFE01', 1, 10, false);
+select pg_temp.assert((select score from meddaily.room_players where room_code = 'LIFE01' and user_id = '00000000-0000-0000-0000-0000000000a3') = 1, 'late score from a stale member is recorded');
+select pg_temp.assert((select finished from meddaily.room_players where room_code = 'LIFE01' and user_id = '00000000-0000-0000-0000-0000000000a3') = true, 'late score marks the stale member finished');
+select pg_temp.assert(meddaily.get_room_state('LIFE01')->>'status' = 'finished', 'room stays finished after a late score');
+reset role;
+select pg_temp.assert(meddaily.room_is_over('LIFE01') = true, 'room_is_over stays true after a late score');
+select pg_temp.assert((select status from meddaily.rooms where code = 'LIFE01') = 'finished', 'rooms.status stays finished after a late score');
+-- a brand new member is still refused, and the room stays finished
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a4', false);
+select pg_temp.fails($$select meddaily.join_room('LIFE01', 'medle', 'party', 'general', current_date, 1, 'Late')$$, 'room_finished');
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000a2', false);
 select meddaily.join_room('LIFE01', 'medle', 'party', 'general', current_date, 1, 'Two');
 select pg_temp.assert(meddaily.get_room_state('LIFE01')->>'status' = 'finished', 'a finished member may rejoin to read results');
