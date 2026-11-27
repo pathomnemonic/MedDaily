@@ -135,7 +135,7 @@ describe("Supabase rooms adapter", () => {
   it("starts no polling or heartbeat when unsubscribed during the first fetch", async () => {
     vi.useFakeTimers();
     let release: ((v: { data: unknown }) => void) | null = null;
-    const f = fakeClient({ rpc: (fn) => (fn === "get_room_state" ? new Promise((res) => { release = res as (v: { data: unknown }) => void; }) as { data: unknown } : { data: state }) });
+    const f = fakeClient({ rpc: (fn) => (fn === "get_room_state" ? new Promise((res) => { release = res as (v: { data: unknown }) => void; }) as unknown as { data: unknown } : { data: state }) });
     const rooms = makeSupabaseRooms({ configured: true, getClient: async () => f.client, debounceMs: 50, refreshMs: 1000, heartbeatMs: 100 });
     const stop = rooms.watch("ABC123", () => undefined);
     await vi.advanceTimersByTimeAsync(0); // setup reaches the pending first fetch
