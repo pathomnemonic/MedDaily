@@ -1,4 +1,4 @@
-# Monetization plan (decided by the owner; nothing is built yet)
+# Monetization plan (decided by the owner; Pro built in November 2026, see the status note under Still open)
 
 Model: Stat!'s. **Pro costs $0.99 per month or $9.99 per year. The daily round stays free.** (The annual plan works out to about $0.83 a month, roughly 16% cheaper than paying monthly.)
 
@@ -32,9 +32,9 @@ Roundsy is a fun game, not a learning game, so Pro is about not losing your habi
 Deeper stats and per-specialty stats (out of Pro, basic stats stay free), streak repair (replaced by automatic freezes), a Free Play cap (Free Play stays unlimited and free), cosmetic extras, any bonus daily round.
 
 ## Plumbing (already prepared)
-- Database: `meddaily.entitlements` (plans `pro_monthly`, `pro_yearly`; the other plan values stay unused), written only by the payment webhook; `meddaily.has_pro()` for checks.
-- Web checkout: Stripe, webhook to a Supabase Edge Function that upserts the entitlement. Native: Apple and Google in-app purchase, with server notifications mapped the same way (Dx Dash's approach; no aggregator).
-- Product IDs: `com.pathomnemonic.roundsy.pro.monthly`, `com.pathomnemonic.roundsy.pro.yearly`.
+- Database: `meddaily.entitlements` (plans `pro_monthly`, `pro_yearly`; the other plan values stay unused) is the summary the client reads; the payment paths write the per source grants in `meddaily.pro_grants`, and `meddaily.recompute_entitlement` rebuilds the summary from them; `meddaily.has_pro()` for checks.
+- Web checkout: Stripe, with the roundsy-checkout and roundsy-stripe-webhook functions granting from the stripe source. Native: Apple and Google in-app purchase, verified by the roundsy-iap-verify function, with store changes learned by client polling verification (Dx Dash's approach; no aggregator, and no store notification handlers, like Dx).
+- Product IDs: `roundsy_pro_monthly`, `roundsy_pro_yearly` (the IDs that exist in App Store Connect; Google Play uses the same IDs).
 - App: a "Roundsy Pro" card in Settings with Subscribe, **Restore purchases** and **Manage subscription** (links to the store or Stripe portal), plus a soft paywall on the Pro features only. The daily round is never gated.
 - Terms of Service: add a Paid features section (prices, renewal, cancellation, refunds) and update the guard test in `src/termsPage.test.ts` when this ships.
 
@@ -57,7 +57,7 @@ Deeper stats and per-specialty stats (out of Pro, basic stats stay free), streak
 
 ## Still open
 1. Regional pricing and tax handling (the stores handle tax; Stripe needs Stripe Tax or a decision).
-2. Pro itself is still unbuilt. Suggested build order: account-gated trial and entitlement plumbing, then archive, then freezes, then the Settings card with restore purchases and manage subscription, then Stripe and store purchases, then the Terms update.
+2. Pro is built (issues 163 to 168 and the November 2026 pull request series): trial and entitlement plumbing, archive, freezes, the purchase layer and paywall, the server functions, and this Terms update. What remains is owner side setup: the ROUNDSY_ function secrets, the Stripe prices and webhook endpoint, the Google Play subscription products, and a real device purchase test.
 
 ## Tip jar (owner direction, Nov 23, 2026)
 A quiet "Support Roundsy" card in Options links out to a Stripe payment link, set once in `src/tip.ts` (`TIP_URL`; the card is hidden while it is empty). Rules: voluntary, no nags or pop-ups, gates nothing, separate from Pro, and tracked per app. It is **web only**: the store apps do not show it, because Apple and Google restrict links to outside payments inside apps. The Ko-fi page is reserved for a different app and is refused by the code. Tips never convert to Pro.
