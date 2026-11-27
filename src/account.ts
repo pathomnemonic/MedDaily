@@ -177,6 +177,37 @@ export function makeAccounts(getClient: () => Promise<SupabaseClient>, redirectT
       const { error } = await c.rpc("start_trial");
       if (error) throw friendlyAccountError(error);
     },
+    /** Whether the free trial can still be offered to this account, mirroring the start_trial gates. */
+    async trialAvailable(): Promise<boolean> {
+      const { c } = await need();
+      const { data, error } = await c.rpc("trial_available");
+      if (error) throw friendlyAccountError(error);
+      return data === true;
+    },
+    /** Hands a store purchase token to the verification function, which checks it with the store and grants Pro on the server. */
+    async verifyPurchase(platform: string, productId: string, token: string): Promise<void> {
+      const { c } = await need();
+      const { error } = await c.functions.invoke("roundsy-iap-verify", { body: { platform, product_id: productId, token } });
+      if (error) throw friendlyAccountError(error);
+    },
+    /** Asks the checkout function for a Stripe Checkout URL for one plan (web purchases). */
+    async checkoutUrl(productId: string): Promise<string> {
+      const { c } = await need();
+      const { data, error } = await c.functions.invoke("roundsy-checkout", { body: { action: "checkout", product_id: productId } });
+      if (error) throw friendlyAccountError(error);
+      const url = (data as { url?: string } | null)?.url;
+      if (!url) throw new AccountError("Web checkout is not switched on yet. Use the app to subscribe.");
+      return url;
+    },
+    /** Asks the checkout function for the Stripe billing portal URL (web subscription management). */
+    async portalUrl(): Promise<string> {
+      const { c } = await need();
+      const { data, error } = await c.functions.invoke("roundsy-checkout", { body: { action: "portal" } });
+      if (error) throw friendlyAccountError(error);
+      const url = (data as { url?: string } | null)?.url;
+      if (!url) throw new AccountError("The billing portal is not switched on yet.");
+      return url;
+    },
     /** Removes the Roundsy profile and everything stored for it. The shared sign-in identity is left to the platform (other apps may use it). */
     async deleteAccount(): Promise<void> {
       const { c } = await need();

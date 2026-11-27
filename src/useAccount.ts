@@ -23,6 +23,7 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
   const [user, setUser] = useState<AccountUser | null>(null);
   const [pro, setPro] = useState<boolean | null>(null);
   const [entitlement, setEntitlement] = useState<EntitlementRow | null>(null);
+  const [trialAvail, setTrialAvail] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [busy, setBusy] = useState<Busy>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -63,13 +64,14 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
     finally { syncing.current = false; setBusy((b) => (b === "sync" ? null : b)); }
   }, [accounts, setPlayer]);
 
-  /** Reads the server side Pro state and the entitlement row. Quiet: a failure just leaves the last known state. */
-  const refreshPro = useCallback(async () => {
-    if (!accounts) return;
+  /** Reads the server side Pro state and the entitlement row. Quiet: a failure just leaves the last known state. Returns the fresh Pro answer when it could be read. */
+  const refreshPro = useCallback(async (): Promise<boolean | null> => {
+    if (!accounts) return null;
     try {
-      const [has, row] = await Promise.all([accounts.hasPro(), accounts.entitlement()]);
-      setPro(has); setEntitlement(row);
-    } catch { /* offline or signed out: keep the last known state */ }
+      const [has, row, trial] = await Promise.all([accounts.hasPro(), accounts.entitlement(), accounts.trialAvailable().catch(() => false)]);
+      setPro(has); setEntitlement(row); setTrialAvail(trial);
+      return has;
+    } catch { return null; }
   }, [accounts]);
 
   const handleSignedIn = useCallback(async (u: AccountUser) => {
@@ -94,7 +96,7 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
       await accounts.onChange((u) => {
         setUser(u);
         if (u) void handleSignedIn(u);
-        else { signedInFor.current = null; setDisplayName(""); setPro(null); setEntitlement(null); }
+        else { signedInFor.current = null; setDisplayName(""); setPro(null); setEntitlement(null); setTrialAvail(false); }
       });
     })().catch(() => { listening.current = null; });
     return listening.current;
@@ -146,7 +148,10 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
   return {
     available: Boolean(accounts),
     user, displayName, busy, notice, emailSent, lastSynced, auto,
-    pro, entitlement, refreshPro,
+    pro, entitlement, refreshPro, trialAvailable: trialAvail,
+    verifyPurchase: (platform: string, productId: string, token: string) => accounts!.verifyPurchase(platform, productId, token),
+    checkoutUrl: (productId: string) => accounts!.checkoutUrl(productId),
+    portalUrl: () => accounts!.portalUrl(),
     startTrial: () => run("trial", async () => { await accounts!.startTrial(); await refreshPro(); setNotice({ kind: "ok", text: "Your 7 day free trial of Roundsy Pro has started." }); }),
     dismissNotice: () => setNotice(null),
     signInGoogle: () => run("google", () => accounts!.signInGoogle()),
@@ -154,7 +159,7 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
     sendEmailCode: (email: string) => run("email", async () => { await accounts!.sendEmailCode(email); setEmailSent(email.trim().toLowerCase()); setNotice({ kind: "ok", text: "Check your email for a sign-in code." }); }),
     verifyEmailCode: (code: string) => run("verify", async () => { if (!emailSent) return; await accounts!.verifyEmailCode(emailSent, code); setEmailSent(null); }),
     cancelEmail: () => { setEmailSent(null); setNotice(null); },
-    signOut: () => run("sync", async () => { await accounts!.signOut(); setUser(null); signedInFor.current = null; setPro(null); setEntitlement(null); setNotice({ kind: "ok", text: "Signed out. Your progress stays on this device." }); }),
+    signOut: () => run("sync", async () => { await accounts!.signOut(); setUser(null); signedInFor.current = null; setPro(null); setEntitlement(null); setTrialAvail(false); setNotice({ kind: "ok", text: "Signed out. Your progress stays on this device." }); }),
     saveName: (name: string) => run("name", async () => { await accounts!.setDisplayName(name); setDisplayName(name.trim().slice(0, 20)); setNotice({ kind: "ok", text: "Name saved." }); }),
     syncNow: () => sync(false),
     setAuto: (on: boolean) => { write(FLAG_AUTO, on ? "1" : "0"); setAutoState(on); },

@@ -202,5 +202,18 @@ select meddaily.ensure_profile('Pro again');
 select pg_temp.fails($$select meddaily.start_trial()$$, 'trial_already_used');
 reset role;
 
+-- 12. Trial availability (20261128010000): mirrors the start_trial gates
+-- without starting anything
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a4', false);
+select pg_temp.assert(not meddaily.trial_available(), 'trial no longer available after use');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a3', true);
+select pg_temp.assert(not meddaily.trial_available(), 'trial unavailable to guests');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a3', false);
+select meddaily.ensure_profile('Third');
+select pg_temp.assert(meddaily.trial_available(), 'trial available to a fresh account');
+select meddaily.start_trial();
+select pg_temp.assert(not meddaily.trial_available(), 'trial unavailable while trialing');
+reset role;
+
 rollback;
 select 'meddaily_rls: all checks passed' as result;
