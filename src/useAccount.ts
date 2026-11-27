@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { friendlyAccountError, makeAccounts, type AccountUser } from "./account";
+import { friendlyAccountError, makeAccounts, type AccountUser, type EntitlementRow } from "./account";
 import { fromResultRows, mergePlayerData, resultKey, toResultRows, toStateRow } from "./accountSync";
 import { getSupabase, hasStoredSupabaseSession, supabaseConfigured } from "./supabaseClient";
 import { loadPlayer, savePlayer, type PlayerData } from "./storage";
@@ -10,7 +10,7 @@ import { isNative, onAppUrl, parseAuthCallback } from "./native";
 export const appleSignInEnabled: boolean = import.meta.env.VITE_AUTH_APPLE === "on";
 export const accountsEnabled: boolean = supabaseConfigured && import.meta.env.VITE_ACCOUNTS !== "off";
 
-type Busy = "google" | "apple" | "email" | "verify" | "sync" | "delete" | "name" | null;
+type Busy = "google" | "apple" | "email" | "verify" | "sync" | "delete" | "name" | "trial" | null;
 export interface Notice { kind: "ok" | "error"; text: string }
 
 const read = (key: string): string | null => { try { return localStorage.getItem(key); } catch { return null; } };
@@ -21,6 +21,8 @@ const FLAG_AUTO = "meddaily:cloudsync", FLAG_LAST = "meddaily:lastsync";
 export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateAction<PlayerData>>) {
   const accounts = useMemo(() => (accountsEnabled ? makeAccounts(getSupabase, () => window.location.origin + window.location.pathname) : null), []);
   const [user, setUser] = useState<AccountUser | null>(null);
+  const [pro, setPro] = useState<boolean | null>(null);
+  const [entitlement, setEntitlement] = useState<EntitlementRow | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [busy, setBusy] = useState<Busy>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -61,6 +63,15 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
     finally { syncing.current = false; setBusy((b) => (b === "sync" ? null : b)); }
   }, [accounts, setPlayer]);
 
+  /** Reads the server side Pro state and the entitlement row. Quiet: a failure just leaves the last known state. */
+  const refreshPro = useCallback(async () => {
+    if (!accounts) return;
+    try {
+      const [has, row] = await Promise.all([accounts.hasPro(), accounts.entitlement()]);
+      setPro(has); setEntitlement(row);
+    } catch { /* offline or signed out: keep the last known state */ }
+  }, [accounts]);
+
   const handleSignedIn = useCallback(async (u: AccountUser) => {
     if (!accounts || signedInFor.current === u.id) return;
     signedInFor.current = u.id;
@@ -68,9 +79,10 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
       const name = await accounts.ensureProfile();
       setDisplayName(name);
       setNotice({ kind: "ok", text: "Signed in as " + (u.email ?? "your account") + "." });
+      await refreshPro();
       await sync(true);
     } catch (e) { signedInFor.current = null; fail(e); }
-  }, [accounts, sync]);
+  }, [accounts, sync, refreshPro]);
 
   /** Start watching sign-in state (once). The Supabase library loads here, not at startup. */
   const listen = useCallback(() => {
@@ -82,7 +94,7 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
       await accounts.onChange((u) => {
         setUser(u);
         if (u) void handleSignedIn(u);
-        else { signedInFor.current = null; setDisplayName(""); }
+        else { signedInFor.current = null; setDisplayName(""); setPro(null); setEntitlement(null); }
       });
     })().catch(() => { listening.current = null; });
     return listening.current;
@@ -134,13 +146,15 @@ export function useAccount(player: PlayerData, setPlayer: Dispatch<SetStateActio
   return {
     available: Boolean(accounts),
     user, displayName, busy, notice, emailSent, lastSynced, auto,
+    pro, entitlement, refreshPro,
+    startTrial: () => run("trial", async () => { await accounts!.startTrial(); await refreshPro(); setNotice({ kind: "ok", text: "Your 7 day free trial of Roundsy Pro has started." }); }),
     dismissNotice: () => setNotice(null),
     signInGoogle: () => run("google", () => accounts!.signInGoogle()),
     signInApple: () => run("apple", () => accounts!.signInApple()),
     sendEmailCode: (email: string) => run("email", async () => { await accounts!.sendEmailCode(email); setEmailSent(email.trim().toLowerCase()); setNotice({ kind: "ok", text: "Check your email for a sign-in code." }); }),
     verifyEmailCode: (code: string) => run("verify", async () => { if (!emailSent) return; await accounts!.verifyEmailCode(emailSent, code); setEmailSent(null); }),
     cancelEmail: () => { setEmailSent(null); setNotice(null); },
-    signOut: () => run("sync", async () => { await accounts!.signOut(); setUser(null); signedInFor.current = null; setNotice({ kind: "ok", text: "Signed out. Your progress stays on this device." }); }),
+    signOut: () => run("sync", async () => { await accounts!.signOut(); setUser(null); signedInFor.current = null; setPro(null); setEntitlement(null); setNotice({ kind: "ok", text: "Signed out. Your progress stays on this device." }); }),
     saveName: (name: string) => run("name", async () => { await accounts!.setDisplayName(name); setDisplayName(name.trim().slice(0, 20)); setNotice({ kind: "ok", text: "Name saved." }); }),
     syncNow: () => sync(false),
     setAuto: (on: boolean) => { write(FLAG_AUTO, on ? "1" : "0"); setAutoState(on); },

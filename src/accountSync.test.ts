@@ -37,4 +37,21 @@ describe("cloud progress", () => {
   it("builds a state row", () => {
     expect(toStateRow(player({ xp: 1e12, bests: { medle: 88.4 } }))).toMatchObject({ xp: 1_000_000_000, bests: { medle: 88 } });
   });
+  it("round-trips the archive flag on results", () => {
+    const rows = toResultRows([{ ...r("2026-11-20", "medle"), archive: true }, r("2026-11-21", "hive")]);
+    expect(rows[0].archive).toBe(true);
+    expect(rows[1].archive).toBe(false);
+    const back = fromResultRows(rows);
+    expect(back[0].archive).toBe(true);
+    expect(back[1].archive).toBeUndefined();
+  });
+  it("carries frozen days in the state row and unions them on merge", () => {
+    expect(toStateRow(player({ frozenDays: ["2026-11-20", "2026-11-20", "junk", "2026-11-18"] })).settings.frozenDays).toEqual(["2026-11-18", "2026-11-20"]);
+    const local = player({ results: [r("2026-11-22", "medle")], frozenDays: ["2026-11-21"] });
+    const remote = { state: { xp: 0, bests: {}, settings: { frozenDays: ["2026-11-19", "2026-11-21"] } }, results: [] };
+    const { merged, changedLocal } = mergePlayerData(local, remote);
+    expect(merged.frozenDays).toEqual(["2026-11-19", "2026-11-21"]);
+    expect(changedLocal).toBe(true);
+    expect(mergePlayerData(merged, remote).changedLocal).toBe(false);
+  });
 });

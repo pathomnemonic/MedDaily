@@ -4,6 +4,7 @@ import { NATIVE_AUTH_REDIRECT, closeSystemBrowser, isNative, openInSystemBrowser
 
 export interface AccountUser { id: string; email: string | null; provider: string }
 export interface RemoteProgress { state: StateRow | null; results: ResultRow[] }
+export interface EntitlementRow { plan: string; source: string; status: string; trial_ends_at: string | null; current_period_end: string | null }
 
 /** A failure whose message is safe to show to the player. */
 export class AccountError extends Error {
@@ -18,6 +19,9 @@ export function friendlyAccountError(error: unknown): AccountError {
   if (/otp_expired|token has expired|invalid.*(token|otp|code)|otp.*invalid/i.test(text + code)) return new AccountError("That code didn't work or has expired. Request a new one.");
   if (/invalid.*email|unable to validate email|email_address_invalid/i.test(text + code)) return new AccountError("That email address doesn't look right.");
   if (/cancel_subscription_first/.test(text)) return new AccountError("Cancel your active subscription with its provider first, then delete the account.");
+  if (/trial_already_used/.test(text)) return new AccountError("This account has already had its free trial.");
+  if (/guest_cannot_start_trial/.test(text)) return new AccountError("Sign in to start your free trial.");
+  if (/already_subscribed/.test(text)) return new AccountError("This account already has Pro.");
   if (/guest_cannot_create_account|not_signed_in/.test(text)) return new AccountError("Sign in to use an account.");
   if (/provider is not enabled|unsupported provider/i.test(text)) return new AccountError("That sign-in option isn't available right now. Try the email option.");
   if (/failed to fetch|network|load failed/i.test(text)) return new AccountError("No connection right now. Your progress is safe on this device.");
@@ -137,7 +141,7 @@ export function makeAccounts(getClient: () => Promise<SupabaseClient>, redirectT
       const { c } = await need();
       const [state, results] = await Promise.all([
         c.from("player_state").select("xp,bests,settings").maybeSingle(),
-        c.from("results").select("day,game_id,scope,score,max_score,perfect,duration_seconds").order("day", { ascending: false }).limit(1200)
+        c.from("results").select("day,game_id,scope,score,max_score,perfect,duration_seconds,archive").order("day", { ascending: false }).limit(1200)
       ]);
       if (state.error) throw friendlyAccountError(state.error);
       if (results.error) throw friendlyAccountError(results.error);
@@ -152,6 +156,26 @@ export function makeAccounts(getClient: () => Promise<SupabaseClient>, redirectT
         const res = await c.from("results").upsert(chunk, { onConflict: "user_id,day,game_id,scope", ignoreDuplicates: true });
         if (res.error) throw friendlyAccountError(res.error);
       }
+    },
+    /** Whether the signed in account currently has Pro, decided on the server by meddaily.has_pro(). */
+    async hasPro(): Promise<boolean> {
+      const { c } = await need();
+      const { data, error } = await c.rpc("has_pro");
+      if (error) throw friendlyAccountError(error);
+      return data === true;
+    },
+    /** The account entitlement row, for showing plan and period dates. Null when the account has never had one. */
+    async entitlement(): Promise<EntitlementRow | null> {
+      const { c, user } = await need();
+      const { data, error } = await c.from("entitlements").select("plan,source,status,trial_ends_at,current_period_end").eq("user_id", user.id).maybeSingle();
+      if (error) throw friendlyAccountError(error);
+      return (data as EntitlementRow | null) ?? null;
+    },
+    /** Starts the one time 7 day free trial. The server refuses guests, second trials and accounts that already have Pro. */
+    async startTrial(): Promise<void> {
+      const { c } = await need();
+      const { error } = await c.rpc("start_trial");
+      if (error) throw friendlyAccountError(error);
     },
     /** Removes the Roundsy profile and everything stored for it. The shared sign-in identity is left to the platform (other apps may use it). */
     async deleteAccount(): Promise<void> {
