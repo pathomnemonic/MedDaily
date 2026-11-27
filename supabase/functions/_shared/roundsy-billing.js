@@ -1,0 +1,436 @@
+/**
+ * roundsy-billing.js — the rules for Roundsy web payments, ported from the
+ * Dx Dash billing module with the Roundsy products and the meddaily grant
+ * functions. No network and no framework in here: the two edge functions
+ * (roundsy-checkout, roundsy-stripe-webhook) fetch from Stripe and call
+ * the database, and hand everything else to this file.
+ *
+ * There is no trial in Stripe here: every signed in account gets its free
+ * 7 day trial from the database, with no card (meddaily.start_trial).
+ */
+
+export var PRODUCTS = {
+  roundsy_pro_yearly: { plan: 'pro_yearly', kind: 'subscription', env: 'ROUNDSY_STRIPE_PRICE_YEARLY' },
+  roundsy_pro_monthly: { plan: 'pro_monthly', kind: 'subscription', env: 'ROUNDSY_STRIPE_PRICE_MONTHLY' }
+};
+
+/** A subscription stays on this long past its paid period, so a late renewal does not lock anyone out for a day. */
+export var GRACE_SECONDS = 2 * 24 * 60 * 60;
+var DAY = 86400;
+
+/** The products that have a Price id set, in display order. */
+export function configuredProducts(env) {
+  return Object.keys(PRODUCTS).filter(function (id) { return !!(env && env[PRODUCTS[id].env]); });
+}
+
+/** Find the product for a plan name or id ('pro_yearly' or 'roundsy_pro_yearly'). */
+export function productFor(planOrId) {
+  var key = String(planOrId || '');
+  if (PRODUCTS[key]) return { id: key, def: PRODUCTS[key] };
+  var id = Object.keys(PRODUCTS).filter(function (k) { return PRODUCTS[k].plan === key; })[0];
+  return id ? { id: id, def: PRODUCTS[id] } : null;
+}
+
+/**
+ * Has this charge been given back? A refund, or a chargeback that is open or lost. A dispute that was won (or an inquiry
+ * that closed) leaves the charge marked "disputed" in Stripe for good, but the customer did pay, so it does not count.
+ * Expect `dispute` expanded (an object); when it is only an id, a disputed charge is treated as given back.
+ */
+export function chargeReturned(ch) {
+  if (!ch || typeof ch !== 'object') return false;
+  if (ch.refunded) return true;
+  if (!ch.disputed) return false;
+  var d = ch.dispute;
+  if (d && typeof d === 'object' && (d.status === 'won' || d.status === 'warning_closed')) return false;
+  return true;
+}
+
+/** ISO period for a Stripe recurring price: P1Y, P1M, or '' for a one-time price. */
+export function periodOf(price) {
+  var r = price && price.recurring;
+  if (!r) return '';
+  var n = Number(r.interval_count) || 1;
+  if (r.interval === 'year') return 'P' + n + 'Y';
+  if (r.interval === 'month') return 'P' + n + 'M';
+  if (r.interval === 'week') return 'P' + n + 'W';
+  if (r.interval === 'day') return 'P' + n + 'D';
+  return '';
+}
+
+/** The billing period each plan's Stripe Price must have. A Price set up differently is never sold. */
+export var EXPECTED_PERIOD = { pro_yearly: 'P1Y', pro_monthly: 'P1M' };
+
+/**
+ * Is this Stripe Price the one the plan needs? Returns '' when it is, or a sentence saying what is wrong. This stops,
+ * for example, a yearly plan whose Price renews monthly from ever reaching a customer.
+ */
+export function priceProblem(productId, price) {
+  var def = PRODUCTS[productId];
+  if (!def) return 'Unknown product.';
+  if (!price || price.active === false) return 'the Price is archived or missing';
+  if (!Number(price.unit_amount)) return 'the Price has no fixed amount';
+  var want = EXPECTED_PERIOD[def.plan];
+  var have = periodOf(price);
+  if (want !== have) return 'the Price renews ' + (have || 'never (one-time)') + ' but ' + def.plan + ' needs ' + (want || 'a one-time price');
+  return '';
+}
+
+/** What the app shows for a product: the same shape the phone paywall gets from the store. */
+export function describePrice(id, price) {
+  var cents = Number(price && price.unit_amount) || 0;
+  var currency = String((price && price.currency) || 'usd').toUpperCase();
+  var money;
+  try { money = new Intl.NumberFormat('en-US', { style: 'currency', currency: currency }).format(cents / 100); } catch { money = (cents / 100).toFixed(2) + ' ' + currency; }
+  return { id: id, price: money, micros: cents * 10000, currency: currency, period: periodOf(price), trialDays: 0 };
+}
+
+/** The unix time a subscription's current paid period ends (Stripe moved this onto the items in newer API versions). */
+export function periodEnd(sub) {
+  if (!sub) return 0;
+  if (sub.current_period_end) return Number(sub.current_period_end);
+  var items = sub.items && sub.items.data;
+  var ends = (items || []).map(function (i) { return Number(i.current_period_end) || 0; });
+  return ends.length ? Math.max.apply(null, ends) : 0;
+}
+
+/** The subscription an invoice belongs to (newer Stripe API versions moved it from invoice.subscription to invoice.parent). */
+export function invoiceSubscriptionId(inv) {
+  if (!inv) return '';
+  if (typeof inv.subscription === 'string' && inv.subscription) return inv.subscription;
+  if (inv.subscription && inv.subscription.id) return inv.subscription.id;
+  var d = inv.parent && inv.parent.subscription_details;
+  var sub = d && d.subscription;
+  if (typeof sub === 'string') return sub;
+  return (sub && sub.id) || '';
+}
+
+/** The payment intent that paid an invoice, as an id, wherever this API version puts it. */
+export function invoicePaymentIntentId(inv) {
+  if (!inv) return '';
+  var pi = inv.payment_intent;
+  if (typeof pi === 'string' && pi) return pi;
+  if (pi && pi.id) return pi.id;
+  var pays = (inv.payments && inv.payments.data) || [];
+  for (var i = 0; i < pays.length; i++) {
+    var p = pays[i] && pays[i].payment && pays[i].payment.payment_intent;
+    if (typeof p === 'string' && p) return p;
+    if (p && p.id) return p.id;
+  }
+  return '';
+}
+
+/** The charge that paid an invoice when Stripe embedded it in the answer, else null (fetch it by invoiceChargeId). */
+export function invoiceCharge(inv) {
+  if (!inv) return null;
+  if (inv.charge && typeof inv.charge === 'object') return inv.charge;
+  var pi = inv.payment_intent;
+  if (pi && typeof pi === 'object' && pi.latest_charge && typeof pi.latest_charge === 'object') return pi.latest_charge;
+  var pays = (inv.payments && inv.payments.data) || [];
+  for (var i = 0; i < pays.length; i++) {
+    var p = pays[i] && pays[i].payment && pays[i].payment.payment_intent;
+    if (p && typeof p === 'object' && p.latest_charge && typeof p.latest_charge === 'object') return p.latest_charge;
+  }
+  return null;
+}
+
+/** The id of the charge that paid an invoice, wherever this API version puts it ('' when there is none to fetch). */
+export function invoiceChargeId(inv) {
+  if (!inv) return '';
+  if (typeof inv.charge === 'string' && inv.charge) return inv.charge;
+  if (inv.charge && inv.charge.id) return inv.charge.id;
+  var ch = invoiceCharge(inv);
+  return (ch && ch.id) || '';
+}
+
+/**
+ * Was the charge that paid this invoice given back? Reads the charge fresh when it can be reached, and falls back
+ * to the payment intent check. An answer that cannot be read counts as not returned: a paying member must not lose
+ * Pro because a check failed.
+ */
+export async function invoiceRefunded(inv, deps) {
+  var ch = invoiceCharge(inv);
+  if (!ch && deps && deps.getCharge) {
+    var cid = invoiceChargeId(inv);
+    if (cid) { try { ch = await deps.getCharge(cid); } catch { ch = null; } }
+  }
+  if (ch) return chargeReturned(ch);
+  var pi = invoicePaymentIntentId(inv);
+  if (pi && deps && deps.isPaymentReturned) {
+    try { return !!(await deps.isPaymentReturned(pi)); } catch { return false; }
+  }
+  return false;
+}
+
+/** How long a plan's paid period runs, in days, for the rare subscription that arrives without a period end. */
+var PLAN_DAYS = { pro_yearly: 366, pro_monthly: 32 };
+var LIVE_STATUSES = ['active', 'trialing', 'past_due'];
+
+/**
+ * Until when Pro should run for a subscription, as an ISO string, or '' when it has nothing to give.
+ * Someone who has paid is never left without Pro because Stripe's answer was missing a field: when there is no period
+ * end, a live subscription gets one paid period (the next renewal event then sets the exact end).
+ * A subscription that is not live gives nothing, with or without a period end: a late Checkout event for a
+ * subscription that has since been cancelled must not grant the period it still shows.
+ */
+export function subscriptionUntil(sub, nowSec) {
+  if (!sub) return '';
+  if (sub.status && LIVE_STATUSES.indexOf(sub.status) < 0) return '';
+  var end = periodEnd(sub);
+  if (!end) {
+    var plan = sub.metadata && sub.metadata.plan;
+    if (LIVE_STATUSES.indexOf(sub.status) < 0 || !PLAN_DAYS[plan]) return '';
+    end = nowSec + PLAN_DAYS[plan] * DAY;
+  }
+  if (end + GRACE_SECONDS <= nowSec) return '';
+  return new Date((end + GRACE_SECONDS) * 1000).toISOString();
+}
+
+/**
+ * What a customer's subscriptions in Stripe say they should have: one { plan, until, trial } per live subscription.
+ * Used to put right a member whose payment event never reached us.
+ */
+export function grantsFromSubscriptions(subs, nowSec) {
+  var out = [];
+  (subs || []).forEach(function (sub) {
+    if (!sub || LIVE_STATUSES.indexOf(sub.status) < 0) return;
+    var plan = productFor(sub.metadata && sub.metadata.plan);
+    var until = subscriptionUntil(sub, nowSec);
+    if (plan && plan.def.kind === 'subscription' && until) out.push({ plan: plan.def.plan, until: until, trial: sub.status === 'trialing' });
+  });
+  return out;
+}
+
+/** The database call that gives a subscription's Pro to an account, in meddaily terms. */
+export function grantArgsForSubscription(user, plan, untilIso, trial) {
+  return {
+    rpc: 'grant_pro',
+    args: {
+      p_user: user, p_plan: plan, p_source: 'stripe',
+      p_status: trial ? 'trialing' : 'active',
+      p_period_end: trial ? null : untilIso,
+      p_trial_ends: trial ? untilIso : null
+    }
+  };
+}
+
+/** The line shown above the Pay button: the terms, and that digital products are delivered at once (which ends a right to withdraw). */
+function payNotice(site) {
+  return 'By paying you agree to the Terms of Use (' + site + '/terms.html). Paid products are delivered to your account immediately; where the law gives a right to withdraw from a digital purchase, it ends once delivery starts.';
+}
+
+/** The Stripe Checkout Session to create for a plan, as form fields. Throws a readable message for a bad request. */
+export function checkoutParams(planOrId, userId, env, opts) {
+  var p = productFor(planOrId);
+  if (!p) throw new Error('Unknown plan.');
+  var priceId = env && env[p.def.env];
+  if (!priceId) throw new Error('That plan is not for sale yet.');
+  if (!userId) throw new Error('Sign in first.');
+  var site = String((env && env.SITE_URL) || '').replace(/\/+$/, '');
+  if (!/^https:\/\//.test(site)) throw new Error('The site address is not set up.');
+  var f = {};
+  f['mode'] = 'subscription';
+  f['client_reference_id'] = userId;
+  f['line_items[0][price]'] = priceId;
+  f['line_items[0][quantity]'] = '1';
+  f['success_url'] = site + '/?pro=success';
+  f['cancel_url'] = site + '/?pro=cancelled';
+  f['allow_promotion_codes'] = 'true';
+  f['custom_text[submit][message]'] = payNotice(site);
+  f['metadata[user_id]'] = userId;
+  f['metadata[plan]'] = p.def.plan;
+  f['subscription_data[metadata][user_id]'] = userId;
+  f['subscription_data[metadata][plan]'] = p.def.plan;
+  if (opts && opts.customer) f['customer'] = opts.customer;
+  return f;
+}
+
+/** Settings for the Stripe billing portal, used when none are saved in the Dashboard: cancel at the end of the period, update the card, see invoices. */
+export function portalConfig(env) {
+  var site = String((env && env.SITE_URL) || '').replace(/\/+$/, '');
+  var f = {
+    'business_profile[headline]': 'Manage your Roundsy Pro subscription',
+    'features[subscription_cancel][enabled]': 'true',
+    'features[subscription_cancel][mode]': 'at_period_end',
+    'features[payment_method_update][enabled]': 'true',
+    'features[invoice_history][enabled]': 'true',
+    'features[customer_update][enabled]': 'true',
+    'features[customer_update][allowed_updates][0]': 'email'
+  };
+  if (/^https:\/\//.test(site)) {
+    f['business_profile[privacy_policy_url]'] = site + '/privacy.html';
+    f['business_profile[terms_of_service_url]'] = site + '/terms.html';
+  }
+  return f;
+}
+
+// ---------- webhook signatures ----------
+
+/** "t=123,v1=abc,v1=def" -> { t, v1: [...] } */
+export function parseSignatureHeader(header) {
+  var out = { t: 0, v1: [] };
+  String(header || '').split(',').forEach(function (part) {
+    var kv = part.trim().split('=');
+    if (kv[0] === 't') out.t = Number(kv[1]) || 0;
+    else if (kv[0] === 'v1' && kv[1]) out.v1.push(kv[1]);
+  });
+  return out;
+}
+
+function hex(buf) { return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
+
+function sameString(a, b) {
+  if (a.length !== b.length) return false;
+  var r = 0;
+  for (var i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
+
+/** The signature Stripe would send for this body (used by the tests, and to check incoming ones). */
+export async function signPayload(rawBody, secret, t) {
+  var key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return hex(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(t + '.' + rawBody)));
+}
+
+/** Is this body really from Stripe, and recent? (Five minutes of clock difference is allowed.) */
+export async function verifyStripeSignature(rawBody, header, secret, nowSec, toleranceSec) {
+  if (!secret || !header) return false;
+  var sig = parseSignatureHeader(header);
+  if (!sig.t || !sig.v1.length) return false;
+  if (Math.abs(nowSec - sig.t) > (toleranceSec === undefined ? 300 : toleranceSec)) return false;
+  var expected = await signPayload(rawBody, secret, sig.t);
+  return sig.v1.some(function (v) { return sameString(v, expected); });
+}
+
+// ---------- the webhook's decisions ----------
+
+/**
+ * Do what a Stripe event means for the database.
+ * @param {any} event the verified Stripe event
+ * @param {{rpc: function(string, object): Promise<any>, getSubscription: function(string): Promise<any>, getCharge: function(string): Promise<any>, getInvoice: function(string): Promise<any>, listSubscriptions: function(string): Promise<any>, isPaymentReturned: function(string): Promise<boolean>, now: number}} deps
+ * @returns {Promise<{handled: boolean, action?: string}>}
+ */
+export async function handleEvent(event, deps) {
+  var obj = event && event.data && event.data.object;
+  if (!obj) return { handled: false };
+  var rpc = deps.rpc;
+  var type = event.type;
+
+  // A payment that finished later (a bank debit, for instance) is the same purchase as one that finished at once.
+  if (type === 'checkout.session.completed' || type === 'checkout.session.async_payment_succeeded') return handleSession(obj, deps);
+
+  if (type === 'invoice.paid' || type === 'invoice.payment_succeeded') {
+    var subId = invoiceSubscriptionId(obj);
+    if (!subId) return { handled: false };
+    var sub2 = await deps.getSubscription(subId);
+    // (a renewal that cost nothing, because of a coupon, still renews: the subscription itself says how long)
+    var plan = productFor(sub2 && sub2.metadata && sub2.metadata.plan);
+    var user2 = (sub2 && sub2.metadata && sub2.metadata.user_id) || (obj.customer ? await rpc('stripe_customer_user', { p_customer: obj.customer }) : null);
+    var until2 = subscriptionUntil(sub2, deps.now);
+    if (!user2 || !plan || !until2 || LIVE_STATUSES.indexOf(sub2.status) < 0) return { handled: false };
+    // The period this invoice paid for was given back: a subscription can still read 'active' in Stripe after its
+    // current period's invoice was refunded, and granting here would undo the revocation the refund made.
+    if (await invoiceRefunded(obj, deps)) return { handled: false };
+    var grant2 = grantArgsForSubscription(user2, plan.def.plan, until2, sub2.status === 'trialing');
+    await rpc(grant2.rpc, grant2.args);
+    return { handled: true, action: 'renewal' };
+  }
+
+  // The subscription is fully over (it ran to its end after a cancellation, or was cancelled at once): the web
+  // source of Pro goes away. Store subscriptions are a different source and are never touched here.
+  if (type === 'customer.subscription.deleted') {
+    var user3 = (obj.metadata && obj.metadata.user_id) || (obj.customer ? await rpc('stripe_customer_user', { p_customer: obj.customer }) : null);
+    if (!user3) return { handled: false };
+    await rpc('revoke_pro_source', { p_user: user3, p_source: 'stripe' });
+    return { handled: true, action: 'subscription_ended' };
+  }
+
+  // Money returned (a refund, or a chargeback) takes the purchase back; a chargeback that was won gives it again. These
+  // events can arrive late and out of order, so none of them is taken at its word: the charge is read fresh from Stripe
+  // and the answer follows how it stands now. The same events in any order leave the same result.
+  if (type === 'charge.refunded' || type === 'charge.dispute.created' || type === 'charge.dispute.closed' || type === 'charge.dispute.updated') {
+    var seen = type === 'charge.refunded' ? obj : await chargeOf(obj, deps);
+    if (!seen) return { handled: false };
+    var ch = deps.getCharge && seen.id ? await deps.getCharge(seen.id) : seen;
+    if (!ch) return { handled: false };
+    if (chargeReturned(ch)) return takeBack(ch, deps, ch.refunded ? 'refunded' : 'disputed');
+    if (type === 'charge.refunded') return { handled: false }; // (only part of it was refunded: the purchase stays)
+    return giveBack(ch, deps);
+  }
+
+  return { handled: false };
+}
+
+/** The charge a dispute is about. */
+async function chargeOf(dispute, deps) {
+  var id = typeof dispute.charge === 'string' ? dispute.charge : dispute.charge && dispute.charge.id;
+  if (!id || !deps.getCharge) return null;
+  return deps.getCharge(id);
+}
+
+/** Who bought what, from a charge: the subscription it paid for, through its invoice. */
+async function purchaseOfCharge(ch, deps) {
+  var invId = typeof ch.invoice === 'string' ? ch.invoice : ch.invoice && ch.invoice.id;
+  if (!invId || !deps.getInvoice) return null;
+  var inv = await deps.getInvoice(invId);
+  var subId = invoiceSubscriptionId(inv);
+  if (!subId) return null;
+  var sub = await deps.getSubscription(subId);
+  var sm = (sub && sub.metadata) || {};
+  if (!sm.user_id || !sm.plan) return null;
+  // only the invoice that paid for the period they hold now ends it; an old invoice being refunded must not
+  if (sub.latest_invoice && String(sub.latest_invoice.id || sub.latest_invoice) !== invId) return null;
+  return { user: sm.user_id, plan: sm.plan, subscription: sub };
+}
+
+async function takeBack(ch, deps, why) {
+  var buy = await purchaseOfCharge(ch, deps);
+  if (!buy) return { handled: false };
+  await deps.rpc('revoke_pro_source', { p_user: buy.user, p_source: 'stripe' });
+  await restoreHeldSubscriptions(buy.user, deps);
+  return { handled: true, action: buy.plan + '_' + why };
+}
+
+/**
+ * Taking the web source back can also take away a second web subscription the member still pays for (they are one
+ * source in the database). Ask Stripe what they still hold and put it back.
+ */
+async function restoreHeldSubscriptions(user, deps) {
+  if (!deps.listSubscriptions) return;
+  var customer = await deps.rpc('user_stripe_customer', { p_user: user });
+  if (!customer) return;
+  var subs = await deps.listSubscriptions(customer);
+  var grants = grantsFromSubscriptions(subs, deps.now);
+  for (var i = 0; i < grants.length; i++) {
+    var g = grantArgsForSubscription(user, grants[i].plan, grants[i].until, grants[i].trial);
+    await deps.rpc(g.rpc, g.args);
+  }
+}
+
+async function giveBack(ch, deps) {
+  var buy = await purchaseOfCharge(ch, deps);
+  if (!buy) return { handled: false };
+  var until = subscriptionUntil(buy.subscription, deps.now);
+  if (!until) return { handled: false };
+  var g = grantArgsForSubscription(buy.user, buy.plan, until, buy.subscription.status === 'trialing');
+  await deps.rpc(g.rpc, g.args);
+  return { handled: true, action: buy.plan + '_restored' };
+}
+
+/** A finished Checkout: give what was bought. */
+async function handleSession(obj, deps) {
+  var rpc = deps.rpc;
+  var userId = obj.client_reference_id || (obj.metadata && obj.metadata.user_id);
+  var p = productFor(obj.metadata && obj.metadata.plan);
+  if (!userId || !p) return { handled: false };
+  if (obj.payment_status !== 'paid' && obj.payment_status !== 'no_payment_required') return { handled: false };
+  if (obj.customer) await rpc('link_stripe_customer', { p_customer: obj.customer, p_user: userId });
+  var sub = obj.subscription ? await deps.getSubscription(obj.subscription) : null;
+  var until = subscriptionUntil(sub, deps.now);
+  if (!until) return { handled: false };
+  var g = grantArgsForSubscription(userId, p.def.plan, until, !!sub && sub.status === 'trialing');
+  await rpc(g.rpc, g.args);
+  if (sub && sub.id) {
+    try { await deps.setSubscriptionRef(userId, obj.customer || '', sub.id); } catch { /* the ref is a convenience for support; the grant is what matters */ }
+  }
+  return { handled: true, action: 'subscription' };
+}
