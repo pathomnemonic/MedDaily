@@ -89,6 +89,14 @@ describe("result recording", () => {
     expect(second.bests.medle).toBe(55);
     expect(second.bests.connections).toBe(70);
   });
+
+  it("lets a replay of a recorded day raise the best without adding a result", () => {
+    const player = emptyPlayer();
+    const first = recordResult(player, { ...result("medle", 0), score: 55 });
+    const replay = recordResult(first, { ...result("medle", 0), score: 90, archive: true });
+    expect(replay.results).toHaveLength(1);
+    expect(replay.bests.medle).toBe(90);
+  });
 });
 
 describe("daily catalog progress", () => {
@@ -129,5 +137,30 @@ describe("level maths survives corrupted xp", () => {
       expect(Number.isFinite(lv.level)).toBe(true);
       expect(lv.pct).toBeGreaterThanOrEqual(0);
     }
+  });
+});
+
+describe("streak rules for archive plays and frozen days", () => {
+  const dayKey = (daysAgo: number): string => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - daysAgo);
+    return dailyDateKey(d);
+  };
+  it("counts a frozen day as kept and bridges a one day gap", () => {
+    const player = emptyPlayer();
+    player.results = [{ ...result("medle", 0), date: dayKey(2) }];
+    expect(playStreak(player)).toBe(0);
+    player.frozenDays = [dayKey(1)];
+    expect(playStreak(player)).toBe(2);
+  });
+  it("never lets an archive play hold or extend a streak", () => {
+    const player = emptyPlayer();
+    player.results = [
+      { ...result("medle", 0), date: dayKey(0) },
+      { ...result("medle", 1), date: dayKey(1), archive: true },
+      { ...result("medle", 2), date: dayKey(2) }
+    ];
+    expect(playStreak(player)).toBe(1);
+    expect(completedToday(player)).toBe(1);
   });
 });
